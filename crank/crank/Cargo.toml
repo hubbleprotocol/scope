@@ -17,3 +17,5 @@ pyth-client = "0.2.2"
 tokio = { version = "1.12", features = ["full"] }
 tokio-tungstenite = { version = "0.15", features = ["native-tls"] }
 chrono = "0.4.19"
+borrowing = { path = "../../../hubble-master/programs/borrowing"}
+bytemuck = "1.7.2"

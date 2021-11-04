@@ -77,6 +77,7 @@ async fn main() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use borrowing;
     use std::{str::FromStr, sync::Arc};
 
     use serum_common::client::{rpc::send_txn, Cluster};
@@ -288,6 +289,28 @@ mod tests {
 
         let signature = send_txn(&client, &txn, false).unwrap();
         println!("Signature {}", signature);
+    }
+
+    #[test]
+    fn get_user_positions() {
+        let cluster = Cluster::Localnet;
+        let client = RpcClient::new(cluster.url().to_string());
+        let client = Arc::new(client);
+
+        let user_positions =
+            Pubkey::from_str("2Sh1QzzkSW9scs5nQGSdDnvcytk7W4zapcEnMz3tsUcR").unwrap();
+        println!("Positions key {}", user_positions);
+
+        let account = client.get_account(&user_positions).unwrap();
+        println!("Positions data {:?}", account);
+        println!("Positions data {:?}", account.data);
+
+        let data: &[u8] = &account.data[8..];
+        let positions: &borrowing::state::UserPositions = bytemuck::from_bytes(data);
+
+        // let serialized_data = bytemuck::
+
+        // println!("{:?}", positions);
     }
 }
 
