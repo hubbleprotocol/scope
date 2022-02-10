@@ -1,5 +1,4 @@
 /target
-Cargo.lock
 .env
 .anchor
 .DS_Store
@@ -9,3 +8,4 @@ node_modules
 build
 .idea/
 test-ledger/
+keys/

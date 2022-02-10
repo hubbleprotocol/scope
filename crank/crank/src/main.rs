@@ -10,7 +10,7 @@ use solana_sdk::{
     signature::Keypair,
     transaction::Transaction,
 };
-use solana_shadow::{BlockchainShadow, Network, Pubkey};
+use solana_shadow::{BlockchainShadow, SyncOptions, Pubkey};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use tracing_subscriber::EnvFilter;
 
@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
 
     let shadow = BlockchainShadow::new_for_accounts(
         &vec![ethusd, btcusd, solusd, rayusd, fttusd, srmusd],
-        Network::Mainnet,
+        SyncOptions::default(),
     )
     .await?;
 

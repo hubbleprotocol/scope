@@ -7,11 +7,11 @@ edition = "2018"
 
 [dependencies]
 serum-common = { path = "../common", features = ["client"] }
-solana-sdk = "1.7.11"
+solana-sdk = "~1.8.14"
 anyhow = "1.0.32"
-solana-client = "1.7.11"
+solana-client = "~1.8.14"
 borsh = "0.9.1"
-solana-shadow = { path = "../solana-shadow" }
+solana-shadow = "0.2.4"
 tracing-subscriber = "0.2"
 pyth-client = "0.2.2"
 tokio = { version = "1.12", features = ["full"] }
