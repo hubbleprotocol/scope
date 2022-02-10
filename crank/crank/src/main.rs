@@ -44,7 +44,7 @@ async fn main() -> Result<()> {
     // iterate over the offline shadow of the account
     // everytime any account is accessed, then its contents
     // will reflect the latest version on-chain.
-    for i in 0.. {
+    for _ in 0.. {
         // access the most recent snapshot of an account
         let ethacc = shadow.get_account(&ethusd).unwrap();
         let eth_price = cast::<Price>(&ethacc.data).agg.price as u64;

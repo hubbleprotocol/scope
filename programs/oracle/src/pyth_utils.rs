@@ -1,8 +1,11 @@
+#![allow(dead_code)]
+
 use crate::Price;
 use crate::Token;
 use anchor_lang::prelude::*;
 use pyth_client::{PriceStatus, PriceType};
 use std::convert::{TryFrom, TryInto};
+
 
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
@@ -173,7 +176,6 @@ pub fn get_pyth_symbol_for_token(token: &Token) -> String {
         Token::RAY => pyth_symbol!("RAY"),
         Token::FTT => pyth_symbol!("FTT"),
         Token::MSOL => pyth_symbol!("MSOL"),
-        _ => unimplemented!(),
     }
 }
 
@@ -186,7 +188,6 @@ pub fn get_pyth_symbol_for_token_devnet(token: &Token) -> String {
         Token::RAY => pyth_symbol!("Crypto.RAY"),
         Token::FTT => pyth_symbol!("Crypto.FTT"),
         Token::MSOL => pyth_symbol!("Crypto.MSOL"),
-        _ => unimplemented!(),
     }
 }
 

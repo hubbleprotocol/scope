@@ -114,6 +114,7 @@ pub struct OraclePrices {
 
 #[derive(Eq, PartialEq, Debug, Clone, Copy, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
+#[non_exhaustive]
 pub enum Token {
     SOL,
     ETH,
