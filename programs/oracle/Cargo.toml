@@ -16,3 +16,5 @@ cpi = ["no-entrypoint"]
 anchor-spl = "0.21.0"
 spl-token = { version = "3.1.1", features = ["no-entrypoint"] }
 anchor-lang = "0.21.0"
+num_enum = "0.5.6"
+pyth-client = "0.2.2"

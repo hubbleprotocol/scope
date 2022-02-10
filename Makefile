@@ -13,11 +13,11 @@ build:
 # Only use this when you want to deploy the program at a new address (or for the first time)
 # otherwise use the "deploy" to deploy to the old address
 deploy:
-	anchor deploy -p oracle
+	anchor deploy -p oracle --provider.wallet ./keys/${CLUSTER}/owner.json
 
 # Use these whenever you already have a program id
 upgrade:
-	anchor upgrade ./target/deploy/oracle.so --program-id $(PROGRAM_ID)
+	anchor upgrade ./target/deploy/oracle.so --program-id $(PROGRAM_ID) --provider.wallet ./keys/${CLUSTER}/owner.json
 
 ## Listen to on-chain logs
 listen:

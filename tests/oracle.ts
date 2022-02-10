@@ -51,7 +51,9 @@ describe("oracle", () => {
         });
 
         {
-            let oracle = await program.account.oracle.fetch(oracleAccount.publicKey);
+            let oracle: any = await program.account.oracle.fetch(
+                oracleAccount.publicKey
+              );
             console.log("Oracle", oracle);
             strictEqual(oracle.srm.price.toNumber(), updatedSolPrice);
         }

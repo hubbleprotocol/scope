@@ -10,7 +10,7 @@ use solana_sdk::{
     signature::Keypair,
     transaction::Transaction,
 };
-use solana_shadow::{BlockchainShadow, SyncOptions, Pubkey};
+use solana_shadow::{BlockchainShadow, Pubkey, SyncOptions};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use tracing_subscriber::EnvFilter;
 
