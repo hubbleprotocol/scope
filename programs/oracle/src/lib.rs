@@ -5,7 +5,7 @@ mod pyth_utils;
 
 use pyth_utils::get_price;
 
-declare_id!("6jnS9rvUGxu4TpwwuCeF12Ar9Cqk2vKbufqc6Hnharnz");
+declare_id!("A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD");
 
 #[program]
 mod oracle {
@@ -17,7 +17,7 @@ mod oracle {
     }
 
     pub fn update(ctx: Context<Update>, token: u8) -> ProgramResult {
-        let oracle = &mut ctx.accounts.oracle;
+        let mut oracle = ctx.accounts.oracle.load_mut()?;
         let clock = &ctx.accounts.clock;
         let token = Token::try_from(token).map_err(|_|ProgramError::InvalidArgument)?;
         let slot = clock.slot;
@@ -41,15 +41,18 @@ mod oracle {
 
         // TODO change "oracle" to an array indexed by `Token`
 
-        match token {
-            Token::SOL => oracle.sol.price = price,
-            Token::ETH => oracle.eth.price = price,
-            Token::BTC => oracle.btc.price = price,
-            Token::SRM => oracle.srm.price = price,
-            Token::RAY => oracle.ray.price = price,
-            Token::FTT => oracle.ftt.price = price,
-            Token::MSOL => oracle.msol.price = price,
+        let to_update = match token {
+            Token::SOL => &mut oracle.sol,
+            Token::ETH => &mut oracle.eth,
+            Token::BTC => &mut oracle.btc,
+            Token::SRM => &mut oracle.srm,
+            Token::RAY => &mut oracle.ray,
+            Token::FTT => &mut oracle.ftt,
+            Token::MSOL => &mut oracle.msol,
         };
+
+        to_update.price = price;
+        to_update.last_updated_slot = slot; // Is it the time reference we want?
 
         Ok(())
     }
@@ -59,30 +62,16 @@ mod oracle {
 pub struct Initialize<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    #[account(init, payer = admin)]
-    pub oracle: Account<'info, OraclePrices>,
+    #[account(init, payer = admin, space = 8 + (8+8+8)*100)]// Space = account discriminator + (price + exposant + timestamp)*max_stored_prices
+    pub oracle: AccountLoader<'info, OraclePrices>,
     pub system_program: Program<'info, System>,
-}
-
-#[account]
-pub struct OracleMappings {
-    // Validated pyth accounts
-    pub pyth_sol_price_info: Pubkey,
-    pub pyth_srm_price_info: Pubkey,
-    pub pyth_eth_price_info: Pubkey,
-    pub pyth_btc_price_info: Pubkey,
-    pub pyth_ray_price_info: Pubkey,
-    pub pyth_ftt_price_info: Pubkey,
-    pub pyth_msol_price_info: Pubkey,
-    pub _reserved: [u64; 128],
 }
 
 #[derive(Accounts)]
 pub struct Update<'info> {
     pub admin: Signer<'info>,
-    pub oracle_mappings: Box<Account<'info, OracleMappings>>,
     #[account(mut)]
-    pub oracle: Account<'info, OraclePrices>,
+    pub oracle: AccountLoader<'info, OraclePrices>,
     pub pyth_price_info: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }
@@ -105,14 +94,13 @@ pub struct Price {
 }
 
 #[zero_copy]
-#[derive(Debug, Eq, PartialEq, BorshDeserialize, BorshSerialize, Default)]
+#[derive(Debug, Eq, PartialEq, Default)]
 pub struct DatedPrice {
     pub price: Price,
-    pub decimals: u8,
     pub last_updated_slot: u64,
 }
 
-#[account]
+#[account(zero_copy)]
 #[derive(Default)]
 pub struct OraclePrices {
     pub sol: DatedPrice,

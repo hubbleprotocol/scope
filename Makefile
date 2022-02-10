@@ -2,7 +2,7 @@ ifneq (,$(wildcard ./.env))
 	include ./.env
 endif
 
-PROGRAM_ID=6jnS9rvUGxu4TpwwuCeF12Ar9Cqk2vKbufqc6Hnharnz
+PROGRAM_ID=A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD
 PROGRAM_DEPLOY_ACCOUNT=$(shell eval solana-keygen pubkey ./keys/${CLUSTER}/owner.json)
 
 .PHONY: build deploy build-client run listen deploy-new
@@ -13,7 +13,7 @@ build:
 # Only use this when you want to deploy the program at a new address (or for the first time)
 # otherwise use the "deploy" to deploy to the old address
 deploy:
-	anchor deploy -p oracle --provider.wallet ./keys/${CLUSTER}/owner.json
+	anchor deploy -p oracle --program-id $(PROGRAM_ID) --provider.wallet ./keys/${CLUSTER}/owner.json
 
 # Use these whenever you already have a program id
 upgrade:
