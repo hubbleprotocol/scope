@@ -52,7 +52,7 @@ mod oracle {
         };
 
         to_update.price = price;
-        to_update.last_updated_slot = slot; // Is it the time reference we want?
+        to_update.last_updated_slot = slot; // TODO Is it the time reference we want?
 
         Ok(())
     }
