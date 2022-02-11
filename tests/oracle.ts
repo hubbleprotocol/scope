@@ -1,18 +1,25 @@
+require('dotenv').config();
 import { Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
 import { strictEqual } from 'assert';
 import * as fs from "fs";
 import { Provider, Program, setProvider, workspace, BN } from "@project-serum/anchor"
 
+enum Tokens {
+    SOL = 1,
+    ETH,
+    BTC,
+    SRM,
+    RAY,
+    FTT,
+    MSOL,
+}
+
 describe("oracle", () => {
-    const admin = Keypair.fromSecretKey(Uint8Array.from([
-        241, 101, 13, 165, 53, 150, 114, 216, 162, 246, 157, 94, 156, 209, 145, 37,
-        186, 13, 219, 120, 66, 196, 128, 253, 177, 46, 0, 70, 68, 211, 238, 83, 155,
-        17, 157, 105, 115, 161, 0, 60, 146, 250, 19, 171, 63, 222, 211, 135, 37, 102,
-        222, 216, 142, 131, 67, 196, 185, 182, 202, 219, 55, 24, 135, 90
-    ]));
+    const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
+    const admin = Keypair.fromSecretKey(keypair_acc);
 
     const idl = JSON.parse(fs.readFileSync("./target/idl/oracle.json", "utf8"));
-    const programId = new PublicKey('6jnS9rvUGxu4TpwwuCeF12Ar9Cqk2vKbufqc6Hnharnz');
+    const programId = new PublicKey('A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD');
     const provider = Provider.local()
     setProvider(provider);
     const program = new Program(idl, programId);
@@ -23,6 +30,7 @@ describe("oracle", () => {
         let oracleAccount = Keypair.generate();
         let price = 0;
         console.log("OracleAcc", oracleAccount.secretKey);
+        console.log("SystemProgram", SystemProgram.programId);
 
         await program.rpc.initialize({
             accounts: {
@@ -38,24 +46,24 @@ describe("oracle", () => {
             console.log("Oracle", oracle);
         }
 
-        let updatedSolPrice = 20;
-        await program.rpc.update(
-            new BN(3),      // SRM
-            new BN(updatedSolPrice), {
-            accounts: {
-                admin: admin.publicKey,
-                oracle: oracleAccount.publicKey,
-                clock: SYSVAR_CLOCK_PUBKEY
-            },
-            signers: [admin]
-        });
+        // let updatedSolPrice = 20;
+        // await program.rpc.update(
+        //     new BN(3),      // SRM
+        //     new BN(updatedSolPrice), {
+        //     accounts: {
+        //         admin: admin.publicKey,
+        //         oracle: oracleAccount.publicKey,
+        //         clock: SYSVAR_CLOCK_PUBKEY
+        //     },
+        //     signers: [admin]
+        // });
 
-        {
-            let oracle: any = await program.account.oracle.fetch(
-                oracleAccount.publicKey
-              );
-            console.log("Oracle", oracle);
-            strictEqual(oracle.srm.price.toNumber(), updatedSolPrice);
-        }
+        // {
+        //     let oracle: any = await program.account.oracle.fetch(
+        //         oracleAccount.publicKey
+        //       );
+        //     console.log("Oracle", oracle);
+        //     strictEqual(oracle.srm.price.toNumber(), updatedSolPrice);
+        // }
     });
 });

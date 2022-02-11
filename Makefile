@@ -13,7 +13,7 @@ build:
 # Only use this when you want to deploy the program at a new address (or for the first time)
 # otherwise use the "deploy" to deploy to the old address
 deploy:
-	anchor deploy -p oracle --program-id $(PROGRAM_ID) --provider.wallet ./keys/${CLUSTER}/owner.json
+	anchor deploy -p oracle --provider.wallet ./keys/${CLUSTER}/owner.json
 
 # Use these whenever you already have a program id
 upgrade:
