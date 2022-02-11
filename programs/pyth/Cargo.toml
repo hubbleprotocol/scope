@@ -1,0 +1,28 @@
+[package]
+name = "pyth"
+version = "0.1.0"
+description = "Pyth oracle interface implementation in anchor"
+edition = "2018"
+license = "Apache-2.0"
+authors = ["Synthetify Labs <contact@synthetify.io>"]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "pyth"
+doctest = false
+
+[features]
+no-entrypoint = []
+no-idl = []
+cpi = ["no-entrypoint"]
+mainnet = []
+testnet = []
+devnet = []
+localnet = []
+default = ["localnet"]
+
+[dependencies]
+anchor-lang = "0.18.2"
+anchor-spl = "0.18.2"
+arrayref = "0.3.6"
+bytemuck = { version = "1.7.2" }

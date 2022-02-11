@@ -4,6 +4,7 @@
 
 [programs.localnet]
 oracle = "A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD"
+pyth = "3URDD3Eutw6SufPBzNm2dbwqwvQjRUFCtqkKVsjk3uSE"
 
 # [scripts]
 # test = "mocha -t 1000000 tests/"
