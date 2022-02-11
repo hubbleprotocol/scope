@@ -2,8 +2,8 @@
 # cluster = "localnet"
 # wallet = "~/.config/solana/id.json"
 
-# [programs.localnet]
-# basic_0 = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+[programs.localnet]
+oracle = "A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD"
 
 # [scripts]
 # test = "mocha -t 1000000 tests/"
@@ -11,4 +11,4 @@
 [provider]
 cluster = "http://127.0.0.1:8899"
 # cluster = "https://api.devnet.solana.com/"
-wallet = "./keypair.json"
+wallet = "./keys/localnet/owner.json"
