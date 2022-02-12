@@ -106,7 +106,7 @@ describe("Oracle tests", () => {
             console.log("Oracle", oracle);
         }
 
-        console.log('Initialize Tokens prices');
+        console.log('Initialize Tokens pyth prices');
 
         fakePythAccounts = await Promise.all(initialTokens.map(async (asset): Promise<any> => {
             console.log(`Adding ${asset.ticker.toString()}`)
