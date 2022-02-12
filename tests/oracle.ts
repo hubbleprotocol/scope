@@ -1,11 +1,16 @@
 require('dotenv').config();
 import { Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, Connection, ConnectionConfig } from '@solana/web3.js';
-import { strictEqual } from 'assert';
+import { strictEqual, deepStrictEqual } from 'assert';
 import * as fs from "fs";
 import { Provider, Program, setProvider, workspace, BN, Wallet } from "@project-serum/anchor"
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
-import { Decimal } from 'decimal.js';
 import * as pythUtils from './pythUtils';
+import { Decimal } from 'decimal.js';
+import * as chai from 'chai';
+import { expect } from 'chai';
+import chaiDecimalJs from 'chai-decimaljs';
+
+chai.use(chaiDecimalJs(Decimal));
 
 
 enum Tokens {
@@ -21,37 +26,37 @@ enum Tokens {
 
 const initialTokens = [
     {
-        price: 22841550900,
+        price: new Decimal('228.41550900'),
         ticker: Buffer.from('SOL'),
         decimals: 8
     },
     {
-        price: 472659830000,
+        price: new Decimal('4726.59830000'),
         ticker: Buffer.from('ETH'),
         decimals: 8
     },
     {
-        price: 6462236900000,
+        price: new Decimal('64622.36900000'),
         ticker: Buffer.from('BTC'),
         decimals: 8
     },
     {
-        price: 706975570,
+        price: new Decimal('7.06975570'),
         ticker: Buffer.from('SRM'),
         decimals: 8
     },
     {
-        price: 1110038050,
+        price: new Decimal('11.10038050'),
         ticker: Buffer.from('RAY'),
         decimals: 8
     },
     {
-        price: 5917104600,
+        price: new Decimal('59.17104600'),
         ticker: Buffer.from('FTT'),
         decimals: 8
     },
     {
-        price: 25341550900,
+        price: new Decimal('253.41550900'),
         ticker: Buffer.from('MSOL'),
         decimals: 8
     }
@@ -124,7 +129,7 @@ describe("oracle", () => {
         })
 
         await program.rpc.update(
-            new BN(3),      // SRM
+            new BN(Tokens.SRM),
             {
                 accounts: {
                     admin: admin.publicKey,
@@ -137,7 +142,10 @@ describe("oracle", () => {
         {
             let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
             console.log("Oracle", oracle);
-            strictEqual(oracle.srm.price.toNumber(), initialTokens[3]);
+            let value = oracle.srm.price.value.toNumber();
+            let expo = oracle.srm.price.exp.toNumber();
+            let in_decimal = new Decimal(value).mul((new Decimal(10)).pow(new Decimal(-expo)))
+            expect(in_decimal).decimal.eq(initialTokens[Tokens.SRM].price);
         }
     });
 });

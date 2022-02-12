@@ -1,5 +1,6 @@
 import { BN, Program, web3 } from '@project-serum/anchor'
 import { parsePriceData } from '@pythnetwork/client'
+import Decimal from 'decimal.js'
 
 export enum PriceStatus {
     Unknown = 0,
@@ -10,7 +11,7 @@ export enum PriceStatus {
 
 interface ICreatePriceFeed {
     oracleProgram: Program
-    initPrice: number
+    initPrice: Decimal
     confidence?: BN
     expo?: number
 }
@@ -24,7 +25,7 @@ export const createPriceFeed = async ({
     const collateralTokenFeed = new web3.Account()
 
     await oracleProgram.rpc.initialize(
-        new BN(initPrice).mul(new BN(10).pow(new BN(-expo))),
+        new BN(initPrice.mul(new Decimal(10).pow(new Decimal(-expo))).toNumber()),
         expo,
         conf,
         {

@@ -22,6 +22,7 @@ pub mod pyth {
         price_oracle.twac.val = conf.try_into().unwrap();
         price_oracle.expo = expo;
         price_oracle.ptype = pc::PriceType::Price;
+        price_oracle.num_qt = 3; //TODO hard coded, to make configurable?
         Ok(())
     }
     pub fn set_price(ctx: Context<SetPrice>, price: i64) -> ProgramResult {

@@ -589,6 +589,11 @@ camelcase@^6.0.0:
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-6.2.0.tgz#924af881c9d525ac9d87f40d964e5cea982a1809"
   integrity sha512-c7wVvbw3f37nuobQNtgsgG9POC9qMbNuMQmTCqZv23b6MIz0fcYpBiOlv9gEN/hdLdnZTDQhg6e9Dq5M1vKvfg==
 
+chai-decimaljs@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/chai-decimaljs/-/chai-decimaljs-0.0.1.tgz#2c29046c9337c165f8a45cfe65a34fa2387d7659"
+  integrity sha512-Ig1fs8cnYymxoUeCUVCFlz4qatCGFt2Z9LYGxKpzDpc2CAv8oj/nDayeQgj2MIfjWjwdWdI81xMTHdjynhW+uQ==
+
 chai@^4.3.4:
   version "4.3.6"
   resolved "https://registry.yarnpkg.com/chai/-/chai-4.3.6.tgz#ffe4ba2d9fa9d6680cc0b370adae709ec9011e9c"

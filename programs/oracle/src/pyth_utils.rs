@@ -6,7 +6,6 @@ use anchor_lang::prelude::*;
 use pyth_client::{PriceStatus, PriceType};
 use std::convert::{TryFrom, TryInto};
 
-
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
@@ -32,7 +31,6 @@ fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
     if cfg!(feature = "skip_price_validation") {
         return Ok(u64::try_from(pyth_price.agg.price).unwrap());
     }
-
     let is_trading = get_status(&pyth_price.agg.status);
     if !is_trading {
         return Err(BorrowError::PriceNotValid.into());
