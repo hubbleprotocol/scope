@@ -189,6 +189,263 @@ pub fn get_pyth_symbol_for_token_devnet(token: &Token) -> String {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use anchor_lang::prelude::{ProgramError, Pubkey};
+    use pyth_client::AccKey;
+
+    use super::utils::{new_product, new_product_attributes};
+    use crate::Token;
+
+    const PRICE_ACCT_SIZE: usize = 3312;
+
+    const PRICE_MAGIC_OFFSET: usize = 0;
+    const PRICE_VERSION_OFFSET: usize = 4;
+    const PRICE_TYPE_OFFSET: usize = 16;
+    const PRICE_STATUS_OFFSET: usize = 224;
+
+    #[test]
+    pub fn test_validate_product() {
+        assert_eq!(
+            super::validate_pyth_product(&new_product()).err().is_none(),
+            true
+        );
+    }
+
+    #[test]
+    pub fn test_validate_product_magic_number() {
+        let product = pyth_client::Product {
+            magic: 0xa1b2c3d3, // incorrect magic
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_product(&product).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_product_account_type() {
+        let product = pyth_client::Product {
+            atype: pyth_client::AccountType::Mapping as u32, // incorrect atype
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_product(&product).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_product_version() {
+        let product = pyth_client::Product {
+            ver: 0_u32, // incorrect ver
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_product(&product).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_product_px_acc() {
+        let product = pyth_client::Product {
+            px_acc: pyth_client::AccKey {
+                val: Pubkey::default().to_bytes(), // incorrect px_acc
+            },
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_product(&product).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_product_symbol() {
+        let product = pyth_client::Product {
+            attr: new_product_attributes("symbol", "ETH/USD"),
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_product_symbol(&product, &Token::ETH)
+                .err()
+                .is_none(),
+            true
+        );
+    }
+
+    #[test]
+    pub fn test_validate_product_symbol_incorrect() {
+        let product = pyth_client::Product {
+            attr: new_product_attributes("symbol", "BTC/USD"),
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_product_symbol(&product, &Token::ETH)
+                .err()
+                .unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn validate_pyth_price_pubkey() {
+        let pubkey = Pubkey::new_unique();
+        let product = pyth_client::Product {
+            px_acc: AccKey {
+                val: pubkey.to_bytes(),
+            },
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_price_pubkey(&product, &pubkey)
+                .err()
+                .is_none(),
+            true
+        );
+    }
+
+    #[test]
+    pub fn validate_pyth_price_pubkey_mismatch() {
+        let pubkey = Pubkey::new_unique();
+        let product = pyth_client::Product {
+            px_acc: AccKey {
+                val: pubkey.to_bytes(),
+            },
+            ..new_product()
+        };
+        assert_eq!(
+            super::validate_pyth_price_pubkey(&product, &Pubkey::new_unique())
+                .err()
+                .unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_price() {
+        let buff = valid_price_bytes();
+        let price = pyth_client::cast::<pyth_client::Price>(&buff);
+        assert_eq!(super::validate_pyth_price(price).err().is_none(), true);
+    }
+
+    #[test]
+    pub fn test_validate_price_magic_incorrect() {
+        let incorrect_magic = 0xa1b2c3d3_u32.to_le_bytes();
+        let mut buff = valid_price_bytes();
+        write_bytes(&mut buff, &incorrect_magic, PRICE_MAGIC_OFFSET);
+        let price = pyth_client::cast::<pyth_client::Price>(&buff);
+        assert_eq!(
+            super::validate_pyth_price(price).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_price_price_type_incorrect() {
+        let incorrect_price_type: &[u8] = &[0];
+        let mut buff = valid_price_bytes();
+        write_bytes(&mut buff, &incorrect_price_type, PRICE_TYPE_OFFSET);
+        let price = pyth_client::cast::<pyth_client::Price>(&buff);
+        assert_eq!(
+            super::validate_pyth_price(price).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_price_version_incorrect() {
+        let incorrect_price_version = 1_u32.to_le_bytes();
+        let mut buff = valid_price_bytes();
+        write_bytes(&mut buff, &incorrect_price_version, PRICE_VERSION_OFFSET);
+        let price = pyth_client::cast::<pyth_client::Price>(&buff);
+        assert_eq!(
+            super::validate_pyth_price(price).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    #[test]
+    pub fn test_validate_price_status_incorrect() {
+        let incorrect_price_status = 0_u32.to_be_bytes();
+        let mut buff = valid_price_bytes();
+        write_bytes(&mut buff, &incorrect_price_status, PRICE_STATUS_OFFSET);
+        let price = pyth_client::cast::<pyth_client::Price>(&buff);
+        assert_eq!(
+            super::validate_pyth_price(price).err().unwrap(),
+            ProgramError::InvalidArgument
+        );
+    }
+
+    fn valid_price_bytes() -> [u8; PRICE_ACCT_SIZE] {
+        let mut buff = [0_u8; PRICE_ACCT_SIZE];
+        write_bytes(
+            &mut buff,
+            &pyth_client::MAGIC.to_le_bytes(),
+            PRICE_MAGIC_OFFSET,
+        );
+        write_bytes(
+            &mut buff,
+            &pyth_client::VERSION_2.to_le_bytes(),
+            PRICE_VERSION_OFFSET,
+        );
+        write_bytes(&mut buff, &[1_u8], PRICE_TYPE_OFFSET); // price type = price
+        write_bytes(&mut buff, &[1_u8], PRICE_STATUS_OFFSET); // price status = trading
+        buff
+    }
+
+    fn write_bytes(buff: &mut [u8], bytes: &[u8], offset: usize) {
+        for i in 0..bytes.len() {
+            buff[i + offset] = bytes[i];
+        }
+    }
+}
+
+pub mod utils {
+
+    use super::*;
+    pub const PROD_ACCT_SIZE: usize = 512;
+    pub const PROD_HDR_SIZE: usize = 48;
+    pub const PROD_ATTR_SIZE: usize = PROD_ACCT_SIZE - PROD_HDR_SIZE;
+
+    pub fn new_product() -> pyth_client::Product {
+        pyth_client::Product {
+            magic: pyth_client::MAGIC,
+            ver: pyth_client::VERSION_2,
+            atype: pyth_client::AccountType::Product as u32,
+            size: u32::try_from(PROD_ACCT_SIZE).unwrap(),
+            px_acc: pyth_client::AccKey {
+                val: Pubkey::new_unique().to_bytes(),
+            },
+            attr: [0_u8; PROD_ATTR_SIZE],
+        }
+    }
+
+    #[allow(clippy::same_item_push)]
+    #[allow(clippy::integer_arithmetic)]
+    pub fn new_product_attributes(key: &str, val: &str) -> [u8; PROD_ATTR_SIZE] {
+        let key_bytes = key.as_bytes();
+        let val_bytes = val.as_bytes();
+        let mut zero_vec: Vec<u8> = Vec::with_capacity(PROD_ATTR_SIZE);
+        // push the length discriminator
+        zero_vec.push(key_bytes.len().try_into().unwrap());
+        // push the value
+        key_bytes.iter().for_each(|i| zero_vec.push(*i));
+        // push the length discriminator
+        zero_vec.push(val_bytes.len().try_into().unwrap());
+        // push the value
+        val_bytes.iter().for_each(|i| zero_vec.push(*i));
+        // push zeroes
+
+        for _ in 0..PROD_ATTR_SIZE - (1 + key_bytes.len() + 1 + val_bytes.len()) {
+            zero_vec.push(0);
+        }
+        zero_vec.try_into().unwrap()
+    }
+}
+
 #[error]
 #[derive(PartialEq, Eq)]
 pub enum BorrowError {
