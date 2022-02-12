@@ -62,7 +62,7 @@ const initialTokens = [
     }
 ]
 
-describe("oracle", () => {
+describe("Oracle tests", () => {
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
     const admin = Keypair.fromSecretKey(keypair_acc);
 
@@ -84,12 +84,11 @@ describe("oracle", () => {
     const fakePythIdl = JSON.parse(fs.readFileSync("./target/idl/pyth.json", "utf8"));
     const fakePythprogramId = new PublicKey('4sZs4ybFfqttgsssLZRZ7659KLg3RJL5gDTFdo7ApsAC');
     const fakePythProgram = new Program(fakePythIdl, fakePythprogramId, provider);
+    let fakePythAccounts: Array<PublicKey>;
+    let oracleAccount = Keypair.generate();
 
 
-    it("Uses the workspace to invoke the initialize instruction", async () => {
-
-        let oracleAccount = Keypair.generate();
-        let price = 0;
+    beforeEach("Initialize the oracle and pyth prices", async () => {
         console.log("OracleAcc", oracleAccount.secretKey);
         console.log("SystemProgram", SystemProgram.programId);
 
@@ -109,10 +108,7 @@ describe("oracle", () => {
 
         console.log('Initialize Tokens prices');
 
-        //let fakePythAccount: PublicKey[] = new Array(Tokens.M);
-
-        //for (const asset of initialTokens) {
-        /* let fakePythAccounts: PublicKey[] = await Promise.all(initialTokens.map(async (asset): Promise<any> => {
+        fakePythAccounts = await Promise.all(initialTokens.map(async (asset): Promise<any> => {
             console.log(`Adding ${asset.ticker.toString()}`)
 
             const oracleAddress = await pythUtils.createPriceFeed({
@@ -120,21 +116,17 @@ describe("oracle", () => {
                 initPrice: asset.price,
                 expo: -asset.decimals
             })
-            oracleAddress
-        })); */
-        const oracleAddress = await pythUtils.createPriceFeed({
-            oracleProgram: fakePythProgram,
-            initPrice: initialTokens[Tokens.SRM].price,
-            expo: -initialTokens[Tokens.SRM].decimals
-        })
-
+            return oracleAddress;
+        }));
+    });
+    it('tests_update_srm_price', async () => {
         await program.rpc.update(
             new BN(Tokens.SRM),
             {
                 accounts: {
                     admin: admin.publicKey,
                     oracle: oracleAccount.publicKey,
-                    pythPriceInfo: oracleAddress,
+                    pythPriceInfo: fakePythAccounts[Tokens.SRM],
                     clock: SYSVAR_CLOCK_PUBKEY
                 },
                 signers: [admin]
