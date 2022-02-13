@@ -1,83 +1,34 @@
 use anchor_lang::prelude::*;
-use borsh::{BorshDeserialize, BorshSerialize};
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-mod pyth_utils;
+use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
+use std::convert::TryInto;
+pub mod handlers;
+pub mod utils;
 
-use pyth_utils::get_price;
+pub use handlers::*;
 
 declare_id!("A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD");
 
 #[program]
 mod oracle {
-    use std::convert::TryFrom;
-
     use super::*;
+
     pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
+        msg!("ix=initialize");
         Ok(())
     }
 
-    pub fn update(ctx: Context<Update>, token: u8) -> ProgramResult {
-        let mut oracle = ctx.accounts.oracle.load_mut()?;
-        let clock = &ctx.accounts.clock;
-        let token = Token::try_from(token).map_err(|_|ProgramError::InvalidArgument)?;
-        let slot = clock.slot;
-        let epoch = clock.epoch;
-        let timestamp = clock.epoch;
-
-        let pyth_price_info = ctx.accounts.pyth_price_info.as_ref();
-
-        // TODO check that the provided "pyth_price_info" is the "token" one
-        // or better, remove the "token" parameter and guess it from "pyth_price_info"
-        let price = get_price(pyth_price_info, token)?;
-
-        msg!(
-            "Setting the price of {:?} to {:?} as of Slot:{} Epoch:{} TS:{}",
-            token,
-            price,
-            slot,
-            epoch,
-            timestamp
-        );
-
-        // TODO change "oracle" to an array indexed by `Token`
-
-        let to_update = match token {
-            Token::SOL => &mut oracle.sol,
-            Token::ETH => &mut oracle.eth,
-            Token::BTC => &mut oracle.btc,
-            Token::SRM => &mut oracle.srm,
-            Token::RAY => &mut oracle.ray,
-            Token::FTT => &mut oracle.ftt,
-            Token::MSOL => &mut oracle.msol,
-        };
-
-        to_update.price = price;
-        to_update.last_updated_slot = slot; // TODO Is it the time reference we want?
-
-        Ok(())
+    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u8) -> ProgramResult {
+        handler_refresh_prices::refresh_one_price(ctx, token)
     }
-}
 
-#[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(mut)]
-    pub admin: Signer<'info>,
-    #[account(init, payer = admin, space = 8 + (8+8+8)*100)]// Space = account discriminator + (price + exposant + timestamp)*max_stored_prices
-    pub oracle: AccountLoader<'info, OraclePrices>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct Update<'info> {
-    pub admin: Signer<'info>,
-    #[account(mut)]
-    pub oracle: AccountLoader<'info, OraclePrices>,
-    pub pyth_price_info: AccountInfo<'info>,
-    pub clock: Sysvar<'info, Clock>,
+    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u8) -> ProgramResult {
+        let token: Token = token.try_into().map_err(|err| ScopeError::from(err))?;
+        handler_update_mapping::process(ctx, token)
+    }
 }
 
 #[zero_copy]
-#[derive(Debug, Eq, PartialEq, BorshDeserialize, BorshSerialize, Default)]
+#[derive(Debug, Eq, PartialEq, Default)]
 pub struct Price {
     // Pyth price, integer + exponent representation
     // decimal price would be
@@ -112,6 +63,19 @@ pub struct OraclePrices {
     pub msol: DatedPrice,
 }
 
+#[account(zero_copy)]
+#[derive(Default)]
+pub struct OracleMappings {
+    // Validated pyth accounts
+    pub pyth_sol_price_info: Pubkey,
+    pub pyth_srm_price_info: Pubkey,
+    pub pyth_eth_price_info: Pubkey,
+    pub pyth_btc_price_info: Pubkey,
+    pub pyth_ray_price_info: Pubkey,
+    pub pyth_ftt_price_info: Pubkey,
+    pub pyth_msol_price_info: Pubkey,
+}
+
 #[derive(Eq, PartialEq, Debug, Clone, Copy, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
 #[non_exhaustive]
@@ -123,4 +87,35 @@ pub enum Token {
     RAY,
     FTT,
     MSOL,
+}
+
+#[error]
+#[derive(PartialEq, Eq)]
+pub enum ScopeError {
+    #[msg("Integer overflow")]
+    IntegerOverflow,
+
+    #[msg("Conversion failure")]
+    ConversionFailure,
+
+    #[msg("Mathematical operation with overflow")]
+    MathOverflow,
+
+    #[msg("Out of range integral conversion attempted")]
+    OutOfRangeIntegralConversion,
+
+    #[msg("Unexpected account in instruction")]
+    UnexpectedAccount,
+
+    #[msg("Price is not valid")]
+    PriceNotValid,
+}
+
+impl<T> From<TryFromPrimitiveError<T>> for ScopeError
+where
+    T: TryFromPrimitive,
+{
+    fn from(_: TryFromPrimitiveError<T>) -> Self {
+        ScopeError::ConversionFailure
+    }
 }

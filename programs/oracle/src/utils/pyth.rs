@@ -1,7 +1,6 @@
-#![allow(dead_code)]
+#![allow(dead_code)] //TODO: remove this
 
-use crate::Price;
-use crate::Token;
+use crate::{Price, Result, ScopeError, Token};
 use anchor_lang::prelude::*;
 use pyth_client::{PriceStatus, PriceType};
 use std::convert::{TryFrom, TryInto};
@@ -33,20 +32,20 @@ fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
     }
     let is_trading = get_status(&pyth_price.agg.status);
     if !is_trading {
-        return Err(BorrowError::PriceNotValid.into());
+        return Err(ScopeError::PriceNotValid.into());
     }
     if pyth_price.num_qt < 3 {
-        return Err(BorrowError::PriceNotValid.into());
+        return Err(ScopeError::PriceNotValid.into());
     }
 
     let price = u64::try_from(pyth_price.agg.price).unwrap();
     if price == 0 {
-        return Err(BorrowError::PriceNotValid.into());
+        return Err(ScopeError::PriceNotValid.into());
     }
     let conf: u64 = pyth_price.agg.conf;
     let conf_50x: u64 = conf.checked_mul(ORACLE_CONFIDENCE_FACTOR).unwrap();
     if conf_50x > price {
-        return Err(BorrowError::PriceNotValid.into());
+        return Err(ScopeError::PriceNotValid.into());
     };
     Ok(price)
 }
@@ -444,259 +443,4 @@ pub mod utils {
         }
         zero_vec.try_into().unwrap()
     }
-}
-
-#[error]
-#[derive(PartialEq, Eq)]
-pub enum BorrowError {
-    #[msg("Insufficient collateral to cover debt")]
-    NotEnoughCollateral,
-
-    #[msg("Collateral not yet enabled")]
-    CollateralNotEnabled,
-
-    #[msg("Cannot deposit zero collateral amount")]
-    CannotDepositZeroAmount,
-
-    #[msg("Cannot withdraw zero collateral amount")]
-    CannotWithdrawZeroAmount,
-
-    #[msg("No outstanding debt")]
-    NothingToRepay,
-
-    #[msg("Could not generate seed")]
-    CannotGenerateSeed,
-
-    #[msg("Need to claim all rewards first")]
-    NeedToClaimAllRewardsFirst,
-
-    #[msg("Need to harvest all rewards first")]
-    NeedToHarvestAllRewardsFirst,
-
-    #[msg("Cannot stake or unstake 0 amount")]
-    StakingZero,
-
-    #[msg("Nothing to unstake")]
-    NothingToUnstake,
-
-    #[msg("No reward to withdraw")]
-    NoRewardToWithdraw,
-
-    #[msg("Cannot provide zero stability")]
-    CannotProvideZeroStability,
-
-    #[msg("Cannot withdraw zero stability")]
-    CannotWithdrawZeroStability,
-
-    #[msg("Nothing to withdraw")]
-    NothingToWithdraw,
-
-    // TODO: integrate this with the provide_stability function.
-    // #[msg("Cannot provide stability more than user balance")]
-    // CannotProvideStabilityMoreThanBalance,
-    #[msg("Stability Pool is empty")]
-    StabilityPoolIsEmpty,
-
-    #[msg("Stability pool cannot offset this much debt")]
-    NotEnoughStabilityInTheStabilityPool,
-
-    #[msg("Mismatching next PDA reward address")]
-    MismatchedNextPdaRewardAddress,
-
-    #[msg("Mismatching next PDA reward seed")]
-    MismatchedNextPdaRewardSeed,
-
-    #[msg("Wrong next reward pda index")]
-    MismatchedNextPdaIndex,
-
-    #[msg("Next reward not ready yet")]
-    NextRewardNotReadyYet,
-
-    #[msg("Nothing staked, cannot collect any rewards")]
-    NothingStaked,
-
-    #[msg("Reward candidate mismatch from user's next pending reward")]
-    NextRewardMismatchForUser,
-
-    #[msg("User is well collateralized, cannot liquidate")]
-    UserWellCollateralized,
-
-    #[msg("Cannot liquidate the last user")]
-    LastUser,
-
-    #[msg("Integer overflow")]
-    IntegerOverflow,
-
-    #[msg("Conversion failure")]
-    ConversionFailure,
-
-    #[msg("Cannot harvest until liquidation gains are cleared")]
-    CannotHarvestUntilLiquidationGainsCleared,
-
-    #[msg("Redemptions queue is full, cannot add one more order")]
-    RedemptionsQueueIsFull,
-
-    #[msg("Redemptions queue is empty, nothing to process")]
-    RedemptionsQueueIsEmpty,
-
-    #[msg("Redemptions amount too small")]
-    RedemptionsAmountTooSmall,
-
-    #[msg("Redemptions amount too much")]
-    CannotRedeemMoreThanMinted,
-
-    #[msg("The program needs to finish processing the first outstanding order before moving on to others")]
-    NeedToProcessFirstOrderBeforeOthers,
-
-    #[msg("The bot submitted the clearing users in the wrong order")]
-    RedemptionClearingOrderIsIncorrect,
-
-    #[msg("Current redemption order is in clearing mode, cannot fill it until it's fully cleared")]
-    CannotFillRedemptionOrderWhileInClearingMode,
-
-    #[msg("Current redemption order is in filling mode, cannot clear it until it's filled")]
-    CannotClearRedemptionOrderWhileInFillingMode,
-
-    #[msg("Redemption order is inactive")]
-    InvalidRedemptionOrder,
-
-    #[msg("Redemption order is empty of candidates")]
-    OrderDoesNotHaveCandidates,
-
-    #[msg("Redemption user is not among the candidates")]
-    WrongRedemptionUser,
-
-    #[msg("Redemption user is not among the candidates")]
-    RedemptionFillerNotFound,
-
-    #[msg("Redeemer does not match with the order being redeemed")]
-    InvalidRedeemer,
-
-    #[msg("Duplicate account in fill order")]
-    DuplicateAccountInFillOrder,
-
-    #[msg("Redemption user is not among the candidates")]
-    RedemptionUserNotFound,
-
-    #[msg("Mathematical operation with overflow")]
-    MathOverflow,
-
-    #[msg("Price is not valid")]
-    PriceNotValid,
-
-    #[msg("Liquidation queue is full")]
-    LiquidationsQueueFull,
-
-    #[msg("Epoch to scale to sum deserialization failed")]
-    CannotDeserializeEpochToScaleToSum,
-
-    #[msg("Cannot borrow in Recovery mode")]
-    CannotBorrowInRecoveryMode,
-
-    #[msg("Cannot withdraw in Recovery mode")]
-    CannotWithdrawInRecoveryMode,
-
-    #[msg("Operation brings system to recovery mode")]
-    OperationBringsSystemToRecoveryMode,
-
-    #[msg("Borrowing is disabled")]
-    BorrowingDisabled,
-
-    #[msg("Cannot borrow zero amount")]
-    CannotBorrowZeroAmount,
-
-    #[msg("Cannot repay zero amount")]
-    CannotRepayZeroAmount,
-
-    #[msg("Cannot redeem during bootstrap period")]
-    CannotRedeemDuringBootstrapPeriod,
-
-    #[msg("Cannot borrow less than minimum")]
-    CannotBorrowLessThanMinimum,
-
-    #[msg("Cannot borrow more than maximum")]
-    CannotBorrowMoreThanMaximum,
-
-    #[msg("User debt is lower than the minimum")]
-    UserDebtTooLow,
-
-    #[msg("User debt is higher than the maximum")]
-    UserDebtTooHigh,
-
-    #[msg("Total debt is more than the maximum")]
-    TotalDebtTooHigh,
-
-    #[msg("Cannot redeem while being undercollateralized")]
-    CannotRedeemWhenUndercollateralized,
-
-    #[msg("Zero argument not allowed")]
-    ZeroAmountInvalid,
-
-    #[msg("Operation lowers system TCR")]
-    OperationLowersSystemTCRInRecoveryMode,
-
-    #[msg("Serum DEX variables inputted wrongly")]
-    InvalidDexInputs,
-
-    #[msg("Serum DEX transaction didn't execute the swap function")]
-    ZeroSwap,
-
-    #[msg("Key is not present in global config")]
-    GlobalConfigKeyError,
-
-    #[msg("Marinade deposit didn't go through")]
-    MarinadeDepositError,
-
-    #[msg("Cannot delegate inactive collateral")]
-    CannotDelegateInactive,
-
-    #[msg("User is either deposited or inactive, can't be both")]
-    StatusMismatch,
-
-    #[msg("Unexpected account in instruction")]
-    UnexpectedAccount,
-
-    #[msg("User is either deposited or inactive, can't be both")]
-    OperationBringsPositionBelowMCR,
-
-    #[msg("Operation forbidden")]
-    OperationForbidden,
-
-    #[msg("System is in emergency mode")]
-    SystemInEmergencyMode,
-
-    #[msg("Borrow is currently blocked")]
-    BorrowBlocked,
-    #[msg("Clear_liquidation_gains is currently blocked")]
-    ClearLiquidationGainsBlocked,
-
-    #[msg("Airdrop_HBB is currently blocked")]
-    AirdropHBBBlocked,
-
-    #[msg("Withdraw_collateral is currently blocked")]
-    WithdrawCollateralBlocked,
-
-    #[msg("Try_liquidate is currently blocked")]
-    TryLiquidateBlocked,
-
-    #[msg("deposit_and_borrow is currently blocked")]
-    DepositAndBorrowBlocked,
-
-    #[msg("harvest_liquidation_gains is currently blocked")]
-    HarvestLiquidationGainsBlocked,
-
-    #[msg("withdraw_stability is currently blocked")]
-    WithdrawStabilityBlocked,
-
-    #[msg("clear_redemption_order is currently blocked")]
-    ClearRedemptionOrderBlocked,
-
-    #[msg("User deposit is too high")]
-    UserDepositTooHigh,
-
-    #[msg("Total deposit is too high")]
-    TotalDepositTooHigh,
-
-    #[msg("Out of range integral conversion attempted")]
-    OutOfRangeIntegralConversion,
 }

@@ -86,19 +86,22 @@ describe("Oracle tests", () => {
     const fakePythProgram = new Program(fakePythIdl, fakePythprogramId, provider);
     let fakePythAccounts: Array<PublicKey>;
     let oracleAccount = Keypair.generate();
+    let oracleMappingAccount = Keypair.generate();
 
 
     beforeEach("Initialize the oracle and pyth prices", async () => {
         console.log("OracleAcc", oracleAccount.secretKey);
+        console.log("OracleMappingAcc", oracleMappingAccount.secretKey);
         console.log("SystemProgram", SystemProgram.programId);
 
         await program.rpc.initialize({
             accounts: {
                 admin: admin.publicKey,
-                oracle: oracleAccount.publicKey,
+                oraclePrices: oracleAccount.publicKey,
+                oracleMappings: oracleMappingAccount.publicKey,
                 systemProgram: SystemProgram.programId,
             },
-            signers: [admin, oracleAccount]
+            signers: [admin, oracleAccount, oracleMappingAccount]
         });
 
         {
@@ -106,7 +109,7 @@ describe("Oracle tests", () => {
             console.log("Oracle", oracle);
         }
 
-        console.log('Initialize Tokens pyth prices');
+        console.log('Initialize Tokens pyth prices and oracle mappings');
 
         fakePythAccounts = await Promise.all(initialTokens.map(async (asset): Promise<any> => {
             console.log(`Adding ${asset.ticker.toString()}`)
@@ -116,16 +119,37 @@ describe("Oracle tests", () => {
                 initPrice: asset.price,
                 expo: -asset.decimals
             })
+
             return oracleAddress;
         }));
     });
+
+    // it('tests_set_oracle_mappings', async () => {
+    //     await program.rpc.updateMapping(
+    //         new BN(Tokens.SRM),
+    //         {
+    //             accounts: {
+    //                 owner: admin.publicKey,
+    //                 oracleMappings: oracleMappingAccount.publicKey,
+    //                 pythProductInfo: fakePythAccounts[Tokens.SRM],//TODO no pythProductInfo?
+    //                 pythPriceInfo: fakePythAccounts[Tokens.SRM],
+    //             },
+    //             signers: [admin]
+    //         });
+    //     {
+    //         let oracle = await program.account.oracleMappings.fetch(oracleMappingAccount.publicKey);
+    //         console.log("Oracle mappings", oracle);
+    //     }
+    // });
+
     it('tests_update_srm_price', async () => {
-        await program.rpc.update(
+        await program.rpc.refreshOnePrice(
             new BN(Tokens.SRM),
             {
                 accounts: {
                     admin: admin.publicKey,
-                    oracle: oracleAccount.publicKey,
+                    oraclePrices: oracleAccount.publicKey,
+                    oracleMappings: oracleMappingAccount.publicKey,
                     pythPriceInfo: fakePythAccounts[Tokens.SRM],
                     clock: SYSVAR_CLOCK_PUBKEY
                 },
