@@ -1,13 +1,18 @@
+use crate::program::Oracle;
 use crate::utils::{check_context, pyth};
 use crate::OracleMappings;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct UpdateOracleMapping<'info> {
-    pub owner: Signer<'info>,
     #[account(mut)]
     pub oracle_mappings: AccountLoader<'info, OracleMappings>,
     pub pyth_price_info: AccountInfo<'info>,
+    #[account(constraint = program.programdata_address() == Some(program_data.key()))]
+    pub program: Program<'info, Oracle>,
+    #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
+    pub program_data: Account<'info, ProgramData>,
+    pub admin: Signer<'info>,
 }
 
 pub fn process(ctx: Context<UpdateOracleMapping>, token: usize) -> ProgramResult {

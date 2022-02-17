@@ -5,7 +5,6 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
-    pub admin: Signer<'info>,
     #[account(mut)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]

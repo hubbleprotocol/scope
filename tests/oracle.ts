@@ -2,13 +2,14 @@ require('dotenv').config();
 import { Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, Connection, ConnectionConfig } from '@solana/web3.js';
 import { strictEqual, deepStrictEqual } from 'assert';
 import * as fs from "fs";
-import { Provider, Program, setProvider, workspace, BN, Wallet } from "@project-serum/anchor"
+import { Provider, Program, setProvider, BN, web3 } from "@project-serum/anchor"
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
 import * as pythUtils from './pythUtils';
 import { Decimal } from 'decimal.js';
 import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiDecimalJs from 'chai-decimaljs';
+import { findProgramAddressSync } from '@project-serum/anchor/dist/cjs/utils/pubkey';
 
 chai.use(chaiDecimalJs(Decimal));
 
@@ -62,6 +63,13 @@ const initialTokens = [
     }
 ]
 
+function getProgramDataAddress(programId: PublicKey): PublicKey {
+    return findProgramAddressSync(
+        [programId.toBytes()],
+        new web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
+    )[0];
+}
+
 describe("Oracle tests", () => {
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
     const admin = Keypair.fromSecretKey(keypair_acc);
@@ -80,6 +88,7 @@ describe("Oracle tests", () => {
     const idl = JSON.parse(fs.readFileSync("./target/idl/oracle.json", "utf8"));
     const programId = new PublicKey('GyQfv4aBAhZevnHdZ2rkJyZkhfdgGLboGoW7U7dKUosb');
     const program = new Program(idl, programId);
+    const programDataAddress = getProgramDataAddress(program.programId);
 
     const fakePythIdl = JSON.parse(fs.readFileSync("./target/idl/pyth.json", "utf8"));
     const fakePythprogramId = new PublicKey('GuLbzepKDZUBWbVzwsCUwmn6VU2nCpkKoHJTD6TERAoM');
@@ -87,6 +96,9 @@ describe("Oracle tests", () => {
     let fakePythAccounts: Array<PublicKey>;
     let oracleAccount = Keypair.generate();
     let oracleMappingAccount = Keypair.generate();
+
+    //TODO: move away
+    let botKey = Keypair.generate();
 
 
     before("Initialize the oracle and pyth prices", async () => {
@@ -96,12 +108,14 @@ describe("Oracle tests", () => {
 
         await program.rpc.initialize({
             accounts: {
-                admin: admin.publicKey,
                 oraclePrices: oracleAccount.publicKey,
                 oracleMappings: oracleMappingAccount.publicKey,
+                admin: admin.publicKey,
+                program: program.programId,
+                programData: programDataAddress,
                 systemProgram: SystemProgram.programId,
             },
-            signers: [admin, oracleAccount, oracleMappingAccount]
+            signers: [admin, oracleAccount, oracleMappingAccount]//TODO Why we need to generate the keypairs, and does we transfer ownership here or?
         });
 
         console.log('Initialize Tokens pyth prices and oracle mappings');
@@ -117,19 +131,23 @@ describe("Oracle tests", () => {
 
             return oracleAddress;
         }));
+        //TODO to move to a dedicated security test suite
+        await provider.connection.requestAirdrop(botKey.publicKey, 1000000000);
     });
 
     it('tests_set_all_oracle_mappings', async () => {
         await Promise.all(fakePythAccounts.map(async (fakePythAccount, idx): Promise<any> => {
-            console.log(`Set mapping of idx ${initialTokens[idx].ticker}`)
+            console.log(`Set mapping of ${initialTokens[idx].ticker}`)
 
             await program.rpc.updateMapping(
                 new BN(idx),
                 {
                     accounts: {
-                        owner: admin.publicKey,
                         oracleMappings: oracleMappingAccount.publicKey,
                         pythPriceInfo: fakePythAccount,
+                        program: program.programId,
+                        programData: programDataAddress,
+                        admin: admin.publicKey,
                     },
                     signers: [admin]
                 });
@@ -141,13 +159,12 @@ describe("Oracle tests", () => {
             new BN(Tokens.SRM),
             {
                 accounts: {
-                    admin: admin.publicKey,
                     oraclePrices: oracleAccount.publicKey,
                     oracleMappings: oracleMappingAccount.publicKey,
                     pythPriceInfo: fakePythAccounts[Tokens.SRM],
                     clock: SYSVAR_CLOCK_PUBKEY
                 },
-                signers: [admin]
+                signers: []//TODO who is paying??
             });
         {
             let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
