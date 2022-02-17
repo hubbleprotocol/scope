@@ -1,14 +1,16 @@
 use anchor_lang::prelude::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
+use std::convert::TryInto;
 pub mod handlers;
 pub mod utils;
 
 pub use handlers::*;
 
-declare_id!("A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD");
+declare_id!("GyQfv4aBAhZevnHdZ2rkJyZkhfdgGLboGoW7U7dKUosb");
 
 #[program]
 mod oracle {
+
     use super::*;
 
     pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
@@ -16,11 +18,17 @@ mod oracle {
         Ok(())
     }
 
-    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResult {
+    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
+        let token: usize = token
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
-    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: usize) -> ProgramResult {
+    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64) -> ProgramResult {
+        let token: usize = token
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_update_mapping::process(ctx, token)
     }
 }
@@ -49,13 +57,13 @@ pub struct DatedPrice {
     pub last_updated_slot: u64,
 }
 
-/// Account to store dated prices
+// Account to store dated prices
 #[account(zero_copy)]
 pub struct OraclePrices {
-    pub prices: DatedPrice,
+    pub prices: [DatedPrice; 256],
 }
 
-/// Accounts holding source of prices (all pyth for now)
+// Accounts holding source of prices (all pyth for now)
 #[account(zero_copy)]
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; 256],

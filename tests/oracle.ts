@@ -78,11 +78,11 @@ describe("Oracle tests", () => {
     setProvider(provider);
 
     const idl = JSON.parse(fs.readFileSync("./target/idl/oracle.json", "utf8"));
-    const programId = new PublicKey('A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD');
+    const programId = new PublicKey('GyQfv4aBAhZevnHdZ2rkJyZkhfdgGLboGoW7U7dKUosb');
     const program = new Program(idl, programId);
 
     const fakePythIdl = JSON.parse(fs.readFileSync("./target/idl/pyth.json", "utf8"));
-    const fakePythprogramId = new PublicKey('4sZs4ybFfqttgsssLZRZ7659KLg3RJL5gDTFdo7ApsAC');
+    const fakePythprogramId = new PublicKey('GuLbzepKDZUBWbVzwsCUwmn6VU2nCpkKoHJTD6TERAoM');
     const fakePythProgram = new Program(fakePythIdl, fakePythprogramId, provider);
     let fakePythAccounts: Array<PublicKey>;
     let oracleAccount = Keypair.generate();
@@ -104,11 +104,6 @@ describe("Oracle tests", () => {
             signers: [admin, oracleAccount, oracleMappingAccount]
         });
 
-        {
-            let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
-            console.log("Oracle", oracle);
-        }
-
         console.log('Initialize Tokens pyth prices and oracle mappings');
 
         fakePythAccounts = await Promise.all(initialTokens.map(async (asset): Promise<any> => {
@@ -124,21 +119,21 @@ describe("Oracle tests", () => {
         }));
     });
 
-    it('tests_set_oracle_mappings', async () => {
-        await program.rpc.updateMapping(
-            new BN(Tokens.SRM),
-            {
-                accounts: {
-                    owner: admin.publicKey,
-                    oracleMappings: oracleMappingAccount.publicKey,
-                    pythPriceInfo: fakePythAccounts[Tokens.SRM],
-                },
-                signers: [admin]
-            });
-        {
-            let oracle = await program.account.oracleMappings.fetch(oracleMappingAccount.publicKey);
-            console.log("Oracle mappings", oracle);
-        }
+    it('tests_set_all_oracle_mappings', async () => {
+        await Promise.all(fakePythAccounts.map(async (fakePythAccount, idx): Promise<any> => {
+            console.log(`Set mapping of idx ${initialTokens[idx].ticker}`)
+
+            await program.rpc.updateMapping(
+                new BN(idx),
+                {
+                    accounts: {
+                        owner: admin.publicKey,
+                        oracleMappings: oracleMappingAccount.publicKey,
+                        pythPriceInfo: fakePythAccount,
+                    },
+                    signers: [admin]
+                });
+        }));
     });
 
     it('tests_update_srm_price', async () => {
@@ -156,7 +151,6 @@ describe("Oracle tests", () => {
             });
         {
             let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
-            console.log("Oracle", oracle);
             let price = oracle.prices[Tokens.SRM].price;
             let value = price.value.toNumber();
             let expo = price.exp.toNumber();
