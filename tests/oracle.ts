@@ -89,7 +89,7 @@ describe("Oracle tests", () => {
     let oracleMappingAccount = Keypair.generate();
 
 
-    beforeEach("Initialize the oracle and pyth prices", async () => {
+    before("Initialize the oracle and pyth prices", async () => {
         console.log("OracleAcc", oracleAccount.secretKey);
         console.log("OracleMappingAcc", oracleMappingAccount.secretKey);
         console.log("SystemProgram", SystemProgram.programId);
@@ -124,23 +124,23 @@ describe("Oracle tests", () => {
         }));
     });
 
-    // it('tests_set_oracle_mappings', async () => {
-    //     await program.rpc.updateMapping(
-    //         new BN(Tokens.SRM),
-    //         {
-    //             accounts: {
-    //                 owner: admin.publicKey,
-    //                 oracleMappings: oracleMappingAccount.publicKey,
-    //                 pythProductInfo: fakePythAccounts[Tokens.SRM],//TODO no pythProductInfo?
-    //                 pythPriceInfo: fakePythAccounts[Tokens.SRM],
-    //             },
-    //             signers: [admin]
-    //         });
-    //     {
-    //         let oracle = await program.account.oracleMappings.fetch(oracleMappingAccount.publicKey);
-    //         console.log("Oracle mappings", oracle);
-    //     }
-    // });
+    it('tests_set_oracle_mappings', async () => {
+        await program.rpc.updateMapping(
+            new BN(Tokens.SRM),
+            {
+                accounts: {
+                    owner: admin.publicKey,
+                    oracleMappings: oracleMappingAccount.publicKey,
+                    pythProductInfo: fakePythAccounts[Tokens.SRM],//TODO no pythProductInfo?
+                    pythPriceInfo: fakePythAccounts[Tokens.SRM],
+                },
+                signers: [admin]
+            });
+        {
+            let oracle = await program.account.oracleMappings.fetch(oracleMappingAccount.publicKey);
+            console.log("Oracle mappings", oracle);
+        }
+    });
 
     it('tests_update_srm_price', async () => {
         await program.rpc.refreshOnePrice(

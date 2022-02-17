@@ -38,7 +38,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u8) -> ProgramResult {
     };
 
     to_update.price = price;
-    to_update.last_updated_slot = clock.slot; // TODO Is it the time reference we want?
+    to_update.last_updated_slot = clock.slot; // TODO Use price `valid_slot` for pyth prices
 
     Ok(())
 }

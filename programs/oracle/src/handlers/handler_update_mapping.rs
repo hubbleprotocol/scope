@@ -32,13 +32,14 @@ pub fn process(ctx: Context<UpdateOracleMapping>, token: Token) -> ProgramResult
         return Ok(());
     }
 
-    let pyth_product_info = ctx.accounts.pyth_product_info.as_ref();
-    let pyth_product_data = pyth_product_info.try_borrow_data()?;
-    let pyth_product = pyth_client::cast::<pyth_client::Product>(&pyth_product_data);
+    // TODO: confirm that we actually don't want to check the pyth product (full trust of the admin)
+    // let pyth_product_info = ctx.accounts.pyth_product_info.as_ref();
+    // let pyth_product_data = pyth_product_info.try_borrow_data()?;
+    // let pyth_product = pyth_client::cast::<pyth_client::Product>(&pyth_product_data);
 
-    pyth::validate_pyth_product(pyth_product)?;
-    pyth::validate_pyth_product_symbol(pyth_product, &token)?;
-    pyth::validate_pyth_price_pubkey(pyth_product, &new_price_pubkey)?;
+    // pyth::validate_pyth_product(pyth_product)?;
+    // pyth::validate_pyth_product_symbol(pyth_product, &token)?;
+    // pyth::validate_pyth_price_pubkey(pyth_product, &new_price_pubkey)?;
 
     let pyth_price_info = ctx.accounts.pyth_price_info.as_ref();
     let pyth_price_data = pyth_price_info.try_borrow_data()?;
