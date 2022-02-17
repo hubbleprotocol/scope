@@ -25,6 +25,13 @@ mod oracle {
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
+    pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: u64) -> ProgramResult {
+        let first_token: usize = first_token
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
+        handler_refresh_prices::refresh_batch_prices(ctx, first_token)
+    }
+
     pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64) -> ProgramResult {
         let token: usize = token
             .try_into()
