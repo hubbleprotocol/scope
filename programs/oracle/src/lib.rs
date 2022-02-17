@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
-use std::convert::TryInto;
 pub mod handlers;
 pub mod utils;
 
@@ -17,12 +16,11 @@ mod oracle {
         Ok(())
     }
 
-    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u8) -> ProgramResult {
+    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResult {
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
-    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u8) -> ProgramResult {
-        let token: Token = token.try_into().map_err(|err| ScopeError::from(err))?;
+    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: usize) -> ProgramResult {
         handler_update_mapping::process(ctx, token)
     }
 }
@@ -51,33 +49,21 @@ pub struct DatedPrice {
     pub last_updated_slot: u64,
 }
 
+/// Account to store dated prices
 #[account(zero_copy)]
-#[derive(Default)]
 pub struct OraclePrices {
-    pub sol: DatedPrice,
-    pub eth: DatedPrice,
-    pub btc: DatedPrice,
-    pub srm: DatedPrice,
-    pub ftt: DatedPrice,
-    pub ray: DatedPrice,
-    pub msol: DatedPrice,
+    pub prices: DatedPrice,
 }
 
+/// Accounts holding source of prices (all pyth for now)
 #[account(zero_copy)]
-#[derive(Default)]
 pub struct OracleMappings {
-    // Validated pyth accounts
-    pub pyth_sol_price_info: Pubkey,
-    pub pyth_srm_price_info: Pubkey,
-    pub pyth_eth_price_info: Pubkey,
-    pub pyth_btc_price_info: Pubkey,
-    pub pyth_ray_price_info: Pubkey,
-    pub pyth_ftt_price_info: Pubkey,
-    pub pyth_msol_price_info: Pubkey,
+    pub price_info_accounts: [Pubkey; 256],
 }
 
+// TODO: Mostly useless now...
 #[derive(Eq, PartialEq, Debug, Clone, Copy, IntoPrimitive, TryFromPrimitive)]
-#[repr(u8)]
+#[repr(usize)]
 #[non_exhaustive]
 pub enum Token {
     SOL,

@@ -131,7 +131,6 @@ describe("Oracle tests", () => {
                 accounts: {
                     owner: admin.publicKey,
                     oracleMappings: oracleMappingAccount.publicKey,
-                    pythProductInfo: fakePythAccounts[Tokens.SRM],//TODO no pythProductInfo?
                     pythPriceInfo: fakePythAccounts[Tokens.SRM],
                 },
                 signers: [admin]
@@ -158,8 +157,9 @@ describe("Oracle tests", () => {
         {
             let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
             console.log("Oracle", oracle);
-            let value = oracle.srm.price.value.toNumber();
-            let expo = oracle.srm.price.exp.toNumber();
+            let price = oracle.prices[Tokens.SRM].price;
+            let value = price.value.toNumber();
+            let expo = price.exp.toNumber();
             let in_decimal = new Decimal(value).mul((new Decimal(10)).pow(new Decimal(-expo)))
             expect(in_decimal).decimal.eq(initialTokens[Tokens.SRM].price);
         }
