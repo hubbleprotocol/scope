@@ -1,4 +1,4 @@
-use crate::program::Oracle;
+use crate::program::Scope;
 use crate::utils::{check_context, pyth};
 use crate::OracleMappings;
 use anchor_lang::prelude::*;
@@ -9,7 +9,7 @@ pub struct UpdateOracleMapping<'info> {
     pub oracle_mappings: AccountLoader<'info, OracleMappings>,
     pub pyth_price_info: AccountInfo<'info>,
     #[account(constraint = program.programdata_address() == Some(program_data.key()))]
-    pub program: Program<'info, Oracle>,
+    pub program: Program<'info, Scope>,
     #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
     pub program_data: Account<'info, ProgramData>,
     pub admin: Signer<'info>,

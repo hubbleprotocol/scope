@@ -78,7 +78,7 @@ function checkOraclePrice(token: number, oraclePrices: any) {
     expect(in_decimal).decimal.eq(initialTokens[token].price);
 }
 
-describe("Oracle tests", () => {
+describe("Scope tests", () => {
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
     const admin = Keypair.fromSecretKey(keypair_acc);
 
@@ -93,8 +93,8 @@ describe("Oracle tests", () => {
     const initialMarketOwner = provider.wallet.publicKey;
     setProvider(provider);
 
-    const idl = JSON.parse(fs.readFileSync("./target/idl/oracle.json", "utf8"));
-    const programId = new PublicKey('GyQfv4aBAhZevnHdZ2rkJyZkhfdgGLboGoW7U7dKUosb');
+    const idl = JSON.parse(fs.readFileSync("./target/idl/scope.json", "utf8"));
+    const programId = new PublicKey('7pXBd5q59Sxmay5BoXqu7pBH1T4jX1D4JxUyFiyanfu7');
     const program = new Program(idl, programId);
     const programDataAddress = getProgramDataAddress(program.programId);
 
@@ -109,7 +109,7 @@ describe("Oracle tests", () => {
     let botKey = Keypair.generate();
 
 
-    before("Initialize the oracle and pyth prices", async () => {
+    before("Initialize Scope and pyth prices", async () => {
         console.log("OracleAcc", oracleAccount.secretKey);
         console.log("OracleMappingAcc", oracleMappingAccount.secretKey);
         console.log("SystemProgram", SystemProgram.programId);
