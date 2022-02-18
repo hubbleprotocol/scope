@@ -69,6 +69,15 @@ function getProgramDataAddress(programId: PublicKey): PublicKey {
     )[0];
 }
 
+function checkOraclePrice(token: number, oraclePrices: any) {
+    console.log(`Check ${initialTokens[token].ticker} price`)
+    let price = oraclePrices.prices[token].price;
+    let value = price.value.toNumber();
+    let expo = price.exp.toNumber();
+    let in_decimal = new Decimal(value).mul((new Decimal(10)).pow(new Decimal(-expo)))
+    expect(in_decimal).decimal.eq(initialTokens[token].price);
+}
+
 describe("Oracle tests", () => {
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
     const admin = Keypair.fromSecretKey(keypair_acc);
@@ -167,11 +176,7 @@ describe("Oracle tests", () => {
             });
         {
             let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
-            let price = oracle.prices[Tokens.SRM].price;
-            let value = price.value.toNumber();
-            let expo = price.exp.toNumber();
-            let in_decimal = new Decimal(value).mul((new Decimal(10)).pow(new Decimal(-expo)))
-            expect(in_decimal).decimal.eq(initialTokens[Tokens.SRM].price);
+            checkOraclePrice(Tokens.SRM, oracle);
         }
     });
 
@@ -194,19 +199,17 @@ describe("Oracle tests", () => {
                 },
                 signers: []
             });
+        // Retrive the price account
+        let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
+        // Check all
         for (const token in Object.values(Tokens)) {
             let tokenId = Number(token);
-            if (tokenId >= initialTokens.length) {
+            if (isNaN(tokenId) || tokenId >= initialTokens.length) {
                 // Safety mesure should never be triggered if correctly build
+                console.log(`Error while iterating over Tokens ${token} is ${tokenId}`)
                 break;
             }
-            console.log(`Check ${initialTokens[tokenId].ticker} price`)
-            let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
-            let price = oracle.prices[tokenId].price;
-            let value = price.value.toNumber();
-            let expo = price.exp.toNumber();
-            let in_decimal = new Decimal(value).mul((new Decimal(10)).pow(new Decimal(-expo)))
-            expect(in_decimal).decimal.eq(initialTokens[tokenId].price);
+            checkOraclePrice(tokenId, oracle);
         }
     });
 });
