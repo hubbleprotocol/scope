@@ -99,8 +99,8 @@ describe("Oracle tests", () => {
     const programDataAddress = getProgramDataAddress(program.programId);
 
     const fakePythIdl = JSON.parse(fs.readFileSync("./target/idl/pyth.json", "utf8"));
-    const fakePythprogramId = new PublicKey('GuLbzepKDZUBWbVzwsCUwmn6VU2nCpkKoHJTD6TERAoM');
-    const fakePythProgram = new Program(fakePythIdl, fakePythprogramId, provider);
+    const fakePythProgramId = new PublicKey('GuLbzepKDZUBWbVzwsCUwmn6VU2nCpkKoHJTD6TERAoM');
+    const fakePythProgram = new Program(fakePythIdl, fakePythProgramId, provider);
     let fakePythAccounts: Array<PublicKey>;
     let oracleAccount = Keypair.generate();
     let oracleMappingAccount = Keypair.generate();
@@ -123,7 +123,7 @@ describe("Oracle tests", () => {
                 programData: programDataAddress,
                 systemProgram: SystemProgram.programId,
             },
-            signers: [admin, oracleAccount, oracleMappingAccount]//TODO Why we need to generate the keypairs, and does we transfer ownership here or?
+            signers: [admin, oracleAccount, oracleMappingAccount]
         });
 
         console.log('Initialize Tokens pyth prices and oracle mappings');
@@ -199,13 +199,13 @@ describe("Oracle tests", () => {
                 },
                 signers: []
             });
-        // Retrive the price account
+        // Retrieve the price account
         let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
         // Check all
         for (const token in Object.values(Tokens)) {
             let tokenId = Number(token);
             if (isNaN(tokenId) || tokenId >= initialTokens.length) {
-                // Safety mesure should never be triggered if correctly build
+                // Safety measure should never be triggered if correctly build
                 console.log(`Error while iterating over Tokens ${token} is ${tokenId}`)
                 break;
             }

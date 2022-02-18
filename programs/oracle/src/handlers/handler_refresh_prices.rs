@@ -21,7 +21,7 @@ pub struct RefreshBatch<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
-    // Array is an unecessary complicated beast here
+    // Array is an unnecessary complicated beast here
     pub pyth_price_info_0: AccountInfo<'info>,
     pub pyth_price_info_1: AccountInfo<'info>,
     pub pyth_price_info_2: AccountInfo<'info>,
