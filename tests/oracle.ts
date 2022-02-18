@@ -205,8 +205,7 @@ describe("Oracle tests", () => {
         for (const token in Object.values(Tokens)) {
             let tokenId = Number(token);
             if (isNaN(tokenId) || tokenId >= initialTokens.length) {
-                // Safety measure should never be triggered if correctly build
-                console.log(`Error while iterating over Tokens ${token} is ${tokenId}`)
+                // Safety measure
                 break;
             }
             checkOraclePrice(tokenId, oracle);

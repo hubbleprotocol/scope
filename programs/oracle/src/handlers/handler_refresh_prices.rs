@@ -45,14 +45,10 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
     }
 
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
-    let clock = &ctx.accounts.clock;
 
     let price = get_price(pyth_price_info)?;
 
-    let to_update = &mut oracle.prices[token];
-
-    to_update.price = price;
-    to_update.last_updated_slot = clock.slot; // TODO Use price `valid_slot` for pyth prices
+    oracle.prices[token] = price;
 
     Ok(())
 }
@@ -61,13 +57,12 @@ pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> P
     msg!("ix=refresh_batch_prices");
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
-    let clock = ctx.accounts.clock.slot; // TODO Use price `valid_slot` for pyth prices
 
     let range = RangeInclusive::new(first_token, first_token + BATCH_UPDATE_SIZE);
     let partial_mappings = &oracle_mappings.price_info_accounts[range.clone()];
     let partial_prices = &mut oracle.prices[range];
 
-    //Easy rebuild of the missing array
+    // Easy rebuild of the missing array
     let pyth_prices_info = [
         &ctx.accounts.pyth_price_info_0,
         &ctx.accounts.pyth_price_info_1,
@@ -80,7 +75,6 @@ pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> P
     ];
 
     let zero_pk: Pubkey = Pubkey::default();
-    //Pubkey::new_from_array([0_u8; 32]);
 
     for ((expected, received), to_update) in partial_mappings
         .iter()
@@ -88,7 +82,6 @@ pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> P
         .zip(partial_prices.iter_mut())
     {
         // Ignore empty accounts
-        // TODO is that possible?
         if received.key() == zero_pk {
             continue;
         }
@@ -97,8 +90,7 @@ pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> P
             return Err(ScopeError::UnexpectedAccount.into());
         }
         let price = get_price(received)?;
-        to_update.price = price;
-        to_update.last_updated_slot = clock;
+        *to_update = price;
     }
 
     Ok(())

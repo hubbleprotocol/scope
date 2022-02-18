@@ -1,4 +1,4 @@
-use crate::{Price, Result, ScopeError};
+use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
 use pyth_client::{PriceStatus, PriceType};
 use std::convert::{TryFrom, TryInto};
@@ -6,14 +6,17 @@ use std::convert::{TryFrom, TryInto};
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
-pub fn get_price(pyth_price_info: &AccountInfo) -> Result<Price> {
+pub fn get_price(pyth_price_info: &AccountInfo) -> Result<DatedPrice> {
     let pyth_price_data = &pyth_price_info.try_borrow_data()?;
     let pyth_price = pyth_client::cast::<pyth_client::Price>(pyth_price_data);
     let price = validate_valid_price(pyth_price)?;
 
-    Ok(Price {
-        value: price,
-        exp: pyth_price.expo.abs().try_into().unwrap(),
+    Ok(DatedPrice {
+        price: Price {
+            value: price,
+            exp: pyth_price.expo.abs().try_into().unwrap(),
+        },
+        last_updated_slot: pyth_price.valid_slot,
     })
 }
 
