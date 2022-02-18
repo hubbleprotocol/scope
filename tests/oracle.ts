@@ -21,8 +21,7 @@ enum Tokens {
     SRM,
     RAY,
     FTT,
-    MSOL,
-    MAX
+    MSOL
 }
 
 const initialTokens = [
@@ -66,7 +65,7 @@ const initialTokens = [
 function getProgramDataAddress(programId: PublicKey): PublicKey {
     return findProgramAddressSync(
         [programId.toBytes()],
-        new web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
+        new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
     )[0];
 }
 
@@ -164,7 +163,7 @@ describe("Oracle tests", () => {
                     pythPriceInfo: fakePythAccounts[Tokens.SRM],
                     clock: SYSVAR_CLOCK_PUBKEY
                 },
-                signers: []//TODO who is paying??
+                signers: []
             });
         {
             let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
@@ -173,6 +172,41 @@ describe("Oracle tests", () => {
             let expo = price.exp.toNumber();
             let in_decimal = new Decimal(value).mul((new Decimal(10)).pow(new Decimal(-expo)))
             expect(in_decimal).decimal.eq(initialTokens[Tokens.SRM].price);
+        }
+    });
+
+    it('tests_update_batch_prices', async () => {
+        await program.rpc.refreshBatchPrices(
+            new BN(0),
+            {
+                accounts: {
+                    oraclePrices: oracleAccount.publicKey,
+                    oracleMappings: oracleMappingAccount.publicKey,
+                    pythPriceInfo0: fakePythAccounts[0],
+                    pythPriceInfo1: fakePythAccounts[1],
+                    pythPriceInfo2: fakePythAccounts[2],
+                    pythPriceInfo3: fakePythAccounts[3],
+                    pythPriceInfo4: fakePythAccounts[4],
+                    pythPriceInfo5: fakePythAccounts[5],
+                    pythPriceInfo6: fakePythAccounts[6],
+                    pythPriceInfo7: PublicKey.default,
+                    clock: SYSVAR_CLOCK_PUBKEY
+                },
+                signers: []
+            });
+        for (const token in Object.values(Tokens)) {
+            let tokenId = Number(token);
+            if (tokenId >= initialTokens.length) {
+                // Safety mesure should never be triggered if correctly build
+                break;
+            }
+            console.log(`Check ${initialTokens[tokenId].ticker} price`)
+            let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
+            let price = oracle.prices[tokenId].price;
+            let value = price.value.toNumber();
+            let expo = price.exp.toNumber();
+            let in_decimal = new Decimal(value).mul((new Decimal(10)).pow(new Decimal(-expo)))
+            expect(in_decimal).decimal.eq(initialTokens[tokenId].price);
         }
     });
 });

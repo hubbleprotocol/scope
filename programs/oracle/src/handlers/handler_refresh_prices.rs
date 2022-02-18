@@ -21,7 +21,7 @@ pub struct RefreshBatch<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
-    //TODO: Why no array?
+    // Array is an unecessary complicated beast here
     pub pyth_price_info_0: AccountInfo<'info>,
     pub pyth_price_info_1: AccountInfo<'info>,
     pub pyth_price_info_2: AccountInfo<'info>,
@@ -67,7 +67,7 @@ pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> P
     let partial_mappings = &oracle_mappings.price_info_accounts[range.clone()];
     let partial_prices = &mut oracle.prices[range];
 
-    //TODO: Why no array?
+    //Easy rebuild of the missing array
     let pyth_prices_info = [
         &ctx.accounts.pyth_price_info_0,
         &ctx.accounts.pyth_price_info_1,
@@ -79,11 +79,19 @@ pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> P
         &ctx.accounts.pyth_price_info_7,
     ];
 
+    let zero_pk: Pubkey = Pubkey::default();
+    //Pubkey::new_from_array([0_u8; 32]);
+
     for ((expected, received), to_update) in partial_mappings
         .iter()
         .zip(pyth_prices_info.into_iter())
         .zip(partial_prices.iter_mut())
     {
+        // Ignore empty accounts
+        // TODO is that possible?
+        if received.key() == zero_pk {
+            continue;
+        }
         // Check that the provided pyth accounts are the one referenced in oracleMapping
         if *expected != received.key() {
             return Err(ScopeError::UnexpectedAccount.into());

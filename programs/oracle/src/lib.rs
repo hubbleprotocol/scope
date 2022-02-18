@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
+use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use std::convert::TryInto;
 pub mod handlers;
 pub mod utils;
@@ -15,6 +15,7 @@ mod oracle {
 
     pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
         msg!("ix=initialize");
+        id();
         Ok(())
     }
 
@@ -74,20 +75,6 @@ pub struct OraclePrices {
 #[account(zero_copy)]
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; 256],
-}
-
-// TODO: Mostly useless now...
-#[derive(Eq, PartialEq, Debug, Clone, Copy, IntoPrimitive, TryFromPrimitive)]
-#[repr(usize)]
-#[non_exhaustive]
-pub enum Token {
-    SOL,
-    ETH,
-    BTC,
-    SRM,
-    RAY,
-    FTT,
-    MSOL,
 }
 
 #[error]
