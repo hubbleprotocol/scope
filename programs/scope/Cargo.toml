@@ -1,5 +1,5 @@
 [package]
-name = "Scope"
+name = "scope"
 version = "0.1.0"
 description = "Scope is Hubble's oracle aggregator"
 edition = "2021"

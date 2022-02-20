@@ -2,7 +2,12 @@ use anchor_lang::prelude::*;
 pub mod pc;
 use pc::{Price, PriceStatus};
 
-declare_id!("3URDD3Eutw6SufPBzNm2dbwqwvQjRUFCtqkKVsjk3uSE");
+const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/pubkey.json"
+)));
+
+declare_id!(PROGRAM_ID);
 
 #[program]
 pub mod pyth {

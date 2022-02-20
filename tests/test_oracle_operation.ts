@@ -1,15 +1,13 @@
 require('dotenv').config();
 import { Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, Connection, ConnectionConfig } from '@solana/web3.js';
-import { strictEqual, deepStrictEqual } from 'assert';
-import * as fs from "fs";
-import { Provider, Program, setProvider, BN, web3 } from "@project-serum/anchor"
+import { Provider, Program, setProvider, BN } from "@project-serum/anchor"
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
-import * as pythUtils from './pythUtils';
+import * as pythUtils from './pyth_utils';
 import { Decimal } from 'decimal.js';
 import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiDecimalJs from 'chai-decimaljs';
-import { findProgramAddressSync } from '@project-serum/anchor/dist/cjs/utils/pubkey';
+import * as global from './global';
 
 chai.use(chaiDecimalJs(Decimal));
 
@@ -62,13 +60,6 @@ const initialTokens = [
     }
 ]
 
-function getProgramDataAddress(programId: PublicKey): PublicKey {
-    return findProgramAddressSync(
-        [programId.toBytes()],
-        new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
-    )[0];
-}
-
 function checkOraclePrice(token: number, oraclePrices: any) {
     console.log(`Check ${initialTokens[token].ticker} price`)
     let price = oraclePrices.prices[token].price;
@@ -93,21 +84,15 @@ describe("Scope tests", () => {
     const initialMarketOwner = provider.wallet.publicKey;
     setProvider(provider);
 
-    const idl = JSON.parse(fs.readFileSync("./target/idl/scope.json", "utf8"));
-    const programId = new PublicKey('7pXBd5q59Sxmay5BoXqu7pBH1T4jX1D4JxUyFiyanfu7');
-    const program = new Program(idl, programId);
-    const programDataAddress = getProgramDataAddress(program.programId);
+    const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);
+    const programDataAddress = global.getProgramDataAddress(program.programId);
 
-    const fakePythIdl = JSON.parse(fs.readFileSync("./target/idl/pyth.json", "utf8"));
-    const fakePythProgramId = new PublicKey('GuLbzepKDZUBWbVzwsCUwmn6VU2nCpkKoHJTD6TERAoM');
-    const fakePythProgram = new Program(fakePythIdl, fakePythProgramId, provider);
+    console.log("program data address is ${programDataAddress}", programDataAddress);
+
+    const fakePythProgram = new Program(global.FakePythIdl, global.getFakePythProgramId(), provider);
     let fakePythAccounts: Array<PublicKey>;
     let oracleAccount = Keypair.generate();
     let oracleMappingAccount = Keypair.generate();
-
-    //TODO: move away
-    let botKey = Keypair.generate();
-
 
     before("Initialize Scope and pyth prices", async () => {
         console.log("OracleAcc", oracleAccount.secretKey);
@@ -139,8 +124,6 @@ describe("Scope tests", () => {
 
             return oracleAddress;
         }));
-        //TODO to move to a dedicated security test suite
-        await provider.connection.requestAirdrop(botKey.publicKey, 1000000000);
     });
 
     it('tests_set_all_oracle_mappings', async () => {

@@ -6,7 +6,12 @@ pub mod utils;
 
 pub use handlers::*;
 
-declare_id!("7pXBd5q59Sxmay5BoXqu7pBH1T4jX1D4JxUyFiyanfu7");
+const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/pubkey.json"
+)));
+
+declare_id!(PROGRAM_ID);
 
 #[program]
 mod scope {

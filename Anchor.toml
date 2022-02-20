@@ -1,15 +1,3 @@
-# [provider]
-# cluster = "localnet"
-# wallet = "~/.config/solana/id.json"
-
-[programs.localnet]
-scope = "A9DXGTCMLJsX7kMfwJ2aBiAFACPmUsxv6TRxcEohL4CD"
-pyth = "3URDD3Eutw6SufPBzNm2dbwqwvQjRUFCtqkKVsjk3uSE"
-
-# [scripts]
-# test = "mocha -t 1000000 tests/"
-
 [provider]
-cluster = "http://127.0.0.1:8899"
-# cluster = "https://api.devnet.solana.com/"
+cluster = "localnet"
 wallet = "./keys/localnet/owner.json"
