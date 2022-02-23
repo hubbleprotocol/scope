@@ -12,8 +12,6 @@ ifeq ($(origin .RECIPEPREFIX), undefined)
 endif
 .RECIPEPREFIX = >
 
-dir_guard=@mkdir -p $(@D)
-
 # TODO: not sure if it really works
 ifneq (,$(wildcard ./.env))
 	include ./.env
@@ -50,33 +48,41 @@ SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_KEYPAIR)
 FAKE_PYTH_PROGRAM_ID != solana-keygen pubkey $(FAKE_PYTH_PROGRAM_KEYPAIR)
 PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
-.PHONY: build deploy build-client run listen deploy deploy-int airdrop
+.PHONY: deploy build-client run listen deploy deploy-int airdrop test test-rust test-ts
 
 build: $(SCOPE_PROGRAM_SO) $(FAKE_PYTH_PROGRAM_SO)
 
 # Don't autodelete the keys, we want to keep them as much as possible 
 .PRECIOUS: keys/$(CLUSTER)/%.json
 keys/$(CLUSTER)/%.json:
-> $(dir_guard)
-> solana-keygen new --no-bip39-passphrase -s -o $@
+>@ mkdir -p $(@D)
+>@ solana-keygen new --no-bip39-passphrase -s -o $@
 
 # Rebuild the .so if any rust file change
 target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $(shell find programs -name "Cargo.toml") Cargo.lock
-> CLUSTER=$(CLUSTER) anchor build -p $*
-> cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
+>@ echo "*******Build $* *******"
+>@ CLUSTER=$(CLUSTER) anchor build -p $*
+#< Optional but just to ensure deploys without the makefile behave correctly 
+>@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json 
 
 deploy:
-> @PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
-> @PROGRAM_SO=$(FAKE_PYTH_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_PYTH_PROGRAM_KEYPAIR) $(MAKE) deploy-int
+>@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
+>@ PROGRAM_SO=$(FAKE_PYTH_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_PYTH_PROGRAM_KEYPAIR) $(MAKE) deploy-int
 
-deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR)
-> solana program deploy -u $(URL) --upgrade-authority $(OWNER_KEYPAIR) --program-id $(PROGRAM_KEYPAIR) $(PROGRAM_SO)
+deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
+>@ echo "*******Deploy $(PROGRAM_SO)*******"
+>@ solana program deploy -u $(URL) --upgrade-authority $(OWNER_KEYPAIR) --program-id $(PROGRAM_KEYPAIR) $(PROGRAM_SO)
 
 ## Listen to on-chain logs
 listen:
 > solana logs ${SCOPE_PROGRAM_ID}
 
-test:
+test: test-rust test-ts
+
+test-rust:
+> cargo test
+
+test-ts:
 > yarn run ts-mocha tests/**/*.ts
 
 ## Client side
@@ -86,5 +92,5 @@ build-client:
 run:
 > npm run start
 
-airdrop:
+airdrop: $(OWNER_KEYPAIR)
 > solana airdrop 10 ${PROGRAM_DEPLOY_ACCOUNT} --url http://127.0.0.1:8899

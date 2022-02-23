@@ -11,6 +11,7 @@ pub struct RefreshOne<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }
@@ -22,20 +23,27 @@ pub struct RefreshBatch<'info> {
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
     // Array is an unnecessary complicated beast here
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_0: AccountInfo<'info>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_1: AccountInfo<'info>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_2: AccountInfo<'info>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_3: AccountInfo<'info>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_4: AccountInfo<'info>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_5: AccountInfo<'info>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_6: AccountInfo<'info>,
+    /// CHECK: In ix, check the account is in `oracle_mappings`
     pub pyth_price_info_7: AccountInfo<'info>,
 
     pub clock: Sysvar<'info, Clock>,
 }
 
 pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResult {
-    msg!("ix=refresh_one_price");
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let pyth_price_info = &ctx.accounts.pyth_price_info;
 
@@ -54,7 +62,6 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
 }
 
 pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> ProgramResult {
-    msg!("ix=refresh_batch_prices");
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 

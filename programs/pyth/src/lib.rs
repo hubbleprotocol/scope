@@ -67,11 +67,13 @@ pub mod pyth {
 }
 #[derive(Accounts)]
 pub struct SetPrice<'info> {
+    /// CHECK: Not safe but this is a test tool
     #[account(mut)]
     pub price: AccountInfo<'info>,
 }
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    /// CHECK: Not safe but this is a test tool
     #[account(mut)]
     pub price: AccountInfo<'info>,
 }

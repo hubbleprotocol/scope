@@ -16,8 +16,6 @@ mod scope {
     use super::*;
 
     pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
-        msg!("ix=initialize");
-        id();
         Ok(())
     }
 

@@ -9,7 +9,7 @@ pub struct Initialize<'info> {
     // Space = account discriminator + (PubKey size)*max_stored_prices
     #[account(init, payer = admin, space = 8 + (32)*256)]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
-    #[account()]
+    #[account(mut)]
     pub admin: Signer<'info>,
     // `program` could be removed as the check could use find program address with id()
     // to find program_data...but compute units is not constant
