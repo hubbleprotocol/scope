@@ -54,7 +54,7 @@ PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
 build: $(SCOPE_PROGRAM_SO) $(FAKE_PYTH_PROGRAM_SO)
 
-# Please don't autodelete the keys, we want to keep them as much as possible 
+# Don't autodelete the keys, we want to keep them as much as possible 
 .PRECIOUS: keys/$(CLUSTER)/%.json
 keys/$(CLUSTER)/%.json:
 > $(dir_guard)
@@ -62,9 +62,8 @@ keys/$(CLUSTER)/%.json:
 
 # Rebuild the .so if any rust file change
 target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $(shell find programs -name "Cargo.toml") Cargo.lock
-> jq --compact-output '.[32:64]' < keys/$(CLUSTER)/$*.json > programs/$*/pubkey.json
-> anchor build -p $*
-> cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json
+> CLUSTER=$(CLUSTER) anchor build -p $*
+> cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
 
 deploy:
 > @PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int

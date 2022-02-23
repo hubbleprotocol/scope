@@ -6,10 +6,7 @@ pub mod utils;
 
 pub use handlers::*;
 
-const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/pubkey.json"
-)));
+const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(env!("OUT_DIR"), "/pubkey.rs")));
 
 declare_id!(PROGRAM_ID);
 

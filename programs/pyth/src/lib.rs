@@ -2,10 +2,7 @@ use anchor_lang::prelude::*;
 pub mod pc;
 use pc::{Price, PriceStatus};
 
-const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/pubkey.json"
-)));
+const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(env!("OUT_DIR"), "/pubkey.rs")));
 
 declare_id!(PROGRAM_ID);
 
@@ -27,7 +24,6 @@ pub mod pyth {
         price_oracle.twac.val = conf.try_into().unwrap();
         price_oracle.expo = expo;
         price_oracle.ptype = pc::PriceType::Price;
-        //TODO hard coded to make check pass, to make configurable?
         price_oracle.num_qt = 3;
         price_oracle.magic = 0xa1b2c3d4;
         price_oracle.ver = 2;

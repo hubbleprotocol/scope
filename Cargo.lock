@@ -413,9 +413,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.53"
+version = "1.0.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94a45b455c14666b85fc40a019e8ab9eb75e3a124e05494f5397122bc9eb06e0"
+checksum = "159bb86af3a200e19a068f4224eae4c8bb2d0fa054c7e5d1cacd5cef95e684cd"
 
 [[package]]
 name = "arrayref"
@@ -2374,8 +2374,11 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang 0.18.2",
  "anchor-spl 0.18.2",
+ "anyhow",
  "arrayref",
  "bytemuck",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2685,8 +2688,11 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang 0.21.0",
  "anchor-spl 0.21.0",
+ "anyhow",
  "num_enum",
  "pyth-client",
+ "serde",
+ "serde_json",
  "spl-token",
 ]
 
@@ -2799,9 +2805,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.78"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d23c1ba4cf0efd44be32017709280b32d1cea5c3f1275c3b6d9e8bc54f758085"
+checksum = "8e8d9fa5c3b304765ce1fd9c4c8a3de2c8db365a5b91be52f186efc675681d95"
 dependencies = [
  "itoa",
  "ryu",

@@ -26,3 +26,8 @@ anchor-lang = "0.18.2"
 anchor-spl = "0.18.2"
 arrayref = "0.3.6"
 bytemuck = { version = "1.7.2" }
+
+[build-dependencies]
+serde = "1.0.136"
+serde_json = "1.0.79"
+anyhow = "1.0.54"

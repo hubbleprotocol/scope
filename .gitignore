@@ -9,4 +9,4 @@ build
 .idea/
 test-ledger/
 keys/
-programs/*/pubkey.json
+.vscode/
