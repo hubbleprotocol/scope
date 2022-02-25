@@ -2,12 +2,12 @@ use anyhow::Result;
 use std::fs;
 use std::{env, path::PathBuf, str::FromStr};
 
-const PUBKEY_RS_FILENAME: &'static str = "pubkey.rs";
+const PUBKEY_RS_FILENAME: &str = "pubkey.rs";
 
 // This build file generate the public key to know the program id
 fn main() -> Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let cluster = env::var("CLUSTER").unwrap_or("localnet".to_string());
+    let cluster = env::var("CLUSTER").unwrap_or_else(|_| "localnet".to_string());
     let keypair_json_filename = format!("{}.json", env::var("CARGO_PKG_NAME").unwrap());
     let keypair_path = PathBuf::from_str("../../keys")?
         .join(cluster)

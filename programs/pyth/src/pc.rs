@@ -62,9 +62,9 @@ pub enum PriceType {
     Volatility,
 }
 
-impl Into<u8> for PriceStatus {
-    fn into(self) -> u8 {
-        match self {
+impl From<PriceStatus> for u8 {
+    fn from(price: PriceStatus) -> Self {
+        match price {
             PriceStatus::Unknown => 0,
             PriceStatus::Trading => 1,
             PriceStatus::Halted => 2,

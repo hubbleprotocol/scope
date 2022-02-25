@@ -83,7 +83,7 @@ mod tests {
     pub fn test_validate_price() {
         let buff = valid_price_bytes();
         let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_eq!(super::validate_pyth_price(price).err().is_none(), true);
+        assert!(super::validate_pyth_price(price).err().is_none());
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod tests {
     pub fn test_validate_price_price_type_incorrect() {
         let incorrect_price_type: &[u8] = &[0];
         let mut buff = valid_price_bytes();
-        write_bytes(&mut buff, &incorrect_price_type, PRICE_TYPE_OFFSET);
+        write_bytes(&mut buff, incorrect_price_type, PRICE_TYPE_OFFSET);
         let price = pyth_client::cast::<pyth_client::Price>(&buff);
         assert_eq!(
             super::validate_pyth_price(price).err().unwrap(),
@@ -152,9 +152,7 @@ mod tests {
     }
 
     fn write_bytes(buff: &mut [u8], bytes: &[u8], offset: usize) {
-        for i in 0..bytes.len() {
-            buff[i + offset] = bytes[i];
-        }
+        buff[offset..(bytes.len() + offset)].clone_from_slice(bytes);
     }
 }
 

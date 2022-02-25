@@ -15,7 +15,7 @@ pub mod pyth {
     pub fn initialize(ctx: Context<Initialize>, price: i64, expo: i32, conf: u64) -> ProgramResult {
         let oracle = &ctx.accounts.price;
 
-        let mut price_oracle = Price::load(&oracle).unwrap();
+        let mut price_oracle = Price::load(oracle).unwrap();
 
         price_oracle.agg.status = PriceStatus::Trading;
         price_oracle.agg.price = price;
@@ -31,13 +31,13 @@ pub mod pyth {
     }
     pub fn set_price(ctx: Context<SetPrice>, price: i64) -> ProgramResult {
         let oracle = &ctx.accounts.price;
-        let mut price_oracle = Price::load(&oracle).unwrap();
-        price_oracle.agg.price = price.try_into().unwrap();
+        let mut price_oracle = Price::load(oracle).unwrap();
+        price_oracle.agg.price = price;
         Ok(())
     }
     pub fn set_trading(ctx: Context<SetPrice>, status: u8) -> ProgramResult {
         let oracle = &ctx.accounts.price;
-        let mut price_oracle = Price::load(&oracle).unwrap();
+        let mut price_oracle = Price::load(oracle).unwrap();
         match status {
             0 => price_oracle.agg.status = PriceStatus::Unknown,
             1 => price_oracle.agg.status = PriceStatus::Trading,
@@ -52,14 +52,14 @@ pub mod pyth {
     }
     pub fn set_twap(ctx: Context<SetPrice>, value: u64) -> ProgramResult {
         let oracle = &ctx.accounts.price;
-        let mut price_oracle = Price::load(&oracle).unwrap();
+        let mut price_oracle = Price::load(oracle).unwrap();
         price_oracle.twap.val = value.try_into().unwrap();
 
         Ok(())
     }
     pub fn set_confidence(ctx: Context<SetPrice>, value: u64) -> ProgramResult {
         let oracle = &ctx.accounts.price;
-        let mut price_oracle = Price::load(&oracle).unwrap();
+        let mut price_oracle = Price::load(oracle).unwrap();
         price_oracle.agg.conf = value;
 
         Ok(())
