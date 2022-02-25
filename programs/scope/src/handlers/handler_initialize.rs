@@ -2,6 +2,7 @@ use crate::program::Scope;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
+#[instruction(feed_name: String)]
 pub struct Initialize<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
@@ -13,10 +14,17 @@ pub struct Initialize<'info> {
     #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
     pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,
-    // Space = account discriminator + (price + exponent + timestamp)*max_stored_prices
-    #[account(init, payer = admin, space = 8 + (8+8+8)*256)]
+    // Space = account discriminator + oracle_mappings + (price + exponent + timestamp)*max_stored_prices
+    #[account(init, seeds = [b"prices", feed_name.as_bytes()], bump, payer = admin, space = 8 + 32 + (8+8+8)*256)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     // Space = account discriminator + (PubKey size)*max_stored_prices
-    #[account(init, payer = admin, space = 8 + (32)*256)]
+    #[account(init, seeds = [b"mappings", feed_name.as_bytes()], bump, payer = admin, space = 8 + (32)*256)]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
+}
+
+pub fn process(ctx: Context<Initialize>, _: String) -> ProgramResult {
+    let oracle_pbk = ctx.accounts.oracle_mappings.key();
+    let mut oracle_prices = ctx.accounts.oracle_prices.load_init()?;
+    oracle_prices.oracle_mappings = oracle_pbk;
+    Ok(())
 }

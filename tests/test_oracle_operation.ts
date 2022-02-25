@@ -8,6 +8,7 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiDecimalJs from 'chai-decimaljs';
 import * as global from './global';
+import { findProgramAddressSync } from '@project-serum/anchor/dist/cjs/utils/pubkey';
 
 chai.use(chaiDecimalJs(Decimal));
 
@@ -91,25 +92,31 @@ describe("Scope tests", () => {
 
     const fakePythProgram = new Program(global.FakePythIdl, global.getFakePythProgramId(), provider);
     let fakePythAccounts: Array<PublicKey>;
-    let oracleAccount = Keypair.generate();
-    let oracleMappingAccount = Keypair.generate();
+    let oracleAccount = findProgramAddressSync(
+        [Buffer.from("prices", 'utf8'), Buffer.from("first_list", 'utf8')],
+        program.programId
+    )[0];
+    let oracleMappingAccount = findProgramAddressSync(
+        [Buffer.from("mappings", 'utf8'), Buffer.from("first_list", 'utf8')],
+        program.programId
+    )[0];;
 
     before("Initialize Scope and pyth prices", async () => {
-        console.log("OracleAcc", oracleAccount.secretKey);
-        console.log("OracleMappingAcc", oracleMappingAccount.secretKey);
         console.log("SystemProgram", SystemProgram.programId);
 
-        await program.rpc.initialize({
-            accounts: {
-                admin: admin.publicKey,
-                program: program.programId,
-                programData: programDataAddress,
-                systemProgram: SystemProgram.programId,
-                oraclePrices: oracleAccount.publicKey,
-                oracleMappings: oracleMappingAccount.publicKey,
-            },
-            signers: [admin, oracleAccount, oracleMappingAccount]
-        });
+        await program.rpc.initialize(
+            "first_list",
+            {
+                accounts: {
+                    admin: admin.publicKey,
+                    program: program.programId,
+                    programData: programDataAddress,
+                    systemProgram: SystemProgram.programId,
+                    oraclePrices: oracleAccount,
+                    oracleMappings: oracleMappingAccount,
+                },
+                signers: [admin]
+            });
 
         console.log('Initialize Tokens pyth prices and oracle mappings');
 
@@ -137,7 +144,7 @@ describe("Scope tests", () => {
                         admin: admin.publicKey,
                         program: program.programId,
                         programData: programDataAddress,
-                        oracleMappings: oracleMappingAccount.publicKey,
+                        oracleMappings: oracleMappingAccount,
                         pythPriceInfo: fakePythAccount,
                     },
                     signers: [admin]
@@ -150,15 +157,15 @@ describe("Scope tests", () => {
             new BN(Tokens.SRM),
             {
                 accounts: {
-                    oraclePrices: oracleAccount.publicKey,
-                    oracleMappings: oracleMappingAccount.publicKey,
+                    oraclePrices: oracleAccount,
+                    oracleMappings: oracleMappingAccount,
                     pythPriceInfo: fakePythAccounts[Tokens.SRM],
                     clock: SYSVAR_CLOCK_PUBKEY
                 },
                 signers: []
             });
         {
-            let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
+            let oracle = await program.account.oraclePrices.fetch(oracleAccount);
             checkOraclePrice(Tokens.SRM, oracle);
         }
     });
@@ -168,8 +175,8 @@ describe("Scope tests", () => {
             new BN(0),
             {
                 accounts: {
-                    oraclePrices: oracleAccount.publicKey,
-                    oracleMappings: oracleMappingAccount.publicKey,
+                    oraclePrices: oracleAccount,
+                    oracleMappings: oracleMappingAccount,
                     pythPriceInfo0: fakePythAccounts[0],
                     pythPriceInfo1: fakePythAccounts[1],
                     pythPriceInfo2: fakePythAccounts[2],
@@ -183,7 +190,7 @@ describe("Scope tests", () => {
                 signers: []
             });
         // Retrieve the price account
-        let oracle = await program.account.oraclePrices.fetch(oracleAccount.publicKey);
+        let oracle = await program.account.oraclePrices.fetch(oracleAccount);
         // Check all
         for (const token in Object.values(Tokens)) {
             let tokenId = Number(token);

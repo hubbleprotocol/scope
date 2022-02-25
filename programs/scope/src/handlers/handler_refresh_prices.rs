@@ -7,7 +7,7 @@ const BATCH_UPDATE_SIZE: usize = 8;
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
-    #[account(mut)]
+    #[account(mut, has_one = oracle_mappings)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
@@ -96,8 +96,10 @@ pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: usize) -> P
         if *expected != received.key() {
             return Err(ScopeError::UnexpectedAccount.into());
         }
-        let price = get_price(received)?;
-        *to_update = price;
+        match get_price(received) {
+            Ok(price) => *to_update = price,
+            Err(_) => msg!("Price skipped as validation failed"), // No format as its a bit costly
+        };
     }
 
     Ok(())

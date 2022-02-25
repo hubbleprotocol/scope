@@ -15,8 +15,8 @@ mod scope {
 
     use super::*;
 
-    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
-        Ok(())
+    pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> ProgramResult {
+        handler_initialize::process(ctx, feed_name)
     }
 
     pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
@@ -68,6 +68,7 @@ pub struct DatedPrice {
 // Account to store dated prices
 #[account(zero_copy)]
 pub struct OraclePrices {
+    pub oracle_mappings: Pubkey,
     pub prices: [DatedPrice; 256],
 }
 
