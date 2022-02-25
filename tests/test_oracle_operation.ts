@@ -101,12 +101,12 @@ describe("Scope tests", () => {
 
         await program.rpc.initialize({
             accounts: {
-                oraclePrices: oracleAccount.publicKey,
-                oracleMappings: oracleMappingAccount.publicKey,
                 admin: admin.publicKey,
                 program: program.programId,
                 programData: programDataAddress,
                 systemProgram: SystemProgram.programId,
+                oraclePrices: oracleAccount.publicKey,
+                oracleMappings: oracleMappingAccount.publicKey,
             },
             signers: [admin, oracleAccount, oracleMappingAccount]
         });
@@ -134,11 +134,11 @@ describe("Scope tests", () => {
                 new BN(idx),
                 {
                     accounts: {
-                        oracleMappings: oracleMappingAccount.publicKey,
-                        pythPriceInfo: fakePythAccount,
+                        admin: admin.publicKey,
                         program: program.programId,
                         programData: programDataAddress,
-                        admin: admin.publicKey,
+                        oracleMappings: oracleMappingAccount.publicKey,
+                        pythPriceInfo: fakePythAccount,
                     },
                     signers: [admin]
                 });

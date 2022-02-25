@@ -5,15 +5,15 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct UpdateOracleMapping<'info> {
-    #[account(mut)]
-    pub oracle_mappings: AccountLoader<'info, OracleMappings>,
-    /// CHECK: We trust the admin to provide a trustable account here.
-    pub pyth_price_info: AccountInfo<'info>,
+    pub admin: Signer<'info>,
     #[account(constraint = program.programdata_address() == Some(program_data.key()))]
     pub program: Program<'info, Scope>,
     #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
     pub program_data: Account<'info, ProgramData>,
-    pub admin: Signer<'info>,
+    #[account(mut)]
+    pub oracle_mappings: AccountLoader<'info, OracleMappings>,
+    /// CHECK: We trust the admin to provide a trustable account here.
+    pub pyth_price_info: AccountInfo<'info>,
 }
 
 pub fn process(ctx: Context<UpdateOracleMapping>, token: usize) -> ProgramResult {

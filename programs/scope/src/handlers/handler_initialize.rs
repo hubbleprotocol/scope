@@ -3,12 +3,6 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    // Space = account discriminator + (price + exponent + timestamp)*max_stored_prices
-    #[account(init, payer = admin, space = 8 + (8+8+8)*256)]
-    pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
-    // Space = account discriminator + (PubKey size)*max_stored_prices
-    #[account(init, payer = admin, space = 8 + (32)*256)]
-    pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
     #[account(mut)]
     pub admin: Signer<'info>,
     // `program` could be removed as the check could use find program address with id()
@@ -19,4 +13,10 @@ pub struct Initialize<'info> {
     #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
     pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,
+    // Space = account discriminator + (price + exponent + timestamp)*max_stored_prices
+    #[account(init, payer = admin, space = 8 + (8+8+8)*256)]
+    pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
+    // Space = account discriminator + (PubKey size)*max_stored_prices
+    #[account(init, payer = admin, space = 8 + (32)*256)]
+    pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 }
