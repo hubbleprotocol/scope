@@ -8,7 +8,6 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiDecimalJs from 'chai-decimaljs';
 import * as global from './global';
-import { findProgramAddressSync } from '@project-serum/anchor/dist/cjs/utils/pubkey';
 
 chai.use(chaiDecimalJs(Decimal));
 
@@ -70,7 +69,7 @@ function checkOraclePrice(token: number, oraclePrices: any) {
     expect(in_decimal).decimal.eq(initialTokens[token].price);
 }
 
-describe("Scope tests", () => {
+describe("Scope tests", async () => {
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
     const admin = Keypair.fromSecretKey(keypair_acc);
 
@@ -92,14 +91,14 @@ describe("Scope tests", () => {
 
     const fakePythProgram = new Program(global.FakePythIdl, global.getFakePythProgramId(), provider);
     let fakePythAccounts: Array<PublicKey>;
-    let oracleAccount = findProgramAddressSync(
+    let oracleAccount = (await PublicKey.findProgramAddress(
         [Buffer.from("prices", 'utf8'), Buffer.from("first_list", 'utf8')],
         program.programId
-    )[0];
-    let oracleMappingAccount = findProgramAddressSync(
+    ))[0];
+    let oracleMappingAccount = (await PublicKey.findProgramAddress(
         [Buffer.from("mappings", 'utf8'), Buffer.from("first_list", 'utf8')],
         program.programId
-    )[0];;
+    ))[0];
 
     before("Initialize Scope and pyth prices", async () => {
         console.log("SystemProgram", SystemProgram.programId);
