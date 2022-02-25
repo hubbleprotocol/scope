@@ -14,11 +14,11 @@ pub struct Initialize<'info> {
     #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
     pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,
-    // Space = account discriminator + oracle_mappings + (price + exponent + timestamp)*max_stored_prices
-    #[account(init, seeds = [b"prices", feed_name.as_bytes()], bump, payer = admin, space = 8 + 32 + (8+8+8)*256)]
+    // Space = account discriminator + account size
+    #[account(init, seeds = [b"prices", feed_name.as_bytes()], bump, payer = admin, space = 8 + std::mem::size_of::<crate::OraclePrices>())]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
-    // Space = account discriminator + (PubKey size)*max_stored_prices
-    #[account(init, seeds = [b"mappings", feed_name.as_bytes()], bump, payer = admin, space = 8 + (32)*256)]
+    // Space = account discriminator + account size
+    #[account(init, seeds = [b"mappings", feed_name.as_bytes()], bump, payer = admin, space = 8 + std::mem::size_of::<crate::OracleMappings>())]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 }
 
