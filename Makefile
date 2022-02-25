@@ -83,7 +83,7 @@ test-rust:
 > cargo test
 
 test-ts:
-> yarn run ts-mocha tests/**/*.ts
+> yarn run ts-mocha -t 1000000 tests/**/*.ts
 
 ## Client side
 build-client:

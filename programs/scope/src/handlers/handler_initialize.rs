@@ -27,7 +27,7 @@ pub struct Initialize<'info> {
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 }
 
-pub fn process(ctx: Context<Initialize>, _: String) -> ProgramResult {
+pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     let oracle_pbk = ctx.accounts.oracle_mappings.key();
     let mut oracle_prices = ctx.accounts.oracle_prices.load_init()?;
     oracle_prices.oracle_mappings = oracle_pbk;

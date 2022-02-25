@@ -1,0 +1,26 @@
+[package]
+name = "scope-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Olivier Eblé <olivier@eble.fr>"]
+description = "Cli to setup the Scope program and trigger autorefresh of the prices"
+
+[[bin]]
+name = "scope"
+path = "src/main.rs"
+
+[lib]
+name = "scope_client"
+path = "src/lib.rs"
+
+[dependencies]
+anchor-client = "0.22.0"
+scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
+anyhow = "1.0.32"
+clap = { version = "3.1.0", features = ["derive", "env", "wrap_help"] }
+solana-sdk = "1.7.2" # Keep an old version of solana-sdk for now because of anchor requirements
+url = "2.2.2"
+shellexpand = "2.1.0"
+serde = "1.0.136"
+serde_json = "1.0.79"
+tracing = "0.1.31"

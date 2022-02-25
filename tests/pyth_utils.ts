@@ -46,13 +46,14 @@ export const createPriceFeed = async ({
 }
 export const setFeedPrice = async (
     oracleProgram: Program,
-    newPrice: number,
+    newPrice: Decimal,
     priceFeed: web3.PublicKey
 ) => {
     const info = await oracleProgram.provider.connection.getAccountInfo(priceFeed)
     //@ts-expect-error
     const data = parsePriceData(info.data)
-    await oracleProgram.rpc.setPrice(new BN(newPrice * 10 ** -data.exponent), {
+    const newPriceBn = new BN(newPrice.mul(new Decimal(10).pow(new Decimal(-data.exponent))).toNumber());
+    await oracleProgram.rpc.setPrice(newPriceBn, {
         accounts: { price: priceFeed }
     })
 }

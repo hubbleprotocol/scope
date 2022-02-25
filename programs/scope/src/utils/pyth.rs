@@ -60,29 +60,29 @@ fn get_status(st: &PriceStatus) -> bool {
     matches!(st, PriceStatus::Trading)
 }
 
-pub fn validate_pyth_price(pyth_price: &pyth_client::Price) -> ProgramResult {
+pub fn validate_pyth_price(pyth_price: &pyth_client::Price) -> Result<()> {
     if pyth_price.magic != pyth_client::MAGIC {
         msg!("Pyth price account provided is not a valid Pyth account");
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidArgument.into());
     }
     if !matches!(pyth_price.ptype, PriceType::Price) {
         msg!("Pyth price account provided has invalid price type");
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidArgument.into());
     }
     if pyth_price.ver != pyth_client::VERSION_2 {
         msg!("Pyth price account provided has a different version than the Pyth client");
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidArgument.into());
     }
     if !matches!(pyth_price.agg.status, PriceStatus::Trading) {
         msg!("Pyth price account provided is not active");
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidArgument.into());
     }
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use anchor_lang::prelude::ProgramError;
+    use anchor_lang::prelude::*;
 
     const PRICE_ACCT_SIZE: usize = 3312;
 
@@ -90,6 +90,16 @@ mod tests {
     const PRICE_VERSION_OFFSET: usize = 4;
     const PRICE_TYPE_OFFSET: usize = 16;
     const PRICE_STATUS_OFFSET: usize = 224;
+
+    fn assert_err<T>(res: Result<T>, err: ProgramError) {
+        match res {
+            Ok(_) => panic!("Expect error {err} received Ok"),
+            // Expected branch
+            Err(Error::ProgramError(recv_e)) if recv_e.program_error == err => (),
+            // Other errors
+            Err(recv_e) => panic!("Expect error {err:?} received {recv_e:?}"),
+        };
+    }
 
     #[test]
     pub fn test_validate_price() {
@@ -104,9 +114,9 @@ mod tests {
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_magic, PRICE_MAGIC_OFFSET);
         let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_eq!(
-            super::validate_pyth_price(price).err().unwrap(),
-            ProgramError::InvalidArgument
+        assert_err(
+            super::validate_pyth_price(price),
+            ProgramError::InvalidArgument,
         );
     }
 
@@ -116,9 +126,9 @@ mod tests {
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, incorrect_price_type, PRICE_TYPE_OFFSET);
         let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_eq!(
-            super::validate_pyth_price(price).err().unwrap(),
-            ProgramError::InvalidArgument
+        assert_err(
+            super::validate_pyth_price(price),
+            ProgramError::InvalidArgument,
         );
     }
 
@@ -128,9 +138,9 @@ mod tests {
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_price_version, PRICE_VERSION_OFFSET);
         let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_eq!(
-            super::validate_pyth_price(price).err().unwrap(),
-            ProgramError::InvalidArgument
+        assert_err(
+            super::validate_pyth_price(price),
+            ProgramError::InvalidArgument,
         );
     }
 
@@ -140,9 +150,9 @@ mod tests {
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_price_status, PRICE_STATUS_OFFSET);
         let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_eq!(
-            super::validate_pyth_price(price).err().unwrap(),
-            ProgramError::InvalidArgument
+        assert_err(
+            super::validate_pyth_price(price),
+            ProgramError::InvalidArgument,
         );
     }
 

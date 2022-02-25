@@ -17,29 +17,29 @@ mod scope {
 
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> Result<()> {
         handler_initialize::process(ctx, feed_name)
     }
 
-    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
+    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
-    pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: u64) -> ProgramResult {
+    pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: u64) -> Result<()> {
         let first_token: usize = first_token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_refresh_prices::refresh_batch_prices(ctx, first_token)
     }
 
-    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u8>) -> ProgramResult {
+    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u8>) -> Result<()> {
         handler_refresh_prices::refresh_price_list(ctx, &tokens)
     }
 
-    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64) -> ProgramResult {
+    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
@@ -85,7 +85,7 @@ pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
 }
 
-#[error]
+#[error_code]
 #[derive(PartialEq, Eq)]
 pub enum ScopeError {
     #[msg("Integer overflow")]

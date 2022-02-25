@@ -16,7 +16,7 @@ pub struct UpdateOracleMapping<'info> {
     pub pyth_price_info: AccountInfo<'info>,
 }
 
-pub fn process(ctx: Context<UpdateOracleMapping>, token: usize) -> ProgramResult {
+pub fn process(ctx: Context<UpdateOracleMapping>, token: usize) -> Result<()> {
     check_context(&ctx)?;
 
     let new_price_pubkey = ctx.accounts.pyth_price_info.key();
