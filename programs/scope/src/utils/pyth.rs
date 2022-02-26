@@ -1,3 +1,14 @@
+//! Toolings to retrieve pyth prices and validate them
+//!
+//! Validation partially follows [pyth best practices](https://docs.pyth.network/consumers/best-practices)
+//!
+//! 1. Some checks in [`validate_pyth_price`] are performed on the pyth price account upon registration in
+//!    the oracle mapping. However some information present only in the associated pyth product account are
+//!    expected to be checked by the admin to ensure the product has the expected quality prior the mapping
+//!    update.
+//! 2. Upon usage the current price state is checked in [`validate_valid_price`]
+//! 3. The confidence interval is also checked in this same function with [`ORACLE_CONFIDENCE_FACTOR`]
+
 use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
 use pyth_client::{PriceStatus, PriceType};

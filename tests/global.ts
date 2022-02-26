@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 import { Keypair, PublicKey } from '@solana/web3.js';
-import { findProgramAddressSync } from '@project-serum/anchor/dist/cjs/utils/pubkey';
 import * as fs from 'fs';
 
 // Global Program Parameters
@@ -58,9 +57,8 @@ export function endpointFromCluster(cluster: string | undefined): string {
     return 'err';
 }
 
-export function getProgramDataAddress(programId: PublicKey): PublicKey {
-    return findProgramAddressSync(
-        [programId.toBytes()],
-        new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
-    )[0];
+export const getProgramDataAddress = async (programId: PublicKey) => {
+    let r = await PublicKey.findProgramAddress([programId.toBytes()],
+        new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111"));
+    return r[0];
 }

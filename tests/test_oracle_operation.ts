@@ -85,7 +85,7 @@ describe("Scope tests", async () => {
     setProvider(provider);
 
     const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);
-    const programDataAddress = global.getProgramDataAddress(program.programId);
+    const programDataAddress = await global.getProgramDataAddress(program.programId);
 
     console.log("program data address is ${programDataAddress}", programDataAddress);
 
