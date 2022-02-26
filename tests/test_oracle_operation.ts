@@ -169,6 +169,29 @@ describe("Scope tests", async () => {
         }
     });
 
+    it('tests_update_price_list', async () => {
+        await program.rpc.refreshPriceList(
+            Buffer.from([Tokens.ETH, Tokens.RAY]),
+            {
+                accounts: {
+                    oraclePrices: oracleAccount,
+                    oracleMappings: oracleMappingAccount,
+                    clock: SYSVAR_CLOCK_PUBKEY
+                },
+                remainingAccounts: [
+                    { pubkey: fakePythAccounts[Tokens.ETH], isWritable: false, isSigner: false },
+                    { pubkey: fakePythAccounts[Tokens.RAY], isWritable: false, isSigner: false },
+                ],
+                signers: []
+            });
+        // Check the two updated accounts
+        {
+            let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+            checkOraclePrice(Tokens.ETH, oracle);
+            checkOraclePrice(Tokens.RAY, oracle);
+        }
+    });
+
     it('tests_update_batch_prices', async () => {
         await program.rpc.refreshBatchPrices(
             new BN(0),

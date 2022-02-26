@@ -35,6 +35,10 @@ mod scope {
         handler_refresh_prices::refresh_batch_prices(ctx, first_token)
     }
 
+    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u8>) -> ProgramResult {
+        handler_refresh_prices::refresh_price_list(ctx, &tokens)
+    }
+
     pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64) -> ProgramResult {
         let token: usize = token
             .try_into()
@@ -101,6 +105,12 @@ pub enum ScopeError {
 
     #[msg("Price is not valid")]
     PriceNotValid,
+
+    #[msg("The number of tokens is different from the number of received accounts")]
+    AccountsAndTokenMismatch,
+
+    #[msg("The token index received is out of range")]
+    BadTokenNb,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
