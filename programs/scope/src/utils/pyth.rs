@@ -17,6 +17,7 @@ pub fn get_price(pyth_price_info: &AccountInfo) -> Result<DatedPrice> {
             exp: pyth_price.expo.abs().try_into().unwrap(),
         },
         last_updated_slot: pyth_price.valid_slot,
+        ..Default::default()
     })
 }
 

@@ -10,6 +10,8 @@ const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(env!("OUT_DIR
 
 declare_id!(PROGRAM_ID);
 
+pub const MAX_ENTRIES: usize = 255;
+
 #[program]
 mod scope {
 
@@ -63,19 +65,20 @@ pub struct Price {
 pub struct DatedPrice {
     pub price: Price,
     pub last_updated_slot: u64,
+    pub _reserved: [u64; 2],
 }
 
 // Account to store dated prices
 #[account(zero_copy)]
 pub struct OraclePrices {
     pub oracle_mappings: Pubkey,
-    pub prices: [DatedPrice; 256],
+    pub prices: [DatedPrice; MAX_ENTRIES],
 }
 
 // Accounts holding source of prices (all pyth for now)
 #[account(zero_copy)]
 pub struct OracleMappings {
-    pub price_info_accounts: [Pubkey; 256],
+    pub price_info_accounts: [Pubkey; MAX_ENTRIES],
 }
 
 #[error]
