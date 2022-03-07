@@ -13,7 +13,7 @@ import chaiDecimalJs from 'chai-decimaljs';
 
 chai.use(chaiDecimalJs(Decimal));
 
-const exe_file = './target/debug/scope';
+const exe_file = './target/release/scope';
 
 export interface ScopeBot {
     programId: PublicKey;
@@ -169,8 +169,7 @@ export class ScopeBot {
         // now lets wait until we get our started chunk
         // to ensure we are all up and running
         const chunkReady = await this.nextLog(10000);
-        assert(chunkReady == 'Info: refresh interval set to 1s', 'first chunk should give information on refresh interval');
-
+        assert(chunkReady.includes('Refresh interval set to 1s'), 'first chunk should give information on refresh interval');
     }
 
     stop() {

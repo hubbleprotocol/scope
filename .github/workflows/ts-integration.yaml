@@ -19,6 +19,7 @@ jobs:
         test_name:
           [
             'yarn run ts-mocha tests/test_oracle_operation.ts',
+            'yarn run ts-mocha tests/test_crank.ts',
             'cargo test',
           ]
     steps:

@@ -82,7 +82,7 @@ function checkAllOraclePrices(oraclePrices: any) {
     });
 }
 
-describe("Scope crank bot tests", async () => {
+describe("Scope crank bot tests", () => {
     // TODO: have a different keypair for the crank to check that other people can actually crank
     const keypair_path = `./keys/${process.env.CLUSTER}/owner.json`;
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(keypair_path))));
@@ -99,20 +99,13 @@ describe("Scope crank bot tests", async () => {
     setProvider(provider);
 
     const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);
-    const programDataAddress = await global.getProgramDataAddress(program.programId);
-
-    console.log(`program data address is ${programDataAddress.toBase58()}`);
 
     const fakePythProgram = new Program(global.FakePythIdl, global.getFakePythProgramId(), provider);
     let fakePythAccounts: Array<PublicKey>;
-    let oracleAccount = (await PublicKey.findProgramAddress(
-        [Buffer.from("prices", 'utf8'), Buffer.from("crank_list", 'utf8')],
-        program.programId
-    ))[0];
-    let oracleMappingAccount = (await PublicKey.findProgramAddress(
-        [Buffer.from("mappings", 'utf8'), Buffer.from("crank_list", 'utf8')],
-        program.programId
-    ))[0];
+
+    let programDataAddress: PublicKey;
+    let oracleAccount: PublicKey;
+    let oracleMappingAccount: PublicKey;
 
     const setAllPythPrices = async () => {
         await Promise.all(tokenList.map(async (asset, idx): Promise<any> => {
@@ -138,7 +131,17 @@ describe("Scope crank bot tests", async () => {
     });
 
     before("Initialize Scope and pyth prices", async () => {
-        console.log("SystemProgram", SystemProgram.programId);
+        programDataAddress = await global.getProgramDataAddress(program.programId);
+        oracleAccount = (await PublicKey.findProgramAddress(
+            [Buffer.from("prices", 'utf8'), Buffer.from("crank_list", 'utf8')],
+            program.programId
+        ))[0];
+        oracleMappingAccount = (await PublicKey.findProgramAddress(
+            [Buffer.from("mappings", 'utf8'), Buffer.from("crank_list", 'utf8')],
+            program.programId
+        ))[0];
+
+        console.log(`program data address is ${programDataAddress.toBase58()}`);
 
         await program.rpc.initialize(
             "crank_list",
@@ -203,13 +206,13 @@ describe("Scope crank bot tests", async () => {
         }
     });
 
-    it('test_30_loop_price_changes', async () => {
+    it('test_5_loop_price_changes', async () => {
         scopeBot = new bot.ScopeBot(program.programId, keypair_path, "crank_list");
         await scopeBot.crank();
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 5; i++) {
             // increase all prices at each loop
             for (var asset of tokenList) {
-                asset.price = asset.price.add(new Decimal('0.100'));
+                asset.price = asset.price.add(new Decimal('0.500'));
             }
             await setAllPythPrices();
             await sleep(2000);//Should wait less?

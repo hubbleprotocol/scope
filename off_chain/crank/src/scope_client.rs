@@ -5,11 +5,15 @@ use solana_sdk::{clock::Clock, instruction::AccountMeta, system_program, sysvar:
 use anyhow::{anyhow, bail, Result};
 
 use scope::{accounts, instruction, OracleMappings, OraclePrices};
-use tracing::{info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::config::{TokenConf, TokenConfList};
 use crate::utils::find_data_address;
 
+/// Max number of refresh per tx
+const MAX_REFRESH_CHUNK_SIZE: usize = 28;
+
+#[derive(Debug)]
 pub struct ScopeClient {
     program: Program,
     program_data_acc: Pubkey,
@@ -120,13 +124,27 @@ impl ScopeClient {
         Ok(TokenConfList { tokens })
     }
 
+    #[tracing::instrument(skip(self))]
     /// Refresh all price referenced in oracle mapping
     pub fn refresh_all_prices(&self) -> Result<()> {
-        for (chunk_nb, chunk) in self.oracle_mappings.chunks(8).enumerate() {
-            // if there is any element in the chunk
-            if chunk.iter().any(|e| e.is_some()) {
-                // Refresh the chunk
-                self.ix_refresh_8_prices(u64::try_from(chunk_nb * 8)?)?;
+        info!("Refresh all prices");
+        let to_refresh_idx: Vec<u8> = self
+            .oracle_mappings
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, e)| {
+                if e.is_some() {
+                    Some(u8::try_from(idx).unwrap())
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        for (nb, chunk) in to_refresh_idx.chunks(MAX_REFRESH_CHUNK_SIZE).enumerate() {
+            debug!("Refresh chunk {}:{:?}", nb, chunk);
+            if let Err(e) = self.ix_refresh_price_list(chunk.to_vec()) {
+                error!("Refresh of some prices failed {:?}", e);
             }
         }
 
@@ -145,6 +163,7 @@ impl ScopeClient {
         Ok(mapping)
     }
 
+    #[tracing::instrument(skip(self))]
     fn ix_initialize(&self) -> Result<()> {
         let init_account = accounts::Initialize {
             oracle_prices: self.oracle_prices_acc,
@@ -168,6 +187,7 @@ impl ScopeClient {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
     fn ix_update_mapping(&self, oracle_account: &Pubkey, token: u64) -> Result<()> {
         let update_account = accounts::UpdateOracleMapping {
             oracle_mappings: self.oracle_mappings_acc,
@@ -189,6 +209,7 @@ impl ScopeClient {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn ix_refresh_one_price(&self, token: u64) -> Result<()> {
         let oracle_account = self
             .oracle_mappings
@@ -214,6 +235,7 @@ impl ScopeClient {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
     fn ix_refresh_8_prices(&self, first_token: u64) -> Result<()> {
         let first_token_idx = usize::try_from(first_token)?;
         let oracle_accounts: Vec<Pubkey> = self.oracle_mappings
@@ -248,7 +270,8 @@ impl ScopeClient {
         Ok(())
     }
 
-    pub fn ix_refresh_price_list(&self, tokens: Vec<u8>) -> Result<()> {
+    #[tracing::instrument(skip(self))]
+    fn ix_refresh_price_list(&self, tokens: Vec<u8>) -> Result<()> {
         let refresh_account = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,

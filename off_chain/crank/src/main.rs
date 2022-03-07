@@ -79,6 +79,9 @@ enum Actions {
 fn main() -> Result<()> {
     let args: Args = Args::parse();
 
+    // TODO output JSON?
+    tracing_subscriber::fmt::init();
+
     // Read keypair to sign transactions
     let payer = read_keypair_file(args.keypair).expect("Keypair file not found or invalid");
 

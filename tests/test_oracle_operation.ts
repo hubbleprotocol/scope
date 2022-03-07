@@ -60,6 +60,8 @@ const initialTokens = [
     }
 ]
 
+const MAX_TOKENS_IN_ONE_UPDATE = 28;
+
 function checkOraclePrice(token: number, oraclePrices: any) {
     console.log(`Check ${initialTokens[token].ticker} price`)
     let price = oraclePrices.prices[token].price;
@@ -69,7 +71,7 @@ function checkOraclePrice(token: number, oraclePrices: any) {
     expect(in_decimal).decimal.eq(initialTokens[token].price);
 }
 
-describe("Scope tests", async () => {
+describe("Scope tests", () => {
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
     const admin = Keypair.fromSecretKey(keypair_acc);
 
@@ -85,23 +87,28 @@ describe("Scope tests", async () => {
     setProvider(provider);
 
     const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);
-    const programDataAddress = await global.getProgramDataAddress(program.programId);
-
-    console.log(`program data address is ${programDataAddress.toBase58()}`);
 
     const fakePythProgram = new Program(global.FakePythIdl, global.getFakePythProgramId(), provider);
     let fakePythAccounts: Array<PublicKey>;
-    let oracleAccount = (await PublicKey.findProgramAddress(
-        [Buffer.from("prices", 'utf8'), Buffer.from("first_list", 'utf8')],
-        program.programId
-    ))[0];
-    let oracleMappingAccount = (await PublicKey.findProgramAddress(
-        [Buffer.from("mappings", 'utf8'), Buffer.from("first_list", 'utf8')],
-        program.programId
-    ))[0];
+    let fakePythAccounts2: Array<PublicKey>; // Used to overflow oracle capacity
+
+    let programDataAddress: PublicKey;
+    let oracleAccount: PublicKey;
+    let oracleMappingAccount: PublicKey;
 
     before("Initialize Scope and pyth prices", async () => {
-        console.log("SystemProgram", SystemProgram.programId);
+
+        programDataAddress = await global.getProgramDataAddress(program.programId);
+        oracleAccount = (await PublicKey.findProgramAddress(
+            [Buffer.from("prices", 'utf8'), Buffer.from("first_list", 'utf8')],
+            program.programId
+        ))[0];
+        oracleMappingAccount = (await PublicKey.findProgramAddress(
+            [Buffer.from("mappings", 'utf8'), Buffer.from("first_list", 'utf8')],
+            program.programId
+        ))[0];
+
+        console.log(`program data address is ${programDataAddress.toBase58()}`);
 
         await program.rpc.initialize(
             "first_list",
@@ -130,9 +137,21 @@ describe("Scope tests", async () => {
 
             return oracleAddress;
         }));
+
+        const range = Array.from(Array(MAX_TOKENS_IN_ONE_UPDATE).keys());
+        fakePythAccounts2 = await Promise.all(range.map(async (idx): Promise<any> => {
+            // Just create random accounts to fill-up the prices
+            const oracleAddress = await pythUtils.createPriceFeed({
+                oracleProgram: fakePythProgram,
+                initPrice: new Decimal(idx),
+                expo: -8
+            })
+
+            return oracleAddress;
+        }));
     });
 
-    it('test_set_all_oracle_mappings', async () => {
+    it('test_set_oracle_mappings', async () => {
         await Promise.all(fakePythAccounts.map(async (fakePythAccount, idx): Promise<any> => {
             console.log(`Set mapping of ${initialTokens[idx].ticker}`)
 
@@ -222,5 +241,47 @@ describe("Scope tests", async () => {
             }
             checkOraclePrice(tokenId, oracle);
         }
+    });
+
+    it('test_set_full_oracle_mappings', async () => {
+
+        await Promise.all(fakePythAccounts2.map(async (fakePythAccount, idx): Promise<any> => {
+
+            await program.rpc.updateMapping(
+                new BN(idx + initialTokens.length),
+                {
+                    accounts: {
+                        admin: admin.publicKey,
+                        program: program.programId,
+                        programData: programDataAddress,
+                        oracleMappings: oracleMappingAccount,
+                        pythPriceInfo: fakePythAccount,
+                    },
+                    signers: [admin]
+                });
+        }));
+    });
+
+    it('test_update_max_list', async () => {
+        // Use the 30 first token from the second pyth accounts list
+        let tokens: number[] = [];
+        let accounts: any[] = [];
+        for (let i = 0; i < MAX_TOKENS_IN_ONE_UPDATE; i++) {
+            tokens.push(i + initialTokens.length);
+            accounts.push({ pubkey: fakePythAccounts2[i], isWritable: false, isSigner: false })
+
+        }
+        await program.rpc.refreshPriceList(
+            Buffer.from(tokens),
+            {
+                accounts: {
+                    oraclePrices: oracleAccount,
+                    oracleMappings: oracleMappingAccount,
+                    clock: SYSVAR_CLOCK_PUBKEY
+                },
+                remainingAccounts: accounts,
+                signers: []
+            });
+        // No check we just want the operation to go through
     });
 });
