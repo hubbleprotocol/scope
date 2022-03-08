@@ -69,7 +69,7 @@ enum Actions {
     #[clap()]
     Crank {
         #[clap(long, env, default_value = "1000")]
-        refresh_interval_ms: u32,
+        refresh_interval_ms: u64,
         /// Where to store the mapping
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
@@ -128,7 +128,7 @@ fn download(scope: &mut ScopeClient, mapping: &impl AsRef<Path>) -> Result<()> {
 fn crank(
     scope: &mut ScopeClient,
     mapping_op: Option<impl AsRef<Path>>,
-    refresh_interval_ms: u32,
+    refresh_interval_ms: u64,
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
         let token_list = TokenConfList::read_from_file(&mapping)?;
@@ -137,10 +137,7 @@ fn crank(
     } else {
         scope.download_oracle_mapping()?;
     }
-    let refresh_interval = Duration::new(
-        u64::from(refresh_interval_ms / 1000),
-        (refresh_interval_ms % 1000) * 1_000_000,
-    );
+    let refresh_interval = Duration::from_millis(refresh_interval_ms);
     info!("Refresh interval set to {:?}", refresh_interval);
     loop {
         let start = Instant::now();
