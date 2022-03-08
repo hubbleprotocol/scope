@@ -7,12 +7,12 @@ import * as fs from 'fs';
 
 export function getScopeProgramId(_cluster?: string) {
     let cluster = _cluster ? _cluster : process.env.CLUSTER;
-    return pubkeyFromFile(`./target/deploy/scope-keypair.json`);
+    return pubkeyFromFile(`./keys/${cluster}/scope.json`);
 }
 
 export function getFakePythProgramId(_cluster?: string) {
     let cluster = _cluster ? _cluster : process.env.CLUSTER;
-    return pubkeyFromFile(`./target/deploy/pyth-keypair.json`);
+    return pubkeyFromFile(`./keys/${cluster}/pyth.json`);
 }
 
 export const ScopeIdl = JSON.parse(fs.readFileSync('./target/idl/scope.json', 'utf8'));

@@ -66,8 +66,7 @@ keys/$(CLUSTER)/%.json:
 target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $(shell find programs -name "Cargo.toml") Cargo.lock
 >@ echo "*******Build $* *******"
 >@ CLUSTER=$(CLUSTER) anchor build -p $*
-#< Optional but just to ensure deploys without the makefile behave correctly 
->@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json 
+>@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
 
 deploy:
 >@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
