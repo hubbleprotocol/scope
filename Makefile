@@ -21,21 +21,21 @@ CLUSTER ?= localnet
 OWNER_KEYPAIR ?= ./keys/$(CLUSTER)/owner.json
 
 ifeq ($(CLUSTER),localnet)
-	URL = "http://127.0.0.1:8899"
+	URL ?= "http://127.0.0.1:8899"
 endif
 ifeq ($(CLUSTER),mainnet)
-	URL = "https://twilight-misty-snow.solana-mainnet.quiknode.pro/1080f1a8952de8e09d402f2ce877698f832faea8/"
+	URL ?= "https://rpc.ankr.com/solana"
 endif
 ifeq ($(CLUSTER),mainnet-beta)
-	URL = "https://twilight-misty-snow.solana-mainnet.quiknode.pro/1080f1a8952de8e09d402f2ce877698f832faea8/"
+	URL ?= "https://rpc.ankr.com/solana"
 endif
 ifeq ($(CLUSTER),devnet)
-	URL = "https://wandering-restless-darkness.solana-devnet.quiknode.pro/8eca9fa5ccdf04e4a0f558cdd6420a6805038a1f/"
+	URL ?= "https://api.devnet.solana.com"
 endif
 ifeq ($(URL),)
 # URL is still empty, CLUSTER is probably set to an URL directly
 # TODO: is this logical?
-	URL = $(CLUSTER)
+	URL ?= $(CLUSTER)
 endif
 
 SCOPE_PROGRAM_KEYPAIR := keys/$(CLUSTER)/scope.json
