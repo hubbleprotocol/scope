@@ -92,8 +92,9 @@ test-rust:
 test-ts: $(SCOPE_CLI)
 > yarn run ts-mocha -t 1000000 tests/**/*.ts
 
+# airdrop done this way to stay in devnet limits
 airdrop: $(OWNER_KEYPAIR)
-> solana airdrop 2 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL)
+> for number in `seq 0 6`; do solana airdrop 2 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL); sleep 2; done
 
 init:
 > cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
