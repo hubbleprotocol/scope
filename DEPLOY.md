@@ -4,7 +4,7 @@
  2. Set `$URL` to a good RPC
  3. Set `$FEED_NAME` to something good like `hubble`
  4. Put/generate owner keypair in `./keys/$CLUSTER/owner.json` and ensure you have enough funds
- 5. `make build`
+ 5. `make build` and check that it actually builds
  6. Build scope-cli in release mode (`cargo build -p scope-cli --release`)
  7. Check the keys in `./keys/$CLUSTER` and save them
  8. `make deploy-scope` (we don't want to deploy fake-pyth)

@@ -22,16 +22,16 @@ OWNER_KEYPAIR ?= ./keys/$(CLUSTER)/owner.json
 FEED_NAME ?= hubble
 
 ifeq ($(CLUSTER),localnet)
-	URL = "http://127.0.0.1:8899"
+	URL ?= "http://127.0.0.1:8899"
 endif
 ifeq ($(CLUSTER),mainnet)
-	URL = "https://solana-api.projectserum.com"
+	URL ?= "https://solana-api.projectserum.com"
 endif
 ifeq ($(CLUSTER),mainnet-beta)
-	URL = "https://api.mainnet-beta.solana.com"
+	URL ?= "https://api.mainnet-beta.solana.com"
 endif
 ifeq ($(CLUSTER),devnet)
-	URL = "https://api.devnet.solana.com"
+	URL ?= "https://api.devnet.solana.com"
 endif
 ifeq ($(URL),)
 # URL is still empty, CLUSTER is probably set to an URL directly
@@ -78,7 +78,8 @@ deploy:
 
 deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
 >@ echo "*******Deploy $(PROGRAM_SO)*******"
->@ solana program deploy -u $(URL) --keypair $(OWNER_KEYPAIR) --upgrade-authority $(OWNER_KEYPAIR) --program-id $(PROGRAM_KEYPAIR) $(PROGRAM_SO)
+>@ echo $(URL)
+> ./deploy.sh $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR) $(URL)
 
 ## Listen to on-chain logs
 listen:
