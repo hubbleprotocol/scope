@@ -1,0 +1,51 @@
+[
+  [
+    0,
+    {
+      "token_pair": "SOL/USD",
+      "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix"
+    }
+  ],
+  [
+    1,
+    {
+      "token_pair": "ETH/USD",
+      "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw"
+    }
+  ],
+  [
+    2,
+    {
+      "token_pair": "BTC/USD",
+      "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J"
+    }
+  ],
+  [
+    3,
+    {
+      "token_pair": "SRM/USD",
+      "oracle_mapping": "992moaMQKs32GKZ9dxi8keyM2bUmbrwBZpK4p2K6X5Vs"
+    }
+  ],
+  [
+    4,
+    {
+      "token_pair": "RAY/USD",
+      "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6"
+    }
+  ],
+  [
+    5,
+    {
+      "token_pair": "FTT/USD",
+      "oracle_mapping": "6vivTRs5ZPeeXbjo7dfburfaYDWoXjBtdtuYgQRuGfu"
+    }
+  ],
+  [
+    6,
+    {
+      "token_pair": "MSOL/USD",
+      "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ"
+    }
+  ]
+]

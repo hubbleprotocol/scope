@@ -19,6 +19,7 @@ endif
 
 CLUSTER ?= localnet
 OWNER_KEYPAIR ?= ./keys/$(CLUSTER)/owner.json
+FEED_NAME ?= hubble
 
 ifeq ($(CLUSTER),localnet)
 	URL = "http://127.0.0.1:8899"
@@ -49,7 +50,7 @@ SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_KEYPAIR)
 FAKE_PYTH_PROGRAM_ID != solana-keygen pubkey $(FAKE_PYTH_PROGRAM_KEYPAIR)
 PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
-.PHONY: deploy build-client run listen deploy deploy-int airdrop test test-rust test-ts
+.PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init
 
 build: $(SCOPE_PROGRAM_SO) $(FAKE_PYTH_PROGRAM_SO) $(SCOPE_CLI)
 
@@ -68,6 +69,9 @@ target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $
 >@ CLUSTER=$(CLUSTER) anchor build -p $*
 >@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
 
+deploy-scope:
+>@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
+
 deploy:
 >@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
 >@ PROGRAM_SO=$(FAKE_PYTH_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_PYTH_PROGRAM_KEYPAIR) $(MAKE) deploy-int
@@ -78,7 +82,7 @@ deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
 
 ## Listen to on-chain logs
 listen:
-> solana logs ${SCOPE_PROGRAM_ID}
+> solana logs -u $(URL) ${SCOPE_PROGRAM_ID}
 
 test: test-rust test-ts
 
@@ -88,12 +92,14 @@ test-rust:
 test-ts: $(SCOPE_CLI)
 > yarn run ts-mocha -t 1000000 tests/**/*.ts
 
-## Client side
-build-client:
-> npm run build
-
-run:
-> npm run start
-
 airdrop: $(OWNER_KEYPAIR)
-> solana airdrop 10 ${PROGRAM_DEPLOY_ACCOUNT} --url http://127.0.0.1:8899
+> solana airdrop 10 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL)
+
+init:
+> cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+
+update-mapping:
+> cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) update --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+
+crank:
+> cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
