@@ -25,13 +25,13 @@ ifeq ($(CLUSTER),localnet)
 	URL = "http://127.0.0.1:8899"
 endif
 ifeq ($(CLUSTER),mainnet)
-	URL = "https://twilight-misty-snow.solana-mainnet.quiknode.pro/1080f1a8952de8e09d402f2ce877698f832faea8/"
+	URL = "https://solana-api.projectserum.com"
 endif
 ifeq ($(CLUSTER),mainnet-beta)
-	URL = "https://twilight-misty-snow.solana-mainnet.quiknode.pro/1080f1a8952de8e09d402f2ce877698f832faea8/"
+	URL = "https://api.mainnet-beta.solana.com"
 endif
 ifeq ($(CLUSTER),devnet)
-	URL = "https://wandering-restless-darkness.solana-devnet.quiknode.pro/8eca9fa5ccdf04e4a0f558cdd6420a6805038a1f/"
+	URL = "https://api.devnet.solana.com"
 endif
 ifeq ($(URL),)
 # URL is still empty, CLUSTER is probably set to an URL directly
@@ -78,7 +78,7 @@ deploy:
 
 deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
 >@ echo "*******Deploy $(PROGRAM_SO)*******"
->@ solana program deploy -u $(URL) --upgrade-authority $(OWNER_KEYPAIR) --program-id $(PROGRAM_KEYPAIR) $(PROGRAM_SO)
+>@ solana program deploy -u $(URL) --keypair $(OWNER_KEYPAIR) --upgrade-authority $(OWNER_KEYPAIR) --program-id $(PROGRAM_KEYPAIR) $(PROGRAM_SO)
 
 ## Listen to on-chain logs
 listen:
@@ -93,7 +93,7 @@ test-ts: $(SCOPE_CLI)
 > yarn run ts-mocha -t 1000000 tests/**/*.ts
 
 airdrop: $(OWNER_KEYPAIR)
-> solana airdrop 10 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL)
+> solana airdrop 2 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL)
 
 init:
 > cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json

@@ -204,7 +204,7 @@ impl ScopeClient {
             .collect();
 
         // Sort the prices from the oldest to the youngest.
-        prices.sort_by(|a, b| b.1.cmp(&a.1));
+        prices.sort_by(|a, b| a.1.cmp(&b.1));
 
         let clock: Clock = self
             .program
