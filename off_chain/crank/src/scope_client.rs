@@ -11,7 +11,7 @@ use solana_sdk::{
 use anyhow::{anyhow, bail, Context, Result};
 
 use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
-use tracing::{debug, error, event, info, span, trace, warn, Level};
+use tracing::{debug, event, info, span, trace, warn, Level};
 
 use crate::config::{TokenConf, TokenConfList};
 use crate::utils::find_data_address;
