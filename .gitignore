@@ -10,3 +10,4 @@ build
 test-ledger/
 keys/
 .vscode/
+CLUSTER

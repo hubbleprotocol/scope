@@ -12,6 +12,19 @@ ifeq ($(origin .RECIPEPREFIX), undefined)
 endif
 .RECIPEPREFIX = >
 
+define DEPENDABLE_VAR
+
+.PHONY: phony
+$1: phony
+>@ if [[ `cat $1 2>&1` != '$($1)' ]]; then \
+     echo -n $($1) > $1 ; \
+   fi
+
+endef
+
+#declare CLUSTER to be dependable
+$(eval $(call DEPENDABLE_VAR,CLUSTER))
+
 # TODO: not sure if it really works
 ifneq (,$(wildcard ./.env))
 	include ./.env
@@ -64,7 +77,7 @@ keys/$(CLUSTER)/%.json:
 >@ solana-keygen new --no-bip39-passphrase -s -o $@
 
 # Rebuild the .so if any rust file change
-target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $(shell find programs -name "Cargo.toml") Cargo.lock
+target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $(shell find programs -name "Cargo.toml") Cargo.lock CLUSTER
 >@ echo "*******Build $* *******"
 >@ CLUSTER=$(CLUSTER) anchor build -p $*
 >@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
