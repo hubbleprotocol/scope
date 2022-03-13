@@ -102,7 +102,7 @@ deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
 >@ PROGRAM_SIZE=$(shell stat -c%s "$(PROGRAM_SO)");\
    PROGRAM_SIZE=$$(( PROGRAM_SIZE * 4 ));\
    echo "Program allocated size: $$PROGRAM_SIZE";\
-   solana program deploy \
+   solana program deploy -v \
    -u $(URL) \
    --program-id $(PROGRAM_KEYPAIR) \
    --keypair $(OWNER_KEYPAIR) \
@@ -135,10 +135,10 @@ airdrop: $(OWNER_KEYPAIR)
    fi
 
 init:
-> cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 update-mapping:
-> cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) update --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) update --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 crank:
-> cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
