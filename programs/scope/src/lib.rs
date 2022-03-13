@@ -69,7 +69,7 @@ pub struct Price {
 pub struct DatedPrice {
     pub price: Price,
     pub last_updated_slot: u64,
-    pub _reserved: [u64; 2],
+    pub _reserved: [u64; 4],
 }
 
 // Account to store dated prices
@@ -83,6 +83,8 @@ pub struct OraclePrices {
 #[account(zero_copy)]
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
+    pub _reserved: [u8; MAX_ENTRIES],
+    pub _reserved2: [u64; MAX_ENTRIES],
 }
 
 // Configuration account of the program

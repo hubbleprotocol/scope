@@ -33,7 +33,7 @@ pub fn get_price(pyth_price_info: &AccountInfo) -> Result<DatedPrice> {
 }
 
 fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
-    if cfg!(feature = "skip_price_validation") {
+    if option_env!("CLUSTER").unwrap_or("localnet") == "devnet" {
         return Ok(u64::try_from(pyth_price.agg.price).unwrap());
     }
     let is_trading = get_status(&pyth_price.agg.status);
