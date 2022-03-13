@@ -5,13 +5,21 @@ import * as fs from 'fs';
 
 // Global Program Parameters
 
-export function getScopeProgramId(_cluster?: string) {
+export function getCluster(_cluster?: string) {
     let cluster = _cluster ? _cluster : process.env.CLUSTER;
+    if (cluster == null) {
+        cluster = "localnet"
+    }
+    return cluster;
+}
+
+export function getScopeProgramId(_cluster?: string) {
+    let cluster = getCluster(_cluster);
     return pubkeyFromFile(`./keys/${cluster}/scope.json`);
 }
 
 export function getFakePythProgramId(_cluster?: string) {
-    let cluster = _cluster ? _cluster : process.env.CLUSTER;
+    let cluster = getCluster(_cluster);
     return pubkeyFromFile(`./keys/${cluster}/pyth.json`);
 }
 
@@ -28,9 +36,9 @@ export type SolEnv = {
 };
 
 export const env: SolEnv = {
-    cluster: process.env.CLUSTER as Cluster,
-    ownerKeypairPath: `./keys/${process.env.CLUSTER}/owner.json`,
-    endpoint: endpointFromCluster(process.env.CLUSTER),
+    cluster: getCluster() as Cluster,
+    ownerKeypairPath: `./keys/${getCluster()}/owner.json`,
+    endpoint: endpointFromCluster(getCluster()),
 };
 
 export function pubkeyFromFile(filepath: string): PublicKey {
@@ -50,9 +58,9 @@ export function pubkeyFromFile(filepath: string): PublicKey {
 export function endpointFromCluster(cluster: string | undefined): string {
     switch (cluster) {
         case 'mainnet':
-            return 'https://twilight-misty-snow.solana-mainnet.quiknode.pro/1080f1a8952de8e09d402f2ce877698f832faea8/';
+            return 'https://solana-api.projectserum.com';
         case 'devnet':
-            return 'https://wandering-restless-darkness.solana-devnet.quiknode.pro/8eca9fa5ccdf04e4a0f558cdd6420a6805038a1f/';
+            return 'https://api.devnet.solana.com';
         case 'localnet':
             return 'http://127.0.0.1:8899';
     }

@@ -73,7 +73,7 @@ function checkOraclePrice(token: number, oraclePrices: any) {
 }
 
 describe("Scope tests", () => {
-    const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${process.env.CLUSTER}/owner.json`))));
+    const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${global.getCluster()}/owner.json`))));
     const admin = Keypair.fromSecretKey(keypair_acc);
 
     let config: ConnectionConfig = {

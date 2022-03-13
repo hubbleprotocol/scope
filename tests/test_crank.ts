@@ -87,7 +87,7 @@ function checkAllOraclePrices(oraclePrices: any) {
 
 describe("Scope crank bot tests", () => {
     // TODO: have a different keypair for the crank to check that other people can actually crank
-    const keypair_path = `./keys/${process.env.CLUSTER}/owner.json`;
+    const keypair_path = `./keys/${global.getCluster()}/owner.json`;
     const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(keypair_path))));
     const admin = Keypair.fromSecretKey(keypair_acc);
 

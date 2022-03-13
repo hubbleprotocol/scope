@@ -74,12 +74,23 @@ deploy-scope:
 
 deploy:
 >@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
->@ PROGRAM_SO=$(FAKE_PYTH_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_PYTH_PROGRAM_KEYPAIR) $(MAKE) deploy-int
+>@ if [ $(CLUSTER) = "localnet" ]; then\
+	   # Deploy fake pyth only on localnet\
+       PROGRAM_SO=$(FAKE_PYTH_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_PYTH_PROGRAM_KEYPAIR) $(MAKE) deploy-int;\
+   fi
 
 deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
->@ echo "*******Deploy $(PROGRAM_SO)*******"
->@ echo $(URL)
-> ./deploy.sh $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR) $(URL)
+>@ echo "*******Deploy $(PROGRAM_SO) to $(URL)*******"
+>@ PROGRAM_SIZE=$(shell stat -c%s "$(PROGRAM_SO)");\
+   PROGRAM_SIZE=$$(( PROGRAM_SIZE * 4 ));\
+   echo "Program allocated size: $$PROGRAM_SIZE";\
+   solana program deploy \
+   -u $(URL) \
+   --program-id $(PROGRAM_KEYPAIR) \
+   --keypair $(OWNER_KEYPAIR) \
+   --upgrade-authority $(OWNER_KEYPAIR) \
+   --max-len $$PROGRAM_SIZE \
+   $(PROGRAM_SO)
 
 ## Listen to on-chain logs
 listen:
@@ -95,7 +106,15 @@ test-ts: $(SCOPE_CLI)
 
 # airdrop done this way to stay in devnet limits
 airdrop: $(OWNER_KEYPAIR)
-> for number in `seq 0 6`; do solana airdrop 2 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL); sleep 2; done
+>@ if [ $(CLUSTER) = "localnet" ]; then\
+      solana airdrop 50 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL);\
+   fi
+>@ if [ $(CLUSTER) = "devnet" ]; then\
+       for number in `seq 0 10`; do solana airdrop 2 ${PROGRAM_DEPLOY_ACCOUNT} --url $(URL); sleep 10; done;\
+   fi
+>@ if [ $(CLUSTER) = "mainnet" ] || [ $(CLUSTER) = "mainnet-beta" ]; then\
+       echo "No airdrop on mainnet";\
+   fi
 
 init:
 > cargo run --bin scope -- --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
