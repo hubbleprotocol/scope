@@ -63,7 +63,12 @@ SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_KEYPAIR)
 FAKE_PYTH_PROGRAM_ID != solana-keygen pubkey $(FAKE_PYTH_PROGRAM_KEYPAIR)
 PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
-.PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init
+.PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env
+
+check-env:
+>@ echo "CLUSTER=$(CLUSTER)" 
+>@ echo "URL=$(URL)" 
+>@ echo "FEED_NAME=$(FEED_NAME)"
 
 build: $(SCOPE_PROGRAM_SO) $(FAKE_PYTH_PROGRAM_SO) $(SCOPE_CLI)
 

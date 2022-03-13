@@ -1,5 +1,9 @@
 [workspace]
-members = [
-  "programs/*",
-  "off_chain/*",
-]
+members = ["programs/*", "off_chain/*"]
+
+[profile.dev]
+overflow-checks = true
+
+[profile.release]
+lto = "thin"
+overflow-checks = true
