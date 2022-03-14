@@ -11,7 +11,7 @@ use solana_sdk::{
 use anyhow::{anyhow, bail, Context, Result};
 
 use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
-use tracing::{debug, event, info, span, trace, warn, Level};
+use tracing::{debug, error, event, info, span, trace, warn, Level};
 
 use crate::config::{TokenConf, TokenConfList};
 use crate::utils::find_data_address;
@@ -350,12 +350,18 @@ impl ScopeClient {
 
         let request = self.program.request();
 
-        request
+        let res = request
             .accounts(update_account)
             .args(instruction::UpdateMapping { token })
-            .send()?;
+            .send();
 
-        info!("Accounts updated successfully");
+        match res {
+            Ok(sig) => info!(signature = %sig, "Accounts updated successfully"),
+            Err(err) => {
+                error!(err = ?err, "Mapping update failed");
+                bail!(err);
+            }
+        }
 
         Ok(())
     }
