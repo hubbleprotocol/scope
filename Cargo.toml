@@ -1,5 +1,5 @@
 [workspace]
-members = ["programs/*", "off_chain/*"]
+members = ["programs/*", "off_chain/scope-cli"]
 
 [profile.dev]
 overflow-checks = true

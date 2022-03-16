@@ -73,7 +73,7 @@ enum Actions {
     /// Automatically refresh the prices
     #[clap()]
     Crank {
-        #[clap(long, env, default_value = "5")]
+        #[clap(long, env, default_value = "30")]
         refresh_interval_slot: clock::Slot,
         /// Where to store the mapping
         #[clap(long, env, parse(from_os_str))]
