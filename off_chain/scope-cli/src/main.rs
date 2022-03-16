@@ -16,6 +16,8 @@ use tracing::{error, info, trace, warn};
 
 use anyhow::Result;
 
+mod webserver;
+
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
@@ -73,11 +75,19 @@ enum Actions {
     /// Automatically refresh the prices
     #[clap()]
     Crank {
+        /// Age of price in slot before triggering a refresh
         #[clap(long, env, default_value = "30")]
         refresh_interval_slot: clock::Slot,
         /// Where to store the mapping
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
+        /// Activate the health webserver for Kubernetes
+        #[clap(long, env = "SERVER_MODE")]
+        server: bool,
+        /// Embedded webserver port
+        /// Only valid if --server is also used
+        #[clap(long, env, default_value = "8080")]
+        server_port: u16,
     },
 }
 
@@ -113,7 +123,14 @@ fn main() -> Result<()> {
             Actions::Crank {
                 refresh_interval_slot,
                 mapping,
-            } => crank(&mut scope, (&mapping).as_ref(), refresh_interval_slot),
+                server,
+                server_port,
+            } => {
+                if server {
+                    webserver::server_thread_start(([0, 0, 0, 0], server_port).into())?;
+                }
+                crank(&mut scope, (&mapping).as_ref(), refresh_interval_slot)
+            }
         }
     }
 }

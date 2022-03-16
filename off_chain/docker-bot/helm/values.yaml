@@ -28,11 +28,15 @@ service-base-chart:
 #    - name: KEYPAIR
 #      value: /root/.hubble/keypair.json
 #    - name: PROGRAM_ID
-#      value: abc1234
+#      value: "abc1234"
 #    - name: JSON_LOGS
-#      value: 1
+#      value: "TRUE"
 #    - name: PRICE_FEED
-#      value: hubble
+#      value: "hubble"
+#    - name: SERVER_MODE
+#      value: "TRUE"
+#    - name: SERVER_PORT
+#      value: "8080"
   secrets:
     keypair.json:
     VALIDATOR_RPC_URL:
