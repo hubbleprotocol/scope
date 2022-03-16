@@ -82,7 +82,7 @@ enum Actions {
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
         /// Activate the health webserver for Kubernetes
-        #[clap(long, env = "SERVER_MODE")]
+        #[clap(long, env)]
         server: bool,
         /// Embedded webserver port
         /// Only valid if --server is also used

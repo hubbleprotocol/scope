@@ -33,7 +33,7 @@ service-base-chart:
 #      value: "TRUE"
 #    - name: PRICE_FEED
 #      value: "hubble"
-#    - name: SERVER_MODE
+#    - name: SERVER
 #      value: "TRUE"
 #    - name: SERVER_PORT
 #      value: "8080"
