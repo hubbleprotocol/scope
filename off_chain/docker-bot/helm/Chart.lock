@@ -1,0 +1,6 @@
+dependencies:
+- name: service-base-chart
+  repository: s3://helmrepository.build.hubbleprotocol.io
+  version: 0.0.1-SNAPSHOT-1644324659
+digest: sha256:01fd6db52ad60c059cddfa7c3f29cfdf18b9f985d147563838a90dbeb6c7bc47
+generated: "2022-02-08T12:51:57.0864371Z"

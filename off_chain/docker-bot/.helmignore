@@ -1,0 +1,14 @@
+**/.git
+**/.gitignore
+**/.github
+**/.idea
+**/*.md
+**/docs
+**/migrations
+**/node_modules
+**/target
+**/test-ledger
+**/.dockerignore
+**/.travis.yml
+**/.editorconfig
+**/*.tgz

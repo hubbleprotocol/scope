@@ -1,0 +1,106 @@
+name: Scope crank Bot
+
+on: [push]
+
+jobs:
+  build_docker:
+    runs-on: ubuntu-latest
+    outputs:
+      build_version: ${{ steps.set_versions.outputs.build_version }}
+      release_version: ${{ steps.set_versions.outputs.release_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Set up SSH keys
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: |
+            ${{ secrets.HUBBLE_GITHUB_DEPLOY_KEY }}
+      - name: Set versions
+        id: set_versions
+        shell: bash
+        working-directory: ./off_chain/scope-cli
+        run: ../../.github/scripts/set-cargo-build-versions.sh
+      - name: Docker buildx (build)
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          ssh: |
+            default=${{ env.SSH_AUTH_SOCK }}
+          file: off_chain/docker-bot/Dockerfile
+          tags: hubbleprotocol/liquidations-bot:${{ steps.set_versions.outputs.build_version }}
+          push: true
+          target: release
+          cache-from: type=gha
+          cache-to: type=gha,mode=min
+  build_helm:
+    needs: build_docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Helm build
+        id: helm_build
+        uses: docker/build-push-action@v2
+        with:
+          file: ./.github/docker/helm.Dockerfile
+          tags: hubbleprotocol/liquidations-bot-helm-build:${{ needs.build_docker.outputs.build_version }}
+          push: false
+          secrets: |
+            "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID_HELM_REPO }}"
+            "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY_HELM_REPO }}"
+          build-args: |
+            "CHART=liquidations-bot"
+            "BUILD_VERSION=${{ needs.build_docker.outputs.build_version }}"
+  pre_release:
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs:
+      - build_docker
+      - build_helm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Fetch release artifact
+        id: fetch_release_bin
+        uses: docker/build-push-action@v2
+        with:
+          file: off_chain/docker-bot/Dockerfile
+          tags: hubbleprotocol/scope-bot-release-bin:${{ needs.build_docker.outputs.build_version }}
+          push: false
+          target: release-bin
+          outputs: "type=tar,dest=scope-bot-${{ needs.build_docker.outputs.build_version }}.tar"
+          cache-from: type=gha
+      - name: Create pre-release
+        id: pre_release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: scope-bot/${{ needs.build_docker.outputs.release_version }}
+          prerelease: true
+          title: scope-bot/${{ needs.build_docker.outputs.release_version }}
+          files: |
+            scope-bot-*.tar
+      - name: Publish release event
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.HUBBLEPROTOCOLBOT_WRITE_REPO_PAT }}
+          repository: hubbleprotocol/hubble-infrastructure
+          event-type: helm-release
+          client-payload: '{"name": "scope-bot", "namespace": "bot", "sub_dir": "scope-bot", "build_version": "${{ needs.build_docker.outputs.build_version }}", "release_version": "${{ needs.build_docker.outputs.release_version }}", "changelog_url": "${{ github.server_url }}/${{ github.repository }}/releases/tag/scope-bot%2F${{ needs.build_docker.outputs.release_version }}", "envs": ["dev", "prod"]}'

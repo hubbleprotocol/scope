@@ -1,0 +1,9 @@
+apiVersion: v2
+name: scope-bot
+description: Scope crank bot
+type: application
+version: 0.0.1
+dependencies:
+  - name: service-base-chart
+    version: 0.0.1-SNAPSHOT-1644324659
+    repository: "@hubbleprotocol"

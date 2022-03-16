@@ -1,0 +1,32 @@
+service-base-chart:
+  applicationName: scope-bot
+  image:
+    repository: hubbleprotocol/scope-bot
+    tag: latest
+  volumeMounts:
+    - name: hubble-config-vol
+      mountPath: /usr/share/hubble
+      readOnly: true
+    - name: hubble-secret-vol
+      mountPath: /root/.hubble
+      readOnly: true
+  volumes:
+    - name: hubble-config-vol
+      configMap:
+        name: scope-bot-config
+        defaultMode: 292
+    - name: hubble-secret-vol
+      secret:
+        secretName: scope-bot-secret
+        defaultMode: 292
+  envVars:
+    - name: VALIDATOR_RPC_URL
+      valueFrom:
+        secretKeyRef:
+          name: scope-bot-secret
+          key: VALIDATOR_RPC_URL
+    - name: KEYPAIR
+      value: /root/.hubble/keypair.json
+  secrets:
+    keypair.json:
+    VALIDATOR_RPC_URL:
