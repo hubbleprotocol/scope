@@ -53,7 +53,7 @@ export class ScopeBot {
             '--keypair',
             this.keypair,
             '--price-feed',
-            this.price_feed,
+            this.price_feed
         ]
     }
 
@@ -143,6 +143,8 @@ export class ScopeBot {
         let args = [
             ...this.base_args(),
             'crank',
+            '--refresh-interval-slot',
+            '10',
             // TODO: allow to test with local mapping
         ];
 
