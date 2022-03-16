@@ -18,7 +18,7 @@ RUN echo -e "[net]\ngit-fetch-with-cli = true" > /root/.cargo/config
 COPY / /scope
 WORKDIR /scope/off_chain/scope-cli
 
-RUN cargo install --root /bot
+RUN cargo install --root /bot --path .
 
 FROM base AS release
 
