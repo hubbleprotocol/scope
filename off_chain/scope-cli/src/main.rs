@@ -16,7 +16,7 @@ use tracing::{error, info, trace, warn};
 
 use anyhow::Result;
 
-mod webserver;
+mod web;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -127,7 +127,7 @@ fn main() -> Result<()> {
                 server_port,
             } => {
                 if server {
-                    webserver::server_thread_start(([0, 0, 0, 0], server_port).into())?;
+                    web::server::thread_start(server_port)?;
                 }
                 crank(&mut scope, (&mapping).as_ref(), refresh_interval_slot)
             }
