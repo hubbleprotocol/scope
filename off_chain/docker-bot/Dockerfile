@@ -12,17 +12,13 @@ RUN yum -y install git unzip build-essential autoconf libtool openssl-devel
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $TOOLCHAIN
 ENV PATH=$PATH:/root/.cargo/bin
 
-# Authorize SSH Host
-RUN mkdir -p -m 0600 ~/.ssh && \
-    ssh-keyscan github.com >> ~/.ssh/known_hosts
-
 # Allow cargo to fetch with git cli
 RUN echo -e "[net]\ngit-fetch-with-cli = true" > /root/.cargo/config
 
 COPY / /scope
 WORKDIR /scope/off_chain/scope-cli
 
-RUN --mount=type=ssh cargo install --root /bot
+RUN cargo install --root /bot
 
 FROM base AS release
 

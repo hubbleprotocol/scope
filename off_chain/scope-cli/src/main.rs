@@ -36,7 +36,7 @@ struct Args {
     price_feed: String,
 
     /// Set flag to activate json log output
-    #[clap(long, env)]
+    #[clap(long, env = "JSON_LOGS")]
     json: bool,
 
     /// Subcommand to execute

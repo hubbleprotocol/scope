@@ -18,11 +18,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - name: Set up SSH keys
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: |
-            ${{ secrets.HUBBLE_GITHUB_DEPLOY_KEY }}
       - name: Set versions
         id: set_versions
         shell: bash
@@ -32,10 +27,8 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          ssh: |
-            default=${{ env.SSH_AUTH_SOCK }}
           file: off_chain/docker-bot/Dockerfile
-          tags: hubbleprotocol/liquidations-bot:${{ steps.set_versions.outputs.build_version }}
+          tags: hubbleprotocol/scope-bot:${{ steps.set_versions.outputs.build_version }}
           push: true
           target: release
           cache-from: type=gha
@@ -53,13 +46,13 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: ./.github/docker/helm.Dockerfile
-          tags: hubbleprotocol/liquidations-bot-helm-build:${{ needs.build_docker.outputs.build_version }}
+          tags: hubbleprotocol/scope-bot-helm-build:${{ needs.build_docker.outputs.build_version }}
           push: false
           secrets: |
             "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID_HELM_REPO }}"
             "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY_HELM_REPO }}"
           build-args: |
-            "CHART=liquidations-bot"
+            "CHART=scope-bot"
             "BUILD_VERSION=${{ needs.build_docker.outputs.build_version }}"
   pre_release:
     if: ${{ github.ref == 'refs/heads/master' }}

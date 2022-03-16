@@ -6,5 +6,7 @@ set -e
 # PROGRAM_ID
 # KEYPAIR (tx payer)
 # REFRESH_INTERVAL_SLOT (optional default to 30)
+# JSON_LOGS
+# PRICE_FEED
 
-exec ./scope --cluster "$VALIDATOR_RPC_URL" --price-feed "hubble" --json crank $@
+exec ./scope --cluster "$VALIDATOR_RPC_URL" crank $@
