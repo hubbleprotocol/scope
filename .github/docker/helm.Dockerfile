@@ -1,9 +1,9 @@
 FROM hubbleprotocol/helm:0.0.1
 
-ARG CHART
 ARG BUILD_VERSION
+ENV CHART=scope-bot
 
-COPY /bots/$CHART/helm /build/helm
+COPY /off_chain/docker-bot/helm /build/helm
 COPY /.github/scripts /build/scripts
 WORKDIR /build/helm
 

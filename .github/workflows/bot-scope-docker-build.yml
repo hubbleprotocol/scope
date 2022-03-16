@@ -52,7 +52,6 @@ jobs:
             "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID_HELM_REPO }}"
             "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY_HELM_REPO }}"
           build-args: |
-            "CHART=scope-bot"
             "BUILD_VERSION=${{ needs.build_docker.outputs.build_version }}"
   pre_release:
     if: ${{ github.ref == 'refs/heads/master' }}
