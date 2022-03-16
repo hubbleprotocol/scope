@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::fs;
 use std::{env, path::PathBuf, str::FromStr};
 
@@ -23,14 +23,16 @@ fn main() -> Result<()> {
         keypair_path.as_os_str().to_string_lossy()
     );
 
-    let keypair_json = fs::read(keypair_path)?;
+    let keypair_json =
+        fs::read(&keypair_path).context(format!("Failed to read keypair {:?}", keypair_path))?;
 
     let keypair: Vec<u8> = serde_json::from_slice(&keypair_json)?;
     let pubkey = &keypair[32..64];
 
     let pubkey_json = serde_json::to_string(pubkey)?;
 
-    fs::write(pubkey_path, pubkey_json)?;
+    fs::write(&pubkey_path, pubkey_json)
+        .context(format!("Failed to write pubkey {:?}", pubkey_path))?;
 
     Ok(())
 }
