@@ -22,7 +22,7 @@ Step 4:
 Step 5:
 - [ ] Add support for non pyth tokens, switchboard, index prices
 
-Low prio:
+Backlog:
 - [ ] Update to last pyth version
 - [ ] Crank only when price change
 - [ ] Autorefresh of mapping in crank mode?
