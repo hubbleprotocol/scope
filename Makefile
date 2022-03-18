@@ -142,3 +142,14 @@ update-mapping:
 
 crank:
 > cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank
+
+price-show:
+>@ if [ $(CLUSTER) = "localnet" ]; then\
+      cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show;\
+   fi
+>@ if [ $(CLUSTER) = "devnet" ]; then\
+       cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+   fi
+>@ if [ $(CLUSTER) = "mainnet" ] || [ $(CLUSTER) = "mainnet-beta" ]; then\
+       cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+   fi

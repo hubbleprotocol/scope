@@ -14,7 +14,7 @@ use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
 use tracing::{debug, error, event, info, span, trace, warn, Level};
 
 use crate::config::{TokenConf, TokenConfList};
-use crate::utils::find_data_address;
+use crate::utils::{find_data_address, price_to_f64};
 
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 27;
@@ -282,8 +282,27 @@ impl ScopeClient {
         Ok(age)
     }
 
+    /// Log current prices
+    /// Note: this uses local mapping
+    pub fn log_prices(&self) -> Result<()> {
+        let prices = self.get_prices()?.prices;
+
+        for (idx, ((dated_price, _), name)) in prices
+            .iter()
+            .zip(&self.oracle_mappings)
+            .zip(&self.token_pairs)
+            .enumerate()
+            .filter(|(_, ((_, map), _))| map.is_some())
+        {
+            let price = price_to_f64(&dated_price.price);
+            let price = format!("{price:.5}");
+            info!(idx, %price, "slot" = dated_price.last_updated_slot, %name);
+        }
+        Ok(())
+    }
+
     /// Get all prices
-    pub fn get_prices(&self) -> Result<OraclePrices> {
+    fn get_prices(&self) -> Result<OraclePrices> {
         let prices: OraclePrices = self.program.account(self.oracle_prices_acc)?;
         Ok(prices)
     }
