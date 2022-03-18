@@ -233,15 +233,14 @@ impl ScopeClient {
                 } else {
                     let new_prices = self.get_prices()?;
                     // if any price has the same date as previously in the chunk
-                    if chunk.iter().any(|(idx, _)| {
+                    if let Some((id, _)) = chunk.iter().find(|(idx, _)| {
                         new_prices.prices[*idx].last_updated_slot
                             == oracle_prices.prices[*idx].last_updated_slot
                     }) {
                         event!(
                             Level::ERROR,
-                            "chunk" = ?price_ids,
-                            "new" = ?new_prices.prices,
-                            "old" = ?oracle_prices.prices,
+                            "chunk" = ?chunk,
+                            "first_failed_id" = ?id,
                             "Refresh of some prices failed"
                         );
                     }
