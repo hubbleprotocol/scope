@@ -23,6 +23,7 @@ Step 5:
 - [ ] Add support for non pyth tokens, switchboard, index prices
 
 Backlog:
+- [ ] Scope-cli: Monitor user lamports in crank mode
 - [ ] Update to last pyth version
 - [ ] Crank only when price change
 - [ ] Autorefresh of mapping in crank mode?
