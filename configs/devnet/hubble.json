@@ -47,5 +47,26 @@
       "token_pair": "MSOL/USD",
       "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ"
     }
+  ],
+  [
+    7,
+    {
+      "token_pair": "UST/USD",
+      "oracle_mapping": "AUKjh1oVPZyudi3nzYSsdZxSjq42afUCvsdbKFc5CbD"
+    }
+  ],
+  [
+    8,
+    {
+      "token_pair": "BNB/USD",
+      "oracle_mapping": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b"
+    }
+  ],
+  [
+    9,
+    {
+      "token_pair": "AVAX/USD",
+      "oracle_mapping": "FVb5h1VmHPfVb1RfqZckchq18GxRv4iKt8T4eVTQAqdz"
+    }
   ]
 ]
