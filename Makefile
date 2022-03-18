@@ -134,22 +134,18 @@ airdrop: $(OWNER_KEYPAIR)
        echo "No airdrop on mainnet";\
    fi
 
-init:
-> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+init: $(SCOPE_CLI)
+> ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
-update-mapping:
-> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) update --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+update-mapping: $(SCOPE_CLI)
+> ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) update --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
-crank:
-> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank
+crank: $(SCOPE_CLI)
+> ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank
 
-price-show:
->@ if [ $(CLUSTER) = "localnet" ]; then\
-      cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show;\
-   fi
->@ if [ $(CLUSTER) = "devnet" ]; then\
-       cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
-   fi
->@ if [ $(CLUSTER) = "mainnet" ] || [ $(CLUSTER) = "mainnet-beta" ]; then\
-       cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+get-prices: $(SCOPE_CLI)
+>@ if [ $(CLUSTER) = "devnet" ] || [ $(CLUSTER) = "mainnet" ]; then\
+       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+   else\
+       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show;\
    fi
