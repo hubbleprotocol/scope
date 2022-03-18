@@ -178,7 +178,7 @@ impl ScopeClient {
 
         for (nb, chunk) in to_refresh_idx.chunks(MAX_REFRESH_CHUNK_SIZE).enumerate() {
             let _span = span!(Level::TRACE, "refresh_chunk", "chunk.nb" = %nb, ?chunk).entered();
-            if let Err(e) = self.ix_refresh_price_list(chunk.to_vec()) {
+            if let Err(e) = self.ix_refresh_price_list(chunk) {
                 event!(Level::ERROR, "err" = ?e, "Refresh of some prices failed");
             }
         }
@@ -223,13 +223,28 @@ impl ScopeClient {
                 .ok_or(anyhow!("Some prices have been updated in the future"))?;
 
             if age >= max_age {
-                let price_ids = chunk
+                let price_ids: Vec<_> = chunk
                     .iter()
                     .map(|(idx, _)| u16::try_from(*idx).unwrap())
                     .collect();
                 debug!("Refresh chunk: {:?}", price_ids);
-                if let Err(e) = self.ix_refresh_price_list(price_ids) {
+                if let Err(e) = self.ix_refresh_price_list(&price_ids) {
                     event!(Level::ERROR, "err" = ?e, "Refresh of some prices failed");
+                } else {
+                    let new_prices = self.get_prices()?;
+                    // if any price has the same date as previously in the chunk
+                    if chunk.iter().any(|(idx, _)| {
+                        new_prices.prices[*idx].last_updated_slot
+                            == oracle_prices.prices[*idx].last_updated_slot
+                    }) {
+                        event!(
+                            Level::ERROR,
+                            "chunk" = ?price_ids,
+                            "new" = ?new_prices.prices,
+                            "old" = ?oracle_prices.prices,
+                            "Refresh of some prices failed"
+                        );
+                    }
                 }
             } else {
                 trace!("Chunk is too recent, stop");
@@ -428,7 +443,7 @@ impl ScopeClient {
     }
 
     #[tracing::instrument(skip(self))]
-    fn ix_refresh_price_list(&self, tokens: Vec<u16>) -> Result<()> {
+    fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<()> {
         let refresh_account = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
@@ -456,6 +471,8 @@ impl ScopeClient {
                 )
             }
         }
+
+        let tokens = tokens.to_vec();
 
         let tx = request
             .args(instruction::RefreshPriceList { tokens })
