@@ -141,4 +141,4 @@ update-mapping:
 > cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) update --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 crank:
-> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> cargo run --bin scope -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank
