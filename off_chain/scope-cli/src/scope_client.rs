@@ -238,7 +238,7 @@ impl ScopeClient {
                             == oracle_prices.prices[*idx].last_updated_slot
                     }) {
                         event!(
-                            Level::ERROR,
+                            Level::WARN,
                             "chunk" = ?chunk,
                             "first_failed_id" = ?id,
                             "Refresh of some prices failed"
