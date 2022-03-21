@@ -1,5 +1,6 @@
 use std::mem::size_of;
 
+use anchor_client::solana_client::rpc_client::RpcClient;
 use anchor_client::{Client, Program};
 
 use solana_sdk::clock;
@@ -14,7 +15,7 @@ use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
 use tracing::{debug, error, event, info, span, trace, warn, Level};
 
 use crate::config::{TokenConf, TokenConfList};
-use crate::utils::{find_data_address, price_to_f64};
+use crate::utils::{find_data_address, get_clock, price_to_f64};
 
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 27;
@@ -46,6 +47,8 @@ impl ScopeClient {
             .account::<Configuration>(configuration_acc)
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
+        debug!(%oracle_prices_pbk, %oracle_mappings_pbk, %configuration_acc);
+
         Ok(Self {
             program,
             program_data_acc,
@@ -57,6 +60,7 @@ impl ScopeClient {
     }
 
     /// Create a new client instance after initializing the program accounts
+    #[tracing::instrument(skip(client))]
     pub fn new_init_program(
         client: &Client,
         program_id: &Pubkey,
@@ -82,6 +86,8 @@ impl ScopeClient {
             &oracle_mappings_acc,
             price_feed,
         )?;
+
+        debug!(?oracle_prices_acc, "oracle_prices_pbk" = %oracle_prices_acc.pubkey(), ?oracle_mappings_acc, "oracle_mappings_pbk" = %oracle_prices_acc.pubkey(), %configuration_acc);
 
         Ok(Self {
             program,
@@ -206,11 +212,7 @@ impl ScopeClient {
         // Sort the prices from the oldest to the youngest.
         prices.sort_by(|a, b| a.1.cmp(&b.1));
 
-        let clock: Clock = self
-            .program
-            .rpc()
-            .get_account(&Clock::id())?
-            .deserialize_data()?;
+        let clock: Clock = get_clock(&self.program.rpc())?;
 
         let current_slot = clock.slot;
         trace!(current_slot);
@@ -268,11 +270,7 @@ impl ScopeClient {
 
         trace!(oldest_price_slot);
 
-        let clock: Clock = self
-            .program
-            .rpc()
-            .get_account(&Clock::id())?
-            .deserialize_data()?;
+        let clock: Clock = get_clock(&self.program.rpc())?;
 
         let age = clock
             .slot
@@ -299,6 +297,11 @@ impl ScopeClient {
             info!(idx, %price, "slot" = dated_price.last_updated_slot, %name);
         }
         Ok(())
+    }
+
+    /// Get an the rpc instance used by the ScopeClient
+    pub fn get_rpc(&self) -> RpcClient {
+        self.program.rpc()
     }
 
     /// Get all prices

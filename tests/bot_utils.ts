@@ -180,8 +180,7 @@ export class ScopeBot {
 
         // now lets wait until we get our started chunk
         // to ensure we are all up and running
-        const chunkReady = await this.nextLog(10000);
-        assert(chunkReady.includes('Refresh interval set to'), 'first chunk should give information on refresh interval');
+        await this.nextLogMatches((c) => c.includes('Refresh interval set to'), 10000);
     }
 
     stop() {

@@ -1,6 +1,7 @@
 use anchor_client::solana_sdk::signature::read_keypair_file;
 use anchor_client::{solana_sdk::pubkey::Pubkey, Client, Cluster};
 
+use scope_client::utils::get_clock;
 use scope_client::{ScopeClient, TokenConfList};
 use solana_sdk::clock;
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -187,6 +188,11 @@ fn show(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Resul
     } else {
         scope.download_oracle_mapping()?;
     }
+
+    let current_slot = get_clock(&scope.get_rpc())?.slot;
+
+    info!(current_slot);
+
     scope.log_prices()
 }
 
