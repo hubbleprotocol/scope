@@ -21,6 +21,16 @@ pub struct TokenConf {
     /// Onchain account used as source for the exchange rate.
     #[serde(with = "serde_string")] // Use bs58 for serialization
     pub oracle_mapping: Pubkey,
+
+    #[serde]
+    pub pull_type: PullType,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag="pull_type")]
+pub enum PullType {
+    Pyth,
+    YiToken,
 }
 
 impl TokenConfList {
