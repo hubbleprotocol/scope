@@ -32,7 +32,7 @@ pub struct Initialize<'info> {
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 }
 
-pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
+pub fn process(ctx: Context<Initialize>, _: String) -> ProgramResult {
     // Initialize oracle mapping account
     let _mappings = ctx.accounts.oracle_mappings.load_init()?;
 

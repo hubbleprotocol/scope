@@ -14,17 +14,16 @@ name = "scope_client"
 path = "src/lib.rs"
 
 [dependencies]
-anchor-client = "0.22.0"
+anchor-client = "~0.20.1"
 scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
-anyhow = "1.0.32"
+anyhow = "1.0.0"
 clap = { version = "3.1.0", features = ["derive", "env", "wrap_help"] }
 # Keep an old version of solana-sdk for now because of anchor requirements
-solana-sdk = "1.7.2"
+solana-sdk = "~1.8.12"
 url = "2.2.2"
-shellexpand = "2.1.0"
 serde = "1.0.136"
 serde_json = "1.0.79"
-tracing = "0.1.32"
+tracing = "0.1.10"
 tracing-subscriber = { version = "0.3.9", features = ["std", "fmt", "json"] }
 tokio = "1.17.0"
 warp = "0.3.2"

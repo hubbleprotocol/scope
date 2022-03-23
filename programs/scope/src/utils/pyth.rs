@@ -82,8 +82,7 @@ pub fn validate_pyth_price(pyth_price: &pyth_client::Price) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use anchor_lang::prelude::*;
-
+    use super::*;
     const PRICE_ACCT_SIZE: usize = 3312;
 
     const PRICE_MAGIC_OFFSET: usize = 0;
@@ -91,7 +90,7 @@ mod tests {
     const PRICE_TYPE_OFFSET: usize = 16;
     const PRICE_STATUS_OFFSET: usize = 224;
 
-    fn assert_err<T>(res: Result<T>, err: ProgramError) {
+    /*fn assert_err<T>(res: Result<T>, err: ProgramError) {
         match res {
             Ok(_) => panic!("Expect error {err} received Ok"),
             // Expected branch
@@ -99,6 +98,9 @@ mod tests {
             // Other errors
             Err(recv_e) => panic!("Expect error {err:?} received {recv_e:?}"),
         };
+    }*/
+    fn assert_err<T>(res: Result<T>, err: ProgramError) {
+        assert_eq!(ProgramError::from(res.err().unwrap()), err);
     }
 
     #[test]

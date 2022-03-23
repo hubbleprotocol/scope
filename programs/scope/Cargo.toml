@@ -13,7 +13,7 @@ no-entrypoint = []
 cpi = ["no-entrypoint"]
 
 [dependencies]
-anchor-lang = "0.22.0"
+anchor-lang = "0.20.1"
 num_enum = "0.5.6"
 pyth-client = "0.2.2"
 

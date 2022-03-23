@@ -13,33 +13,33 @@ declare_id!(PROGRAM_ID);
 pub const MAX_ENTRIES: usize = 512;
 
 #[program]
-mod scope {
+pub mod scope {
 
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> ProgramResult {
         handler_initialize::process(ctx, feed_name)
     }
 
-    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> Result<()> {
+    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
-    pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: u64) -> Result<()> {
+    pub fn refresh_batch_prices(ctx: Context<RefreshBatch>, first_token: u64) -> ProgramResult {
         let first_token: usize = first_token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_refresh_prices::refresh_batch_prices(ctx, first_token)
     }
 
-    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u16>) -> Result<()> {
+    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u16>) -> ProgramResult {
         handler_refresh_prices::refresh_price_list(ctx, &tokens)
     }
 
-    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64) -> Result<()> {
+    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64) -> ProgramResult {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
@@ -96,7 +96,7 @@ pub struct Configuration {
     _padding: [u64; 1267],
 }
 
-#[error_code]
+#[error]
 #[derive(PartialEq, Eq)]
 pub enum ScopeError {
     #[msg("Integer overflow")]
