@@ -23,7 +23,6 @@ default = ["localnet"]
 
 [dependencies]
 anchor-lang = "0.18.2"
-anchor-spl = "0.18.2"
 arrayref = "0.3.6"
 bytemuck = { version = "1.7.2" }
 

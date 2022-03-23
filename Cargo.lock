@@ -340,18 +340,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anchor-spl"
-version = "0.18.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6d6c8fbc834319618581a4e19807a30e76326b9981abd069addb55acf0647db"
-dependencies = [
- "anchor-lang 0.18.2",
- "solana-program",
- "spl-associated-token-account",
- "spl-token",
-]
-
-[[package]]
 name = "anchor-syn"
 version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2459,7 +2447,6 @@ name = "pyth"
 version = "0.1.0"
 dependencies = [
  "anchor-lang 0.18.2",
- "anchor-spl",
  "anyhow",
  "arrayref",
  "bytemuck",
