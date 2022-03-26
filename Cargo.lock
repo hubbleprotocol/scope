@@ -2796,11 +2796,9 @@ name = "scope"
 version = "0.1.0"
 dependencies = [
  "anchor-lang 0.20.1",
- "anyhow",
+ "cfg-if 1.0.0",
  "num_enum",
  "pyth-client",
- "serde",
- "serde_json",
 ]
 
 [[package]]

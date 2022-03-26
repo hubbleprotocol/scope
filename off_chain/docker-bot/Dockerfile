@@ -19,11 +19,9 @@ COPY / /scope
 
 # Just simulate a valid scope program
 WORKDIR /scope
-RUN mkdir -p keys/localnet
-RUN echo "[136,209,142,151,46,179,22,31,181,123,45,32,9,176,77,44,34,235,236,219,127,117,84,100,128,11,119,178,212,10,72,91,24,182,101,20,142,227,3,67,30,101,120,181,199,162,221,168,118,163,228,210,0,51,111,6,30,93,175,34,94,52,16,162]" > keys/localnet/scope.json
 
 WORKDIR /scope/off_chain/scope-cli
-RUN cargo install --root /bot --path .
+RUN CLUSTER=mainnet cargo install --root /bot --path . --locked
 
 FROM base AS release
 

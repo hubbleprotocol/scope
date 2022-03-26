@@ -11,13 +11,12 @@ name = "scope"
 [features]
 no-entrypoint = []
 cpi = ["no-entrypoint"]
+skip_price_validation = []
+devnet = ["skip_price_validation"]
+localnet = []
 
 [dependencies]
 anchor-lang = "0.20.1"
 num_enum = "0.5.6"
 pyth-client = "0.2.2"
-
-[build-dependencies]
-serde = "1.0.136"
-serde_json = "1.0.79"
-anyhow = "1.0.54"
+cfg-if = "1.0.0"

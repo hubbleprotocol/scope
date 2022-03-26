@@ -5,8 +5,9 @@ pub mod handlers;
 pub mod utils;
 
 pub use handlers::*;
+pub mod program_id;
 
-const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(env!("OUT_DIR"), "/pubkey.rs")));
+pub use program_id::PROGRAM_ID;
 
 declare_id!(PROGRAM_ID);
 
