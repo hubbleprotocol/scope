@@ -14,11 +14,14 @@ pub const MAINNET_PROGRAM_ID: Pubkey = Pubkey::new_from_array([
 ]);
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "localnet")] {
+    if #[cfg(feature = "mainnet")] {
+        pub const PROGRAM_ID:Pubkey = MAINNET_PROGRAM_ID;
+    }
+    else if #[cfg(feature = "localnet")] {
         pub const PROGRAM_ID:Pubkey = LOCALNET_PROGRAM_ID;
     } else if #[cfg(feature = "devnet")] {
         pub const PROGRAM_ID:Pubkey = DEVNET_PROGRAM_ID;
-    } else /* Default to mainnet*/ {
-        pub const PROGRAM_ID:Pubkey = MAINNET_PROGRAM_ID;
+    } else {
+        compile_error!("At least one of 'mainnet', 'localnet' or 'devnet' feature need to be set")
     }
 }
