@@ -1,4 +1,31 @@
-# Example of crank refresh operation: 
+# Scope
+
+*Scope sees all prices in one glance.*
+
+[![Integration tests](https://github.com/hubbleprotocol/scope/actions/workflows/ts-integration.yaml/badge.svg)](https://github.com/hubbleprotocol/scope/actions/workflows/ts-integration.yaml)
+
+Scope is a price oracle aggregator living on the Solana network. It copies data from multiple on-chain oracles' accounts into one "price feed".
+
+Scope prevalidate the prices with a preset of rules and perform the update only if they meet the criteria.
+
+The repository contains two software:
+- [`scope`](./programs/scope/) on-chain program.
+- [`scope-cli`](./off_chain/scope-cli/) that provide administration commands and a bot feature to trigger the price feed update.
+
+## Limitations
+
+- The association between an price at a given index in the price feed and the token pair associated to this price need is not stored on chain.
+- A price feed is currently limited to 512 prices.
+- At the moment, only pyth prices are supported.
+
+## Future updates/ideas
+
+- Support of switchboard as a price source.
+- Support different refresh rates in the bot (stacked stable coin price change less often than other token).
+- Open creation of price feed to any user who will became admin of the feed.
+- Allow extensible price feed (when resizable account feature is available in Solana mainnet)
+
+## Example of crank refresh operation: 
 
 - For simplification let's say we only refresh at most 3 prices per IX.
 - In this example, we have 10 prices in scope named A, B, C, D, E, F, G, H, I, J.
@@ -6,9 +33,9 @@
 - If we fire an IX, we fill the IX as much as possible (minimum refresh size is 3).
 - Price age is given by source oracle (pyth) not the current slot of refresh.
 
-## Steps
+### Steps
 
-### Loop 0
+#### Loop 0
 
 - Starting ages: A: 0, B: 5, C: 10, D: 15, E: 20, F: 25, G: 30, H: 35, I: 5, J: 10
 - Refresh old prices:
@@ -20,7 +47,7 @@
 - Get the new oldest price: E: 25, so sleep for 5 slot (400ms*5).
 - Loop
 
-### Loop 1
+#### Loop 1
 
 - Starting ages: A: 10, B: 15, C: 20, D: 25, E: 30, F: 17, G: 8, H: 8, I: 15, J: 20
 - Refresh old prices:
