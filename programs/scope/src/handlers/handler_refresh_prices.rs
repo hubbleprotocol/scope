@@ -1,4 +1,4 @@
-use crate::utils::PriceType;
+use crate::utils::OracleType;
 use crate::{utils::get_price, ScopeError};
 use anchor_lang::prelude::*;
 
@@ -33,7 +33,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
         return Err(ScopeError::UnexpectedAccount.into());
     }
 
-    let price_type: PriceType = oracle_mappings.price_types[token]
+    let price_type: OracleType = oracle_mappings.price_types[token]
         .try_into()
         .map_err(|_| ScopeError::BadTokenType)?;
 
@@ -67,7 +67,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
             .price_info_accounts
             .get(token_idx)
             .ok_or(ScopeError::BadTokenNb)?;
-        let price_type: PriceType = oracle_mappings.price_types[token_idx]
+        let price_type: OracleType = oracle_mappings.price_types[token_idx]
             .try_into()
             .map_err(|_| ScopeError::BadTokenType)?;
         // Ignore unset mapping accounts

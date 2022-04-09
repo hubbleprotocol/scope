@@ -2128,6 +2128,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "nohash-hasher"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
+
+[[package]]
 name = "ntapi"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2880,10 +2886,10 @@ dependencies = [
  "anchor-spl",
  "anyhow",
  "clap 3.1.6",
+ "nohash-hasher",
  "scope",
  "serde",
  "serde_json",
- "solana-sdk",
  "spl-token",
  "tokio",
  "tracing",

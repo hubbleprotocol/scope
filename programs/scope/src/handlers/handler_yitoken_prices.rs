@@ -1,5 +1,5 @@
 use crate::utils::yitoken::get_price;
-use crate::utils::PriceType;
+use crate::utils::OracleType;
 use crate::ScopeError;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, TokenAccount};
@@ -30,7 +30,7 @@ pub struct RefreshYiToken<'info> {
 
 pub fn refresh_yi_token(ctx: Context<RefreshYiToken>, token: usize) -> ProgramResult {
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
-    let price_type: PriceType = oracle_mappings.price_types[token]
+    let price_type: OracleType = oracle_mappings.price_types[token]
         .try_into()
         .map_err(|_| ScopeError::BadTokenType)?;
 

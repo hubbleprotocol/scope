@@ -19,16 +19,16 @@ pub fn check_context<T>(ctx: &Context<T>) -> ProgramResult {
     Serialize, Deserialize, IntoPrimitive, TryFromPrimitive, Clone, Copy, PartialEq, Debug,
 )]
 #[repr(u8)]
-pub enum PriceType {
-    Pyth,
+pub enum OracleType {
+    Pyth = 0,
     Switchboard,
     YiToken,
 }
 
-pub fn get_price(price_type: PriceType, price_acc: &AccountInfo) -> crate::Result<DatedPrice> {
+pub fn get_price(price_type: OracleType, price_acc: &AccountInfo) -> crate::Result<DatedPrice> {
     match price_type {
-        PriceType::Pyth => pyth::get_price(price_acc),
-        PriceType::Switchboard => todo!(),
-        PriceType::YiToken => Err(ScopeError::BadTokenType.into()),
+        OracleType::Pyth => pyth::get_price(price_acc),
+        OracleType::Switchboard => todo!(),
+        OracleType::YiToken => Err(ScopeError::BadTokenType.into()),
     }
 }

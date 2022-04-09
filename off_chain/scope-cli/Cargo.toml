@@ -20,8 +20,6 @@ spl-token = { version = "3.1.1", features = ["no-entrypoint"] }
 scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
 anyhow = "1.0.0"
 clap = { version = "3.1.0", features = ["derive", "env", "wrap_help"] }
-# Keep an old version of solana-sdk for now because of anchor requirements
-solana-sdk = "~1.8.12"
 url = "2.2.2"
 serde = "1.0.136"
 serde_json = "1.0.79"
@@ -29,3 +27,4 @@ tracing = "0.1.10"
 tracing-subscriber = { version = "0.3.9", features = ["std", "fmt", "json"] }
 tokio = "1.17.0"
 warp = "0.3.2"
+nohash-hasher = "0.2.0"

@@ -1,13 +1,10 @@
 use std::str::FromStr;
 
 use anchor_client::solana_client::rpc_client::RpcClient;
-use scope::Price;
-use solana_sdk::pubkey::Pubkey;
-
+use anchor_client::solana_sdk::{clock::Clock, pubkey::Pubkey, sysvar::SysvarId};
 use anyhow::Result;
 
-use solana_sdk::clock::Clock;
-use solana_sdk::sysvar::SysvarId;
+use scope::Price;
 
 /// Get the program data address of the given program id
 pub fn find_data_address(pid: &Pubkey) -> Pubkey {

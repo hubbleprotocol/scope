@@ -1,19 +1,19 @@
-use crate::utils::PriceType;
+use crate::utils::OracleType;
 use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::clock;
 use anchor_spl::token::{Mint, TokenAccount};
 
 pub fn get_price(
-    price_type: PriceType,
+    price_type: OracleType,
     yi_underlying_tokens: &Account<TokenAccount>,
     yi_mint: &Account<Mint>,
     clock_slot: clock::Slot,
 ) -> Result<DatedPrice> {
     match price_type {
-        PriceType::Pyth => return Err(ScopeError::BadTokenType.into()),
-        PriceType::Switchboard => todo!(),
-        PriceType::YiToken => (),
+        OracleType::Pyth => return Err(ScopeError::BadTokenType.into()),
+        OracleType::Switchboard => todo!(),
+        OracleType::YiToken => (),
     }
     let yi_underlying_tokens_amount = yi_underlying_tokens.amount;
     let yi_mint_supply = yi_mint.supply;
