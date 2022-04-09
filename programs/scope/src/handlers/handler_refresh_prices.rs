@@ -52,7 +52,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
 
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
-        return Err(ProgramError::InvalidArgument.into());
+        return Err(ProgramError::InvalidArgument);
     }
     // Check the received token list is as long as the number of provided accounts
     if tokens.len() != ctx.remaining_accounts.len() {
