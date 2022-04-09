@@ -34,4 +34,3 @@ pub fn get_clock(rpc: &RpcClient) -> Result<Clock> {
 
     Ok(clock)
 }
-

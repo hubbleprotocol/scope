@@ -1,9 +1,9 @@
 use std::{fs::File, io::BufReader, path::Path};
 
 use anyhow::Result;
+use scope::utils::PriceType;
 use serde::{Deserialize, Serialize};
 use solana_sdk::pubkey::Pubkey;
-use scope::utils::PriceType;
 
 // Format of storage of Scope configuration
 #[derive(Debug, Serialize, Deserialize)]

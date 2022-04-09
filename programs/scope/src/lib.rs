@@ -31,7 +31,9 @@ pub mod scope {
     }
 
     pub fn refresh_yi_token(ctx: Context<RefreshYiToken>, token: u64) -> ProgramResult {
-        let token: usize = token.try_into().map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
+        let token: usize = token
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_yitoken_prices::refresh_yi_token(ctx, token)
     }
 
@@ -40,7 +42,11 @@ pub mod scope {
         handler_refresh_prices::refresh_price_list(ctx, &tokens)
     }
 
-    pub fn update_mapping(ctx: Context<UpdateOracleMapping>, token: u64, price_type: u8) -> ProgramResult {
+    pub fn update_mapping(
+        ctx: Context<UpdateOracleMapping>,
+        token: u64,
+        price_type: u8,
+    ) -> ProgramResult {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;

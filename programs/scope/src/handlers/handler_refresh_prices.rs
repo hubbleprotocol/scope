@@ -63,7 +63,8 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
 
     for (&token_nb, received_account) in tokens.iter().zip(ctx.remaining_accounts.iter()) {
         let token_idx: usize = token_nb.into();
-        let oracle_mapping = oracle_mappings.price_info_accounts
+        let oracle_mapping = oracle_mappings
+            .price_info_accounts
             .get(token_idx)
             .ok_or(ScopeError::BadTokenNb)?;
         let price_type: PriceType = oracle_mappings.price_types[token_idx]

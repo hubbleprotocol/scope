@@ -22,6 +22,6 @@ cfg_if::cfg_if! {
     } else if #[cfg(feature = "devnet")] {
         pub const PROGRAM_ID:Pubkey = DEVNET_PROGRAM_ID;
     } else {
-        compile_error!("At least one of 'mainnet', 'localnet' or 'devnet' feature need to be set")
+        compile_error!("At least one of 'mainnet', 'localnet' or 'devnet' feature need to be set");
     }
 }
