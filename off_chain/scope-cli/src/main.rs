@@ -4,7 +4,7 @@ use anchor_client::{solana_sdk::pubkey::Pubkey, Client, Cluster};
 use anchor_client::solana_sdk::clock;
 use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
 use scope_client::utils::get_clock;
-use scope_client::{ScopeClient, TokenConfList};
+use scope_client::{ScopeClient, TokensConfig};
 use std::path::Path;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -161,7 +161,7 @@ fn init(
     let mut scope = ScopeClient::new_init_program(client, program_id, price_feed)?;
 
     if let Some(mapping) = mapping_op {
-        let token_list = TokenConfList::read_from_file(&mapping)?;
+        let token_list = TokensConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list)?;
         scope.upload_oracle_mapping()?;
     }
@@ -170,7 +170,7 @@ fn init(
 }
 
 fn upload(scope: &mut ScopeClient, mapping: &impl AsRef<Path>) -> Result<()> {
-    let token_list = TokenConfList::read_from_file(&mapping)?;
+    let token_list = TokensConfig::read_from_file(&mapping)?;
     scope.set_local_mapping(&token_list)?;
     scope.upload_oracle_mapping()
 }
@@ -183,7 +183,7 @@ fn download(scope: &mut ScopeClient, mapping: &impl AsRef<Path>) -> Result<()> {
 
 fn show(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Result<()> {
     if let Some(mapping) = mapping_op {
-        let token_list = TokenConfList::read_from_file(&mapping)?;
+        let token_list = TokensConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list)?;
     } else {
         scope.download_oracle_mapping()?;
@@ -204,7 +204,7 @@ fn crank(
     info!("Refresh interval set to {:?} slots", refresh_interval_slot);
 
     if let Some(mapping) = mapping_op {
-        let token_list = TokenConfList::read_from_file(&mapping)?;
+        let token_list = TokensConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list)?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
@@ -213,6 +213,7 @@ fn crank(
     loop {
         let start = Instant::now();
 
+        // TODO: rework
         if let Err(e) = scope.refresh_prices_older_than(refresh_interval_slot) {
             error!("Error while refreshing prices {:?}", e);
         }
@@ -224,7 +225,7 @@ fn crank(
         let elapsed = start.elapsed();
         trace!("last refresh duration was {:?}", elapsed);
 
-        let oldest_age = scope.get_oldest_price_age()?;
+        let oldest_age = scope.get_shortest_price_ttl()?;
         trace!(oldest_age);
 
         if refresh_interval_slot > oldest_age {

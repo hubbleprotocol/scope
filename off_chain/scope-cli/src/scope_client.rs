@@ -23,7 +23,8 @@ use scope::{
 };
 use tracing::{debug, error, event, info, span, trace, warn, Level};
 
-use crate::config::{TokenConf, TokenConfList};
+use crate::config::{TokenConfig, TokenList, TokensConfig};
+use crate::oracle_helpers::{self, entry_from_config, TokenEntry};
 use crate::utils::{find_data_address, get_clock, price_to_f64};
 
 /// Max number of refresh per tx
@@ -34,19 +35,14 @@ const EMPTY_STRING: String = String::new();
 
 pub static YI_MINT_ACC_STR: &str = "CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9";
 pub static YI_UNDERLYING_TOKEN_ACC_STR: &str = "EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc";
-pub const YI_TOKEN_U64: u64 = 10u64;
 
-#[derive(Debug)]
+type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {
     program: Program,
     program_data_acc: Pubkey,
     oracle_prices_acc: Pubkey,
     oracle_mappings_acc: Pubkey,
-    oracle_mappings: [Option<Pubkey>; scope::MAX_ENTRIES],
-    token_pairs: [String; scope::MAX_ENTRIES],
-    token_price_type: [scope::utils::OracleType; scope::MAX_ENTRIES],
-    yi_underlying_token_account: Pubkey,
-    yi_mint: Pubkey,
+    tokens: TokenEntryList,
 }
 
 impl ScopeClient {
@@ -73,11 +69,7 @@ impl ScopeClient {
             program_data_acc,
             oracle_prices_acc: oracle_prices_pbk,
             oracle_mappings_acc: oracle_mappings_pbk,
-            oracle_mappings: [None; scope::MAX_ENTRIES],
-            token_pairs: [EMPTY_STRING; scope::MAX_ENTRIES],
-            token_price_type: [OracleType::Pyth; scope::MAX_ENTRIES],
-            yi_underlying_token_account,
-            yi_mint: yi_mint_account,
+            tokens: IntMap::default(),
         })
     }
 
@@ -119,24 +111,31 @@ impl ScopeClient {
             program_data_acc,
             oracle_prices_acc: oracle_prices_acc.pubkey(),
             oracle_mappings_acc: oracle_mappings_acc.pubkey(),
-            oracle_mappings: [None; scope::MAX_ENTRIES],
-            token_pairs: [EMPTY_STRING; scope::MAX_ENTRIES],
-            token_price_type: [OracleType::Pyth; scope::MAX_ENTRIES],
-            yi_underlying_token_account,
-            yi_mint: yi_mint_account,
+            tokens: IntMap::default(),
         })
     }
 
     /// Set the locally known oracle mapping according to the provided configuration list.
-    pub fn set_local_mapping(&mut self, token_list: &TokenConfList) -> Result<()> {
+    pub fn set_local_mapping(&mut self, token_list: &TokensConfig) -> Result<()> {
         for (idx, token) in &token_list.tokens {
             let idx = usize::try_from(*idx)?;
             if idx >= scope::MAX_ENTRIES {
                 bail!("Out of range token index provided in token list configuration");
             }
-            self.oracle_mappings[idx] = Some(token.oracle_mapping);
-            self.token_pairs[idx] = token.token_pair.clone();
-            self.token_price_type[idx] = token.oracle_type;
+            let default_max_age = token_list.default_max_age;
+            let rpc = self.program.rpc();
+            // Transform the configuration entries in appropriate local token entries
+            // Local implies to get a copy of needed onchain data (as a cache)
+            let tokens_res: Result<TokenEntryList> = token_list
+                .tokens
+                .iter()
+                .map(|(id, token_conf)| {
+                    let token_entry: Box<dyn TokenEntry> =
+                        entry_from_config(token_conf, default_max_age, &rpc)?;
+                    Ok((*id, token_entry))
+                })
+                .collect();
+            self.tokens = tokens_res?;
         }
         Ok(())
     }
@@ -148,67 +147,72 @@ impl ScopeClient {
         let onchain_price_type_mapping = program_mapping.price_types;
 
         // For all "token" local and remote
-        for (token, (local_mapping, local_price_type)) in self
-            .oracle_mappings
-            .iter()
-            .zip(self.token_price_type.iter())
-            .enumerate()
-        {
-            let rem_mapping = onchain_accounts_mapping[token];
-            let rem_price_type = onchain_price_type_mapping[token];
+        for (token_idx, local_entry) in self.tokens {
+            let idx: usize = token_idx.try_into().unwrap();
+            let rem_mapping = &onchain_accounts_mapping[idx];
+            let rem_price_type = onchain_price_type_mapping[idx];
             // Update remote in case of difference
-            let local_mapping_pk = local_mapping.unwrap_or_default();
-            let loc_price_type_u8: u8 = *local_price_type as u8;
+            let local_mapping_pk = local_entry.get_mapping_account();
+            let loc_price_type_u8: u8 = local_entry.get_type().into();
             if rem_mapping != local_mapping_pk || rem_price_type != loc_price_type_u8 {
-                self.ix_update_mapping(&local_mapping_pk, token.try_into()?, loc_price_type_u8)?;
+                self.ix_update_mapping(
+                    &local_mapping_pk,
+                    token_idx.try_into()?,
+                    loc_price_type_u8,
+                )?;
             }
         }
         Ok(())
     }
 
     /// Update the local oracle mapping from the on-chain version
-    pub fn download_oracle_mapping(&mut self) -> Result<()> {
+    pub fn download_oracle_mapping(&mut self, default_max_age: clock::Slot) -> Result<()> {
         let onchain_oracle_mapping = self.get_program_mapping()?;
         let onchain_mapping = onchain_oracle_mapping.price_info_accounts;
         let onchain_types = onchain_oracle_mapping.price_types;
 
         let zero_pk = Pubkey::default();
-        for (loc_mapping, rem_mapping) in self.oracle_mappings.iter_mut().zip(onchain_mapping) {
-            *loc_mapping = if rem_mapping == zero_pk {
-                None
-            } else {
-                Some(rem_mapping)
-            };
-        }
-        for (loc_type, rem_type) in self.token_price_type.iter_mut().zip(onchain_types) {
-            *loc_type = rem_type.try_into()?;
-        }
+        let rpc = self.program.rpc();
+
+        let tokens_res: Result<TokenEntryList> = onchain_mapping
+            .iter()
+            .enumerate()
+            .zip(onchain_types)
+            .filter(|((_, &oracle_mapping), _)| oracle_mapping != zero_pk)
+            .map(|((idx, oracle_mapping), oracle_type)| {
+                let id: u16 = idx.try_into()?;
+                let oracle_conf = TokenConfig {
+                    token_pair: "".to_string(),
+                    oracle_type: oracle_type.try_into()?,
+                    max_age: None,
+                    oracle_mapping: oracle_mapping.clone(),
+                };
+                let entry = entry_from_config(&oracle_conf, default_max_age, &rpc)?;
+                Ok((id, entry))
+            })
+            .collect();
+        self.tokens = tokens_res?;
         Ok(())
     }
 
     /// Extract the local oracle mapping to a token list configuration
-    pub fn get_local_mapping(&self) -> Result<TokenConfList> {
-        let tokens: IntMap<u64, TokenConf> = self
-            .oracle_mappings
+    pub fn get_local_mapping(&self) -> Result<TokensConfig> {
+        let tokens: TokenList = self
+            .tokens
             .iter()
-            .enumerate()
-            .zip(self.token_price_type.iter())
-            .zip(self.token_pairs.iter())
-            .filter_map(|(((idx, mapping_op), price_type), pair)| {
-                mapping_op.as_ref().map(|mapping| {
-                    (
-                        u64::try_from(idx).unwrap(),
-                        TokenConf {
-                            token_pair: pair.clone(),
-                            oracle_mapping: *mapping,
-                            oracle_type: *price_type,
-                            max_age: None,
-                        },
-                    )
-                })
+            .map(|(id, entry)| {
+                (
+                    *id,
+                    TokenConfig {
+                        token_pair: entry.to_string(),
+                        oracle_mapping: *entry.get_mapping_account(),
+                        oracle_type: entry.get_type(),
+                        max_age: None,
+                    },
+                )
             })
             .collect();
-        Ok(TokenConfList {
+        Ok(TokensConfig {
             tokens,
             default_max_age: 0,
         })
@@ -309,79 +313,32 @@ impl ScopeClient {
         Ok(())
     }
 
-    #[tracing::instrument(skip(self))]
-    pub fn check_refresh_yi_token(&self) -> Result<()> {
+    /// Get the minimum remaining time to live of all prices.
+    ///
+    /// i.e. the number of slot until at least one price has reached its `max_age`
+    pub fn get_prices_shortest_ttl(&self) -> Result<clock::Slot> {
         let oracle_prices = self.get_prices()?;
 
-        let mut prices: Vec<_> = oracle_prices
-            .prices
+        let current_slot = get_clock(&self.get_rpc())?.slot;
+
+        let shortest_ttl = self
+            .tokens
             .iter()
-            .zip(self.oracle_mappings)
-            .zip(self.token_price_type) // Iterate with mappings to ensure the price is usable
-            .enumerate()
-            .filter(|(_, ((_, _), price_type))| *price_type == OracleType::YiToken) // keep track of indexes, needed for refresh
-            .filter_map(|(idx, ((dp, mapping_op), _))| mapping_op.map(|_| (idx, dp.price)))
-            .collect();
-
-        if prices.is_empty() {
-            info!("No Yi Token to refresh");
-            return Ok(());
-        };
-
-        if prices.len() != 1 {
-            error!("Error while refreshing Yi Token Prices, there can only be one price with PriceType::YiToken, found {}", prices.len());
-        };
-
-        let (yi_idx, yi_price) = prices.pop().unwrap();
-        let yi_underlying_tokens_amount = self.get_yi_underlying_token_account().unwrap().amount;
-        let yi_mint_supply = self.get_yi_mint().unwrap().supply;
-
-        let new_price: u64 = 100_000_000u128
-            .checked_mul(yi_underlying_tokens_amount.into())
-            .unwrap()
-            .checked_div(yi_mint_supply.into())
-            .unwrap()
-            .try_into()
-            .unwrap();
-        let old_price = yi_price.value;
-        if new_price != old_price {
-            self.ix_refresh_yi_token_price(yi_idx.try_into()?)?;
-            trace!(
-                "Prices for Yi Token updated successfully at yi_idx {}",
-                yi_idx
-            );
-        } else {
-            trace!("Price for Yi Token has not changed");
-        }
-
-        trace!("Check-update for Yi Token ran successfully");
-        Ok(())
-    }
-
-    /// Get age in slots of the oldest price
-    pub fn get_oldest_price_age(&self) -> Result<clock::Slot> {
-        let oracle_prices = self.get_prices()?;
-
-        let oldest_price_slot = oracle_prices
-            .prices
-            .iter()
-            .zip(self.oracle_mappings)
-            .zip(self.token_price_type)
-            .filter(|((_, _), price_type)| *price_type != OracleType::YiToken)
-            .filter_map(|((dp, mapping_op), _)| mapping_op.map(|_| dp.last_updated_slot))
+            .map(|(id, entry)| {
+                let price_slot = oracle_prices
+                    .prices
+                    .get(usize::from(*id))
+                    .unwrap()
+                    .last_updated_slot;
+                // default to no remaning slot (ttl=0)
+                let age = current_slot.checked_sub(price_slot).unwrap_or(0);
+                let remaining_slots = entry.get_max_age().checked_sub(age).unwrap_or(0);
+                remaining_slots
+            })
             .min()
             .unwrap_or(0);
 
-        trace!(oldest_price_slot);
-
-        let clock: Clock = get_clock(&self.program.rpc())?;
-
-        let age = clock
-            .slot
-            .checked_sub(oldest_price_slot)
-            .ok_or_else(|| anyhow!("Some prices have been updated in the future"))?;
-
-        Ok(age)
+        Ok(shortest_ttl)
     }
 
     /// Log current prices
@@ -389,17 +346,12 @@ impl ScopeClient {
     pub fn log_prices(&self) -> Result<()> {
         let prices = self.get_prices()?.prices;
 
-        for (idx, (((dated_price, _), name), price_type)) in prices
-            .iter()
-            .zip(&self.oracle_mappings)
-            .zip(&self.token_pairs)
-            .zip(&self.token_price_type)
-            .enumerate()
-            .filter(|(_, (((_, map), _), _))| map.is_some())
-        {
+        for (id, entry) in self.tokens {
+            let dated_price = prices[usize::from(id)];
             let price = price_to_f64(&dated_price.price);
             let price = format!("{price:.5}");
-            info!(idx, %price, ?price_type, "slot" = dated_price.last_updated_slot, %name);
+            let price_type = entry.get_type();
+            info!(id, %price, ?price_type, "slot" = dated_price.last_updated_slot, %entry);
         }
         Ok(())
     }
@@ -413,18 +365,6 @@ impl ScopeClient {
     fn get_prices(&self) -> Result<OraclePrices> {
         let prices: OraclePrices = self.program.account(self.oracle_prices_acc)?;
         Ok(prices)
-    }
-
-    /// Get Yi Underlying Token Account
-    fn get_yi_underlying_token_account(&self) -> Result<TokenAccount> {
-        let token_account: TokenAccount = self.program.account(self.yi_underlying_token_account)?;
-        Ok(token_account)
-    }
-
-    /// Get Yi Mint
-    fn get_yi_mint(&self) -> Result<Mint> {
-        let mint: Mint = self.program.account(self.yi_mint)?;
-        Ok(mint)
     }
 
     /// Get program oracle mapping
@@ -520,49 +460,33 @@ impl ScopeClient {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn ix_refresh_yi_token_price(&self, token: u64) -> Result<()> {
-        let refresh_account = accounts::RefreshYiToken {
-            oracle_prices: self.oracle_prices_acc,
-            oracle_mappings: self.oracle_mappings_acc,
-            yi_underlying_tokens: self.yi_underlying_token_account,
-            yi_mint: self.yi_mint,
-            clock: Clock::id(),
-        };
-
-        let request = self.program.request();
-
-        let tx = request
-            .accounts(refresh_account)
-            .args(instruction::RefreshYiToken { token })
-            .send()?;
-
-        info!(signature = %tx, "Yi Token price refreshed successfully");
-
-        Ok(())
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub fn ix_refresh_one_price(&self, token: u64) -> Result<()> {
-        let oracle_account = self
-            .oracle_mappings
-            .get(usize::try_from(token)?)
-            .ok_or_else(|| anyhow!("Out of range token {token}"))?
-            .unwrap_or_default();
+    pub fn ix_refresh_one_price(&self, token: u16) -> Result<()> {
+        let entry = self
+            .tokens
+            .get(&token)
+            .ok_or_else(|| anyhow!("Unexpected token id {token}"))?;
         let refresh_account = accounts::RefreshOne {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            pyth_price_info: oracle_account,
+            pyth_price_info: *entry.get_mapping_account(),
             clock: Clock::id(),
         };
 
-        let request = self.program.request();
+        let mut request = self.program.request();
 
-        request
+        request = request
             .accounts(refresh_account)
-            .args(instruction::RefreshOnePrice { token })
-            .send()?;
+            .args(instruction::RefreshOnePrice {
+                token: token.into(),
+            });
 
-        info!("Price refreshed successfully");
+        for extra in entry.get_extra_accounts() {
+            request = request.accounts(AccountMeta::new_readonly(*extra, false));
+        }
+
+        let tx = request.send()?;
+
+        info!(%tx, "Price refreshed successfully");
 
         Ok(())
     }
@@ -579,21 +503,18 @@ impl ScopeClient {
 
         let mut request = request.accounts(refresh_account);
 
-        for token_idx in tokens.iter() {
-            let oracle_pubkey_op = self
-                .oracle_mappings
-                .get(usize::from(*token_idx))
-                .ok_or_else(|| anyhow!("Out of range token {token_idx}"))?;
-
-            if let Some(oracle_pubkey) = oracle_pubkey_op {
-                request = request.accounts(AccountMeta::new_readonly(*oracle_pubkey, false));
-            } else {
-                // TODO: Inefficient, we could remove the token from the list but this should not happen anyway in the program
-                request = request.accounts(AccountMeta::new_readonly(Pubkey::default(), false));
-                warn!(
-                    token_idx,
-                    "Refresh price of a token which has an undefined oracle mapping."
-                )
+        for token_idx in tokens {
+            let entry = self
+                .tokens
+                .get(token_idx)
+                .ok_or_else(|| anyhow!("Unexpected token {token_idx}"))?;
+            // Note: no control at this point, all token accounts will be sent in on tx
+            request = request.accounts(AccountMeta::new_readonly(
+                *entry.get_mapping_account(),
+                false,
+            ));
+            for extra in entry.get_extra_accounts() {
+                request = request.accounts(AccountMeta::new_readonly(*extra, false));
             }
         }
 
@@ -603,7 +524,7 @@ impl ScopeClient {
             .args(instruction::RefreshPriceList { tokens })
             .send()?;
 
-        info!(signature = %tx, "Prices refreshed successfully");
+        info!(signature = %tx, "Prices list refreshed successfully");
 
         Ok(())
     }

@@ -50,3 +50,8 @@ pub mod serde_int_map {
         Ok(map)
     }
 }
+
+#[cfg(test)]
+pub fn remove_whitespace(s: &str) -> String {
+    s.split_whitespace().collect()
+}
