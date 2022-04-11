@@ -22,7 +22,6 @@ pub mod scope {
         handler_initialize::process(ctx, feed_name)
     }
 
-    //This handler only works for Pyth type tokens
     pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
         let token: usize = token
             .try_into()
@@ -30,14 +29,6 @@ pub mod scope {
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
-    pub fn refresh_yi_token(ctx: Context<RefreshYiToken>, token: u64) -> ProgramResult {
-        let token: usize = token
-            .try_into()
-            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
-        handler_yitoken_prices::refresh_yi_token(ctx, token)
-    }
-
-    /// This handler will reject the refresh of yi tokens
     pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u16>) -> ProgramResult {
         handler_refresh_prices::refresh_price_list(ctx, &tokens)
     }

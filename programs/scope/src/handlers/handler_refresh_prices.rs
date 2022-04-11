@@ -9,7 +9,7 @@ pub struct RefreshOne<'info> {
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
     /// CHECK: In ix, check the account is in `oracle_mappings`
-    pub pyth_price_info: AccountInfo<'info>,
+    pub price_info: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }
 
@@ -26,10 +26,10 @@ pub struct RefreshList<'info> {
 
 pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResult {
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
-    let pyth_price_info = &ctx.accounts.pyth_price_info;
+    let price_info = &ctx.accounts.price_info;
 
     // Check that the provided pyth account is the one referenced in oracleMapping
-    if oracle_mappings.price_info_accounts[token] != pyth_price_info.key() {
+    if oracle_mappings.price_info_accounts[token] != price_info.key() {
         return Err(ScopeError::UnexpectedAccount.into());
     }
 
@@ -39,7 +39,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
 
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
-    let price = get_price(price_type, pyth_price_info)?;
+    let mut remaining_iter = ctx.remaining_accounts.iter();
+    let price = get_price(price_type, price_info, &mut remaining_iter)?;
 
     oracle.prices[token] = price;
 
@@ -61,7 +62,9 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
 
     let zero_pk: Pubkey = Pubkey::default();
 
-    for (&token_nb, received_account) in tokens.iter().zip(ctx.remaining_accounts.iter()) {
+    let mut accounts_iter = ctx.remaining_accounts.iter();
+
+    for &token_nb in tokens.iter() {
         let token_idx: usize = token_nb.into();
         let oracle_mapping = oracle_mappings
             .price_info_accounts
@@ -70,6 +73,9 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
         let price_type: OracleType = oracle_mappings.price_types[token_idx]
             .try_into()
             .map_err(|_| ScopeError::BadTokenType)?;
+        let received_account = accounts_iter
+            .next()
+            .ok_or(ScopeError::AccountsAndTokenMismatch)?;
         // Ignore unset mapping accounts
         if zero_pk == *oracle_mapping {
             continue;
@@ -78,7 +84,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
         if oracle_mappings.price_info_accounts[token_idx] != received_account.key() {
             return Err(ScopeError::UnexpectedAccount.into());
         }
-        match get_price(price_type, received_account) {
+        match get_price(price_type, received_account, &mut accounts_iter) {
             Ok(price) => {
                 let to_update = oracle_prices
                     .get_mut(token_idx)

@@ -25,10 +25,22 @@ pub enum OracleType {
     YiToken,
 }
 
-pub fn get_price(price_type: OracleType, price_acc: &AccountInfo) -> crate::Result<DatedPrice> {
+/// Get the price for a given oracle type
+///
+/// The `base_account` should have been checked against the oracle mapping
+/// If needed the `extra_accounts` will be extracted from the provided iterator and checked
+/// with the data contained in the `base_account`
+pub fn get_price<'a, 'b>(
+    price_type: OracleType,
+    base_account: &AccountInfo,
+    extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
+) -> crate::Result<DatedPrice>
+where
+    'a: 'b,
+{
     match price_type {
-        OracleType::Pyth => pyth::get_price(price_acc),
+        OracleType::Pyth => pyth::get_price(base_account),
         OracleType::Switchboard => todo!(),
-        OracleType::YiToken => Err(ScopeError::BadTokenType.into()),
+        OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
     }
 }

@@ -445,7 +445,7 @@ impl ScopeClient {
         let refresh_account = accounts::RefreshOne {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            pyth_price_info: *entry.get_mapping_account(),
+            price_info: *entry.get_mapping_account(),
             clock: Clock::id(),
         };
 
