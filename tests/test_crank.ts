@@ -24,7 +24,7 @@ import { TOKEN_PROGRAM_ID } from "@project-serum/serum/lib/token-instructions";
 
 chai.use(chaiDecimalJs(Decimal));
 
-let tokenList = [
+const tokenList = [
   {
     price: new Decimal("228.41550900"),
     ticker: Buffer.from("SOL"),
@@ -108,10 +108,10 @@ function getRevisedIndex(token: number): number {
 function checkAllOraclePrices(oraclePrices: any) {
   console.log(`Check all prices`);
   tokenList.map((tokenData, idx) => {
-    let price = oraclePrices.prices[getRevisedIndex(idx)].price;
-    let value = price.value.toNumber();
-    let expo = price.exp.toNumber();
-    let in_decimal = new Decimal(value).mul(
+    const price = oraclePrices.prices[getRevisedIndex(idx)].price;
+    const value = price.value.toNumber();
+    const expo = price.exp.toNumber();
+    const in_decimal = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
     if (idx != 10) {
@@ -128,7 +128,7 @@ describe("Scope crank bot tests", () => {
   );
   const admin = Keypair.fromSecretKey(keypair_acc);
 
-  let config: ConnectionConfig = {
+  const config: ConnectionConfig = {
     commitment: Provider.defaultOptions().commitment,
     confirmTransactionInitialTimeout: 220000,
   };
@@ -190,8 +190,8 @@ describe("Scope crank bot tests", () => {
       )
     )[0];
 
-    let oracleAccount_kp = Keypair.generate();
-    let oracleMappingAccount_kp = Keypair.generate();
+    const oracleAccount_kp = Keypair.generate();
+    const oracleMappingAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
@@ -246,7 +246,7 @@ describe("Scope crank bot tests", () => {
               program: program.programId,
               programData: programDataAddress,
               oracleMappings: oracleMappingAccount,
-              pythPriceInfo: fakePythAccount,
+              priceInfo: fakePythAccount,
             },
             signers: [admin],
           }
@@ -276,7 +276,7 @@ describe("Scope crank bot tests", () => {
     await sleep(1500); // One block await
 
     {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      const oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkAllOraclePrices(oracle);
     }
   });
@@ -286,7 +286,7 @@ describe("Scope crank bot tests", () => {
     await scopeBot.crank();
     for (let i = 0; i < 5; i++) {
       // increase all prices at each loop
-      for (var asset of tokenList) {
+      for (const asset of tokenList) {
         asset.price = asset.price.add(new Decimal("0.500"));
       }
       await setAllPythPrices();
@@ -297,7 +297,7 @@ describe("Scope crank bot tests", () => {
       );
       await sleep(2000);
 
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      const oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkAllOraclePrices(oracle);
     }
   });
@@ -307,7 +307,7 @@ describe("Scope crank bot tests", () => {
     let price = oracle.prices[getRevisedIndex(10)].price;
     let value = price.value.toNumber();
     let expo = price.exp.toNumber();
-    let in_decimal_before = new Decimal(value).mul(
+    const in_decimal_before = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
     scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
@@ -327,7 +327,7 @@ describe("Scope crank bot tests", () => {
     price = oracle.prices[getRevisedIndex(10)].price;
     value = price.value.toNumber();
     expo = price.exp.toNumber();
-    let in_decimal_after = new Decimal(value).mul(
+    const in_decimal_after = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
     expect(in_decimal_after.toNumber()).eq(in_decimal_before.toNumber());
@@ -338,10 +338,10 @@ describe("Scope crank bot tests", () => {
     let price = oracle.prices[getRevisedIndex(10)].price;
     let value = price.value.toNumber();
     let expo = price.exp.toNumber();
-    let in_decimal_before = new Decimal(value).mul(
+    const in_decimal_before = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
-    let mint_amount = 10_000_000 * 1_000_000; //10 million solUST * 1 million factor (for 6 decimals)
+    const mint_amount = 10_000_000 * 1_000_000; //10 million solUST * 1 million factor (for 6 decimals)
     const tx = new Transaction().add(
       Token.createMintToInstruction(
         TOKEN_PROGRAM_ID, // always TOKEN_PROGRAM_ID
@@ -372,7 +372,7 @@ describe("Scope crank bot tests", () => {
     price = oracle.prices[getRevisedIndex(10)].price;
     value = price.value.toNumber();
     expo = price.exp.toNumber();
-    let in_decimal_after = new Decimal(value).mul(
+    const in_decimal_after = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
     expect(in_decimal_after.toNumber()).gt(in_decimal_before.toNumber());

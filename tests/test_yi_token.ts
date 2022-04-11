@@ -126,7 +126,7 @@ describe("Yi Scope tests", () => {
   );
   const admin = Keypair.fromSecretKey(keypair_acc);
 
-  let config: ConnectionConfig = {
+  const config: ConnectionConfig = {
     commitment: Provider.defaultOptions().commitment,
     confirmTransactionInitialTimeout: 220000,
   };
@@ -165,8 +165,8 @@ describe("Yi Scope tests", () => {
       )
     )[0];
 
-    let oracleAccount_kp = Keypair.generate();
-    let oracleMappingAccount_kp = Keypair.generate();
+    const oracleAccount_kp = Keypair.generate();
+    const oracleMappingAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
@@ -238,7 +238,7 @@ describe("Yi Scope tests", () => {
               program: program.programId,
               programData: programDataAddress,
               oracleMappings: oracleMappingAccount,
-              pythPriceInfo: fakePythAccount,
+              priceInfo: fakePythAccount,
             },
             signers: [admin],
           }
@@ -253,7 +253,7 @@ describe("Yi Scope tests", () => {
     let price = oracle.prices[10].price;
     let value = price.value.toNumber();
     let expo = price.exp.toNumber();
-    let in_decimal_before = new Decimal(value).mul(
+    const in_decimal_before = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
     console.log("Calling Refresh now.");
@@ -271,7 +271,7 @@ describe("Yi Scope tests", () => {
     price = oracle.prices[10].price;
     value = price.value.toNumber();
     expo = price.exp.toNumber();
-    let in_decimal_after = new Decimal(value).mul(
+    const in_decimal_after = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
     expect(in_decimal_after.toNumber()).not.eq(in_decimal_before.toNumber());

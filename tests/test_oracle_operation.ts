@@ -78,10 +78,10 @@ const MAX_NB_TOKENS_IN_ONE_UPDATE = 27;
 
 function checkOraclePrice(token: number, oraclePrices: any) {
   console.log(`Check ${initialTokens[token].ticker} price`);
-  let price = oraclePrices.prices[token].price;
-  let value = price.value.toNumber();
-  let expo = price.exp.toNumber();
-  let in_decimal = new Decimal(value).mul(
+  const price = oraclePrices.prices[token].price;
+  const value = price.value.toNumber();
+  const expo = price.exp.toNumber();
+  const in_decimal = new Decimal(value).mul(
     new Decimal(10).pow(new Decimal(-expo))
   );
   expect(in_decimal).decimal.eq(initialTokens[token].price);
@@ -97,7 +97,7 @@ describe("Scope tests", () => {
   );
   const admin = Keypair.fromSecretKey(keypair_acc);
 
-  let config: ConnectionConfig = {
+  const config: ConnectionConfig = {
     commitment: Provider.defaultOptions().commitment,
     confirmTransactionInitialTimeout: 220000,
   };
@@ -136,8 +136,8 @@ describe("Scope tests", () => {
       )
     )[0];
 
-    let oracleAccount_kp = Keypair.generate();
-    let oracleMappingAccount_kp = Keypair.generate();
+    const oracleAccount_kp = Keypair.generate();
+    const oracleMappingAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
@@ -206,7 +206,7 @@ describe("Scope tests", () => {
             program: program.programId,
             programData: programDataAddress,
             oracleMappings: oracleMappingAccount,
-            pythPriceInfo: fakePythAccount,
+            priceInfo: fakePythAccount,
           },
           signers: [admin],
         });
@@ -219,13 +219,13 @@ describe("Scope tests", () => {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        pythPriceInfo: fakePythAccounts[Tokens.SRM],
+        priceInfo: fakePythAccounts[Tokens.SRM],
         clock: SYSVAR_CLOCK_PUBKEY,
       },
       signers: [],
     });
     {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      const oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkOraclePrice(Tokens.SRM, oracle);
     }
   });
@@ -256,7 +256,7 @@ describe("Scope tests", () => {
     );
     // Check the two updated accounts
     {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      const oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkOraclePrice(Tokens.ETH, oracle);
       checkOraclePrice(Tokens.RAY, oracle);
     }
@@ -275,7 +275,7 @@ describe("Scope tests", () => {
               program: program.programId,
               programData: programDataAddress,
               oracleMappings: oracleMappingAccount,
-              pythPriceInfo: fakePythAccount,
+              priceInfo: fakePythAccount,
             },
             signers: [admin],
           }
@@ -286,8 +286,8 @@ describe("Scope tests", () => {
 
   it("test_update_max_list", async () => {
     // Use the 30 first token from the second pyth accounts list
-    let tokens: number[] = [];
-    let accounts: any[] = [];
+    const tokens: number[] = [];
+    const accounts: any[] = [];
     for (let i = 0; i < MAX_NB_TOKENS_IN_ONE_UPDATE; i++) {
       tokens.push(global.MAX_NB_TOKENS - i - 1);
       accounts.push({
