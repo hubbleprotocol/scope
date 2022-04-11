@@ -60,7 +60,7 @@ fn get_status(st: &PriceStatus) -> bool {
     matches!(st, PriceStatus::Trading)
 }
 
-pub fn validate_pyth_price(pyth_price: &pyth_client::Price) -> Result<()> {
+fn validate_pyth_price(pyth_price: &pyth_client::Price) -> Result<()> {
     if pyth_price.magic != pyth_client::MAGIC {
         msg!("Pyth price account provided is not a valid Pyth account");
         return Err(ProgramError::InvalidArgument.into());
@@ -78,6 +78,13 @@ pub fn validate_pyth_price(pyth_price: &pyth_client::Price) -> Result<()> {
         return Err(ProgramError::InvalidArgument.into());
     }
     Ok(())
+}
+
+pub fn validate_pyth_price_info(pyth_price_info: &AccountInfo) -> Result<()> {
+    let pyth_price_data = pyth_price_info.try_borrow_data()?;
+    let pyth_price = pyth_client::cast::<pyth_client::Price>(&pyth_price_data);
+
+    validate_pyth_price(pyth_price)
 }
 
 #[cfg(test)]

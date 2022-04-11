@@ -409,7 +409,7 @@ impl ScopeClient {
     fn ix_update_mapping(&self, oracle_account: &Pubkey, token: u64, price_type: u8) -> Result<()> {
         let update_account = accounts::UpdateOracleMapping {
             oracle_mappings: self.oracle_mappings_acc,
-            pyth_price_info: *oracle_account,
+            price_info: *oracle_account,
             program: self.program.id(),
             program_data: self.program_data_acc,
             admin: self.program.payer(),

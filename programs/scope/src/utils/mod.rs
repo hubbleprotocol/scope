@@ -44,3 +44,18 @@ where
         OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
     }
 }
+
+/// Validate the given account as being an appropriate price account for the
+/// given oracle type.
+///
+/// This function shall be called before update of oracle mappings
+pub fn validate_oracle_account(
+    price_type: OracleType,
+    price_account: &AccountInfo,
+) -> crate::Result<()> {
+    match price_type {
+        OracleType::Pyth => pyth::validate_pyth_price_info(price_account),
+        OracleType::Switchboard => todo!(),
+        OracleType::YiToken => Ok(()), // TODO how shall we validate yi token account?
+    }
+}
