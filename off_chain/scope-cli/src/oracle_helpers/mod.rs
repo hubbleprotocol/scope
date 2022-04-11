@@ -43,10 +43,6 @@ pub trait OracleHelper {
     /// Get the extra accounts needed for the refresh price ix
     fn get_extra_accounts(&self) -> &[Pubkey];
 
-    /// This will be called after an onchain refresh operation, allowing
-    /// to refresh local data if needed.
-    fn refresh_local_data(&mut self);
-
     /// Get max age after which a refresh must be forced.
     ///
     /// The price will be refreshed after this age even if

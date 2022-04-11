@@ -48,10 +48,6 @@ impl OracleHelper for SingleAccountOracle {
         &[]
     }
 
-    fn refresh_local_data(&mut self) {
-        /* This is a no-op for this impl */
-    }
-
     fn get_max_age(&self) -> clock::Slot {
         self.max_age
     }

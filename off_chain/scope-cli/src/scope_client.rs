@@ -26,9 +26,6 @@ use crate::utils::{find_data_address, get_clock, price_to_f64};
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 27;
 
-pub static YI_MINT_ACC_STR: &str = "CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9";
-pub static YI_UNDERLYING_TOKEN_ACC_STR: &str = "EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc";
-
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {
     program: Program,
