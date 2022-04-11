@@ -176,7 +176,7 @@ fn upload(scope: &mut ScopeClient, mapping: &impl AsRef<Path>) -> Result<()> {
 }
 
 fn download(scope: &mut ScopeClient, mapping: &impl AsRef<Path>) -> Result<()> {
-    scope.download_oracle_mapping()?;
+    scope.download_oracle_mapping(0)?;
     let token_list = scope.get_local_mapping()?;
     token_list.save_to_file(&mapping)
 }
@@ -186,7 +186,7 @@ fn show(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Resul
         let token_list = TokensConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list)?;
     } else {
-        scope.download_oracle_mapping()?;
+        scope.download_oracle_mapping(0)?;
     }
 
     let current_slot = get_clock(&scope.get_rpc())?.slot;
@@ -208,28 +208,23 @@ fn crank(
         scope.set_local_mapping(&token_list)?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
-        scope.download_oracle_mapping()?;
+        scope.download_oracle_mapping(refresh_interval_slot)?;
     }
     loop {
         let start = Instant::now();
 
-        // TODO: rework
-        if let Err(e) = scope.refresh_prices_older_than(refresh_interval_slot) {
+        if let Err(e) = scope.refresh_expired_prices() {
             error!("Error while refreshing prices {:?}", e);
-        }
-
-        if let Err(e) = scope.check_refresh_yi_token() {
-            error!("Error while refreshing yi token prices {:?}", e);
         }
 
         let elapsed = start.elapsed();
         trace!("last refresh duration was {:?}", elapsed);
 
-        let oldest_age = scope.get_shortest_price_ttl()?;
-        trace!(oldest_age);
+        let shortest_ttl = scope.get_prices_shortest_ttl()?;
+        trace!(shortest_ttl);
 
-        if refresh_interval_slot > oldest_age {
-            let sleep_ms = (refresh_interval_slot - oldest_age) * clock::DEFAULT_MS_PER_SLOT;
+        if shortest_ttl > 0 {
+            let sleep_ms = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
             sleep(Duration::from_millis(sleep_ms));
         }
     }

@@ -1,9 +1,7 @@
 use std::mem::size_of;
-use std::str::FromStr;
 
 use anchor_client::solana_client::rpc_client::RpcClient;
 use anchor_client::{Client, Program};
-use anchor_spl::token::{Mint, TokenAccount};
 
 use anchor_client::solana_sdk::{
     clock::{self, Clock},
@@ -18,20 +16,15 @@ use anchor_client::solana_sdk::{
 use anyhow::{anyhow, bail, Context, Result};
 
 use nohash_hasher::IntMap;
-use scope::{
-    accounts, instruction, utils::OracleType, Configuration, OracleMappings, OraclePrices,
-};
-use tracing::{debug, error, event, info, span, trace, warn, Level};
+use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
+use tracing::{debug, error, event, info, warn, Level};
 
 use crate::config::{TokenConfig, TokenList, TokensConfig};
-use crate::oracle_helpers::{self, entry_from_config, TokenEntry};
+use crate::oracle_helpers::{entry_from_config, TokenEntry};
 use crate::utils::{find_data_address, get_clock, price_to_f64};
 
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 27;
-
-/// Default value for token_pairs
-const EMPTY_STRING: String = String::new();
 
 pub static YI_MINT_ACC_STR: &str = "CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9";
 pub static YI_UNDERLYING_TOKEN_ACC_STR: &str = "EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc";
@@ -48,9 +41,6 @@ pub struct ScopeClient {
 impl ScopeClient {
     #[tracing::instrument(skip(client))] //Skip client that does not impl Debug
     pub fn new(client: Client, program_id: Pubkey, price_feed: &str) -> Result<Self> {
-        let yi_mint_account: Pubkey = Pubkey::from_str(YI_MINT_ACC_STR).unwrap();
-        let yi_underlying_token_account: Pubkey =
-            Pubkey::from_str(YI_UNDERLYING_TOKEN_ACC_STR).unwrap();
         let program = client.program(program_id);
         let program_data_acc = find_data_address(&program_id);
 
@@ -80,9 +70,6 @@ impl ScopeClient {
         program_id: &Pubkey,
         price_feed: &str,
     ) -> Result<Self> {
-        let yi_mint_account: Pubkey = Pubkey::from_str(YI_MINT_ACC_STR).unwrap();
-        let yi_underlying_token_account: Pubkey =
-            Pubkey::from_str(YI_UNDERLYING_TOKEN_ACC_STR).unwrap();
         let program = client.program(*program_id);
 
         let program_data_acc = find_data_address(program_id);
@@ -117,26 +104,20 @@ impl ScopeClient {
 
     /// Set the locally known oracle mapping according to the provided configuration list.
     pub fn set_local_mapping(&mut self, token_list: &TokensConfig) -> Result<()> {
-        for (idx, token) in &token_list.tokens {
-            let idx = usize::try_from(*idx)?;
-            if idx >= scope::MAX_ENTRIES {
-                bail!("Out of range token index provided in token list configuration");
-            }
-            let default_max_age = token_list.default_max_age;
-            let rpc = self.program.rpc();
-            // Transform the configuration entries in appropriate local token entries
-            // Local implies to get a copy of needed onchain data (as a cache)
-            let tokens_res: Result<TokenEntryList> = token_list
-                .tokens
-                .iter()
-                .map(|(id, token_conf)| {
-                    let token_entry: Box<dyn TokenEntry> =
-                        entry_from_config(token_conf, default_max_age, &rpc)?;
-                    Ok((*id, token_entry))
-                })
-                .collect();
-            self.tokens = tokens_res?;
-        }
+        let default_max_age = token_list.default_max_age;
+        let rpc = self.program.rpc();
+        // Transform the configuration entries in appropriate local token entries
+        // Local implies to get a copy of needed onchain data (as a cache)
+        let tokens_res: Result<TokenEntryList> = token_list
+            .tokens
+            .iter()
+            .map(|(id, token_conf)| {
+                let token_entry: Box<dyn TokenEntry> =
+                    entry_from_config(token_conf, default_max_age, &rpc)?;
+                Ok((*id, token_entry))
+            })
+            .collect();
+        self.tokens = tokens_res?;
         Ok(())
     }
 
@@ -147,7 +128,7 @@ impl ScopeClient {
         let onchain_price_type_mapping = program_mapping.price_types;
 
         // For all "token" local and remote
-        for (token_idx, local_entry) in self.tokens {
+        for (&token_idx, local_entry) in &self.tokens {
             let idx: usize = token_idx.try_into().unwrap();
             let rem_mapping = &onchain_accounts_mapping[idx];
             let rem_price_type = onchain_price_type_mapping[idx];
@@ -155,11 +136,7 @@ impl ScopeClient {
             let local_mapping_pk = local_entry.get_mapping_account();
             let loc_price_type_u8: u8 = local_entry.get_type().into();
             if rem_mapping != local_mapping_pk || rem_price_type != loc_price_type_u8 {
-                self.ix_update_mapping(
-                    &local_mapping_pk,
-                    token_idx.try_into()?,
-                    loc_price_type_u8,
-                )?;
+                self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)?;
             }
         }
         Ok(())
@@ -185,7 +162,7 @@ impl ScopeClient {
                     token_pair: "".to_string(),
                     oracle_type: oracle_type.try_into()?,
                     max_age: None,
-                    oracle_mapping: oracle_mapping.clone(),
+                    oracle_mapping: *oracle_mapping,
                 };
                 let entry = entry_from_config(&oracle_conf, default_max_age, &rpc)?;
                 Ok((id, entry))
@@ -218,123 +195,123 @@ impl ScopeClient {
         })
     }
 
-    #[tracing::instrument(skip(self))]
     /// Refresh all price referenced in oracle mapping
+    ///
+    /// We will use [`ScopeClient::ix_refresh_price_list`] for this method.
+    /// The ix has a hard limit of [`MAX_REFRESH_CHUNK_SIZE`] accounts that needs
+    /// to be carefully taken care of since the number of accounts varies from
+    /// one token to another.
+    #[tracing::instrument(skip(self))]
     pub fn refresh_all_prices(&self) -> Result<()> {
         info!("Refresh all prices");
-        let to_refresh_idx: Vec<u16> = self
-            .oracle_mappings
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, e)| {
-                if e.is_some() {
-                    Some(u16::try_from(idx).unwrap())
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        for (nb, chunk) in to_refresh_idx.chunks(MAX_REFRESH_CHUNK_SIZE).enumerate() {
-            let _span = span!(Level::TRACE, "refresh_chunk", "chunk.nb" = %nb, ?chunk).entered();
-            if let Err(e) = self.ix_refresh_price_list(chunk) {
+        // Create chunk of tokens of max `MAX_REFRESH_CHUNK_SIZE` accounts
+        let mut acc_account_num = 0_usize;
+        let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
+        let refresh_acc = |token_ids: &[u16]| {
+            if let Err(e) = self.ix_refresh_price_list(token_ids) {
                 event!(Level::ERROR, "err" = ?e, "Refresh of some prices failed");
             }
+        };
+
+        for (id, entry) in &self.tokens {
+            // if current entry would overflow the token count > send and reset
+            if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
+                refresh_acc(&acc_token_id);
+                acc_account_num = 0;
+                acc_token_id.clear()
+            }
+            // accumulate
+            acc_account_num += entry.get_number_of_extra_accounts() + 1;
+            acc_token_id.push(*id);
+        }
+
+        // last tokens refresh
+        if !acc_token_id.is_empty() {
+            refresh_acc(&acc_token_id);
         }
 
         Ok(())
     }
 
-    /// Refresh all prices older than given number of slots
+    /// Refresh all prices that has reach 0 ttl
     ///
-    /// As an optimization for number of tx. The prices are divided in chunk by age.
-    /// If one token is too old at least `MAX_REFRESH_CHUNK_SIZE` tokens will be
-    /// refreshed.
+    /// As an optimization for number of tx, we complete tx with not 0 ttl
+    /// if some room is left.
     #[tracing::instrument(skip(self))]
-    pub fn refresh_prices_older_than(&self, max_age: clock::Slot) -> Result<()> {
-        let oracle_prices = self.get_prices()?;
+    pub fn refresh_expired_prices(&self) -> Result<()> {
+        let mut prices_ttl: Vec<(u16, clock::Slot)> = self.get_prices_ttl()?.collect();
 
-        let mut prices: Vec<_> = oracle_prices
-            .prices
-            .iter()
-            .zip(self.oracle_mappings)
-            .zip(self.token_price_type) // Iterate with mappings to ensure the price is usable
-            .enumerate()
-            .filter(|(_, ((_, _), price_type))| *price_type == OracleType::Pyth) // keep track of indexes, needed for refresh
-            .filter_map(|(idx, ((dp, mapping_op), _))| {
-                mapping_op.map(|_| (idx, dp.last_updated_slot))
-            })
-            .collect();
+        // Sort the prices ttl from the smallest to biggest.
+        prices_ttl.sort_by(|(_, a), (_, b)| a.cmp(b));
 
-        // Sort the prices from the oldest to the youngest.
-        prices.sort_by(|a, b| a.1.cmp(&b.1));
-
-        let clock: Clock = get_clock(&self.program.rpc())?;
-
-        let current_slot = clock.slot;
-        trace!(current_slot);
-
-        for (nb, chunk) in prices.chunks(MAX_REFRESH_CHUNK_SIZE).enumerate() {
-            let _span = span!(Level::TRACE, "evaluate_chunk", "chunk.nb" = %nb, ?chunk).entered();
-            let price_slot = chunk[0].1;
-            let age = current_slot
-                .checked_sub(price_slot)
-                .ok_or_else(|| anyhow!("Some prices have been updated in the future"))?;
-
-            if age >= max_age {
-                let price_ids: Vec<_> = chunk
-                    .iter()
-                    .map(|(idx, _)| u16::try_from(*idx).unwrap())
-                    .collect();
-                debug!("Refresh chunk: {:?}", price_ids);
-                if let Err(e) = self.ix_refresh_price_list(&price_ids) {
-                    event!(Level::ERROR, "err" = ?e, "Refresh of some prices failed");
-                } else {
-                    let new_prices = self.get_prices()?;
-                    // if any price has the same date as previously in the chunk
-                    if let Some((id, _)) = chunk.iter().find(|(idx, _)| {
-                        new_prices.prices[*idx].last_updated_slot
-                            == oracle_prices.prices[*idx].last_updated_slot
-                    }) {
-                        event!(
-                            Level::WARN,
-                            "chunk" = ?chunk,
-                            "first_failed_id" = ?id,
-                            "Refresh of some prices failed"
-                        );
-                    }
-                }
-            } else {
-                trace!("Chunk is too recent, stop");
-                break;
+        // Create chunk of tokens of max `MAX_REFRESH_CHUNK_SIZE` accounts
+        let mut acc_account_num = 0_usize;
+        let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
+        let refresh_acc = |token_ids: &[u16]| {
+            if let Err(e) = self.ix_refresh_price_list(token_ids) {
+                event!(Level::ERROR, "err" = ?e, "Refresh of some prices failed");
             }
+        };
+
+        for (id, ttl) in &prices_ttl {
+            let entry = self
+                .tokens
+                .get(id)
+                .ok_or_else(|| anyhow!("Unknown price at index {id}"))?;
+            // if current entry would overflow the token count > send and reset
+            if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
+                refresh_acc(&acc_token_id);
+                acc_account_num = 0;
+                acc_token_id.clear();
+
+                if *ttl > 0 {
+                    // Current entry is not old enough yet: stop refresh procedure
+                    break;
+                }
+            }
+            // accumulate
+            acc_account_num += entry.get_number_of_extra_accounts() + 1;
+            acc_token_id.push(*id);
+        }
+
+        // last tokens refresh
+        if !acc_token_id.is_empty() {
+            refresh_acc(&acc_token_id);
         }
 
         Ok(())
+    }
+
+    /// Get an iterator over (id, prices_ttl)
+    ///
+    /// i.e. the number of slot until at the price currently known by scope has reached its `max_age`
+    /// Note: If a price "need_refresh" then ttl is forced to 0.
+    pub fn get_prices_ttl(&self) -> Result<impl Iterator<Item = (u16, clock::Slot)> + '_> {
+        let oracle_prices = self.get_prices()?;
+
+        let current_slot = get_clock(&self.get_rpc())?.slot;
+
+        let it = self.tokens.iter().map(move |(id, entry)| {
+            let price_slot = oracle_prices
+                .prices
+                .get(usize::from(*id))
+                .unwrap()
+                .last_updated_slot;
+            // default to no remaning slot (ttl=0)
+            let age = current_slot.saturating_sub(price_slot);
+            let remaining_slots = entry.get_max_age().saturating_sub(age);
+            (*id, remaining_slots)
+        });
+        Ok(it)
     }
 
     /// Get the minimum remaining time to live of all prices.
     ///
     /// i.e. the number of slot until at least one price has reached its `max_age`
     pub fn get_prices_shortest_ttl(&self) -> Result<clock::Slot> {
-        let oracle_prices = self.get_prices()?;
-
-        let current_slot = get_clock(&self.get_rpc())?.slot;
-
         let shortest_ttl = self
-            .tokens
-            .iter()
-            .map(|(id, entry)| {
-                let price_slot = oracle_prices
-                    .prices
-                    .get(usize::from(*id))
-                    .unwrap()
-                    .last_updated_slot;
-                // default to no remaning slot (ttl=0)
-                let age = current_slot.checked_sub(price_slot).unwrap_or(0);
-                let remaining_slots = entry.get_max_age().checked_sub(age).unwrap_or(0);
-                remaining_slots
-            })
+            .get_prices_ttl()?
+            .map(|(_, ttl)| ttl)
             .min()
             .unwrap_or(0);
 
@@ -346,7 +323,7 @@ impl ScopeClient {
     pub fn log_prices(&self) -> Result<()> {
         let prices = self.get_prices()?.prices;
 
-        for (id, entry) in self.tokens {
+        for (&id, entry) in &self.tokens {
             let dated_price = prices[usize::from(id)];
             let price = price_to_f64(&dated_price.price);
             let price = format!("{price:.5}");

@@ -23,7 +23,7 @@ pub struct SingleAccountOracle {
 impl SingleAccountOracle {
     pub fn new(conf: &TokenConfig, default_max_age: clock::Slot) -> Self {
         Self {
-            label: conf.token_pair,
+            label: conf.token_pair.clone(),
             oracle_account: conf.oracle_mapping,
             oracle_type: conf.oracle_type,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),

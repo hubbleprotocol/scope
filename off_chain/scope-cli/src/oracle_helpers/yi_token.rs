@@ -20,10 +20,12 @@ pub struct YiOracle {
     label: String,
     /// Yi token reference account of type [`YiToken`]
     mapping: Pubkey,
-    /// The [`anchor_spl::token::Mint`] backing the [`YiToken`].
-    pub token_mint: Pubkey,
-    /// [`anchor_spl::token::TokenAccount`] containing the staked tokens.
-    pub token_account: Pubkey,
+
+    /// Extra accounts are:
+    /// 0. The [`anchor_spl::token::Mint`] backing the [`YiToken`].
+    /// 1. [`anchor_spl::token::TokenAccount`] containing the staked tokens.
+    extra_accounts: [Pubkey; 2],
+
     /// Configured max age
     max_age: clock::Slot,
 }
@@ -39,29 +41,28 @@ impl YiOracle {
         let yi_account = YiToken::try_deserialize(&mut &yi_account_raw[..]).unwrap();
 
         Ok(Self {
-            label: conf.token_pair,
+            label: conf.token_pair.clone(),
             mapping,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
-            token_mint: yi_account.token_mint,
-            token_account: yi_account.token_account,
+            extra_accounts: [yi_account.token_mint, yi_account.token_account],
         })
     }
 
     pub fn get_current_price(&self, rpc: &RpcClient) -> Result<Price> {
         // Retrieve the onchain accounts
         let token_account_raw = rpc
-            .get_account_data(&self.token_account)
+            .get_account_data(&self.extra_accounts[1])
             .context("retrieving yi token account")?;
         let token_account = TokenAccount::try_deserialize(&mut &token_account_raw[..]).unwrap();
 
         let token_mint_raw = rpc
-            .get_account_data(&self.token_mint)
+            .get_account_data(&self.extra_accounts[0])
             .context("retrieving yi mint account")?;
         let token_mint = Mint::try_deserialize(&mut &token_mint_raw[..]).unwrap();
 
         // Compute the price
         let new_price = price_compute(token_account.amount, token_mint.supply)
-            .ok_or(anyhow!("Overflow while computing yi price"))?;
+            .ok_or_else(|| anyhow!("Overflow while computing yi price"))?;
         Ok(new_price)
     }
 }
@@ -80,7 +81,7 @@ impl OracleHelper for YiOracle {
     }
 
     fn get_extra_accounts(&self) -> &[Pubkey] {
-        &[self.token_mint, self.token_account]
+        &self.extra_accounts
     }
 
     fn refresh_local_data(&mut self) {
