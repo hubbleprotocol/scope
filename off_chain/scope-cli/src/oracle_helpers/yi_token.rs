@@ -11,6 +11,7 @@ use anchor_client::solana_sdk::clock;
 use scope::utils::yitoken::{price_compute, YiToken};
 use scope::utils::OracleType;
 use scope::{AccountDeserialize, DatedPrice, Price, Pubkey};
+use tracing::trace;
 
 use super::{OracleHelper, TokenEntry};
 use crate::config::TokenConfig;
@@ -91,7 +92,13 @@ impl OracleHelper for YiOracle {
     fn need_refresh(&self, scope_price: &DatedPrice, rpc: &RpcClient) -> Result<bool> {
         let new_price = self.get_current_price(rpc)?;
         // Need refresh is current token price is different from scope price
-        Ok(new_price != scope_price.price)
+        if new_price == scope_price.price {
+            trace!("Price for Yi Token has not changed");
+            Ok(false)
+        } else {
+            trace!("Price for Yi Token needs update");
+            Ok(true)
+        }
     }
 }
 

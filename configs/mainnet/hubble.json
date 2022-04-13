@@ -68,5 +68,13 @@
             "token_pair": "AVAX/USD",
             "oracle_mapping": "Ax9ujW5B9oqcv59N8m6f1BpTBq2rGeGaBcpKjC5UYsXU"
         }
-    ]
+    ],
+    [
+        10,
+        {
+          "token_pair": "UST/stSolUST",
+          "oracle_mapping": "53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs",
+          "price_type": "YiToken"
+        }
+      ]
 ]

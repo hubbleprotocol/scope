@@ -237,6 +237,14 @@ describe("Scope crank bot tests", () => {
     await Promise.all(
       fakePythAccounts.map(async (fakePythAccount, idx): Promise<any> => {
         console.log(`Set mapping of ${tokenList[idx].ticker}`);
+        let price_account: PublicKey;
+        if (tokenList[idx].priceType == 2) {
+          price_account = new PublicKey(
+            "53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs"
+          );
+        } else {
+          price_account = fakePythAccount;
+        }
         await program.rpc.updateMapping(
           new BN(getRevisedIndex(idx)),
           tokenList[idx].priceType,
@@ -246,7 +254,7 @@ describe("Scope crank bot tests", () => {
               program: program.programId,
               programData: programDataAddress,
               oracleMappings: oracleMappingAccount,
-              priceInfo: fakePythAccount,
+              priceInfo: price_account,
             },
             signers: [admin],
           }
@@ -265,15 +273,11 @@ describe("Scope crank bot tests", () => {
     await scopeBot.crank();
 
     await scopeBot.nextLogMatches(
-      (c) => c.includes("Prices refreshed successfully"),
-      10000
-    );
-    await scopeBot.nextLogMatches(
-      (c) => c.includes("Check-update for Yi Token ran successfully"),
+      (c) => c.includes("Prices list refreshed successfully"),
       10000
     );
 
-    await sleep(1500); // One block await
+    await sleep(1000);
 
     {
       const oracle = await program.account.oraclePrices.fetch(oracleAccount);
@@ -291,11 +295,14 @@ describe("Scope crank bot tests", () => {
       }
       await setAllPythPrices();
 
+      scopeBot.flushLogs();
+
       await scopeBot.nextLogMatches(
-        (c) => c.includes("Prices refreshed successfully"),
+        (c) => c.includes("Prices list refreshed successfully"),
         10000
       );
-      await sleep(2000);
+
+      await sleep(1000);
 
       const oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkAllOraclePrices(oracle);
@@ -313,16 +320,19 @@ describe("Scope crank bot tests", () => {
     scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
     await scopeBot.crank();
 
-    await scopeBot.nextLogMatches(
-      (c) => c.includes("Prices refreshed successfully"),
-      10000
-    );
+    scopeBot.flushLogs();
+
     await scopeBot.nextLogMatches(
       (c) => c.includes("Price for Yi Token has not changed"),
       10000
     );
+    await scopeBot.nextLogMatches(
+      (c) => c.includes("Prices list refreshed successfully"),
+      10000
+    );
 
-    await sleep(3000);
+    await sleep(1000);
+
     oracle = await program.account.oraclePrices.fetch(oracleAccount);
     price = oracle.prices[getRevisedIndex(10)].price;
     value = price.value.toNumber();
@@ -356,14 +366,15 @@ describe("Scope crank bot tests", () => {
     await provider.send(tx);
     await sleep(2000);
     scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    await scopeBot.crank();
+    await scopeBot.crank(1000);
 
     await scopeBot.nextLogMatches(
-      (c) => c.includes("Prices refreshed successfully"),
+      (c) => c.includes("Price for Yi Token needs update"),
       10000
     );
+
     await scopeBot.nextLogMatches(
-      (c) => c.includes("Prices for Yi Token updated successfully"),
+      (c) => c.includes("Prices list refreshed successfully"),
       10000
     );
 

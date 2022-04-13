@@ -115,6 +115,9 @@ const YI_UNDERLYING_TOKENS = new PublicKey(
   "EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc"
 );
 const YI_MINT = new PublicKey("CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9");
+const YI_ACCOUNT = new PublicKey(
+  "53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs"
+);
 
 describe("Yi Scope tests", () => {
   const keypair_acc = Uint8Array.from(
@@ -256,15 +259,25 @@ describe("Yi Scope tests", () => {
     const in_decimal_before = new Decimal(value).mul(
       new Decimal(10).pow(new Decimal(-expo))
     );
-    console.log("Calling Refresh now.");
-    await program.rpc.refreshYiToken(new BN(Tokens.STSOLUST), {
+    const accounts: any[] = [];
+    accounts.push({
+      pubkey: YI_MINT,
+      isWritable: false,
+      isSigner: false,
+    });
+    accounts.push({
+      pubkey: YI_UNDERLYING_TOKENS,
+      isWritable: false,
+      isSigner: false,
+    });
+    await program.rpc.refreshOnePrice(new BN(Tokens.STSOLUST), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        yiUnderlyingTokens: YI_UNDERLYING_TOKENS,
-        yiMint: YI_MINT,
+        priceInfo: YI_ACCOUNT,
         clock: SYSVAR_CLOCK_PUBKEY,
       },
+      remainingAccounts: accounts,
       signers: [],
     });
     oracle = await program.account.oraclePrices.fetch(oracleAccount);

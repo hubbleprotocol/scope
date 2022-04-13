@@ -1,6 +1,7 @@
 use crate::utils::OracleType;
 use crate::{utils::get_price, ScopeError};
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::log::sol_log;
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
@@ -55,8 +56,8 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
     if tokens.len() > crate::MAX_ENTRIES {
         return Err(ProgramError::InvalidArgument);
     }
-    // Check the received token list is as long as the number of provided accounts
-    if tokens.len() != ctx.remaining_accounts.len() {
+    // Check the received token list is at least as long as the number of provided accounts
+    if tokens.len() > ctx.remaining_accounts.len() {
         return Err(ScopeError::AccountsAndTokenMismatch.into());
     }
 
@@ -91,7 +92,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
                     .ok_or(ScopeError::BadTokenNb)?;
                 *to_update = price;
             }
-            Err(_) => msg!("Price skipped as validation failed"), // No format as its a bit costly
+            Err(_) => sol_log("Price skipped as validation failed"), // No format as its a bit costly
         };
     }
 

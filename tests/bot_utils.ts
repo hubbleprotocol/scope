@@ -127,12 +127,12 @@ export class ScopeBot {
     }
   }
 
-  async crank() {
+  async crank(max_age: number = 10) {
     let args = [
       ...this.base_args(),
       "crank",
       "--refresh-interval-slot",
-      "10",
+      max_age.toString(),
       // TODO: allow to test with local mapping
     ];
 
@@ -211,6 +211,11 @@ export class ScopeBot {
       }
       elapsed = Date.now() - s;
     }
+  }
+
+  // flush pending logs
+  flushLogs() {
+    this.logCurrentChunk = this.logChunks.length;
   }
 
   // TODO: Json logs

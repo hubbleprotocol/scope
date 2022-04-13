@@ -282,21 +282,27 @@ impl ScopeClient {
     /// Get an iterator over (id, prices_ttl)
     ///
     /// i.e. the number of slot until at the price currently known by scope has reached its `max_age`
-    /// Note: If a price "need_refresh" then ttl is forced to 0.
+    /// Note: If a price `need_refresh` then ttl is forced to 0.
     pub fn get_prices_ttl(&self) -> Result<impl Iterator<Item = (u16, clock::Slot)> + '_> {
         let oracle_prices = self.get_prices()?;
 
         let current_slot = get_clock(&self.get_rpc())?.slot;
 
         let it = self.tokens.iter().map(move |(id, entry)| {
-            let price_slot = oracle_prices
-                .prices
-                .get(usize::from(*id))
-                .unwrap()
-                .last_updated_slot;
+            let price = &oracle_prices.prices[usize::from(*id)];
+            let price_slot = price.last_updated_slot;
             // default to no remaning slot (ttl=0)
             let age = current_slot.saturating_sub(price_slot);
-            let remaining_slots = entry.get_max_age().saturating_sub(age);
+            let mut remaining_slots = entry.get_max_age().saturating_sub(age);
+            match entry.need_refresh(price, &self.get_rpc()) {
+                Ok(true) => remaining_slots = 0,
+                Err(e) => error!(
+                    ?e,
+                    "token" = id,
+                    "Error while checking if price need refresh"
+                ),
+                _ => (), // Nothing to do
+            }
             (*id, remaining_slots)
         });
         Ok(it)
