@@ -17,7 +17,7 @@ use anyhow::{anyhow, bail, Context, Result};
 
 use nohash_hasher::IntMap;
 use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
-use tracing::{debug, error, event, info, warn, Level};
+use tracing::{debug, error, event, info, trace, warn, Level};
 
 use crate::config::{TokenConfig, TokenList, TokensConfig};
 use crate::oracle_helpers::{entry_from_config, TokenEntry};
@@ -240,6 +240,8 @@ impl ScopeClient {
 
         // Sort the prices ttl from the smallest to biggest.
         prices_ttl.sort_by(|(_, a), (_, b)| a.cmp(b));
+
+        trace!(?prices_ttl);
 
         // Create chunk of tokens of max `MAX_REFRESH_CHUNK_SIZE` accounts
         let mut acc_account_num = 0_usize;
