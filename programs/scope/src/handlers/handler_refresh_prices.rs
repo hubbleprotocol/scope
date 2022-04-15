@@ -29,7 +29,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let price_info = &ctx.accounts.price_info;
 
-    // Check that the provided pyth account is the one referenced in oracleMapping
+    // Check that the provided account is the one referenced in oracleMapping
     if oracle_mappings.price_info_accounts[token] != price_info.key() {
         return Err(ScopeError::UnexpectedAccount.into());
     }
@@ -81,7 +81,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
         if zero_pk == *oracle_mapping {
             continue;
         }
-        // Check that the provided pyth accounts are the one referenced in oracleMapping
+        // Check that the provided oracle accounts are the one referenced in oracleMapping
         if oracle_mappings.price_info_accounts[token_idx] != received_account.key() {
             return Err(ScopeError::UnexpectedAccount.into());
         }

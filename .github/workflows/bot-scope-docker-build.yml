@@ -83,7 +83,7 @@ jobs:
           tags: hubbleprotocol/scope-bot-release-bin:${{ needs.build_docker.outputs.build_version }}
           push: false
           target: release-bin
-          outputs: "type=tar,dest=scope-bot-${{ needs.build_docker.outputs.build_version }}.tar"
+          outputs: 'type=tar,dest=scope-bot-${{ needs.build_docker.outputs.build_version }}.tar'
           cache-from: type=gha
       - name: Create pre-release
         id: pre_release

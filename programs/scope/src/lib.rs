@@ -22,6 +22,7 @@ pub mod scope {
         handler_initialize::process(ctx, feed_name)
     }
 
+    //This handler only works for Pyth type tokens
     pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
         let token: usize = token
             .try_into()
@@ -77,7 +78,7 @@ pub struct OraclePrices {
     pub prices: [DatedPrice; MAX_ENTRIES],
 }
 
-// Accounts holding source of prices (all pyth for now)
+// Accounts holding source of prices
 #[account(zero_copy)]
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
@@ -123,6 +124,9 @@ pub enum ScopeError {
 
     #[msg("The token type received is invalid")]
     BadTokenType,
+
+    #[msg("There was an error with the Switchboard V2 retrieval")]
+    SwitchboardV2Error,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

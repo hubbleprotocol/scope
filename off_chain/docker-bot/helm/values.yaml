@@ -20,23 +20,23 @@ service-base-chart:
         secretName: scope-bot-secret
         defaultMode: 292
   envVars:
-#    - name: VALIDATOR_RPC_URL
-#      valueFrom:
-#        secretKeyRef:
-#          name: scope-bot-secret
-#          key: VALIDATOR_RPC_URL
-#    - name: KEYPAIR
-#      value: /root/.hubble/keypair.json
-#    - name: PROGRAM_ID
-#      value: "abc1234"
-#    - name: JSON_LOGS
-#      value: "TRUE"
-#    - name: PRICE_FEED
-#      value: "hubble"
-#    - name: SERVER
-#      value: "TRUE"
-#    - name: SERVER_PORT
-#      value: "8080"
+  #    - name: VALIDATOR_RPC_URL
+  #      valueFrom:
+  #        secretKeyRef:
+  #          name: scope-bot-secret
+  #          key: VALIDATOR_RPC_URL
+  #    - name: KEYPAIR
+  #      value: /root/.hubble/keypair.json
+  #    - name: PROGRAM_ID
+  #      value: "abc1234"
+  #    - name: JSON_LOGS
+  #      value: "TRUE"
+  #    - name: PRICE_FEED
+  #      value: "hubble"
+  #    - name: SERVER
+  #      value: "TRUE"
+  #    - name: SERVER_PORT
+  #      value: "8080"
   secrets:
     keypair.json:
     VALIDATOR_RPC_URL:

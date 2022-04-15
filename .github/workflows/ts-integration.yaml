@@ -21,6 +21,7 @@ jobs:
             'yarn run ts-mocha -t 1000000 tests/test_oracle_operation.ts',
             'yarn run ts-mocha -t 1000000 tests/test_crank.ts',
             'yarn run ts-mocha -t 1000000 tests/test_yi_token.ts',
+            'yarn run ts-mocha -t 1000000 tests/test_switchboard.ts',
             'cargo test',
           ]
     steps:

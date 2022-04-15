@@ -65,7 +65,7 @@ pub fn entry_from_config(
     rpc: &RpcClient,
 ) -> Result<Box<dyn TokenEntry>> {
     Ok(match token_conf.oracle_type {
-        OracleType::Pyth | OracleType::Switchboard => {
+        OracleType::Pyth | OracleType::SwitchboardV1 | OracleType::SwitchboardV2 => {
             Box::new(SingleAccountOracle::new(token_conf, default_max_age))
         }
         OracleType::YiToken => Box::new(YiOracle::new(token_conf, default_max_age, rpc)?),

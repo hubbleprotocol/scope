@@ -17,8 +17,8 @@ use std::convert::{TryFrom, TryInto};
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
-pub fn get_price(pyth_price_info: &AccountInfo) -> Result<DatedPrice> {
-    let pyth_price_data = &pyth_price_info.try_borrow_data()?;
+pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
+    let pyth_price_data = &price_info.try_borrow_data()?;
     let pyth_price = pyth_client::cast::<pyth_client::Price>(pyth_price_data);
     let price = validate_valid_price(pyth_price)?;
 

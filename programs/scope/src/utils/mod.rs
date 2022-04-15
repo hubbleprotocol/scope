@@ -1,4 +1,6 @@
 pub mod pyth;
+pub mod switchboard_v1;
+pub mod switchboard_v2;
 pub mod yitoken;
 
 use crate::{DatedPrice, ScopeError};
@@ -20,8 +22,9 @@ pub fn check_context<T>(ctx: &Context<T>) -> ProgramResult {
 )]
 #[repr(u8)]
 pub enum OracleType {
-    Pyth = 0,
-    Switchboard,
+    Pyth,
+    SwitchboardV1,
+    SwitchboardV2,
     YiToken,
 }
 
@@ -40,7 +43,8 @@ where
 {
     match price_type {
         OracleType::Pyth => pyth::get_price(base_account),
-        OracleType::Switchboard => todo!(),
+        OracleType::SwitchboardV1 => switchboard_v1::get_price(base_account),
+        OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
     }
 }
@@ -55,7 +59,8 @@ pub fn validate_oracle_account(
 ) -> crate::Result<()> {
     match price_type {
         OracleType::Pyth => pyth::validate_pyth_price_info(price_account),
-        OracleType::Switchboard => todo!(),
-        OracleType::YiToken => Ok(()), // TODO how shall we validate yi token account?
+        OracleType::SwitchboardV1 => Ok(()), // TODO at least check account ownership?
+        OracleType::SwitchboardV2 => Ok(()), // TODO at least check account ownership?
+        OracleType::YiToken => Ok(()),       // TODO how shall we validate yi token account?
     }
 }

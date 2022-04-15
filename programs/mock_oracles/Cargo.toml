@@ -1,5 +1,5 @@
 [package]
-name = "pyth"
+name = "mock_oracles"
 version = "0.1.0"
 description = "Pyth oracle interface implementation in anchor"
 edition = "2018"
@@ -8,7 +8,7 @@ authors = ["Synthetify Labs <contact@synthetify.io>"]
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "pyth"
+name = "mock_oracles"
 doctest = false
 
 [features]
@@ -25,6 +25,10 @@ default = ["localnet"]
 anchor-lang = "0.18.2"
 arrayref = "0.3.6"
 bytemuck = { version = "1.7.2" }
+switchboard-program = "=0.2.0"
+switchboard-v2 = "0.1.3"
+borsh = "=0.9.0"
+quick-protobuf = "=0.8.0"
 
 [build-dependencies]
 serde = "1.0.136"

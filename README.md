@@ -1,6 +1,6 @@
 # Scope
 
-*Scope sees all prices in one glance.*
+_Scope sees all prices in one glance._
 
 [![Integration tests](https://github.com/hubbleprotocol/scope/actions/workflows/ts-integration.yaml/badge.svg)](https://github.com/hubbleprotocol/scope/actions/workflows/ts-integration.yaml)
 
@@ -9,6 +9,7 @@ Scope is a price oracle aggregator living on the Solana network. It copies data 
 Scope prevalidate the prices with a preset of rules and perform the update only if they meet the criteria.
 
 The repository contains two software:
+
 - [`scope`](./programs/scope/) on-chain program.
 - [`scope-cli`](./off_chain/scope-cli/) that provide administration commands and a bot feature to trigger the price feed update.
 
@@ -25,7 +26,7 @@ The repository contains two software:
 - Open creation of price feed to any user who will became admin of the feed.
 - Allow extensible price feed (when resizable account feature is available in Solana mainnet)
 
-## Example of crank refresh operation: 
+## Example of crank refresh operation:
 
 - For simplification let's say we only refresh at most 3 prices per IX.
 - In this example, we have 10 prices in scope named A, B, C, D, E, F, G, H, I, J.
@@ -44,7 +45,7 @@ The repository contains two software:
   3. For each chunk if oldest price is more than 30, refresh chunk
   4. Only one refreshed chunk H, G, F
 - After refresh operation new price ages is: A: 5, B: 10, C: 15, D: 20, E: 25, F: 12, G: 3, H: 3, I: 10, J: 15 (All prices are older by 5 slots about the time to execute the ix, and just refreshed prices are not at 0 because age come from the oracle)
-- Get the new oldest price: E: 25, so sleep for 5 slot (400ms*5).
+- Get the new oldest price: E: 25, so sleep for 5 slot (400ms\*5).
 - Loop
 
 #### Loop 1
@@ -56,5 +57,5 @@ The repository contains two software:
   3. For each chunk if oldest price is more than 30, refresh chunk
   4. Only one refreshed chunk E, D, C
 - After refresh operation new price ages is: A: 15, B: 20, C: 3, D: 5, E: 3, F: 22, G: 13, H: 13, I: 20, J: 25
-- Get the new oldest price: J: 25, so sleep for 5 slot (400ms*5).
+- Get the new oldest price: J: 25, so sleep for 5 slot (400ms\*5).
 - Loop

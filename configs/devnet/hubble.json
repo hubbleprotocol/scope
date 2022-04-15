@@ -86,5 +86,37 @@
       "oracle_mapping": "8yazwmgc66uKrDBy3TZpNCgLa8qUDcuH8PZCz9jy6dzd",
       "price_type": "YiToken"
     }
+  ],
+  [
+    11,
+    {
+      "token_pair": "SaberMSOL/SOL",
+      "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
+      "price_type": "SwitchboardV1"
+    }
+  ],
+  [
+    12,
+    {
+      "token_pair": "USDH/USD",
+      "oracle_mapping": "37NFcKPTgqUVx3gwTQ4c2Q94oJWk2xZy3NQUXtDixReb",
+      "price_type": "SwitchboardV1"
+    }
+  ],
+  [
+    13,
+    {
+      "token_pair": "STSOL/USD",
+      "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA",
+      "price_type": "SwitchboardV2"
+    }
+  ],
+  [
+    14,
+    {
+      "token_pair": "UST/USDswitchboardV1",
+      "oracle_mapping": "8o8gN6VnW45R8pPfQzUJUwJi2adFmsWwfGcFNmicWt61",
+      "price_type": "SwitchboardV1"
+    }
   ]
 ]

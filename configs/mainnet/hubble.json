@@ -1,80 +1,104 @@
 [
-    [
-        0,
-        {
-            "token_pair": "SOL/USD",
-            "oracle_mapping": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG"
-        }
-    ],
-    [
-        1,
-        {
-            "token_pair": "ETH/USD",
-            "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB"
-        }
-    ],
-    [
-        2,
-        {
-            "token_pair": "BTC/USD",
-            "oracle_mapping": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU"
-        }
-    ],
-    [
-        3,
-        {
-            "token_pair": "SRM/USD",
-            "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym"
-        }
-    ],
-    [
-        4,
-        {
-            "token_pair": "RAY/USD",
-            "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB"
-        }
-    ],
-    [
-        5,
-        {
-            "token_pair": "FTT/USD",
-            "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF"
-        }
-    ],
-    [
-        6,
-        {
-            "token_pair": "MSOL/USD",
-            "oracle_mapping": "E4v1BBgoso9s64TQvmyownAVJbhbEPGyzA3qn4n46qj9"
-        }
-    ],
-    [
-        7,
-        {
-            "token_pair": "UST/USD",
-            "oracle_mapping": "H8DvrfSaRfUyP1Ytse1exGf7VSinLWtmKNNaBhA4as9P"
-        }
-    ],
-    [
-        8,
-        {
-            "token_pair": "BNB/USD",
-            "oracle_mapping": "4CkQJBxhU8EZ2UjhigbtdaPbpTe6mqf811fipYBFbSYN"
-        }
-    ],
-    [
-        9,
-        {
-            "token_pair": "AVAX/USD",
-            "oracle_mapping": "Ax9ujW5B9oqcv59N8m6f1BpTBq2rGeGaBcpKjC5UYsXU"
-        }
-    ],
-    [
-        10,
-        {
-          "token_pair": "UST/stSolUST",
-          "oracle_mapping": "53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs",
-          "price_type": "YiToken"
-        }
-      ]
+  [
+    0,
+    {
+      "token_pair": "SOL/USD",
+      "oracle_mapping": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG"
+    }
+  ],
+  [
+    1,
+    {
+      "token_pair": "ETH/USD",
+      "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB"
+    }
+  ],
+  [
+    2,
+    {
+      "token_pair": "BTC/USD",
+      "oracle_mapping": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU"
+    }
+  ],
+  [
+    3,
+    {
+      "token_pair": "SRM/USD",
+      "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym"
+    }
+  ],
+  [
+    4,
+    {
+      "token_pair": "RAY/USD",
+      "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB"
+    }
+  ],
+  [
+    5,
+    {
+      "token_pair": "FTT/USD",
+      "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF"
+    }
+  ],
+  [
+    6,
+    {
+      "token_pair": "MSOL/USD",
+      "oracle_mapping": "E4v1BBgoso9s64TQvmyownAVJbhbEPGyzA3qn4n46qj9"
+    }
+  ],
+  [
+    7,
+    {
+      "token_pair": "UST/USD",
+      "oracle_mapping": "H8DvrfSaRfUyP1Ytse1exGf7VSinLWtmKNNaBhA4as9P"
+    }
+  ],
+  [
+    8,
+    {
+      "token_pair": "BNB/USD",
+      "oracle_mapping": "4CkQJBxhU8EZ2UjhigbtdaPbpTe6mqf811fipYBFbSYN"
+    }
+  ],
+  [
+    9,
+    {
+      "token_pair": "AVAX/USD",
+      "oracle_mapping": "Ax9ujW5B9oqcv59N8m6f1BpTBq2rGeGaBcpKjC5UYsXU"
+    }
+  ],
+  [
+    10,
+    {
+      "token_pair": "UST/stSolUST",
+      "oracle_mapping": "53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs",
+      "price_type": "YiToken"
+    }
+  ],
+  [
+    11,
+    {
+      "token_pair": "SaberMSOL/SOL",
+      "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
+      "price_type": "SwitchboardV1"
+    }
+  ],
+  [
+    12,
+    {
+      "token_pair": "USDH/USD",
+      "oracle_mapping": "37NFcKPTgqUVx3gwTQ4c2Q94oJWk2xZy3NQUXtDixReb",
+      "price_type": "SwitchboardV1"
+    }
+  ],
+  [
+    13,
+    {
+      "token_pair": "STSOL/USD",
+      "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA",
+      "price_type": "SwitchboardV2"
+    }
+  ]
 ]

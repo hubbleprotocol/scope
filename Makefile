@@ -53,14 +53,14 @@ ifeq ($(URL),)
 endif
 
 SCOPE_PROGRAM_KEYPAIR := keys/$(CLUSTER)/scope.json
-FAKE_PYTH_PROGRAM_KEYPAIR := keys/$(CLUSTER)/pyth.json
+FAKE_ORACLES_PROGRAM_KEYPAIR := keys/$(CLUSTER)/mock_oracles.json
 
 SCOPE_PROGRAM_SO := target/deploy/scope.so
-FAKE_PYTH_PROGRAM_SO := target/deploy/pyth.so
+FAKE_ORACLES_PROGRAM_SO := target/deploy/mock_oracles.so
 SCOPE_CLI := target/debug/scope
 
 SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_KEYPAIR)
-FAKE_PYTH_PROGRAM_ID != solana-keygen pubkey $(FAKE_PYTH_PROGRAM_KEYPAIR)
+FAKE_ORACLES_PROGRAM_ID != solana-keygen pubkey $(FAKE_ORACLES_PROGRAM_KEYPAIR)
 PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
 .PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env
@@ -70,7 +70,7 @@ check-env:
 >@ echo "URL=$(URL)" 
 >@ echo "FEED_NAME=$(FEED_NAME)"
 
-build: $(SCOPE_PROGRAM_SO) $(FAKE_PYTH_PROGRAM_SO) $(SCOPE_CLI)
+build: $(SCOPE_PROGRAM_SO) $(FAKE_ORACLES_PROGRAM_SO) $(SCOPE_CLI)
 
 $(SCOPE_CLI): $(shell find off_chain -name "*.rs") $(shell find off_chain -name "Cargo.toml") Cargo.lock
 > cargo build -p scope-cli
@@ -93,8 +93,8 @@ deploy-scope:
 deploy:
 >@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
 >@ if [ $(CLUSTER) = "localnet" ]; then\
-	   # Deploy fake pyth only on localnet\
-       PROGRAM_SO=$(FAKE_PYTH_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_PYTH_PROGRAM_KEYPAIR) $(MAKE) deploy-int;\
+	   # Deploy fake oracles (mock_oracles, Switchboard V1 and Switchboard V2) only on localnet\
+       PROGRAM_SO=$(FAKE_ORACLES_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_ORACLES_PROGRAM_KEYPAIR) $(MAKE) deploy-int;\
    fi
 
 deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
@@ -119,7 +119,11 @@ listen:
 > solana logs -u $(URL) ${SCOPE_PROGRAM_ID}
 
 test-validator:
-> solana-test-validator -r --url mainnet-beta --clone EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9 53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs --account JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T deps/solustscope.json
+> solana-test-validator -r --url mainnet-beta --clone \
+                         EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc \
+                         CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9 \
+                         53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs \
+                         --account JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T tests/deps/solustscope.json
 
 test: test-rust test-ts
 

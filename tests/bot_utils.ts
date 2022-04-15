@@ -1,19 +1,19 @@
-import { execFile, ChildProcess } from "child_process";
+import { execFile, ChildProcess } from 'child_process';
 
-import { PublicKey, Keypair } from "@solana/web3.js";
-import { sleep } from "@project-serum/common";
+import { PublicKey, Keypair } from '@solana/web3.js';
+import { sleep } from '@project-serum/common';
 
-import { Decimal } from "decimal.js";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import path from "path";
+import { Decimal } from 'decimal.js';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import path from 'path';
 
-import * as chai from "chai";
-import assert from "assert";
-import chaiDecimalJs from "chai-decimaljs";
+import * as chai from 'chai';
+import assert from 'assert';
+import chaiDecimalJs from 'chai-decimaljs';
 
 chai.use(chaiDecimalJs(Decimal));
 
-const exe_file = "./target/debug/scope";
+const exe_file = './target/debug/scope';
 
 export interface ScopeBot {
   programId: PublicKey;
@@ -35,7 +35,7 @@ export class ScopeBot {
   }
 
   log(str: string) {
-    console.log("\x1b[32m%s\x1b[0m", str);
+    console.log('\x1b[32m%s\x1b[0m', str);
   }
 
   base_args() {
@@ -44,29 +44,27 @@ export class ScopeBot {
       //'--bin',
       //'scope',
       //'--',
-      "--program-id",
+      '--program-id',
       this.programId.toString(),
-      "--keypair",
+      '--keypair',
       this.keypair,
-      "--price-feed",
+      '--price-feed',
       this.price_feed,
     ];
   }
 
   env() {
-    return Object.assign({}, process.env, {
-      RUST_LOG: "info,scope=trace,scope_client=trace",
-    });
+    return Object.assign({}, process.env, { RUST_LOG: 'info,scope=trace,scope_client=trace' });
   }
 
   async init(mappingPath: string) {
-    let args = [...this.base_args(), "init", "--mapping", mappingPath];
+    let args = [...this.base_args(), 'init', '--mapping', mappingPath];
 
     let env = this.env();
 
     this.childProcess = execFile(exe_file, args, { env: env }, (err) => {
       // ignore errors arising from our sigkill
-      if (err && err.signal != "SIGKILL") {
+      if (err && err.signal != 'SIGKILL') {
         console.error(err);
         return;
       }
@@ -74,7 +72,7 @@ export class ScopeBot {
 
     // now collect output chunks
     if (this.childProcess.stdout) {
-      this.childProcess.stdout.on("data", (data) => {
+      this.childProcess.stdout.on('data', (data) => {
         const chunks = data.trim().split(/\r?\n/);
         for (let chunk of chunks) {
           this.log(`Chunk: ${chunk}`);
@@ -89,18 +87,18 @@ export class ScopeBot {
         }
       });
     } else {
-      throw new Error("childprocess stdout missing??");
+      throw new Error('childprocess stdout missing??');
     }
   }
 
   async update(mappingPath: string) {
-    let args = [...this.base_args(), "update", "--mapping", mappingPath];
+    let args = [...this.base_args(), 'update', '--mapping', mappingPath];
 
     let env = this.env();
 
     this.childProcess = execFile(exe_file, args, { env: env }, (err) => {
       // ignore errors arising from our sigkill
-      if (err && err.signal != "SIGKILL") {
+      if (err && err.signal != 'SIGKILL') {
         console.error(err);
         return;
       }
@@ -108,7 +106,7 @@ export class ScopeBot {
 
     // now collect output chunks
     if (this.childProcess.stdout) {
-      this.childProcess.stdout.on("data", (data) => {
+      this.childProcess.stdout.on('data', (data) => {
         const chunks = data.trim().split(/\r?\n/);
         for (let chunk of chunks) {
           this.log(`Bot log: ${chunk}`);
@@ -123,16 +121,16 @@ export class ScopeBot {
         }
       });
     } else {
-      throw new Error("childprocess stdout missing??");
+      throw new Error('childprocess stdout missing??');
     }
   }
 
-  async crank(max_age: number = 10) {
+  async crank() {
     let args = [
       ...this.base_args(),
-      "crank",
-      "--refresh-interval-slot",
-      max_age.toString(),
+      'crank',
+      '--refresh-interval-slot',
+      '10',
       // TODO: allow to test with local mapping
     ];
 
@@ -140,7 +138,7 @@ export class ScopeBot {
 
     this.childProcess = execFile(exe_file, args, { env: env }, (err) => {
       // ignore errors arising from our sigkill
-      if (err && err.signal != "SIGKILL") {
+      if (err && err.signal != 'SIGKILL') {
         console.error(err);
         return;
       }
@@ -148,7 +146,7 @@ export class ScopeBot {
 
     // now collect output chunks
     if (this.childProcess.stdout) {
-      this.childProcess.stdout.on("data", (data) => {
+      this.childProcess.stdout.on('data', (data) => {
         const chunks = data.trim().split(/\r?\n/);
         for (let chunk of chunks) {
           this.log(`Chunk: ${chunk}`);
@@ -163,19 +161,16 @@ export class ScopeBot {
         }
       });
     } else {
-      throw new Error("childprocess stdout missing??");
+      throw new Error('childprocess stdout missing??');
     }
 
     // now lets wait until we get our started chunk
     // to ensure we are all up and running
-    await this.nextLogMatches(
-      (c) => c.includes("Refresh interval set to"),
-      10000
-    );
+    await this.nextLogMatches((c) => c.includes('Refresh interval set to'), 10000);
   }
 
   stop() {
-    this.childProcess.kill("SIGKILL");
+    this.childProcess.kill('SIGKILL');
   }
 
   pid(): number | undefined {
@@ -194,7 +189,7 @@ export class ScopeBot {
       }
 
       if (Date.now() > e) {
-        throw new Error("missing expected output chunk within timeout");
+        throw new Error('missing expected output chunk within timeout');
       }
       await sleep(100);
     }

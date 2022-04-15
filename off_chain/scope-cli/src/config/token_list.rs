@@ -65,7 +65,7 @@ mod tests {
                 max_age: None,
                 oracle_mapping: Pubkey::from_str("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw")
                     .unwrap(),
-                oracle_type: OracleType::Switchboard,
+                oracle_type: OracleType::SwitchboardV1,
             },
         );
         token_conf_list.tokens.insert(
@@ -88,7 +88,7 @@ mod tests {
             },
             "1": {
               "token_pair": "ETH/USD",
-              "oracle_type": "Switchboard",
+              "oracle_type": "SwitchboardV1",
               "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw"
             },
             "4": {

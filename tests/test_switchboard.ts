@@ -1,4 +1,4 @@
-require('dotenv').config();
+import { setFeedPriceSwitchboardV1, setFeedPriceSwitchboardV2 } from './mock_account_utils';
 import {
   Connection,
   ConnectionConfig,
@@ -13,15 +13,15 @@ import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
 import { Decimal } from 'decimal.js';
 import * as chai from 'chai';
 import { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
 import chaiDecimalJs from 'chai-decimaljs';
 import * as global from './global';
-import { PriceType, Tokens, createFakeAccounts } from './utils';
+import { createFakeAccounts, PriceType, Tokens } from './utils';
 
-chai.use(chaiAsPromised);
+require('dotenv').config();
+
 chai.use(chaiDecimalJs(Decimal));
 
-const initialTokens = [
+let initialTokens = [
   {
     price: new Decimal('228.41550900'),
     ticker: Buffer.from('SOL'),
@@ -136,12 +136,18 @@ const initialTokens = [
   },
 ];
 
-const PRICE_FEED = 'yi_test_feed';
+const PRICE_FEED = 'switchboard_test_feed';
 
-const YI_UNDERLYING_TOKENS = new PublicKey('EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc');
-const YI_MINT = new PublicKey('CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9');
+function checkOraclePrice(token: number, oraclePrices: any) {
+  console.log(`Check ${initialTokens[token].ticker} price`);
+  let price = oraclePrices.prices[token].price;
+  let value = price.value.toString();
+  let expo = price.exp.toString();
+  expect(value).eq(initialTokens[token].mantissa.toString());
+  expect(expo).eq(initialTokens[token].expo.toString());
+}
 
-describe('Yi Scope tests', () => {
+describe('Switchboard Scope tests', () => {
   const keypair_acc = Uint8Array.from(
     Buffer.from(JSON.parse(require('fs').readFileSync(`./keys/${global.getCluster()}/owner.json`)))
   );
@@ -160,7 +166,7 @@ describe('Yi Scope tests', () => {
   const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);
 
   const fakeOraclesProgram = new Program(global.FakeOraclesIdl, global.getFakeOraclesProgramId(), provider);
-  let fakeOraclesAccounts: Array<PublicKey>;
+  let fakeAccounts: Array<PublicKey>;
 
   let programDataAddress: PublicKey;
   let confAccount: PublicKey;
@@ -204,12 +210,12 @@ describe('Yi Scope tests', () => {
 
     console.log('Initialize Tokens mock_oracles prices and oracle mappings');
 
-    fakeOraclesAccounts = await createFakeAccounts(fakeOraclesProgram, initialTokens);
+    fakeAccounts = await createFakeAccounts(fakeOraclesProgram, initialTokens);
   });
 
   it('test_set_oracle_mappings', async () => {
     await Promise.all(
-      fakeOraclesAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
+      fakeAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
         console.log(`Set mapping of ${initialTokens[idx].ticker}`);
 
         await program.rpc.updateMapping(new BN(idx), initialTokens[idx].priceType, {
@@ -225,49 +231,109 @@ describe('Yi Scope tests', () => {
       })
     );
   });
-
-  it('test_update_Yi_price', async () => {
-    let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    let price = oracle.prices[10].price;
-    let value = price.value.toNumber();
-    let expo = price.exp.toNumber();
-    let in_decimal_before = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
-    console.log('Calling Refresh now.');
-    await program.rpc.refreshYiToken(new BN(Tokens.STSOLUST), {
+  it('test_update_stsolusd_v2_price', async () => {
+    await program.rpc.refreshOnePrice(new BN(Tokens.STSOLUSD), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        yiUnderlyingTokens: YI_UNDERLYING_TOKENS,
-        yiMint: YI_MINT,
+        priceInfo: fakeAccounts[Tokens.STSOLUSD],
         clock: SYSVAR_CLOCK_PUBKEY,
       },
       signers: [],
     });
-    oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    price = oracle.prices[10].price;
-    value = price.value.toNumber();
-    expo = price.exp.toNumber();
-    let in_decimal_after = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
-    expect(in_decimal_after.toNumber()).not.eq(in_decimal_before.toNumber());
+    {
+      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      checkOraclePrice(Tokens.STSOLUSD, oracle);
+    }
   });
-  it('test_update_Yi_price_fails_for_non_Yi_tokens', async () => {
-    await Promise.all(
-      initialTokens.map(async (tokenData, idx) => {
-        let nonYiTokenUpdate = program.rpc.refreshYiToken(new BN(idx), {
-          accounts: {
-            oraclePrices: oracleAccount,
-            oracleMappings: oracleMappingAccount,
-            yiUnderlyingTokens: YI_UNDERLYING_TOKENS,
-            yiMint: YI_MINT,
-            clock: SYSVAR_CLOCK_PUBKEY,
-          },
-          signers: [],
-        });
-        if (tokenData.priceType != PriceType.YiToken) {
-          await expect(nonYiTokenUpdate).to.be.rejected;
-          console.log(`Failed as expected for non-Yi token: ${tokenData.ticker}`);
-        }
-      })
-    );
+  it('test_update_sabermsolsol_v1_price', async () => {
+    await program.rpc.refreshOnePrice(new BN(Tokens.SABERMSOLSOL), {
+      accounts: {
+        oraclePrices: oracleAccount,
+        oracleMappings: oracleMappingAccount,
+        priceInfo: fakeAccounts[Tokens.SABERMSOLSOL],
+        clock: SYSVAR_CLOCK_PUBKEY,
+      },
+      signers: [],
+    });
+    {
+      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      checkOraclePrice(Tokens.SABERMSOLSOL, oracle);
+    }
+  });
+  it('test_update_usdh_usd_v1_price', async () => {
+    await program.rpc.refreshOnePrice(new BN(Tokens.USDHUSD), {
+      accounts: {
+        oraclePrices: oracleAccount,
+        oracleMappings: oracleMappingAccount,
+        priceInfo: fakeAccounts[Tokens.USDHUSD],
+        clock: SYSVAR_CLOCK_PUBKEY,
+      },
+      signers: [],
+    });
+    {
+      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      checkOraclePrice(Tokens.USDHUSD, oracle);
+    }
+  });
+  it('test_set_update_stsolusd_v2_price', async () => {
+    let mantissa = new BN('123456789012345678');
+    let scale = new BN('15');
+    await setFeedPriceSwitchboardV2(fakeOraclesProgram, mantissa, scale, fakeAccounts[Tokens.STSOLUSD]);
+    initialTokens[Tokens.STSOLUSD].mantissa = mantissa;
+    initialTokens[Tokens.STSOLUSD].expo = scale.toNumber();
+    await program.rpc.refreshOnePrice(new BN(Tokens.STSOLUSD), {
+      accounts: {
+        oraclePrices: oracleAccount,
+        oracleMappings: oracleMappingAccount,
+        priceInfo: fakeAccounts[Tokens.STSOLUSD],
+        clock: SYSVAR_CLOCK_PUBKEY,
+      },
+      signers: [],
+    });
+    {
+      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      checkOraclePrice(Tokens.STSOLUSD, oracle);
+    }
+  });
+  it('test_set_update_saber_msol_sol_v1_price', async () => {
+    let mantissa = new BN('44859120123');
+    let scale = new BN('8');
+    await setFeedPriceSwitchboardV1(fakeOraclesProgram, mantissa, scale, fakeAccounts[Tokens.SABERMSOLSOL]);
+    initialTokens[Tokens.SABERMSOLSOL].mantissa = mantissa;
+    initialTokens[Tokens.SABERMSOLSOL].expo = scale.toNumber();
+    await program.rpc.refreshOnePrice(new BN(Tokens.SABERMSOLSOL), {
+      accounts: {
+        oraclePrices: oracleAccount,
+        oracleMappings: oracleMappingAccount,
+        priceInfo: fakeAccounts[Tokens.SABERMSOLSOL],
+        clock: SYSVAR_CLOCK_PUBKEY,
+      },
+      signers: [],
+    });
+    {
+      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      checkOraclePrice(Tokens.SABERMSOLSOL, oracle);
+    }
+  });
+  it('test_set_update_usdh_usd_v1_price', async () => {
+    let mantissa = new BN('88675558012');
+    let scale = new BN('8');
+    await setFeedPriceSwitchboardV1(fakeOraclesProgram, mantissa, scale, fakeAccounts[Tokens.USDHUSD]);
+    initialTokens[Tokens.USDHUSD].mantissa = mantissa;
+    initialTokens[Tokens.USDHUSD].expo = scale.toNumber();
+    await program.rpc.refreshOnePrice(new BN(Tokens.USDHUSD), {
+      accounts: {
+        oraclePrices: oracleAccount,
+        oracleMappings: oracleMappingAccount,
+        priceInfo: fakeAccounts[Tokens.USDHUSD],
+        clock: SYSVAR_CLOCK_PUBKEY,
+      },
+      signers: [],
+    });
+    {
+      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      checkOraclePrice(Tokens.USDHUSD, oracle);
+    }
   });
 });
