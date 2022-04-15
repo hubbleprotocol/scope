@@ -11,6 +11,8 @@ const SWITCHBOARD_V1_PRICE_DECIMALS: u32 = 8u32;
 const PRICE_MULTIPLIER: f64 = 10u64.pow(SWITCHBOARD_V1_PRICE_DECIMALS) as f64;
 const MAX_PRICE_FLOAT: f64 = 10_000_000_000f64; //we choose an arbitrarily high number to do a sanity check and avoid overflow in the multiplication below
 const MIN_NUM_SUCCESS: i32 = 3i32;
+const MIN_CONFIDENCE_PERCENTAGE: f64 = 2f64;
+const CONFIDENCE_FACTOR: f64 = 100f64/MIN_CONFIDENCE_PERCENTAGE;
 
 pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     let account_buf = switchboard_feed_info.try_borrow_data()?;
@@ -30,7 +32,10 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     }
     let price: u64 = (price_float * PRICE_MULTIPLIER) as u64;
     let slot: u64 = round_result.round_open_slot.unwrap();
-    validate_valid_price(price, slot, aggregator, round_result)
+
+    let max_response = round_result.max_response.ok_or(ScopeError::PriceNotValid)?;
+    let min_response = round_result.min_response.ok_or(ScopeError::PriceNotValid)?;
+    validate_valid_price(price, slot, aggregator, round_result, price_float, max_response, min_response)
 }
 
 pub fn validate_valid_price(
@@ -38,6 +43,9 @@ pub fn validate_valid_price(
     slot: u64,
     aggregator: AggregatorState,
     round_result: RoundResult,
+    price_float: f64,
+    max_response: f64,
+    min_response: f64,
 ) -> Result<DatedPrice> {
     let dated_price = DatedPrice {
         price: Price {
@@ -51,6 +59,13 @@ pub fn validate_valid_price(
         return Ok(dated_price);
     };
 
+    validate_min_success(aggregator, round_result)?;
+    validate_confidence(price_float, max_response, min_response)?;
+
+    Ok(dated_price)
+}
+
+fn validate_min_success(aggregator: AggregatorState, round_result: RoundResult) -> Result<()> {
     let aggregator_min_confirmations = aggregator
         .configs
         .ok_or(ScopeError::PriceNotValid)?
@@ -62,8 +77,17 @@ pub fn validate_valid_price(
     if num_success < min_num_success_for_oracle {
         return Err(ScopeError::PriceNotValid.into());
     };
+    Ok(())
+}
 
-    Ok(dated_price)
+fn validate_confidence(price: f64, max_response: f64, min_response: f64) -> Result<()> {
+    //st_dev_estimate = (max_response - min_response) / 4
+    //st_dev_estimate < CONFIDENCE_PERCENTAGE * price/100 <-- THIS IS MEANS VALID PRICE
+    // st_dev_estimate * (100/CONFIDENCE_PERCENTAGE) = st_dev_estimate * CONFIDENCE_FACTOR < price
+    if max_response < min_response || (max_response - min_response) * CONFIDENCE_FACTOR >= 4f64 * price {
+        return Err(ScopeError::PriceNotValid.into());
+    };
+    Ok(())
 }
 
 #[cfg(test)]
@@ -94,30 +118,78 @@ mod tests {
     #[test]
     fn test_valid_switchboard_v1_price() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(1, 1);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_ok());
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 1f64).is_ok());
     }
 
     #[test]
     fn test_valid_switchboard_v1_price_min_1_success_2() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(1, 2);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_ok());
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 1f64).is_ok());
     }
 
     #[test]
     fn test_valid_switchboard_v1_price_default_min_success() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(4, 3);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_ok());
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 1f64).is_ok());
     }
 
     #[test]
     fn test_invalid_switchboard_v1_price_1() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(2, 1);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_err());
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 1f64).is_err());
     }
 
     #[test]
     fn test_invalid_switchboard_v1_price_2() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(4, 2);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_err());
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 1f64).is_err());
+    }
+
+    //validate_confidence_tests
+    fn get_valid_structs() -> (AggregatorState, RoundResult) {
+        get_structs_from_min_confirmations_and_num_success(1, 1)
+    }
+
+    #[test]
+    fn test_valid_switchboard_v1_price_stdev_estimate() {
+        let (aggregator, round_result) = get_valid_structs();
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1.079f64, 1f64).is_ok());
+    }
+
+    #[test]
+    fn test_invalid_switchboard_v1_price_stdev_estimate() {
+        let (aggregator, round_result) = get_valid_structs();
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1.08f64, 1f64).is_err());
+    }
+
+    #[test]
+    fn test_valid_switchboard_v1_price_stdev_estimate_1() {
+        let (aggregator, round_result) = get_valid_structs();
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1.039f64, 0.96f64).is_ok());
+    }
+
+    #[test]
+    fn test_invalid_switchboard_v1_price_stdev_estimate_1() {
+        let (aggregator, round_result) = get_valid_structs();
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1.04f64, 0.96f64).is_err());
+    }
+
+
+    #[test]
+    fn test_valid_switchboard_v1_price_stdev_estimate_2() {
+        let (aggregator, round_result) = get_valid_structs();
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 0.921f64).is_ok());
+    }
+
+    #[test]
+    fn test_invalid_switchboard_v1_price_stdev_estimate_2() {
+        let (aggregator, round_result) = get_valid_structs();
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 0.919999f64).is_err());
+    }
+
+    #[test]
+    fn test_invalid_switchboard_v1_price_wrong_min_max() {
+        let (aggregator, round_result) = get_valid_structs();
+        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result, 1f64, 1f64, 1.001f64).is_err());
     }
 }

@@ -75,6 +75,8 @@ pub mod mock_oracles {
             num_success: Some(3),
             result: Some(price),
             round_open_slot: Some(slot),
+            max_response: Some(price),
+            min_response: Some(price),
             ..RoundResult::default()
         });
         let aggregator_state = AggregatorState {
@@ -139,6 +141,8 @@ pub mod mock_oracles {
         let price = mantissa_f64.div(denominator);
         let mut last_round_result = aggregator_state.last_round_result.unwrap();
         last_round_result.result = Some(price);
+        last_round_result.max_response = Some(price);
+        last_round_result.min_response = Some(price);
         let slot = ctx.accounts.clock.slot;
         last_round_result.round_open_slot = Some(slot);
         aggregator_state.last_round_result = Some(last_round_result);
