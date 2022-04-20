@@ -1,7 +1,12 @@
-import { Program } from '@project-serum/anchor';
-import * as mockAccountUtils from './mock_account_utils';
+import { expect } from 'chai';
+import * as chai from 'chai';
+import Decimal from 'decimal.js';
+import chaiDecimalJs from 'chai-decimaljs';
+import { ITokenEntry, ITokenInput, OracleType } from './oracle_utils/mock_oracles';
 
-export enum Tokens {
+chai.use(chaiDecimalJs(Decimal));
+
+export enum HubbleTokens {
   SOL = 0,
   ETH,
   BTC,
@@ -12,43 +17,104 @@ export enum Tokens {
   UST,
   BNB,
   AVAX,
-  STSOLUST,
+  //STSOLUST,
   SABERMSOLSOL,
   USDHUSD,
   STSOLUSD,
 }
 
-export enum PriceType {
-  Pyth = 0,
-  SwitchboardV1 = 1,
-  SwitchboardV2 = 2,
-  YiToken = 3,
-}
+export const initialTokens: ITokenInput[] = [
+  {
+    price: new Decimal('228.41550900'),
+    ticker: 'SOL',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('4726.59830000'),
+    ticker: 'ETH',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('64622.36900000'),
+    ticker: 'BTC',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('7.06975570'),
+    ticker: 'SRM',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('11.10038050'),
+    ticker: 'RAY',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('59.17104600'),
+    ticker: 'FTT',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('253.41550900'),
+    ticker: 'MSOL',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('228.415509'),
+    ticker: 'UST',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('11.10038050'),
+    ticker: 'BNB',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  {
+    price: new Decimal('59.17104600'),
+    ticker: 'AVAX',
+    decimals: 8,
+    priceType: OracleType.Pyth,
+  },
+  // {
+  //   price: new Decimal('0.90987600'),
+  //   ticker: 'STSOLUST',
+  //   decimals: 8,
+  //   priceType: OracleType.YiToken,
+  // },
+  {
+    price: new Decimal('343.92109348'),
+    ticker: 'SABERMSOLSOL',
+    decimals: 8,
+    priceType: OracleType.SwitchboardV1,
+  },
+  {
+    price: new Decimal('999.20334456'),
+    ticker: 'USDHUSD',
+    decimals: 8,
+    priceType: OracleType.SwitchboardV1,
+  },
+  {
+    ticker: 'STSOLUSD',
+    price: new Decimal('474.00324002'),
+    decimals: 8,
+    priceType: OracleType.SwitchboardV2,
+  },
+];
 
-export async function createFakeAccounts(fakeOraclesProgram: Program<any>, initialTokens: any[]) {
-  return await Promise.all(
-    initialTokens.map(async (asset): Promise<any> => {
-      console.log(`Adding ${asset.ticker.toString()}`);
-
-      if (asset.priceType == PriceType.Pyth || asset.priceType == PriceType.YiToken) {
-        return await mockAccountUtils.createPriceFeedPyth({
-          oracleProgram: fakeOraclesProgram,
-          initPrice: asset.price,
-          expo: -asset.decimals,
-        });
-      } else if (asset.priceType == PriceType.SwitchboardV1) {
-        return await mockAccountUtils.createPriceFeedSwitchboardV1({
-          oracleProgram: fakeOraclesProgram,
-          mantissa: asset.mantissa,
-          scale: asset.expo,
-        });
-      } else if (asset.priceType == PriceType.SwitchboardV2) {
-        return await mockAccountUtils.createPriceFeedSwitchboardV2({
-          oracleProgram: fakeOraclesProgram,
-          mantissa: asset.mantissa,
-          scale: asset.expo,
-        });
-      }
-    })
-  );
+export function checkOraclePrice(token: number, oraclePrices: any, testTokens: ITokenEntry[]) {
+  //console.log(`Check ${testTokens[token].ticker} price`);
+  let price = oraclePrices.prices[token].price;
+  let value = price.value.toNumber();
+  let expo = price.exp.toNumber();
+  let in_decimal = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
+  expect(in_decimal).decimal.eq(testTokens[token].price);
 }
