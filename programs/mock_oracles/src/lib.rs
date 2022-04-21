@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+mod ctokens;
 pub mod pc;
 
 use pc::{Price, PriceStatus};
@@ -24,7 +25,12 @@ pub mod mock_oracles {
 
     use super::*;
     use switchboard_v2::decimal::SwitchboardDecimal;
-    pub fn initialize(ctx: Context<Initialize>, price: i64, expo: i32, conf: u64) -> ProgramResult {
+    pub fn initialize_pyth(
+        ctx: Context<Initialize>,
+        price: i64,
+        expo: i32,
+        conf: u64,
+    ) -> ProgramResult {
         let oracle = &ctx.accounts.price;
 
         let mut price_oracle = Price::load(oracle).unwrap();
@@ -114,6 +120,21 @@ pub mod mock_oracles {
         Ok(())
     }
 
+    pub fn initialize_ctoken(
+        ctx: Context<Initialize>,
+        mint_total_supply: u64,
+        total_liquidity: u64,
+    ) -> ProgramResult {
+        ctokens::initialize(&ctx.accounts.price, mint_total_supply, total_liquidity)?;
+        msg!(
+            "Ctoken price {} updated to supply: {} liquidity: {}",
+            ctx.accounts.price.key(),
+            mint_total_supply,
+            total_liquidity
+        );
+        Ok(())
+    }
+
     pub fn set_price_pyth(ctx: Context<SetPrice>, price: i64) -> ProgramResult {
         let oracle = &ctx.accounts.price;
 
@@ -122,7 +143,12 @@ pub mod mock_oracles {
 
         let slot = ctx.accounts.clock.slot;
         price_oracle.valid_slot = slot;
-        msg!("Price {} updated to {} at slot {}", oracle.key, price, slot);
+        msg!(
+            "Pyth price {} updated to {} at slot {}",
+            oracle.key,
+            price,
+            slot
+        );
         Ok(())
     }
 
@@ -168,6 +194,21 @@ pub mod mock_oracles {
             .round_open_slot = slot;
         let key = &ctx.accounts.price.key.to_string();
         msg!("Switchboard V2 Price {} updated at slot {}", key, slot);
+
+        Ok(())
+    }
+
+    pub fn set_price_ctoken(
+        ctx: Context<SetPrice>,
+        mint_total_supply: u64,
+        total_liquidity: u64,
+    ) -> ProgramResult {
+        ctokens::update(&ctx.accounts.price, mint_total_supply, total_liquidity)?;
+        msg!(
+            "Ctoken Price {} updated at slot {}",
+            ctx.accounts.price.key(),
+            ctx.accounts.clock.slot
+        );
 
         Ok(())
     }

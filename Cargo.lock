@@ -2271,6 +2271,7 @@ dependencies = [
  "quick-protobuf",
  "serde",
  "serde_json",
+ "solend-program",
  "switchboard-program",
  "switchboard-v2",
 ]

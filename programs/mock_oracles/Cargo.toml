@@ -29,6 +29,9 @@ switchboard-program = "=0.2.0"
 switchboard-v2 = "0.1.3"
 borsh = "=0.9.0"
 quick-protobuf = "=0.8.0"
+solend-program = { git = "https://github.com/solendprotocol/solana-program-library", features = [
+    "no-entrypoint",
+] }
 
 [build-dependencies]
 serde = "1.0.136"
