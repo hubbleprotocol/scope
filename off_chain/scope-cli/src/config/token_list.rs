@@ -78,29 +78,59 @@ mod tests {
                 oracle_type: OracleType::YiToken,
             },
         );
+        token_conf_list.tokens.insert(
+            13,
+            TokenConfig {
+                token_pair: "STSOL/USD".to_string(),
+                max_age: None,
+                oracle_mapping: Pubkey::from_str("9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA")
+                    .unwrap(),
+                oracle_type: OracleType::SwitchboardV2,
+            },
+        );
+        token_conf_list.tokens.insert(
+            14, // 4 to test actual holes
+            TokenConfig {
+                token_pair: "cSOL/SOL".to_string(),
+                max_age: None,
+                oracle_mapping: Pubkey::from_str("9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA")
+                    .unwrap(),
+                oracle_type: OracleType::CToken,
+            },
+        );
 
         let json = r#"{
             "default_max_age": 30,
             "0": {
-              "token_pair": "SOL/USD",
-              "oracle_type": "Pyth",
-              "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix"
+                "token_pair": "SOL/USD",
+                "oracle_type": "Pyth",
+                "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix"
             },
             "1": {
-              "token_pair": "ETH/USD",
-              "oracle_type": "SwitchboardV1",
-              "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw"
+                "token_pair": "ETH/USD",
+                "oracle_type": "SwitchboardV1",
+                "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw"
             },
             "4": {
-              "token_pair": "UST/stSolUST",
-              "oracle_type": "YiToken",
-              "max_age": 800,
-              "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J"
+                "token_pair": "UST/stSolUST",
+                "oracle_type": "YiToken",
+                "max_age": 800,
+                "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J"
+            },
+            "13": {
+                "token_pair": "STSOL/USD",
+                "oracle_type": "SwitchboardV2",
+                "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA"
+            },
+            "14": {
+                "token_pair": "cSOL/SOL",
+                "oracle_type": "CToken",
+                "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA"
             }
           }
           "#;
 
-        let serialized: TokensConfig = dbg!(serde_json::from_str(json)).unwrap();
+        let serialized: TokensConfig = serde_json::from_str(json).unwrap();
         assert_eq!(token_conf_list, serialized);
 
         let deserialized = serde_json::to_string(&token_conf_list).unwrap();

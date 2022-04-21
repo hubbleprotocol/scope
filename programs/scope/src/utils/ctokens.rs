@@ -5,13 +5,11 @@ use anchor_lang::solana_program::program_pack::Pack;
 use solend_program::state::Reserve;
 
 const DECIMALS: u32 = 15u32;
-const FACTOR: u64 = 10u64.pow(DECIMALS);
 
 pub fn get_price(solend_reserve_account: &AccountInfo) -> Result<DatedPrice> {
     let reserve = Reserve::unpack(&solend_reserve_account.data.borrow())?;
-    let rate = reserve.collateral_exchange_rate()?;
 
-    let value = rate.liquidity_to_collateral(FACTOR)?;
+    let value = scaled_rate(&reserve)?;
 
     let price = Price {
         value,
@@ -27,6 +25,7 @@ pub fn get_price(solend_reserve_account: &AccountInfo) -> Result<DatedPrice> {
 }
 
 fn scaled_rate(reserve: &Reserve) -> Result<u64> {
+    const FACTOR: u64 = 10u64.pow(DECIMALS);
     let rate = reserve.collateral_exchange_rate()?;
     let value = rate.liquidity_to_collateral(FACTOR)?;
 

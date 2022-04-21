@@ -1,122 +1,94 @@
-[
-  [
-    0,
-    {
-      "token_pair": "SOL/USD",
-      "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    1,
-    {
-      "token_pair": "ETH/USD",
-      "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    2,
-    {
-      "token_pair": "BTC/USD",
-      "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    3,
-    {
-      "token_pair": "SRM/USD",
-      "oracle_mapping": "992moaMQKs32GKZ9dxi8keyM2bUmbrwBZpK4p2K6X5Vs",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    4,
-    {
-      "token_pair": "RAY/USD",
-      "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    5,
-    {
-      "token_pair": "FTT/USD",
-      "oracle_mapping": "6vivTRs5ZPeeXbjo7dfburfaYDWoXjBtdtuYgQRuGfu",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    6,
-    {
-      "token_pair": "MSOL/USD",
-      "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    7,
-    {
-      "token_pair": "UST/USD",
-      "oracle_mapping": "AUKjh1oVPZyudi3nzYSsdZxSjq42afUCvsdbKFc5CbD",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    8,
-    {
-      "token_pair": "BNB/USD",
-      "oracle_mapping": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    9,
-    {
-      "token_pair": "AVAX/USD",
-      "oracle_mapping": "FVb5h1VmHPfVb1RfqZckchq18GxRv4iKt8T4eVTQAqdz",
-      "price_type": "Pyth"
-    }
-  ],
-  [
-    10,
-    {
-      "token_pair": "UST/stSolUST",
-      "oracle_mapping": "8yazwmgc66uKrDBy3TZpNCgLa8qUDcuH8PZCz9jy6dzd",
-      "price_type": "YiToken"
-    }
-  ],
-  [
-    11,
-    {
-      "token_pair": "SaberMSOL/SOL",
-      "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
-      "price_type": "SwitchboardV1"
-    }
-  ],
-  [
-    12,
-    {
-      "token_pair": "USDH/USD",
-      "oracle_mapping": "37NFcKPTgqUVx3gwTQ4c2Q94oJWk2xZy3NQUXtDixReb",
-      "price_type": "SwitchboardV1"
-    }
-  ],
-  [
-    13,
-    {
-      "token_pair": "STSOL/USD",
-      "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA",
-      "price_type": "SwitchboardV2"
-    }
-  ],
-  [
-    14,
-    {
-      "token_pair": "UST/USDswitchboardV1",
-      "oracle_mapping": "8o8gN6VnW45R8pPfQzUJUwJi2adFmsWwfGcFNmicWt61",
-      "price_type": "SwitchboardV1"
-    }
-  ]
-]
+{
+  "default_max_age": 30,
+  "0": {
+    "token_pair": "SOL/USD",
+    "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
+    "oracle_type": "Pyth"
+  },
+  "1": {
+    "token_pair": "ETH/USD",
+    "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw",
+    "oracle_type": "Pyth"
+  },
+  "2": {
+    "token_pair": "BTC/USD",
+    "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J",
+    "oracle_type": "Pyth"
+  },
+  "3": {
+    "token_pair": "SRM/USD",
+    "oracle_mapping": "992moaMQKs32GKZ9dxi8keyM2bUmbrwBZpK4p2K6X5Vs",
+    "oracle_type": "Pyth"
+  },
+  "4": {
+    "token_pair": "RAY/USD",
+    "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6",
+    "oracle_type": "Pyth"
+  },
+  "5": {
+    "token_pair": "FTT/USD",
+    "oracle_mapping": "6vivTRs5ZPeeXbjo7dfburfaYDWoXjBtdtuYgQRuGfu",
+    "oracle_type": "Pyth"
+  },
+  "6": {
+    "token_pair": "MSOL/USD",
+    "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ",
+    "oracle_type": "Pyth"
+  },
+  "7": {
+    "token_pair": "UST/USD",
+    "oracle_mapping": "AUKjh1oVPZyudi3nzYSsdZxSjq42afUCvsdbKFc5CbD",
+    "oracle_type": "Pyth"
+  },
+  "8": {
+    "token_pair": "BNB/USD",
+    "oracle_mapping": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b",
+    "oracle_type": "Pyth"
+  },
+  "9": {
+    "token_pair": "AVAX/USD",
+    "oracle_mapping": "FVb5h1VmHPfVb1RfqZckchq18GxRv4iKt8T4eVTQAqdz",
+    "oracle_type": "Pyth"
+  },
+  "10": {
+    "token_pair": "UST/stSolUST",
+    "oracle_mapping": "8yazwmgc66uKrDBy3TZpNCgLa8qUDcuH8PZCz9jy6dzd",
+    "max_age": 800,
+    "oracle_type": "YiToken"
+  },
+  "11": {
+    "token_pair": "SaberMSOL/SOL",
+    "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
+    "oracle_type": "SwitchboardV1"
+  },
+  "12": {
+    "token_pair": "USDH/USD",
+    "oracle_mapping": "37NFcKPTgqUVx3gwTQ4c2Q94oJWk2xZy3NQUXtDixReb",
+    "oracle_type": "SwitchboardV1"
+  },
+  "13": {
+    "token_pair": "STSOL/USD",
+    "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA",
+    "oracle_type": "SwitchboardV2"
+  },
+  "14": {
+    "token_pair": "cSOL/SOL",
+    "oracle_mapping": "5VVLD7BQp8y3bTgyF5ezm1ResyMTR3PhYsT4iHFU8Sxz",
+    "oracle_type": "CToken"
+  },
+  "15": {
+    "token_pair": "cETH/ETH",
+    "oracle_mapping": "CuQcLfN3iTWqyEEbAHNZp7awChbR4KQPFJsTUhsAxrcu",
+    "oracle_type": "CToken"
+  },
+  "16": {
+    "token_pair": "cBTC/BTC",
+    "oracle_mapping": "FNXBRv3saDgVoaoDLV5ho28D4AvZikG9r7QpThTLak9f",
+    "oracle_type": "CToken"
+  },
+  "17": {
+    "token_pair": "cMSOL/MSOL",
+    "oracle_mapping": "Ei2dC7hFxBhVq5pn4qNJLMxKBSojx7p7wnNoBz4HELKG",
+    "oracle_type": "CToken"
+  }
+}
