@@ -1,3 +1,4 @@
+pub mod ctokens;
 pub mod pyth;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
@@ -26,6 +27,8 @@ pub enum OracleType {
     SwitchboardV1,
     SwitchboardV2,
     YiToken,
+    /// Solend tokens
+    CToken,
 }
 
 /// Get the price for a given oracle type
@@ -46,6 +49,7 @@ where
         OracleType::SwitchboardV1 => switchboard_v1::get_price(base_account),
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
+        OracleType::CToken => ctokens::get_price(base_account),
     }
 }
 
@@ -62,5 +66,6 @@ pub fn validate_oracle_account(
         OracleType::SwitchboardV1 => Ok(()), // TODO at least check account ownership?
         OracleType::SwitchboardV2 => Ok(()), // TODO at least check account ownership?
         OracleType::YiToken => Ok(()),       // TODO how shall we validate yi token account?
+        OracleType::CToken => Ok(()),        // TODO how shall we validate ctoken account?
     }
 }
