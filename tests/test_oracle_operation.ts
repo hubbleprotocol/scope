@@ -133,7 +133,13 @@ describe('Scope tests', () => {
 
   it('test_update_price_list', async () => {
     await program.rpc.refreshPriceList(
-      Uint16Array.from([HubbleTokens.ETH, HubbleTokens.RAY, HubbleTokens.STSOLUSD, HubbleTokens.SABERMSOLSOL]),
+      Uint16Array.from([
+        HubbleTokens.ETH,
+        HubbleTokens.RAY,
+        HubbleTokens.STSOLUSD,
+        HubbleTokens.SABERMSOLSOL,
+        HubbleTokens.CSOL,
+      ]),
       {
         accounts: {
           oraclePrices: oracleAccount,
@@ -145,6 +151,7 @@ describe('Scope tests', () => {
           { pubkey: testTokens[HubbleTokens.RAY].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.STSOLUSD].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.SABERMSOLSOL].account, isWritable: false, isSigner: false },
+          { pubkey: testTokens[HubbleTokens.CSOL].account, isWritable: false, isSigner: false },
         ],
         signers: [],
       }
@@ -156,6 +163,7 @@ describe('Scope tests', () => {
       checkOraclePrice(HubbleTokens.RAY, oracle, testTokens);
       checkOraclePrice(HubbleTokens.STSOLUSD, oracle, testTokens);
       checkOraclePrice(HubbleTokens.SABERMSOLSOL, oracle, testTokens);
+      checkOraclePrice(HubbleTokens.CSOL, oracle, testTokens);
     }
   });
 

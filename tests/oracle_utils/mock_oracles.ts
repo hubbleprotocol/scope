@@ -8,8 +8,7 @@ import * as pyth from './pyth';
 import * as switchboardV1 from './switchboard_v1';
 import * as switchboardV2 from './switchboard_v2';
 import * as yi from './yitokens';
-//import * as yitokens from './yitokens';
-//import * as ctokens from './ctokens';
+import * as ctokens from './ctokens';
 
 const mockOracleProgram = anchor.workspace.MockOracle;
 
@@ -18,7 +17,7 @@ export enum OracleType {
   SwitchboardV1 = 1,
   SwitchboardV2 = 2,
   YiToken = 3,
-  //  CToken = 4,
+  CToken = 4,
 }
 
 export interface ITokenInput {
@@ -52,7 +51,7 @@ export const oracles: Record<OracleType, IMockOracle> = {
   [OracleType.SwitchboardV1]: new switchboardV1.Sb1MockOracle(),
   [OracleType.SwitchboardV2]: new switchboardV2.Sb2MockOracle(),
   [OracleType.YiToken]: new yi.YiMockOracle(),
-  //  [OracleType.CToken]: new pyth.PythMockOracle(),
+  [OracleType.CToken]: new ctokens.CTokenMockOracle(),
 };
 
 export async function createFakeAccounts(
