@@ -21,7 +21,7 @@ export const createPriceFeed = async (
   const conf = confidence || new BN(0);
   const collateralTokenFeed = new web3.Keypair();
 
-  await mockOracleProgram.rpc.initialize(
+  await mockOracleProgram.rpc.initializePyth(
     new BN(initPrice.mul(new Decimal(10).pow(new Decimal(-expo))).toNumber()),
     expo,
     conf,
