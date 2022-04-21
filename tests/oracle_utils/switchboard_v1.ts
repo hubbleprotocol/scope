@@ -1,8 +1,6 @@
 import { BN, Program, web3 } from '@project-serum/anchor';
-import { parsePriceData } from '@pythnetwork/client';
 import { PublicKey, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
 import Decimal from 'decimal.js';
-import * as anchor from '@project-serum/anchor';
 import { IMockOracle, ITokenEntry, OracleType } from './mock_oracles';
 
 export const createPriceFeedSwitchboardV1 = async (mockOracleProgram: Program, mantissa: BN, scale: BN) => {
@@ -31,8 +29,6 @@ export const setFeedPriceSwitchboardV1 = async (
   priceFeed: web3.PublicKey
 ) => {
   const info = await mockOracleProgram.provider.connection.getAccountInfo(priceFeed);
-  //@ts-expect-error
-  const data = parsePriceData(info.data);
   await mockOracleProgram.rpc.setPriceSwitchboardV1(mantissa, scale, {
     accounts: { price: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
   });

@@ -45,7 +45,7 @@ impl YiOracle {
             label: conf.token_pair.clone(),
             mapping,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
-            extra_accounts: [yi_account.token_mint, yi_account.token_account],
+            extra_accounts: [yi_account.mint, yi_account.token_account],
         })
     }
 

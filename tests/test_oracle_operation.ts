@@ -149,7 +149,7 @@ describe('Scope tests', () => {
         signers: [],
       }
     );
-    // Check the two updated accounts
+    // Check the updated accounts
     {
       const oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkOraclePrice(HubbleTokens.ETH, oracle, testTokens);

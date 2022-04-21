@@ -49,7 +49,7 @@ export const setFeedPrice = async (mockOracleProgram: Program, newPrice: Decimal
   //@ts-expect-error
   const data = parsePriceData(info.data);
   const newPriceBn = new BN(newPrice.mul(new Decimal(10).pow(new Decimal(-data.exponent))).toNumber());
-  await mockOracleProgram.rpc.setPrice(newPriceBn, {
+  await mockOracleProgram.rpc.setPricePyth(newPriceBn, {
     accounts: { price: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
   });
 };

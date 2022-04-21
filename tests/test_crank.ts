@@ -1,4 +1,3 @@
-import { Token } from '@solana/spl-token';
 import {
   Connection,
   ConnectionConfig,
@@ -12,139 +11,20 @@ import { BN, Program, Provider, setProvider } from '@project-serum/anchor';
 import { sleep } from '@project-serum/common';
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
 import { Decimal } from 'decimal.js';
-import * as chai from 'chai';
 import { expect } from 'chai';
-import chaiDecimalJs from 'chai-decimaljs';
 import * as global from './global';
 import * as bot from './bot_utils';
-import { TOKEN_PROGRAM_ID } from '@project-serum/serum/lib/token-instructions';
-import { createFakeAccounts, PriceType } from './utils';
-import * as mockAccountUtils from './mock_account_utils';
+import { HubbleTokens, initialTokens, getScopePriceDecimal } from './utils';
+import { OracleType, createFakeAccounts, ITokenEntry, oracles } from './oracle_utils/mock_oracles';
 
 require('dotenv').config();
 
-chai.use(chaiDecimalJs(Decimal));
-
-let tokenList = [
-  {
-    price: new Decimal('228.41550900'),
-    ticker: Buffer.from('SOL'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('4726.59830000'),
-    ticker: Buffer.from('ETH'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('64622.36900000'),
-    ticker: Buffer.from('BTC'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('7.06975570'),
-    ticker: Buffer.from('SRM'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('11.10038050'),
-    ticker: Buffer.from('RAY'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('59.17104600'),
-    ticker: Buffer.from('FTT'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('253.41550900'),
-    ticker: Buffer.from('MSOL'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('228.415509'),
-    ticker: Buffer.from('UST'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('11.10038050'),
-    ticker: Buffer.from('BNB'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('59.17104600'),
-    ticker: Buffer.from('AVAX'),
-    decimals: 8,
-    priceType: PriceType.Pyth,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('0.90987600'),
-    ticker: Buffer.from('STSOLUST'),
-    decimals: 8,
-    priceType: PriceType.YiToken,
-    mantissa: new BN(0),
-    expo: 1,
-  },
-  {
-    price: new Decimal('343.92109348'),
-    ticker: Buffer.from('SABERMSOLSOL'),
-    decimals: 8,
-    priceType: PriceType.SwitchboardV1,
-    mantissa: new BN('34392109348'),
-    expo: 8,
-  },
-  {
-    price: new Decimal('999.20334456'),
-    ticker: Buffer.from('USDHUSD'),
-    decimals: 8,
-    priceType: PriceType.SwitchboardV1,
-    mantissa: new BN('99920334456'),
-    expo: 8,
-  },
-  {
-    mantissa: new BN('474003240021234567'),
-    expo: 15,
-    ticker: Buffer.from('STSOLUSD'),
-    price: new Decimal('474.003240021234567'),
-    decimals: 8,
-    priceType: PriceType.SwitchboardV2,
-  },
-];
-
-const PRICE_FEED = 'crank_test_feed';
+const date = Date.now();
+const PRICE_FEED = 'crank_test_feed' + date;
 
 function getRevisedIndex(token: number): number {
   // Create a bit of spread in the mapping to make bot's life harder
-  if (token < tokenList.length / 2) {
+  if (token < initialTokens.length / 2) {
     return token;
   } else {
     // Put last tokens at the end
@@ -152,23 +32,13 @@ function getRevisedIndex(token: number): number {
   }
 }
 
-function checkAllOraclePrices(oraclePrices: any) {
+function checkAllOraclePrices(oraclePrices: any, tokenEntries: ITokenEntry[]) {
   console.log(`Check all prices`);
-  tokenList.map((tokenData, idx) => {
-    if (tokenData.priceType == PriceType.SwitchboardV1 || tokenData.priceType == PriceType.SwitchboardV2) {
-      let price = oraclePrices.prices[getRevisedIndex(idx)].price;
-      let value = price.value.toString();
-      let expo = price.exp.toString();
-      expect(value).eq(tokenData.mantissa.toString());
-      expect(expo).eq(tokenData.expo.toString());
-    } else {
-      let price = oraclePrices.prices[getRevisedIndex(idx)].price;
-      let value = price.value.toNumber();
-      let expo = price.exp.toNumber();
-      let in_decimal = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
-      if (idx != 10) {
-        expect(in_decimal).decimal.eq(tokenData.price);
-      }
+  tokenEntries.map((tokenEntry, idx) => {
+    // Ignore Yi token as it is not properly mocked, they are checked separately
+    if (tokenEntry.getType() != OracleType.YiToken) {
+      let in_decimal = getScopePriceDecimal(getRevisedIndex(idx), oraclePrices);
+      expect(in_decimal).decimal.eq(tokenEntry.price);
     }
   });
 }
@@ -192,37 +62,12 @@ describe('Scope crank bot tests', () => {
   const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);
 
   const fakeOraclesProgram = new Program(global.FakeOraclesIdl, global.getFakeOraclesProgramId(), provider);
-  let fakeAccounts: Array<PublicKey>;
+  let fakeAccounts: ITokenEntry[];
 
   let programDataAddress: PublicKey;
   let confAccount: PublicKey;
   let oracleAccount: PublicKey;
   let oracleMappingAccount: PublicKey;
-
-  const setAllPythPrices = async () => {
-    await Promise.all(
-      tokenList.map(async (asset, idx): Promise<any> => {
-        console.log(`set price for ${asset.ticker}`);
-        if (asset.priceType == PriceType.Pyth || asset.priceType == PriceType.YiToken) {
-          await mockAccountUtils.setFeedPricePyth(fakeOraclesProgram, asset.price, fakeAccounts[idx]);
-        } else if (asset.priceType == PriceType.SwitchboardV1) {
-          await mockAccountUtils.setFeedPriceSwitchboardV1(
-            fakeOraclesProgram,
-            asset.mantissa,
-            new BN(asset.expo),
-            fakeAccounts[idx]
-          );
-        } else if (asset.priceType == PriceType.SwitchboardV2) {
-          await mockAccountUtils.setFeedPriceSwitchboardV2(
-            fakeOraclesProgram,
-            asset.mantissa,
-            new BN(asset.expo),
-            fakeAccounts[idx]
-          );
-        }
-      })
-    );
-  };
 
   // NOTE: this only works when the test cases within this describe are
   // executed sequentially
@@ -276,18 +121,18 @@ describe('Scope crank bot tests', () => {
 
     console.log('Initialize Tokens mock_oracles prices and oracle mappings');
 
-    fakeAccounts = await createFakeAccounts(fakeOraclesProgram, tokenList);
+    fakeAccounts = await createFakeAccounts(fakeOraclesProgram, initialTokens);
 
     await Promise.all(
       fakeAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
-        console.log(`Set mapping of ${tokenList[idx].ticker}`);
-        await program.rpc.updateMapping(new BN(getRevisedIndex(idx)), tokenList[idx].priceType, {
+        console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
+        await program.rpc.updateMapping(new BN(getRevisedIndex(idx)), fakeOracleAccount.getType(), {
           accounts: {
             admin: admin.publicKey,
             program: program.programId,
             programData: programDataAddress,
             oracleMappings: oracleMappingAccount,
-            priceInfo: fakeOracleAccount,
+            priceInfo: fakeOracleAccount.account,
           },
           signers: [admin],
         });
@@ -304,14 +149,13 @@ describe('Scope crank bot tests', () => {
     scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
     await scopeBot.crank();
 
-    await scopeBot.nextLogMatches((c) => c.includes('Prices refreshed successfully'), 10000);
-    await scopeBot.nextLogMatches((c) => c.includes('Check-update for Yi Token ran successfully'), 10000);
+    await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
 
     await sleep(1500); // One block await
 
     {
       let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkAllOraclePrices(oracle);
+      checkAllOraclePrices(oracle, fakeAccounts);
     }
   });
 
@@ -320,97 +164,75 @@ describe('Scope crank bot tests', () => {
     await scopeBot.crank();
     for (let i = 0; i < 5; i++) {
       // increase all prices at each loop
-      for (var asset of tokenList) {
-        asset.price = asset.price.add(new Decimal('0.500'));
-        let scale = 10 ** asset.expo;
-        let mantissa_adding = new BN(scale).div(new BN(2));
-        asset.mantissa = asset.mantissa.add(mantissa_adding);
-        console.log(
-          `asset price set ${asset.ticker} T:${asset.priceType} P:${asset.price} M:${asset.mantissa} E:${asset.expo} adder is ${mantissa_adding}`
-        );
-      }
-      await setAllPythPrices();
+      await Promise.all(
+        fakeAccounts.map(async (asset) => {
+          let new_price = asset.price.add(new Decimal('0.500'));
+          await asset.updatePrice(new_price);
+        })
+      );
 
-      await scopeBot.nextLogMatches((c) => c.includes('Prices refreshed successfully'), 10000);
+      scopeBot.flushLogs();
+
+      await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
       await sleep(2000);
 
       let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkAllOraclePrices(oracle);
+      checkAllOraclePrices(oracle, fakeAccounts);
     }
   });
 
   it('test_yi_price_not_change', async () => {
     let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    let price = oracle.prices[getRevisedIndex(10)].price;
-    let value = price.value.toNumber();
-    let expo = price.exp.toNumber();
-    let in_decimal_before = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
+    const in_decimal_before = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+
     scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
     await scopeBot.crank();
 
     scopeBot.flushLogs();
 
-    await scopeBot.nextLogMatches(
-      (c) => c.includes("Price for Yi Token has not changed"),
-      10000
-    );
-    await scopeBot.nextLogMatches(
-      (c) => c.includes("Prices list refreshed successfully"),
-      10000
-    );
+    await scopeBot.nextLogMatches((c) => c.includes('Price for Yi Token has not changed'), 10000);
+    await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
 
     await sleep(3000);
     oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    price = oracle.prices[getRevisedIndex(10)].price;
-    value = price.value.toNumber();
-    expo = price.exp.toNumber();
-    let in_decimal_after = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
+    const in_decimal_after = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+
     expect(in_decimal_after.toNumber()).eq(in_decimal_before.toNumber());
   });
 
   it('test_yi_price_change', async () => {
-    let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    let price = oracle.prices[getRevisedIndex(10)].price;
-    let value = price.value.toNumber();
-    let expo = price.exp.toNumber();
-    let in_decimal_before = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
-    let mint_amount = 10_000_000 * 1_000_000; //10 million solUST * 1 million factor (for 6 decimals)
-    const tx = new Transaction().add(
-      Token.createMintToInstruction(
-        TOKEN_PROGRAM_ID, // always TOKEN_PROGRAM_ID
-        new PublicKey('JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T'), // mint
-        new PublicKey('EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc'), // Yi Underlying token account
-        provider.wallet.publicKey, // mint authority
-        [], // only multisig account will use. leave it empty now.
-        mint_amount // amount. if your decimals is 8, you mint 10^8 for 1 token.
-      )
-    );
-
-    await provider.send(tx);
-    await sleep(2000);
     scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    await scopeBot.crank();
-
-    await scopeBot.crank(1000);
-
-    await scopeBot.nextLogMatches(
-      (c) => c.includes("Price for Yi Token needs update"),
-      10000
+    // Update all prices to start
+    await Promise.all(
+      fakeAccounts.map(async (asset) => {
+        let new_price = asset.price.add(new Decimal('0.100'));
+        await asset.updatePrice(new_price);
+      })
     );
 
-    await scopeBot.nextLogMatches(
-      (c) => c.includes("Prices list refreshed successfully"),
-      10000
-    );
+    // Higher number of slot as max_age to check that price change gets detected correctly
+    await scopeBot.crank(20);
 
     await sleep(2000);
+
+    // Before Yi price update
+    let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+    const in_decimal_before = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+
+    scopeBot.flushLogs();
+
+    // Update the Yi price randomly, mock Yi token don't use input values
+    fakeAccounts[HubbleTokens.STSOLUST].updatePrice(new Decimal('0'));
+
+    await scopeBot.nextLogMatches((c) => c.includes('Price for Yi Token needs update'), 20000);
+    await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 20000);
+
+    await sleep(3000);
+
+    // After Yi price update
     oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    price = oracle.prices[getRevisedIndex(10)].price;
-    value = price.value.toNumber();
-    expo = price.exp.toNumber();
-    const in_decimal_after = new Decimal(value).mul(
-      new Decimal(10).pow(new Decimal(-expo))
-    );
-    expect(in_decimal_after.toNumber()).gt(in_decimal_before.toNumber());
+    const in_decimal_after = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+
+    expect(in_decimal_after.toNumber()).gt(in_decimal_before.toNumber()); // What???
   });
 });

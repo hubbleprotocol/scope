@@ -125,12 +125,12 @@ export class ScopeBot {
     }
   }
 
-  async crank() {
+  async crank(refreshInterval: number = 10) {
     let args = [
       ...this.base_args(),
       'crank',
       '--refresh-interval-slot',
-      '10',
+      refreshInterval.toString(),
       // TODO: allow to test with local mapping
     ];
 
@@ -149,7 +149,7 @@ export class ScopeBot {
       this.childProcess.stdout.on('data', (data) => {
         const chunks = data.trim().split(/\r?\n/);
         for (let chunk of chunks) {
-          this.log(`Chunk: ${chunk}`);
+          //this.log(`Chunk: ${chunk}`);
           this.logChunks.push(chunk);
           //TODO: Json logs
           /*try {
