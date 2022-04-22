@@ -27,7 +27,7 @@ export const createPriceFeed = async (
     conf,
     {
       accounts: {
-        price: collateralTokenFeed.publicKey,
+        oracleAccount: collateralTokenFeed.publicKey,
         clock: SYSVAR_CLOCK_PUBKEY,
       },
       signers: [collateralTokenFeed],
@@ -50,7 +50,7 @@ export const setFeedPrice = async (mockOracleProgram: Program, newPrice: Decimal
   const data = parsePriceData(info.data);
   const newPriceBn = new BN(newPrice.mul(new Decimal(10).pow(new Decimal(-data.exponent))).toNumber());
   await mockOracleProgram.rpc.setPricePyth(newPriceBn, {
-    accounts: { price: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
+    accounts: { oracleAccount: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
   });
 };
 

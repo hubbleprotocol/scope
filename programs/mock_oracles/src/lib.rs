@@ -31,7 +31,7 @@ pub mod mock_oracles {
         expo: i32,
         conf: u64,
     ) -> ProgramResult {
-        let oracle = &ctx.accounts.price;
+        let oracle = &ctx.accounts.oracle_account;
 
         let mut price_oracle = Price::load(oracle).unwrap();
 
@@ -66,7 +66,7 @@ pub mod mock_oracles {
         mantissa: i128,
         scale: u32,
     ) -> ProgramResult {
-        let mut account_data = ctx.accounts.price.data.borrow_mut();
+        let mut account_data = ctx.accounts.oracle_account.data.borrow_mut();
         account_data[0] = SwitchboardAccountType::TYPE_AGGREGATOR as u8;
 
         let configs = Some(mod_AggregatorState::Configs {
@@ -89,7 +89,7 @@ pub mod mock_oracles {
             ..AggregatorState::default()
         };
         serialize_into_slice(&aggregator_state, &mut account_data[1..]).unwrap();
-        let key = &ctx.accounts.price.key.to_string();
+        let key = &ctx.accounts.oracle_account.key.to_string();
         msg!("Switchboard V1 price {} initialized at slot {}", key, slot);
 
         Ok(())
@@ -100,7 +100,7 @@ pub mod mock_oracles {
         mantissa: i128,
         scale: u32,
     ) -> ProgramResult {
-        let mut account_data = ctx.accounts.price.data.borrow_mut();
+        let mut account_data = ctx.accounts.oracle_account.data.borrow_mut();
         const DISCRIMINATOR: [u8; 8] = [217, 230, 65, 101, 201, 162, 27, 125];
         account_data[..8].copy_from_slice(&DISCRIMINATOR);
         let aggregator_account_data: &mut AggregatorAccountData =
@@ -115,7 +115,7 @@ pub mod mock_oracles {
             .round_open_slot = slot;
         aggregator_account_data.latest_confirmed_round.num_success = 3;
         aggregator_account_data.min_oracle_results = 3;
-        let key = &ctx.accounts.price.key.to_string();
+        let key = &ctx.accounts.oracle_account.key.to_string();
         msg!("Switchboard V2 price {} initialized at slot {}", key, slot);
         Ok(())
     }
@@ -125,10 +125,14 @@ pub mod mock_oracles {
         mint_total_supply: u64,
         total_liquidity: u64,
     ) -> ProgramResult {
-        ctokens::initialize(&ctx.accounts.price, mint_total_supply, total_liquidity)?;
+        ctokens::initialize(
+            &ctx.accounts.oracle_account,
+            mint_total_supply,
+            total_liquidity,
+        )?;
         msg!(
             "Ctoken price {} updated to supply: {} liquidity: {}",
-            ctx.accounts.price.key(),
+            ctx.accounts.oracle_account.key(),
             mint_total_supply,
             total_liquidity
         );
@@ -136,7 +140,7 @@ pub mod mock_oracles {
     }
 
     pub fn set_price_pyth(ctx: Context<SetPrice>, price: i64) -> ProgramResult {
-        let oracle = &ctx.accounts.price;
+        let oracle = &ctx.accounts.oracle_account;
 
         let mut price_oracle = Price::load(oracle).unwrap();
         price_oracle.agg.price = price;
@@ -157,7 +161,7 @@ pub mod mock_oracles {
         mantissa: i128,
         scale: u32,
     ) -> ProgramResult {
-        let mut account_data = ctx.accounts.price.data.borrow_mut();
+        let mut account_data = ctx.accounts.oracle_account.data.borrow_mut();
         let mut aggregator_state: AggregatorState =
             deserialize_from_slice(&account_data[1..]).unwrap();
         let mantissa_f64 = mantissa as f64;
@@ -169,7 +173,7 @@ pub mod mock_oracles {
         last_round_result.round_open_slot = Some(slot);
         aggregator_state.last_round_result = Some(last_round_result);
         serialize_into_slice(&aggregator_state, &mut account_data[1..]).unwrap();
-        let key = &ctx.accounts.price.key.to_string();
+        let key = &ctx.accounts.oracle_account.key.to_string();
         msg!("Switchboard V1 Price {} updated to at slot {}", key, slot);
 
         Ok(())
@@ -180,7 +184,7 @@ pub mod mock_oracles {
         mantissa: i128,
         scale: u32,
     ) -> ProgramResult {
-        let mut account_data = ctx.accounts.price.data.borrow_mut();
+        let mut account_data = ctx.accounts.oracle_account.data.borrow_mut();
         let aggregator_account_data: &mut AggregatorAccountData =
             bytemuck::from_bytes_mut(&mut account_data[8..]);
         aggregator_account_data.latest_confirmed_round.result =
@@ -192,7 +196,7 @@ pub mod mock_oracles {
         aggregator_account_data
             .latest_confirmed_round
             .round_open_slot = slot;
-        let key = &ctx.accounts.price.key.to_string();
+        let key = &ctx.accounts.oracle_account.key.to_string();
         msg!("Switchboard V2 Price {} updated at slot {}", key, slot);
 
         Ok(())
@@ -203,10 +207,14 @@ pub mod mock_oracles {
         mint_total_supply: u64,
         total_liquidity: u64,
     ) -> ProgramResult {
-        ctokens::update(&ctx.accounts.price, mint_total_supply, total_liquidity)?;
+        ctokens::update(
+            &ctx.accounts.oracle_account,
+            mint_total_supply,
+            total_liquidity,
+        )?;
         msg!(
             "Ctoken Price {} updated at slot {}",
-            ctx.accounts.price.key(),
+            ctx.accounts.oracle_account.key(),
             ctx.accounts.clock.slot
         );
 
@@ -214,7 +222,7 @@ pub mod mock_oracles {
     }
 
     pub fn set_trading_pyth(ctx: Context<SetPrice>, status: u8) -> ProgramResult {
-        let oracle = &ctx.accounts.price;
+        let oracle = &ctx.accounts.oracle_account;
         let mut price_oracle = Price::load(oracle).unwrap();
         match status {
             0 => price_oracle.agg.status = PriceStatus::Unknown,
@@ -229,14 +237,14 @@ pub mod mock_oracles {
         Ok(())
     }
     pub fn set_twap_pyth(ctx: Context<SetPrice>, value: u64) -> ProgramResult {
-        let oracle = &ctx.accounts.price;
+        let oracle = &ctx.accounts.oracle_account;
         let mut price_oracle = Price::load(oracle).unwrap();
         price_oracle.twap.val = value.try_into().unwrap();
 
         Ok(())
     }
     pub fn set_confidence_pyth(ctx: Context<SetPrice>, value: u64) -> ProgramResult {
-        let oracle = &ctx.accounts.price;
+        let oracle = &ctx.accounts.oracle_account;
         let mut price_oracle = Price::load(oracle).unwrap();
         price_oracle.agg.conf = value;
 
@@ -247,13 +255,13 @@ pub mod mock_oracles {
 pub struct SetPrice<'info> {
     /// CHECK: Not safe but this is a test tool
     #[account(mut)]
-    pub price: AccountInfo<'info>,
+    pub oracle_account: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     /// CHECK: Not safe but this is a test tool
     #[account(mut)]
-    pub price: AccountInfo<'info>,
+    pub oracle_account: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }

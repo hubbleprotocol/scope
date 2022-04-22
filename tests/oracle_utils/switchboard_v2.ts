@@ -7,7 +7,7 @@ export const createPriceFeedSwitchboardV2 = async (mockOracleProgram: Program, m
   const collateralTokenFeed = new web3.Keypair();
 
   await mockOracleProgram.rpc.initializeSwitchboardV2(mantissa, scale, {
-    accounts: { price: collateralTokenFeed.publicKey, clock: SYSVAR_CLOCK_PUBKEY },
+    accounts: { oracleAccount: collateralTokenFeed.publicKey, clock: SYSVAR_CLOCK_PUBKEY },
     signers: [collateralTokenFeed],
     instructions: [
       web3.SystemProgram.createAccount({
@@ -30,7 +30,7 @@ export const setFeedPriceSwitchboardV2 = async (
 ) => {
   const info = await mockOracleProgram.provider.connection.getAccountInfo(priceFeed);
   await mockOracleProgram.rpc.setPriceSwitchboardV2(mantissa, scale, {
-    accounts: { price: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
+    accounts: { oracleAccount: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
   });
 };
 

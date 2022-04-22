@@ -42,7 +42,7 @@ impl YiOracle {
         let yi_account = YiToken::try_deserialize(&mut &yi_account_raw[..]).unwrap();
 
         Ok(Self {
-            label: conf.token_pair.clone(),
+            label: conf.label.clone(),
             mapping,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
             extra_accounts: [yi_account.mint, yi_account.token_account],

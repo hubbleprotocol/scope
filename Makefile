@@ -131,7 +131,7 @@ test-rust:
 > cargo test
 
 test-ts: $(SCOPE_CLI)
-> yarn run ts-mocha -t 1000000 tests/**/*.ts
+> yarn run ts-mocha -t 1000000 tests/test_*.ts
 
 # airdrop done this way to stay in devnet limits
 airdrop: $(OWNER_KEYPAIR)

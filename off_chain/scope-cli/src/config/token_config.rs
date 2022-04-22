@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct TokenConfig {
     /// Name of the pair (used for display)
     /// eg. "SOL/USD"
-    pub token_pair: String,
+    pub label: String,
     /// Type of oracle providing the price.
     pub oracle_type: OracleType,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -30,7 +30,7 @@ mod tests {
     #[test]
     fn conf_de_ser() {
         let token_conf = TokenConfig {
-            token_pair: "SOL/USD".to_string(),
+            label: "SOL/USD".to_string(),
             max_age: None,
             oracle_mapping: Pubkey::from_str("J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix")
                 .unwrap(),
@@ -38,7 +38,7 @@ mod tests {
         };
 
         let json = r#"{
-              "token_pair": "SOL/USD",
+              "label": "SOL/USD",
               "oracle_type": "Pyth",
               "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix"
             }

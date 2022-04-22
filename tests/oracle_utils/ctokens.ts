@@ -8,7 +8,7 @@ const createPriceFeedCtoken = async (mockOracleProgram: Program, mint_total_supp
   const collateralTokenFeed = new web3.Keypair();
 
   await mockOracleProgram.rpc.initializeCtoken(mint_total_supply, total_liquidity, {
-    accounts: { price: collateralTokenFeed.publicKey, clock: SYSVAR_CLOCK_PUBKEY },
+    accounts: { oracleAccount: collateralTokenFeed.publicKey, clock: SYSVAR_CLOCK_PUBKEY },
     signers: [collateralTokenFeed],
     instructions: [
       web3.SystemProgram.createAccount({
@@ -30,7 +30,7 @@ const setFeedPriceCtoken = async (
   priceFeed: web3.PublicKey
 ) => {
   await mockOracleProgram.rpc.setPriceCtoken(mint_total_supply, total_liquidity, {
-    accounts: { price: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
+    accounts: { oracleAccount: priceFeed, clock: SYSVAR_CLOCK_PUBKEY },
   });
 };
 

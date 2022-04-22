@@ -19,7 +19,7 @@ use nohash_hasher::IntMap;
 use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
 use tracing::{debug, error, event, info, trace, warn, Level};
 
-use crate::config::{TokenConfig, TokenList, TokensConfig};
+use crate::config::{ScopeConfig, TokenConfig, TokenList};
 use crate::oracle_helpers::{entry_from_config, TokenEntry};
 use crate::utils::{find_data_address, get_clock, price_to_f64};
 
@@ -100,7 +100,7 @@ impl ScopeClient {
     }
 
     /// Set the locally known oracle mapping according to the provided configuration list.
-    pub fn set_local_mapping(&mut self, token_list: &TokensConfig) -> Result<()> {
+    pub fn set_local_mapping(&mut self, token_list: &ScopeConfig) -> Result<()> {
         let default_max_age = token_list.default_max_age;
         let rpc = self.program.rpc();
         // Transform the configuration entries in appropriate local token entries
@@ -156,7 +156,7 @@ impl ScopeClient {
             .map(|((idx, oracle_mapping), oracle_type)| {
                 let id: u16 = idx.try_into()?;
                 let oracle_conf = TokenConfig {
-                    token_pair: "".to_string(),
+                    label: "".to_string(),
                     oracle_type: oracle_type.try_into()?,
                     max_age: None,
                     oracle_mapping: *oracle_mapping,
@@ -170,7 +170,7 @@ impl ScopeClient {
     }
 
     /// Extract the local oracle mapping to a token list configuration
-    pub fn get_local_mapping(&self) -> Result<TokensConfig> {
+    pub fn get_local_mapping(&self) -> Result<ScopeConfig> {
         let tokens: TokenList = self
             .tokens
             .iter()
@@ -178,7 +178,7 @@ impl ScopeClient {
                 (
                     *id,
                     TokenConfig {
-                        token_pair: entry.to_string(),
+                        label: entry.to_string(),
                         oracle_mapping: *entry.get_mapping_account(),
                         oracle_type: entry.get_type(),
                         max_age: None,
@@ -186,7 +186,7 @@ impl ScopeClient {
                 )
             })
             .collect();
-        Ok(TokensConfig {
+        Ok(ScopeConfig {
             tokens,
             default_max_age: 0,
         })
@@ -303,7 +303,7 @@ impl ScopeClient {
                     "token" = id,
                     "Error while checking if price need refresh"
                 ),
-                _ => (), // Nothing to do
+                Ok(false) => (), // Nothing to do
             }
             (*id, remaining_slots)
         });
