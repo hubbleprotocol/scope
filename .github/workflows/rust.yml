@@ -29,8 +29,21 @@ jobs:
         name: Clippy
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
       - uses: actions-rs/cargo@v1
         name: Cargo test
         with:
           command: test
+
+  soteria:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout changes
+        uses: actions/checkout@v2
+      - name: Soteria Audit
+        continue-on-error: false
+        uses: silas-x/soteria-action@main
+        with:
+          solana-version: '1.9.18'
+          run-mode: '-analyzeAll'
+          cargo-com: '.'
+          program-path: 'programs/scope'
