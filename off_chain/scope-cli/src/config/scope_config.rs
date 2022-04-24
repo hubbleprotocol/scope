@@ -89,7 +89,7 @@ mod tests {
             },
         );
         token_conf_list.tokens.insert(
-            14, // 4 to test actual holes
+            14,
             TokenConfig {
                 label: "cSOL/SOL".to_string(),
                 max_age: None,
