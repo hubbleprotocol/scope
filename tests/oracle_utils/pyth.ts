@@ -5,6 +5,8 @@ import Decimal from 'decimal.js';
 import * as anchor from '@project-serum/anchor';
 import { IMockOracle, ITokenEntry, OracleType } from './mock_oracles';
 
+const PYTH_PRICE_ACCOUNT_SIZE: number = 3312;
+
 export enum PriceStatus {
   Unknown = 0,
   Trading = 1,
@@ -35,8 +37,10 @@ export const createPriceFeed = async (
         web3.SystemProgram.createAccount({
           fromPubkey: mockOracleProgram.provider.wallet.publicKey,
           newAccountPubkey: collateralTokenFeed.publicKey,
-          space: 3312,
-          lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(3312),
+          space: PYTH_PRICE_ACCOUNT_SIZE,
+          lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(
+            PYTH_PRICE_ACCOUNT_SIZE
+          ),
           programId: mockOracleProgram.programId,
         }),
       ],

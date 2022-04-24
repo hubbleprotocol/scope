@@ -4,6 +4,8 @@ import { expect } from 'chai';
 import Decimal from 'decimal.js';
 import { IMockOracle, ITokenEntry, OracleType } from './mock_oracles';
 
+const CTOKEN_ACCOUNT_SIZE: number = 619;
+
 const createPriceFeedCtoken = async (mockOracleProgram: Program, mint_total_supply: BN, total_liquidity: BN) => {
   const collateralTokenFeed = new web3.Keypair();
 
@@ -14,8 +16,8 @@ const createPriceFeedCtoken = async (mockOracleProgram: Program, mint_total_supp
       web3.SystemProgram.createAccount({
         fromPubkey: mockOracleProgram.provider.wallet.publicKey,
         newAccountPubkey: collateralTokenFeed.publicKey,
-        space: 619,
-        lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(619),
+        space: CTOKEN_ACCOUNT_SIZE,
+        lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(CTOKEN_ACCOUNT_SIZE),
         programId: mockOracleProgram.programId,
       }),
     ],

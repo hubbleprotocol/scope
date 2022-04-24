@@ -3,6 +3,8 @@ import { PublicKey, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
 import Decimal from 'decimal.js';
 import { IMockOracle, ITokenEntry, OracleType } from './mock_oracles';
 
+const SWITCHBOARD_V2_ACCOUNT_SIZE: number = 3851;
+
 export const createPriceFeedSwitchboardV2 = async (mockOracleProgram: Program, mantissa: BN, scale: BN) => {
   const collateralTokenFeed = new web3.Keypair();
 
@@ -13,8 +15,10 @@ export const createPriceFeedSwitchboardV2 = async (mockOracleProgram: Program, m
       web3.SystemProgram.createAccount({
         fromPubkey: mockOracleProgram.provider.wallet.publicKey,
         newAccountPubkey: collateralTokenFeed.publicKey,
-        space: 3851,
-        lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(3851),
+        space: SWITCHBOARD_V2_ACCOUNT_SIZE,
+        lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(
+          SWITCHBOARD_V2_ACCOUNT_SIZE
+        ),
         programId: mockOracleProgram.programId,
       }),
     ],
