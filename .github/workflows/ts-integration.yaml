@@ -12,7 +12,7 @@ env:
   anchor_version: 0.22.0
 
 jobs:
-  install:
+  ts-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:

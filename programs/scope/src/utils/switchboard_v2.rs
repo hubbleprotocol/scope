@@ -79,7 +79,7 @@ fn validate_confidence(price: u64, exp: u32, stdev_mantissa: i128, stdev_scale: 
         .map_err(|_| ScopeError::MathOverflow)?;
     if exp >= stdev_scale {
         let scaling_factor = 10u64
-            .checked_pow(exp - stdev_scale)
+            .checked_pow(exp.abs_diff(stdev_scale))
             .ok_or(ScopeError::MathOverflow)?;
         let stdev_x_confidence_factor_downscaled = stdev_mantissa
             .checked_mul(CONFIDENCE_FACTOR)
@@ -91,7 +91,7 @@ fn validate_confidence(price: u64, exp: u32, stdev_mantissa: i128, stdev_scale: 
         };
     } else {
         let scaling_factor = 10u64
-            .checked_pow(stdev_scale - exp)
+            .checked_pow(stdev_scale.abs_diff(exp))
             .ok_or(ScopeError::MathOverflow)?;
         let stdev_x_confidence_factor_upscaled = stdev_mantissa
             .checked_mul(CONFIDENCE_FACTOR)
