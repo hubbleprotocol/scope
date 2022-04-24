@@ -1,9 +1,9 @@
-use crate::{DatedPrice, Price, Result, ScopeError};
+use std::cmp::{max, min};
+
 use anchor_lang::prelude::*;
-
-use std::cmp::min;
-
 use switchboard_v2::AggregatorAccountData;
+
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 const MIN_NUM_SUCCESS: u32 = 3u32;
 const MIN_CONFIDENCE_PERCENTAGE: u64 = 2u64;
@@ -77,32 +77,29 @@ fn validate_confidence(price: u64, exp: u32, stdev_mantissa: i128, stdev_scale: 
     let stdev_mantissa: u64 = stdev_mantissa
         .try_into()
         .map_err(|_| ScopeError::MathOverflow)?;
-    if exp >= stdev_scale {
-        let scaling_factor = 10u64
-            .checked_pow(exp.abs_diff(stdev_scale))
-            .ok_or(ScopeError::MathOverflow)?;
-        let stdev_x_confidence_factor_downscaled = stdev_mantissa
-            .checked_mul(CONFIDENCE_FACTOR)
-            .ok_or(ScopeError::MathOverflow)?
-            .checked_div(scaling_factor)
-            .ok_or(ScopeError::MathOverflow)?;
-        if stdev_x_confidence_factor_downscaled >= price {
-            return Err(ScopeError::PriceNotValid.into());
-        };
+    let scale_op = if exp >= stdev_scale {
+        u64::checked_div
     } else {
-        let scaling_factor = 10u64
-            .checked_pow(stdev_scale.abs_diff(exp))
-            .ok_or(ScopeError::MathOverflow)?;
-        let stdev_x_confidence_factor_upscaled = stdev_mantissa
-            .checked_mul(CONFIDENCE_FACTOR)
-            .ok_or(ScopeError::MathOverflow)?
-            .checked_mul(scaling_factor)
-            .ok_or(ScopeError::MathOverflow)?;
-        if stdev_x_confidence_factor_upscaled >= price {
-            return Err(ScopeError::PriceNotValid.into());
-        };
+        u64::checked_mul
     };
-    Ok(())
+    let interval = max(exp, stdev_scale)
+        .checked_sub(min(exp, stdev_scale))
+        .unwrap(); // This cannot fail
+
+    let scaling_factor = 10u64
+        .checked_pow(interval)
+        .ok_or(ScopeError::MathOverflow)?;
+
+    let stdev_x_confidence_factor_scaled = stdev_mantissa
+        .checked_mul(CONFIDENCE_FACTOR)
+        .and_then(|a| scale_op(a, scaling_factor))
+        .ok_or(ScopeError::MathOverflow)?;
+
+    if stdev_x_confidence_factor_scaled >= price {
+        Err(ScopeError::PriceNotValid.into())
+    } else {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
