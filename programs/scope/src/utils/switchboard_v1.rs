@@ -3,8 +3,7 @@ use anchor_lang::prelude::*;
 use std::cmp::min;
 
 use switchboard_program::{
-    get_aggregator, get_aggregator_result, AggregatorState, RoundResult,
-    SwitchboardAccountType,
+    get_aggregator, get_aggregator_result, AggregatorState, RoundResult, SwitchboardAccountType,
 };
 
 const SWITCHBOARD_V1_PRICE_DECIMALS: u32 = 8u32;
