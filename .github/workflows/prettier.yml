@@ -1,9 +1,12 @@
 name: Typescript Prettier
 
-on: [push]
-
-env:
-  CARGO_TERM_COLOR: always
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build:
