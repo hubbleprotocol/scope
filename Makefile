@@ -123,7 +123,18 @@ test-validator:
                          EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc \
                          CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9 \
                          53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs \
+                         ${EXTRA_TOKEN} \
                          --account JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T tests/deps/solustscope.json
+
+clone-mainnet-to-local-validator:
+>@ export BASE_TOKEN_ACCOUNTS="${shell jq --compact-output 'del(.["default_max_age"]) | .[] | .oracle_mapping' < configs/mainnet/hubble.json | xargs echo}"
+>@ export EXTRA_YI_TOKEN_ACCOUNTS="EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9 JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T"
+> solana-test-validator -r --url mainnet-beta --clone $$BASE_TOKEN_ACCOUNTS $$EXTRA_YI_TOKEN_ACCOUNTS
+
+clone-devnet-to-local-validator:
+>@ export BASE_TOKEN_ACCOUNTS="${shell jq --compact-output 'del(.["default_max_age"]) | .[] | .oracle_mapping' < configs/devnet/hubble.json | xargs echo}"
+>@ export EXTRA_YI_TOKEN_ACCOUNTS="B2a2MDAJxjcy2dqPaHMFk2y1Tb88Wave8pnhNjYzZXVe 6XyygxFmUeemaTvA9E9mhH9FvgpynZqARVyG3gUdCMt7"
+> solana-test-validator -r --url devnet --clone $$BASE_TOKEN_ACCOUNTS $$EXTRA_YI_TOKEN_ACCOUNTS
 
 test: test-rust test-ts
 
@@ -146,16 +157,20 @@ airdrop: $(OWNER_KEYPAIR)
    fi
 
 init: $(SCOPE_CLI)
-> ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 update-mapping: $(SCOPE_CLI)
-> ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) update --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 crank: $(SCOPE_CLI)
-> ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank
+> if [ -f ./configs/$(CLUSTER)/$(FEED_NAME).json ]; then\
+       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+   else\
+       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank;\
+   fi
 
 get-prices: $(SCOPE_CLI)
->@ if [ $(CLUSTER) = "devnet" ] || [ $(CLUSTER) = "mainnet" ]; then\
+>@ if [ -f ./configs/$(CLUSTER)/$(FEED_NAME).json ]; then\
        ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
    else\
        ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show;\
