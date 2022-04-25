@@ -1,7 +1,7 @@
 use crate::utils::OracleType;
 use crate::{utils::get_price, ScopeError};
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::log::sol_log;
+use anchor_lang::solana_program::log::{sol_log, sol_log_64};
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
@@ -92,7 +92,10 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
                     .ok_or(ScopeError::BadTokenNb)?;
                 *to_update = price;
             }
-            Err(_) => sol_log("Price skipped as validation failed"), // No format as its a bit costly
+            Err(_) => {
+                sol_log("Price skipped as validation failed (token, type)");
+                sol_log_64(token_idx as u64, price_type as u64, 0, 0, 0);
+            }
         };
     }
 
