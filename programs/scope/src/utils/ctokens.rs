@@ -6,6 +6,7 @@ use solend_program::state::Reserve;
 
 const DECIMALS: u32 = 15u32;
 
+// Gives the price of 1 cToken in the collateral token
 pub fn get_price(solend_reserve_account: &AccountInfo) -> Result<DatedPrice> {
     let reserve = Reserve::unpack(&solend_reserve_account.data.borrow())?;
 
@@ -27,7 +28,7 @@ pub fn get_price(solend_reserve_account: &AccountInfo) -> Result<DatedPrice> {
 fn scaled_rate(reserve: &Reserve) -> Result<u64> {
     const FACTOR: u64 = 10u64.pow(DECIMALS);
     let rate = reserve.collateral_exchange_rate()?;
-    let value = rate.liquidity_to_collateral(FACTOR)?;
+    let value = rate.collateral_to_liquidity(FACTOR)?;
 
     Ok(value)
 }
@@ -39,7 +40,7 @@ mod test {
     use super::*;
 
     #[test]
-    pub fn scale_1_to_1() {
+    pub fn minted_ctoken_is_equal_to_token_in_vault() {
         let total_liquidity = 10u64.pow(5);
         let mint_total_supply = 10u64.pow(5);
         let reserve = Reserve {
@@ -59,7 +60,7 @@ mod test {
     }
 
     #[test]
-    pub fn scale_1_to_2() {
+    pub fn minted_ctoken_is_2xtoken_in_vault() {
         let total_liquidity = 10u64.pow(5);
         let mint_total_supply = 2 * 10u64.pow(5);
         let reserve = Reserve {
@@ -75,11 +76,12 @@ mod test {
             },
             ..Default::default()
         };
-        assert_eq!(scaled_rate(&reserve).unwrap(), 2 * 10u64.pow(DECIMALS));
+        // Expect ctoken price to be 0.5 token
+        assert_eq!(scaled_rate(&reserve).unwrap(), 5 * 10u64.pow(DECIMALS - 1));
     }
 
     #[test]
-    pub fn scale_2_to_1() {
+    pub fn token_in_vault_is_2xctoken_minted() {
         let total_liquidity = 2 * 10u64.pow(5);
         let mint_total_supply = 10u64.pow(5);
         let reserve = Reserve {
@@ -95,6 +97,7 @@ mod test {
             },
             ..Default::default()
         };
-        assert_eq!(scaled_rate(&reserve).unwrap(), 5 * 10u64.pow(DECIMALS - 1));
+        // Expect ctoken price to be 2 tokens
+        assert_eq!(scaled_rate(&reserve).unwrap(), 2 * 10u64.pow(DECIMALS));
     }
 }

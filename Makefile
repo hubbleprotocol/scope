@@ -123,7 +123,6 @@ test-validator:
                          EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc \
                          CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9 \
                          53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs \
-                         ${EXTRA_TOKEN} \
                          --account JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T tests/deps/solustscope.json
 
 clone-mainnet-to-local-validator:

@@ -37,12 +37,12 @@ const setFeedPriceCtoken = async (
 };
 
 function liquiditiesFromPrice(price: Decimal): [BN, BN] {
-  // rate = mint_total_supply / total_liquidity
-  // mint_total_supply = rate * total_liquidity
-  // fix total_liquidity = 10^10 for a minimum of precisions
-  const total_liquidity = new BN(10).pow(new BN(10)); // So the price have a minimum of precision
-  const mint_total_supply_decimal = price.mul(new Decimal(10).pow(new Decimal(10)));
-  const mint_total_supply = new BN(mint_total_supply_decimal.toNumber());
+  // ctoken to token rate = total_liquidity / mint_total_supply
+  // total_liquidity = rate * mint_total_supply
+  // fix mint_total_supply = 10^10 for a minimum of precisions
+  const mint_total_supply = new BN(10).pow(new BN(10)); // So the price have a minimum of precision
+  const total_liquidity_decimal = price.mul(new Decimal(10).pow(new Decimal(10)));
+  const total_liquidity = new BN(total_liquidity_decimal.toNumber());
   return [mint_total_supply, total_liquidity];
 }
 
