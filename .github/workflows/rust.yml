@@ -1,0 +1,53 @@
+name: Rust clippy & tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  clippy_and_test:
+    name: Rust project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install essential
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config build-essential libudev-dev
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions-rs/cargo@v1
+        name: Rust format
+        with:
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/clippy-check@v1
+        name: Clippy
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions-rs/cargo@v1
+        name: Cargo test
+        with:
+          command: test
+
+  soteria:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout changes
+        uses: actions/checkout@v2
+      - name: Soteria Audit
+        continue-on-error: false
+        uses: silas-x/soteria-action@main
+        with:
+          solana-version: '1.9.18'
+          run-mode: '-analyzeAll'
+          cargo-com: '.'
+          program-path: 'programs/scope'

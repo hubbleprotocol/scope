@@ -1,14 +1,13 @@
-use crate::{DatedPrice, Price, Result, ScopeError};
+use std::cmp::{max, min};
+
 use anchor_lang::prelude::*;
-
-use std::cmp::min;
-
-
 use switchboard_v2::AggregatorAccountData;
+
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 const MIN_NUM_SUCCESS: u32 = 3u32;
 const MIN_CONFIDENCE_PERCENTAGE: u64 = 2u64;
-const CONFIDENCE_FACTOR: u64 = 100/MIN_CONFIDENCE_PERCENTAGE;
+const CONFIDENCE_FACTOR: u64 = 100 / MIN_CONFIDENCE_PERCENTAGE;
 
 pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     let feed = AggregatorAccountData::new(switchboard_feed_info)
@@ -78,29 +77,30 @@ fn validate_confidence(price: u64, exp: u32, stdev_mantissa: i128, stdev_scale: 
     let stdev_mantissa: u64 = stdev_mantissa
         .try_into()
         .map_err(|_| ScopeError::MathOverflow)?;
-    if exp >= stdev_scale {
-        let scaling_factor = 10u64.checked_pow(exp-stdev_scale).ok_or(ScopeError::MathOverflow)?;
-        let stdev_x_confidence_factor_downscaled = stdev_mantissa.checked_mul(CONFIDENCE_FACTOR)
-            .ok_or(ScopeError::MathOverflow)?
-            .checked_div(scaling_factor)
-            .ok_or(ScopeError::MathOverflow)?;
-        if stdev_x_confidence_factor_downscaled >= price {
-            return Err(ScopeError::PriceNotValid.into());
-        };
-    }
-    else {
-        let scaling_factor = 10u64.checked_pow(stdev_scale-exp).ok_or(ScopeError::MathOverflow)?;
-        let stdev_x_confidence_factor_upscaled = stdev_mantissa.checked_mul(CONFIDENCE_FACTOR)
-            .ok_or(ScopeError::MathOverflow)?
-            .checked_mul(scaling_factor)
-            .ok_or(ScopeError::MathOverflow)?;
-        if stdev_x_confidence_factor_upscaled >= price {
-            return Err(ScopeError::PriceNotValid.into());
-        };
+    let scale_op = if exp >= stdev_scale {
+        u64::checked_div
+    } else {
+        u64::checked_mul
     };
-    Ok(())
-}
+    let interval = max(exp, stdev_scale)
+        .checked_sub(min(exp, stdev_scale))
+        .unwrap(); // This cannot fail
 
+    let scaling_factor = 10u64
+        .checked_pow(interval)
+        .ok_or(ScopeError::MathOverflow)?;
+
+    let stdev_x_confidence_factor_scaled = stdev_mantissa
+        .checked_mul(CONFIDENCE_FACTOR)
+        .and_then(|a| scale_op(a, scaling_factor))
+        .ok_or(ScopeError::MathOverflow)?;
+
+    if stdev_x_confidence_factor_scaled >= price {
+        Err(ScopeError::PriceNotValid.into())
+    } else {
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -144,7 +144,9 @@ mod tests {
 
     #[test]
     fn test_valid_switchboard_v2_price_stdev_zero_1() {
-        assert!(switchboard_v2::validate_valid_price(474003240021234567, 15, 1, 1, 1, 0, 1).is_ok());
+        assert!(
+            switchboard_v2::validate_valid_price(474003240021234567, 15, 1, 1, 1, 0, 1).is_ok()
+        );
     }
 
     #[test]
@@ -162,7 +164,6 @@ mod tests {
         assert!(switchboard_v2::validate_valid_price(100_000_000_000, 0, 1, 1, 1, 1, 9).is_ok());
     }
 
-
     #[test]
     fn test_invalid_switchboard_v2_price_stdev_2percent_std_exp_larger_than_price_exp() {
         assert!(switchboard_v2::validate_valid_price(100000, 0, 1, 1, 1, 2, 3).is_err());
@@ -177,8 +178,6 @@ mod tests {
     fn test_invalid_switchboard_v2_price_stdev_above_2percent() {
         assert!(switchboard_v2::validate_valid_price(100, 3, 1, 1, 1, 2001, 0).is_err());
     }
-
-
 
     #[test]
     fn test_invalid_switchboard_v2_price_stdev_above_2percent_2() {

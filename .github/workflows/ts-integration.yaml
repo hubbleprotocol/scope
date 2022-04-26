@@ -12,7 +12,7 @@ env:
   anchor_version: 0.22.0
 
 jobs:
-  install:
+  ts-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,7 +22,6 @@ jobs:
             'yarn run ts-mocha -t 1000000 tests/test_crank.ts',
             'yarn run ts-mocha -t 1000000 tests/test_yi_token.ts',
             'yarn run ts-mocha -t 1000000 tests/test_switchboard.ts',
-            'cargo test',
           ]
     steps:
       - uses: actions/checkout@v2
