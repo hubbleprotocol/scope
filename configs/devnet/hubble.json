@@ -1,5 +1,5 @@
 {
-  "default_max_age": 60,
+  "default_max_age": 30,
   "0": {
     "label": "SOL/USD",
     "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
@@ -35,11 +35,6 @@
     "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ",
     "oracle_type": "Pyth"
   },
-  "7": {
-    "label": "UST/USD",
-    "oracle_mapping": "AUKjh1oVPZyudi3nzYSsdZxSjq42afUCvsdbKFc5CbD",
-    "oracle_type": "Pyth"
-  },
   "8": {
     "label": "BNB/USD",
     "oracle_mapping": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b",
@@ -49,12 +44,6 @@
     "label": "AVAX/USD",
     "oracle_mapping": "FVb5h1VmHPfVb1RfqZckchq18GxRv4iKt8T4eVTQAqdz",
     "oracle_type": "Pyth"
-  },
-  "10": {
-    "label": "stSolUST/UST",
-    "oracle_mapping": "8yazwmgc66uKrDBy3TZpNCgLa8qUDcuH8PZCz9jy6dzd",
-    "max_age": 86400,
-    "oracle_type": "YiToken"
   },
   "11": {
     "label": "SaberMSOL/SOL",
