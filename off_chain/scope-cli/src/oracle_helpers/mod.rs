@@ -12,7 +12,7 @@ use anchor_client::solana_client::rpc_client::RpcClient;
 use anchor_client::solana_sdk::clock;
 use anyhow::Result;
 use scope::utils::OracleType;
-use scope::{DatedPrice, Pubkey};
+use scope::{anchor_lang::prelude::Pubkey, DatedPrice};
 
 pub mod single_account_oracle;
 pub mod yi_token;

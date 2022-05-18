@@ -1,13 +1,19 @@
-pub use anchor_lang::prelude::*;
-use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
-use std::convert::TryInto;
 pub mod handlers;
+pub mod program_id;
 pub mod utils;
 
-pub use handlers::*;
-pub mod program_id;
+// Reexports to deal with eventual conflicts
+pub use anchor_lang;
+pub use num_enum;
 
-pub use program_id::PROGRAM_ID;
+// Local use
+use std::convert::TryInto;
+
+use anchor_lang::prelude::*;
+use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
+
+use handlers::*;
+use program_id::PROGRAM_ID;
 
 declare_id!(PROGRAM_ID);
 

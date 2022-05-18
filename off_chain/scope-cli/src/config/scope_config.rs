@@ -37,8 +37,8 @@ impl ScopeConfig {
 mod tests {
     use super::*;
     use crate::config::utils::remove_whitespace;
+    use scope::anchor_lang::prelude::Pubkey;
     use scope::utils::OracleType;
-    use scope::Pubkey;
     use std::num::NonZeroU64;
     use std::str::FromStr;
 

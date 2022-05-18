@@ -1,8 +1,8 @@
 use std::num::NonZeroU64;
 
 use super::utils::serde_string;
+use scope::anchor_lang::prelude::Pubkey;
 use scope::utils::OracleType;
-use scope::Pubkey;
 use serde::{Deserialize, Serialize};
 
 /// Configuration of the tokens
