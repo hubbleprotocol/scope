@@ -29,6 +29,8 @@ service-base-chart:
   #      value: /root/.hubble/keypair.json
   #    - name: PROGRAM_ID
   #      value: "abc1234"
+  #    - name: MAPPING
+  #      value: /usr/share/hubble/mapping.json
   #    - name: JSON_LOGS
   #      value: "TRUE"
   #    - name: PRICE_FEED
@@ -40,3 +42,5 @@ service-base-chart:
   secrets:
     keypair.json:
     VALIDATOR_RPC_URL:
+  config:
+    mapping.json:

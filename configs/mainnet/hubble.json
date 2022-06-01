@@ -45,6 +45,11 @@
     "oracle_mapping": "Ax9ujW5B9oqcv59N8m6f1BpTBq2rGeGaBcpKjC5UYsXU",
     "oracle_type": "Pyth"
   },
+  "10": {
+    "label": "daoSOL/USDC",
+    "oracle_mapping": "5FtGB8YeMrAqxt2Zsw6WatQnc1R8vSpWEMyomvgFJnh6",
+    "oracle_type": "SwitchboardV2"
+  },
   "11": {
     "label": "SaberMSOL/SOL",
     "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
