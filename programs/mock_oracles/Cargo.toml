@@ -32,6 +32,7 @@ quick-protobuf = "=0.8.0"
 solend-program = { git = "https://github.com/solendprotocol/solana-program-library", features = [
     "no-entrypoint",
 ] }
+spl-stake-pool = "0.6.3"
 
 [build-dependencies]
 serde = "1.0.136"

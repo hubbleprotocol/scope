@@ -139,6 +139,7 @@ describe('Scope tests', () => {
         HubbleTokens.STSOLUSD,
         HubbleTokens.SABERMSOLSOL,
         HubbleTokens.CSOL,
+        HubbleTokens.SCNSOL,
       ]),
       {
         accounts: {
@@ -152,6 +153,7 @@ describe('Scope tests', () => {
           { pubkey: testTokens[HubbleTokens.STSOLUSD].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.SABERMSOLSOL].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.CSOL].account, isWritable: false, isSigner: false },
+          { pubkey: testTokens[HubbleTokens.SCNSOL].account, isWritable: false, isSigner: false },
         ],
         signers: [],
       }
@@ -164,6 +166,7 @@ describe('Scope tests', () => {
       checkOraclePrice(HubbleTokens.STSOLUSD, oracle, testTokens);
       checkOraclePrice(HubbleTokens.SABERMSOLSOL, oracle, testTokens);
       checkOraclePrice(HubbleTokens.CSOL, oracle, testTokens);
+      checkOraclePrice(HubbleTokens.SCNSOL, oracle, testTokens);
     }
   });
 

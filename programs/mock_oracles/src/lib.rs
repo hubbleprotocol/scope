@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 mod ctokens;
 pub mod pc;
+mod spl_stake;
 
 use pc::{Price, PriceStatus};
 use switchboard_program::{
@@ -139,6 +140,25 @@ pub mod mock_oracles {
         Ok(())
     }
 
+    pub fn initialize_stake_pool(
+        ctx: Context<Initialize>,
+        mint_total_supply: u64,
+        total_liquidity: u64,
+    ) -> ProgramResult {
+        spl_stake::initialize(
+            &ctx.accounts.oracle_account,
+            mint_total_supply,
+            total_liquidity,
+        )?;
+        msg!(
+            "SPL Stake pool token price {} updated to supply: {} liquidity: {}",
+            ctx.accounts.oracle_account.key(),
+            mint_total_supply,
+            total_liquidity
+        );
+        Ok(())
+    }
+
     pub fn set_price_pyth(ctx: Context<SetPrice>, price: i64) -> ProgramResult {
         let oracle = &ctx.accounts.oracle_account;
 
@@ -214,6 +234,25 @@ pub mod mock_oracles {
         )?;
         msg!(
             "Ctoken Price {} updated at slot {}",
+            ctx.accounts.oracle_account.key(),
+            ctx.accounts.clock.slot
+        );
+
+        Ok(())
+    }
+
+    pub fn set_price_stake_pool(
+        ctx: Context<SetPrice>,
+        mint_total_supply: u64,
+        total_liquidity: u64,
+    ) -> ProgramResult {
+        spl_stake::update(
+            &ctx.accounts.oracle_account,
+            mint_total_supply,
+            total_liquidity,
+        )?;
+        msg!(
+            "SPL Stake pool token Price {} updated at slot {}",
             ctx.accounts.oracle_account.key(),
             ctx.accounts.clock.slot
         );

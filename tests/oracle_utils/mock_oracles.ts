@@ -1,7 +1,6 @@
 import { BN, Program, web3 } from '@project-serum/anchor';
 import * as anchor from '@project-serum/anchor';
-import { parsePriceData } from '@pythnetwork/client';
-import { PublicKey, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import Decimal from 'decimal.js';
 
 import * as pyth from './pyth';
@@ -9,6 +8,7 @@ import * as switchboardV1 from './switchboard_v1';
 import * as switchboardV2 from './switchboard_v2';
 import * as yi from './yitokens';
 import * as ctokens from './ctokens';
+import * as spl_stake from './spl_stake';
 
 const mockOracleProgram = anchor.workspace.MockOracle;
 
@@ -18,6 +18,7 @@ export enum OracleType {
   SwitchboardV2 = 2,
   YiToken = 3,
   CToken = 4,
+  SplStake = 5,
 }
 
 export interface ITokenInput {
@@ -52,6 +53,7 @@ export const oracles: Record<OracleType, IMockOracle> = {
   [OracleType.SwitchboardV2]: new switchboardV2.Sb2MockOracle(),
   [OracleType.YiToken]: new yi.YiMockOracle(),
   [OracleType.CToken]: new ctokens.CTokenMockOracle(),
+  [OracleType.SplStake]: new spl_stake.StakePoolMockOracle(),
 };
 
 export async function createFakeAccounts(

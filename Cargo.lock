@@ -2350,6 +2350,7 @@ dependencies = [
  "serde",
  "serde_json",
  "solend-program",
+ "spl-stake-pool",
  "switchboard-program",
  "switchboard-v2",
 ]

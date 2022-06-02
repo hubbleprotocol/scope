@@ -25,6 +25,7 @@ export enum HubbleTokens {
   CETH,
   CBTC,
   CMSOL,
+  SCNSOL,
 }
 
 export const initialTokens: ITokenInput[] = [
@@ -135,6 +136,12 @@ export const initialTokens: ITokenInput[] = [
     price: new Decimal('1.1234568'),
     decimals: 15,
     priceType: OracleType.CToken,
+  },
+  {
+    ticker: 'scnSOL',
+    price: new Decimal('1.1'),
+    decimals: 15,
+    priceType: OracleType.SplStake,
   },
 ];
 

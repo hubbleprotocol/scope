@@ -14,11 +14,14 @@ fn main() {
         // Rerun if CLUSTER is changed
         println!("cargo:rerun-if-env-changed=CLUSTER");
         // Set feature according to current cluster
-        if matches!(cluster.as_str(), "localnet" | "devnet") {
-            println!("cargo:rustc-cfg=feature=\"{}\"", cluster);
-        } else {
-            // default to mainnet configuration
-            println!("cargo:rustc-cfg=feature=\"mainnet\"");
+        match cluster.as_str() {
+            "localnet" => println!("cargo:rustc-cfg=feature=\"localnet\""),
+            "devnet" => {
+                println!("cargo:rustc-cfg=feature=\"devnet\"");
+                // On devnet also skip price validation
+                println!("cargo:rustc-cfg=feature=\"skip_price_validation\"");
+            }
+            _ => println!("cargo:rustc-cfg=feature=\"mainnet\""), // default to mainnet configuration
         }
     }
 }
