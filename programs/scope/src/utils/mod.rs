@@ -1,11 +1,13 @@
 pub mod ctokens;
 pub mod pyth;
+pub mod spl_stake;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
 pub mod yitoken;
 
 use crate::{DatedPrice, ScopeError};
-use anchor_lang::prelude::{AccountInfo, Context, ProgramResult};
+
+use anchor_lang::prelude::{AccountInfo, Clock, Context, ProgramResult, SolanaSysvar};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
@@ -29,6 +31,8 @@ pub enum OracleType {
     YiToken,
     /// Solend tokens
     CToken,
+    /// SPL Stake Pool token (like scnSol)
+    SplStake,
 }
 
 /// Get the price for a given oracle type
@@ -50,6 +54,7 @@ where
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
         OracleType::CToken => ctokens::get_price(base_account),
+        OracleType::SplStake => spl_stake::get_price(base_account, Clock::get()?),
     }
 }
 
@@ -67,5 +72,6 @@ pub fn validate_oracle_account(
         OracleType::SwitchboardV2 => Ok(()), // TODO at least check account ownership?
         OracleType::YiToken => Ok(()),       // TODO how shall we validate yi token account?
         OracleType::CToken => Ok(()),        // TODO how shall we validate ctoken account?
+        OracleType::SplStake => Ok(()),
     }
 }

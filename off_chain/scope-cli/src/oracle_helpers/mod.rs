@@ -68,7 +68,8 @@ pub fn entry_from_config(
         OracleType::Pyth
         | OracleType::SwitchboardV1
         | OracleType::SwitchboardV2
-        | OracleType::CToken => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
+        | OracleType::CToken
+        | OracleType::SplStake => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
         OracleType::YiToken => Box::new(YiOracle::new(token_conf, default_max_age, rpc)?),
     })
 }
