@@ -89,5 +89,15 @@
     "label": "cMSOL/MSOL",
     "oracle_mapping": "Ei2dC7hFxBhVq5pn4qNJLMxKBSojx7p7wnNoBz4HELKG",
     "oracle_type": "CToken"
+  },
+  "18": {
+    "label": "wstETH/USD",
+    "oracle_mapping": "EAZWGNvNAB8gizuGyyBPQHEPyqUwscrDmQE11eWVbJrQ",
+    "oracle_type": "SwitchboardV2"
+  },
+  "19": {
+    "label": "LDO/USD",
+    "oracle_mapping": "GQmDtUWV4TnntedyfGo5bbJ2WGQG3J2WzonQbDeDEevf",
+    "oracle_type": "SwitchboardV2"
   }
 }
