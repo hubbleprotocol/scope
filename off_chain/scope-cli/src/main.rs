@@ -214,7 +214,7 @@ fn crank(
     loop {
         let start = Instant::now();
 
-        if let Err(e) = scope.refresh_expired_prices() {
+        if let Err(e) = scope.refresh_all_prices() {
             warn!("Error while refreshing prices {:?}", e);
         }
 
@@ -232,7 +232,13 @@ fn crank(
 
         if shortest_ttl > 0 {
             nb_refresh_retry_before_err = 3;
-            let sleep_ms = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
+            // Time to sleep if we consider slot age
+            let sleep_ms_from_slots = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
+            // Time to sleep if we consider a forced period of 20s refresh rate
+            let sleep_ms_from_forced_period =
+                20000_u64.saturating_sub(start.elapsed().as_millis().try_into().unwrap());
+            let sleep_ms = std::cmp::min(sleep_ms_from_slots, sleep_ms_from_forced_period);
+            trace!(sleep_ms);
             sleep(Duration::from_millis(sleep_ms));
         } else {
             nb_refresh_retry_before_err -= 1;
