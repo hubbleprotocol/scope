@@ -92,9 +92,15 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
                     .ok_or(ScopeError::BadTokenNb)?;
                 *to_update = price;
             }
-            Err(_) => {
-                sol_log("Price skipped as validation failed (token, type)");
-                sol_log_64(token_idx as u64, price_type as u64, 0, 0, 0);
+            Err(e) => {
+                sol_log("Price skipped as validation failed (token, type, err)");
+                sol_log_64(
+                    token_idx as u64,
+                    price_type as u64,
+                    ProgramError::from(e).into(),
+                    0,
+                    0,
+                );
             }
         };
     }

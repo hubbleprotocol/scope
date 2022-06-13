@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 
 use clap::{Parser, Subcommand};
 
-use tracing::{error, info, trace};
+use tracing::{error, info, trace, warn};
 
 use anyhow::Result;
 
@@ -193,7 +193,7 @@ fn show(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Resul
 
     info!(current_slot);
 
-    scope.log_prices()
+    scope.log_prices(current_slot)
 }
 
 fn crank(
@@ -210,22 +210,37 @@ fn crank(
     } else {
         scope.download_oracle_mapping(refresh_interval_slot)?;
     }
+    let mut nb_refresh_retry_before_err: usize = 3;
     loop {
         let start = Instant::now();
 
         if let Err(e) = scope.refresh_expired_prices() {
-            error!("Error while refreshing prices {:?}", e);
+            warn!("Error while refreshing prices {:?}", e);
         }
 
         let elapsed = start.elapsed();
         trace!("last refresh duration was {:?}", elapsed);
 
+        let current_slot = get_clock(&scope.get_rpc())?.slot;
+
+        info!(current_slot);
+
+        let _ = scope.log_prices(current_slot);
+
         let shortest_ttl = scope.get_prices_shortest_ttl()?;
         trace!(shortest_ttl);
 
         if shortest_ttl > 0 {
+            nb_refresh_retry_before_err = 3;
             let sleep_ms = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
             sleep(Duration::from_millis(sleep_ms));
+        } else {
+            nb_refresh_retry_before_err -= 1;
+        }
+
+        if nb_refresh_retry_before_err == 0 {
+            error!("Some prices are still too old after 3 refresh attempts");
+            nb_refresh_retry_before_err = 3;
         }
     }
 
