@@ -7,8 +7,18 @@ use solend_program::state::Reserve;
 const DECIMALS: u32 = 15u32;
 
 // Gives the price of 1 cToken in the collateral token
-pub fn get_price(solend_reserve_account: &AccountInfo) -> Result<DatedPrice> {
-    let reserve = Reserve::unpack(&solend_reserve_account.data.borrow())?;
+pub fn get_price(solend_reserve_account: &AccountInfo, clock: &Clock) -> Result<DatedPrice> {
+    let mut reserve = Reserve::unpack(&solend_reserve_account.data.borrow())?;
+
+    // Manual refresh of the reserve to ensure the most accurate price
+    let last_updated_slot = if reserve.accrue_interest(clock.slot).is_ok() {
+        // We have just refreshed the price so we can use the current slot
+        clock.slot
+    } else {
+        // This should never happen but on simulations when the current slot is not valid
+        // yet we have a default value
+        reserve.last_update.slot
+    };
 
     let value = scaled_rate(&reserve)?;
 
@@ -18,7 +28,7 @@ pub fn get_price(solend_reserve_account: &AccountInfo) -> Result<DatedPrice> {
     };
     let dated_price = DatedPrice {
         price,
-        last_updated_slot: reserve.last_update.slot,
+        last_updated_slot,
         _reserved: Default::default(),
     };
 

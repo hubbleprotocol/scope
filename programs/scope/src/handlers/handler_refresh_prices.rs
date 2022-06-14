@@ -41,7 +41,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
     let mut remaining_iter = ctx.remaining_accounts.iter();
-    let price = get_price(price_type, price_info, &mut remaining_iter)?;
+    let clock = Clock::get()?;
+    let price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
 
     oracle.prices[token] = price;
 
@@ -85,7 +86,8 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
         if oracle_mappings.price_info_accounts[token_idx] != received_account.key() {
             return Err(ScopeError::UnexpectedAccount.into());
         }
-        match get_price(price_type, received_account, &mut accounts_iter) {
+        let clock = Clock::get()?;
+        match get_price(price_type, received_account, &mut accounts_iter, &clock) {
             Ok(price) => {
                 let to_update = oracle_prices
                     .get_mut(token_idx)
