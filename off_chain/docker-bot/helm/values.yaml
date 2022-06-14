@@ -39,6 +39,10 @@ service-base-chart:
   #      value: "TRUE"
   #    - name: SERVER_PORT
   #      value: "8080"
+  #    - name: NUM_RETRIES_BEFORE_ERROR
+  #      value: "3"
+  #    - name: OLD_PRICE_IS_ERROR
+  #      value: "TRUE"
   secrets:
     keypair.json:
     VALIDATOR_RPC_URL:

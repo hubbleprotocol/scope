@@ -104,6 +104,12 @@ enum Actions {
         /// Only valid if --server is also used
         #[clap(long, env, default_value = "8080")]
         server_port: u16,
+        /// Number of tx retries before logging an error for prices being too old
+        #[clap(long, env, default_value = "3")]
+        num_retries_before_error: usize,
+        /// Log old prices as errors when prices are still too old after all retries
+        #[clap(long, env)]
+        old_price_is_error: bool,
     },
 }
 
@@ -142,11 +148,19 @@ fn main() -> Result<()> {
                 mapping,
                 server,
                 server_port,
+                num_retries_before_error,
+                old_price_is_error,
             } => {
                 if server {
                     web::server::thread_start(server_port)?;
                 }
-                crank(&mut scope, (&mapping).as_ref(), refresh_interval_slot)
+                crank(
+                    &mut scope,
+                    (&mapping).as_ref(),
+                    refresh_interval_slot,
+                    num_retries_before_error,
+                    old_price_is_error,
+                )
             }
         }
     }
@@ -200,17 +214,24 @@ fn crank(
     scope: &mut ScopeClient,
     mapping_op: Option<impl AsRef<Path>>,
     refresh_interval_slot: clock::Slot,
+    init_num_retries_before_err: usize,
+    old_price_is_error: bool,
 ) -> Result<()> {
-    info!("Refresh interval set to {:?} slots", refresh_interval_slot);
-
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list)?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
+        info!(
+            "Default refresh interval set to {:?} slots",
+            refresh_interval_slot
+        );
         scope.download_oracle_mapping(refresh_interval_slot)?;
     }
-    let mut nb_refresh_retry_before_err: usize = 3;
+    let mut num_retries_before_err: usize = init_num_retries_before_err;
+    let error_log = format!(
+        "Some prices are still too old after {init_num_retries_before_err} refresh attempts"
+    );
     loop {
         let start = Instant::now();
 
@@ -231,7 +252,7 @@ fn crank(
         trace!(shortest_ttl);
 
         if shortest_ttl > 0 {
-            nb_refresh_retry_before_err = 3;
+            num_retries_before_err = init_num_retries_before_err;
             // Time to sleep if we consider slot age
             let sleep_ms_from_slots = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
             // Time to sleep if we consider a forced period of 20s refresh rate
@@ -241,12 +262,16 @@ fn crank(
             trace!(sleep_ms);
             sleep(Duration::from_millis(sleep_ms));
         } else {
-            nb_refresh_retry_before_err -= 1;
+            num_retries_before_err -= 1;
         }
 
-        if nb_refresh_retry_before_err == 0 {
-            error!("Some prices are still too old after 3 refresh attempts");
-            nb_refresh_retry_before_err = 3;
+        if num_retries_before_err == 0 {
+            if old_price_is_error {
+                error!(%error_log);
+            } else {
+                warn!(%error_log);
+            }
+            num_retries_before_err = init_num_retries_before_err;
         }
     }
 

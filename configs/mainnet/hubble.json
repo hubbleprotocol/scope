@@ -53,22 +53,26 @@
   "10": {
     "label": "daoSOL/USDC",
     "oracle_mapping": "5FtGB8YeMrAqxt2Zsw6WatQnc1R8vSpWEMyomvgFJnh6",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 400
   },
   "11": {
     "label": "SaberMSOL/SOL",
     "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
-    "oracle_type": "SwitchboardV1"
+    "oracle_type": "SwitchboardV1",
+    "max_age": 400
   },
   "12": {
     "label": "USDH/USD",
     "oracle_mapping": "37NFcKPTgqUVx3gwTQ4c2Q94oJWk2xZy3NQUXtDixReb",
-    "oracle_type": "SwitchboardV1"
+    "oracle_type": "SwitchboardV1",
+    "max_age": 400
   },
   "13": {
     "label": "STSOL/USD",
     "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 400
   },
   "14": {
     "label": "cSOL/SOL",
@@ -93,11 +97,13 @@
   "18": {
     "label": "wstETH/USD",
     "oracle_mapping": "FqTj8jtFWBp1RzWxWeWJXUpRnYdUUkf65u5bLMSp2CKm",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 400
   },
   "19": {
     "label": "LDO/USD",
     "oracle_mapping": "9dCoWrkPYwyUAmb62UwTyewsiRS6c9GTcEpJy8id6WCE",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 400
   }
 }

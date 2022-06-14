@@ -334,6 +334,7 @@ impl ScopeClient {
             let price = format!("{price:.5}");
             let price_type = entry.get_type();
             let age_in_slots: i64 = current_slot as i64 - dated_price.last_updated_slot as i64;
+            trace!(id, %entry, price = ?dated_price.price);
             info!(id, %entry, %price, ?price_type, "slot" = dated_price.last_updated_slot, age_in_slots);
         }
         Ok(())
