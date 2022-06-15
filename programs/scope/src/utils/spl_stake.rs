@@ -13,7 +13,7 @@ const DECIMALS: u32 = 15u32;
 // Gives the price of 1 staked SOL in SOL
 pub fn get_price(
     stake_pool_account_info: &AccountInfo,
-    current_clock: Clock,
+    current_clock: &Clock,
 ) -> Result<DatedPrice> {
     let stake_pool = try_from_slice_unchecked::<StakePool>(&stake_pool_account_info.data.borrow())
         .map_err(|_| ScopeError::UnexpectedAccount)?;

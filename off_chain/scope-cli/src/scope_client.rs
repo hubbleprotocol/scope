@@ -206,7 +206,7 @@ impl ScopeClient {
         let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
         let refresh_acc = |token_ids: &[u16]| {
             if let Err(e) = self.ix_refresh_price_list(token_ids) {
-                event!(Level::ERROR, "err" = ?e, "Refresh of some prices failed");
+                event!(Level::WARN, "err" = ?e, "Refresh of some prices failed");
             }
         };
 
@@ -248,7 +248,7 @@ impl ScopeClient {
         let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
         let refresh_acc = |token_ids: &[u16]| {
             if let Err(e) = self.ix_refresh_price_list(token_ids) {
-                event!(Level::ERROR, "err" = ?e, "Refresh of some prices failed");
+                event!(Level::WARN, "err" = ?e, "Refresh of some prices failed");
             }
         };
 
@@ -325,7 +325,7 @@ impl ScopeClient {
 
     /// Log current prices
     /// Note: this uses local mapping
-    pub fn log_prices(&self) -> Result<()> {
+    pub fn log_prices(&self, current_slot: u64) -> Result<()> {
         let prices = self.get_prices()?.prices;
 
         for (&id, entry) in &self.tokens {
@@ -333,7 +333,9 @@ impl ScopeClient {
             let price = price_to_f64(&dated_price.price);
             let price = format!("{price:.5}");
             let price_type = entry.get_type();
-            info!(id, %price, ?price_type, "slot" = dated_price.last_updated_slot, %entry);
+            let age_in_slots: i64 = current_slot as i64 - dated_price.last_updated_slot as i64;
+            trace!(id, %entry, price = ?dated_price.price);
+            info!(id, %entry, %price, ?price_type, "slot" = dated_price.last_updated_slot, age_in_slots);
         }
         Ok(())
     }

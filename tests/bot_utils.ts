@@ -166,7 +166,7 @@ export class ScopeBot {
 
     // now lets wait until we get our started chunk
     // to ensure we are all up and running
-    await this.nextLogMatches((c) => c.includes('Refresh interval set to'), 10000);
+    await this.nextLogMatches((c) => c.includes('Default refresh interval set to'), 10000);
   }
 
   stop() {

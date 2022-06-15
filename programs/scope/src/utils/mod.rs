@@ -7,7 +7,7 @@ pub mod yitoken;
 
 use crate::{DatedPrice, ScopeError};
 
-use anchor_lang::prelude::{AccountInfo, Clock, Context, ProgramResult, SolanaSysvar};
+use anchor_lang::prelude::{AccountInfo, Clock, Context, ProgramResult};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
@@ -44,6 +44,7 @@ pub fn get_price<'a, 'b>(
     price_type: OracleType,
     base_account: &AccountInfo,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
+    clock: &Clock,
 ) -> crate::Result<DatedPrice>
 where
     'a: 'b,
@@ -53,8 +54,8 @@ where
         OracleType::SwitchboardV1 => switchboard_v1::get_price(base_account),
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
-        OracleType::CToken => ctokens::get_price(base_account),
-        OracleType::SplStake => spl_stake::get_price(base_account, Clock::get()?),
+        OracleType::CToken => ctokens::get_price(base_account, clock),
+        OracleType::SplStake => spl_stake::get_price(base_account, clock),
     }
 }
 

@@ -181,58 +181,59 @@ describe('Scope crank bot tests', () => {
     }
   });
 
-  it('test_yi_price_not_change', async () => {
-    let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    const in_decimal_before = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+  // TODO: we force refresh the prices for now the tests of yi token can't work as they expect the price to be refreshed on price change.
+  // it('test_yi_price_not_change', async () => {
+  //   let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+  //   const in_decimal_before = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
 
-    scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    await scopeBot.crank();
+  //   scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
+  //   await scopeBot.crank();
 
-    scopeBot.flushLogs();
+  //   scopeBot.flushLogs();
 
-    await scopeBot.nextLogMatches((c) => c.includes('Price for Yi Token has not changed'), 10000);
-    await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
+  //   await scopeBot.nextLogMatches((c) => c.includes('Price for Yi Token has not changed'), 10000);
+  //   await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
 
-    await sleep(3000);
-    oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    const in_decimal_after = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+  //   await sleep(3000);
+  //   oracle = await program.account.oraclePrices.fetch(oracleAccount);
+  //   const in_decimal_after = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
 
-    expect(in_decimal_after.toNumber()).eq(in_decimal_before.toNumber());
-  });
+  //   expect(in_decimal_after.toNumber()).eq(in_decimal_before.toNumber());
+  // });
 
-  it('test_yi_price_change', async () => {
-    scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    // Update all prices to start
-    await Promise.all(
-      fakeAccounts.map(async (asset) => {
-        let new_price = asset.price.add(new Decimal('0.100'));
-        await asset.updatePrice(new_price);
-      })
-    );
+  // it('test_yi_price_change', async () => {
+  //   scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
+  //   // Update all prices to start
+  //   await Promise.all(
+  //     fakeAccounts.map(async (asset) => {
+  //       let new_price = asset.price.add(new Decimal('0.100'));
+  //       await asset.updatePrice(new_price);
+  //     })
+  //   );
 
-    // Higher number of slot as max_age to check that price change gets detected correctly
-    await scopeBot.crank(20);
+  //   // Higher number of slot as max_age to check that price change gets detected correctly
+  //   await scopeBot.crank(20);
 
-    await sleep(2000);
+  //   await sleep(2000);
 
-    // Before Yi price update
-    let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    const in_decimal_before = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+  //   // Before Yi price update
+  //   let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+  //   const in_decimal_before = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
 
-    scopeBot.flushLogs();
+  //   scopeBot.flushLogs();
 
-    // Update the Yi price randomly, mock Yi token don't use input values
-    fakeAccounts[HubbleTokens.STSOLUST].updatePrice(new Decimal('0'));
+  //   // Update the Yi price randomly, mock Yi token don't use input values
+  //   fakeAccounts[HubbleTokens.STSOLUST].updatePrice(new Decimal('0'));
 
-    await scopeBot.nextLogMatches((c) => c.includes('Price for Yi Token needs update'), 20000);
-    await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 20000);
+  //   await scopeBot.nextLogMatches((c) => c.includes('Price for Yi Token needs update'), 20000);
+  //   await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 20000);
 
-    await sleep(3000);
+  //   await sleep(3000);
 
-    // After Yi price update
-    oracle = await program.account.oraclePrices.fetch(oracleAccount);
-    const in_decimal_after = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
+  //   // After Yi price update
+  //   oracle = await program.account.oraclePrices.fetch(oracleAccount);
+  //   const in_decimal_after = getScopePriceDecimal(getRevisedIndex(HubbleTokens.STSOLUST), oracle);
 
-    expect(in_decimal_after.toNumber()).gt(in_decimal_before.toNumber()); // What???
-  });
+  //   expect(in_decimal_after.toNumber()).gt(in_decimal_before.toNumber()); // What???
+  // });
 });

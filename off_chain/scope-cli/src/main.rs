@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 
 use clap::{Parser, Subcommand};
 
-use tracing::{error, info, trace};
+use tracing::{error, info, trace, warn};
 
 use anyhow::Result;
 
@@ -104,6 +104,12 @@ enum Actions {
         /// Only valid if --server is also used
         #[clap(long, env, default_value = "8080")]
         server_port: u16,
+        /// Number of tx retries before logging an error for prices being too old
+        #[clap(long, env, default_value = "3")]
+        num_retries_before_error: usize,
+        /// Log old prices as errors when prices are still too old after all retries
+        #[clap(long, env)]
+        old_price_is_error: bool,
     },
 }
 
@@ -142,11 +148,19 @@ fn main() -> Result<()> {
                 mapping,
                 server,
                 server_port,
+                num_retries_before_error,
+                old_price_is_error,
             } => {
                 if server {
                     web::server::thread_start(server_port)?;
                 }
-                crank(&mut scope, (&mapping).as_ref(), refresh_interval_slot)
+                crank(
+                    &mut scope,
+                    (&mapping).as_ref(),
+                    refresh_interval_slot,
+                    num_retries_before_error,
+                    old_price_is_error,
+                )
             }
         }
     }
@@ -193,39 +207,75 @@ fn show(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Resul
 
     info!(current_slot);
 
-    scope.log_prices()
+    scope.log_prices(current_slot)
 }
 
 fn crank(
     scope: &mut ScopeClient,
     mapping_op: Option<impl AsRef<Path>>,
     refresh_interval_slot: clock::Slot,
+    init_num_retries_before_err: usize,
+    old_price_is_error: bool,
 ) -> Result<()> {
-    info!("Refresh interval set to {:?} slots", refresh_interval_slot);
-
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
+        info!(
+            "Default refresh interval set to {:?} slots",
+            token_list.default_max_age
+        );
         scope.set_local_mapping(&token_list)?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
+        info!(
+            "Default refresh interval set to {:?} slots",
+            refresh_interval_slot
+        );
         scope.download_oracle_mapping(refresh_interval_slot)?;
     }
+    let mut num_retries_before_err: usize = init_num_retries_before_err;
+    let error_log = format!(
+        "Some prices are still too old after {init_num_retries_before_err} refresh attempts"
+    );
     loop {
         let start = Instant::now();
 
-        if let Err(e) = scope.refresh_expired_prices() {
-            error!("Error while refreshing prices {:?}", e);
+        if let Err(e) = scope.refresh_all_prices() {
+            warn!("Error while refreshing prices {:?}", e);
         }
 
         let elapsed = start.elapsed();
         trace!("last refresh duration was {:?}", elapsed);
 
+        let current_slot = get_clock(&scope.get_rpc())?.slot;
+
+        info!(current_slot);
+
+        let _ = scope.log_prices(current_slot);
+
         let shortest_ttl = scope.get_prices_shortest_ttl()?;
         trace!(shortest_ttl);
 
         if shortest_ttl > 0 {
-            let sleep_ms = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
+            num_retries_before_err = init_num_retries_before_err;
+            // Time to sleep if we consider slot age
+            let sleep_ms_from_slots = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
+            // Time to sleep if we consider a forced period of 20s refresh rate
+            let sleep_ms_from_forced_period =
+                20000_u64.saturating_sub(start.elapsed().as_millis().try_into().unwrap());
+            let sleep_ms = std::cmp::min(sleep_ms_from_slots, sleep_ms_from_forced_period);
+            trace!(sleep_ms);
             sleep(Duration::from_millis(sleep_ms));
+        } else {
+            num_retries_before_err -= 1;
+        }
+
+        if num_retries_before_err == 0 {
+            if old_price_is_error {
+                error!(%error_log);
+            } else {
+                warn!(%error_log);
+            }
+            num_retries_before_err = init_num_retries_before_err;
         }
     }
 
