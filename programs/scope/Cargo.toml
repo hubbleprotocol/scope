@@ -33,3 +33,6 @@ solend-program = { git = "https://github.com/solendprotocol/solana-program-libra
     "no-entrypoint",
 ] }
 spl-stake-pool = { version = "0.6.3", features = ["no-entrypoint"] }
+
+[dev-dependencies]
+proptest = "1.0"
