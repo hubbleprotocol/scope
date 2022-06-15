@@ -156,7 +156,7 @@ describe('Switchboard Scope tests', () => {
   });
   it('test_set_update_stsolusd_v2_price', async () => {
     //await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.456789012345678'), 15);
-    await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.456789012345'), 12);
+    await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.4567890123'), 10);
     await program.rpc.refreshOnePrice(new BN(HubbleTokens.STSOLUSD), {
       accounts: {
         oraclePrices: oracleAccount,
