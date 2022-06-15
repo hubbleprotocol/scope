@@ -219,6 +219,10 @@ fn crank(
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
+        info!(
+            "Default refresh interval set to {:?} slots",
+            token_list.default_max_age
+        );
         scope.set_local_mapping(&token_list)?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
