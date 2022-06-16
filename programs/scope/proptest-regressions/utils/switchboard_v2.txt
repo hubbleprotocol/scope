@@ -5,3 +5,4 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc 68ec7556ff8ca4d6ce7749e19470f7fd91331e1953afc4a4a3d951534b399d0c # shrinks to mantissa = 1951328795563237400, scale = 12
+cc ba871764a9ca3841d2be3987c4015576d978189c35d5ec45a9503534ddf2f94a # shrinks to mantissa = 388409990354810750, scale = 0, stdev_scale_diff = 0

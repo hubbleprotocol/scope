@@ -1,5 +1,3 @@
-use std::cmp::{max, min};
-
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::log::sol_log;
 use switchboard_v2::decimal::SwitchboardDecimal;
@@ -31,7 +29,7 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
         let stdev_mantissa = feed.latest_confirmed_round.std_deviation.mantissa;
         let stdev_scale = feed.latest_confirmed_round.std_deviation.scale;
         if validate_confidence(
-            price.value,
+            price_switchboard_desc.mantissa,
             price_switchboard_desc.scale,
             stdev_mantissa,
             stdev_scale,
@@ -57,30 +55,39 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     })
 }
 
-fn validate_confidence(price: u64, exp: u32, stdev_mantissa: i128, stdev_scale: u32) -> Result<()> {
-    let stdev_mantissa: u64 = stdev_mantissa
-        .try_into()
-        .map_err(|_| ScopeError::MathOverflow)?;
-    let scale_op = if exp >= stdev_scale {
-        u64::checked_div
-    } else {
-        u64::checked_mul
-    };
-    let interval = max(exp, stdev_scale)
-        .checked_sub(min(exp, stdev_scale))
-        .unwrap(); // This cannot fail
+fn validate_confidence(
+    price_mantissa: i128,
+    price_scale: u32,
+    stdev_mantissa: i128,
+    stdev_scale: u32,
+) -> std::result::Result<(), ScopeError> {
+    // Step 1: compute scaling factor to bring the stdev to the same scale as the price.
+    let (scale_op, scale_diff): (&dyn Fn(i128, i128) -> Option<i128>, _) =
+        if price_scale >= stdev_scale {
+            (
+                &i128::checked_mul,
+                price_scale.checked_sub(stdev_scale).unwrap(),
+            )
+        } else {
+            (
+                &i128::checked_div,
+                stdev_scale.checked_sub(price_scale).unwrap(),
+            )
+        };
 
-    let scaling_factor = 10u64
-        .checked_pow(interval)
+    let scaling_factor = 10_i128
+        .checked_pow(scale_diff)
         .ok_or(ScopeError::MathOverflow)?;
 
+    // Step 2: multiply the stdev by the CONFIDENCE_FACTOR and apply scaling factor.
+
     let stdev_x_confidence_factor_scaled = stdev_mantissa
-        .checked_mul(CONFIDENCE_FACTOR)
+        .checked_mul(CONFIDENCE_FACTOR.into())
         .and_then(|a| scale_op(a, scaling_factor))
         .ok_or(ScopeError::MathOverflow)?;
 
-    if stdev_x_confidence_factor_scaled >= price {
-        Err(ScopeError::PriceNotValid.into())
+    if stdev_x_confidence_factor_scaled >= price_mantissa {
+        Err(ScopeError::PriceNotValid)
     } else {
         Ok(())
     }
@@ -164,10 +171,12 @@ mod tests {
         assert!(validate_confidence(1, 1, 0, 1).is_ok());
     }
 
-    //V2 Standard Deviation Confidence Tests
+    // V2 Standard Deviation Confidence Tests
+
+    // Success cases
     #[test]
     fn test_valid_switchboard_v2_price_stdev_1_point_99_percent() {
-        assert!(validate_confidence(100, 3, 1999, 0).is_ok());
+        assert!(validate_confidence(100_000, 3, 1999, 3).is_ok());
     }
 
     #[test]
@@ -176,13 +185,13 @@ mod tests {
     }
 
     #[test]
-    fn test_valid_switchboard_v2_price_stdev_zero_1() {
-        assert!(validate_confidence(474003240021234567, 15, 0, 1).is_ok());
+    fn test_valid_switchboard_v2_price_stdev_1p() {
+        assert!(validate_confidence(474003240021234567, 15, 4, 0).is_ok());
     }
 
     #[test]
     fn test_valid_switchboard_v2_price_stdev_1p9percent_std_exp_larger_than_price_exp() {
-        assert!(validate_confidence(100000, 0, 19, 2).is_ok());
+        assert!(validate_confidence(100_000, 0, 19, 1).is_ok());
     }
 
     #[test]
@@ -196,27 +205,87 @@ mod tests {
     }
 
     #[test]
+    fn test_valid_switchboard_v2_price_array_from_onchain() {
+        let valid_onchain_exp = [
+            (33794739, 6, 117065947069186545442401589, 28),
+            (345089113014, 10, 5311207363673122742057483, 28),
+            (61950, 5, 5000000000000000000000000, 28),
+        ];
+        for (value, exp, stdev_val, stdev_exp) in valid_onchain_exp {
+            validate_confidence(value, exp, stdev_val, stdev_exp).unwrap();
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn test_valid_switchboard_v2_2p_minus_one_unit_proptest(
+            mantissa in 0_i128..=850_705_917_302_346_158,
+            scale in 0u32..=20,
+            stdev_scale_diff in 0u32..=20, // stdev_scale must be greater than scale to store 2% of the price only
+        ) {
+            let stdev_scale = scale + stdev_scale_diff;
+            let stdev_mantissa = (mantissa * 2 * 10_i128.pow(stdev_scale_diff) / 100) - 1;
+            validate_confidence(mantissa, scale, stdev_mantissa, stdev_scale).unwrap();
+        }
+    }
+
+    // Failure cases
+
+    #[test]
     fn test_invalid_switchboard_v2_price_stdev_2percent_std_exp_larger_than_price_exp() {
-        assert!(validate_confidence(100000, 0, 2, 3).is_err());
+        let price = 100000;
+        let stdev_scale = 3;
+        // stdev at 2% of price
+        let stdev = price * 10_i128.pow(stdev_scale) * 2 / 100;
+        assert_eq!(
+            validate_confidence(price, 0, stdev, stdev_scale).unwrap_err(),
+            ScopeError::PriceNotValid
+        );
     }
 
     #[test]
     fn test_invalid_switchboard_v2_price_stdev_2percent_std_exp_larger_than_price_exp_2() {
-        assert!(validate_confidence(100, 3, 20, 2).is_err());
+        assert_eq!(
+            validate_confidence(100, 2, 20, 3).unwrap_err(),
+            ScopeError::PriceNotValid
+        );
     }
 
     #[test]
     fn test_invalid_switchboard_v2_price_stdev_above_2percent() {
-        assert!(validate_confidence(100, 3, 2001, 0).is_err());
+        assert_eq!(
+            validate_confidence(100, 0, 2001, 3).unwrap_err(),
+            ScopeError::PriceNotValid
+        );
     }
 
     #[test]
     fn test_invalid_switchboard_v2_price_stdev_above_2percent_2() {
-        assert!(validate_confidence(100, 3, 201, 1).is_err());
+        assert_eq!(
+            validate_confidence(100, 1, 201, 3).unwrap_err(),
+            ScopeError::PriceNotValid
+        );
     }
 
     #[test]
     fn test_invalid_switchboard_v2_price_stdev_higher_than_price() {
-        assert!(validate_confidence(100, 3, 100001, 0).is_err());
+        assert_eq!(
+            validate_confidence(100, 0, 100001, 3).unwrap_err(),
+            ScopeError::PriceNotValid
+        );
+    }
+
+    proptest! {
+        #[test]
+        fn test_invalid_switchboard_v2_2p_plus_one_unit_proptest(
+            mantissa in 1_i128..=850_705_917_302_346_158,
+            scale in 0u32..=20,
+            stdev_scale_diff in 3u32..=20, // stdev_scale must be greater than scale to store 2% of the price only
+        ) {
+            let stdev_scale = scale + stdev_scale_diff;
+            // 2% + 1 unit to be just above the 2% threshold
+            let stdev_mantissa = mantissa * 2 * 10_i128.pow(stdev_scale_diff) / 100 + 1;
+            prop_assert!(matches!(validate_confidence(mantissa, scale, stdev_mantissa, stdev_scale), Err(ScopeError::PriceNotValid)));
+        }
     }
 }
