@@ -11,6 +11,7 @@
 
 use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::log::sol_log;
 use pyth_client::{PriceStatus, PriceType};
 use std::convert::{TryFrom, TryInto};
 
@@ -38,9 +39,11 @@ fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
     }
     let is_trading = get_status(&pyth_price.agg.status);
     if !is_trading {
+        sol_log("Price is not trading");
         return Err(ScopeError::PriceNotValid.into());
     }
     if pyth_price.num_qt < 3 {
+        msg!("Number of quotes is {} (less than 3)", pyth_price.num_qt);
         return Err(ScopeError::PriceNotValid.into());
     }
 
@@ -51,6 +54,11 @@ fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
     let conf: u64 = pyth_price.agg.conf;
     let conf_50x: u64 = conf.checked_mul(ORACLE_CONFIDENCE_FACTOR).unwrap();
     if conf_50x > price {
+        msg!(
+            "Price is not as not a valid confidence level: conf: {}, price: {}",
+            conf,
+            price
+        );
         return Err(ScopeError::PriceNotValid.into());
     };
     Ok(price)
