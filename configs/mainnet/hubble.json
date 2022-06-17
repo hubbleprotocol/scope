@@ -70,9 +70,9 @@
   },
   "13": {
     "label": "STSOL/USD",
-    "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 400
+    "oracle_mapping": "Bt1hEbY62aMriY1SyQqbeZbm8VmSbQVGBFzSzMuVNWzN",
+    "oracle_type": "Pyth",
+    "max_age": 60
   },
   "14": {
     "label": "cSOL/SOL",
