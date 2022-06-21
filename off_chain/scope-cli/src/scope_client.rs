@@ -323,6 +323,20 @@ impl ScopeClient {
         Ok(shortest_ttl)
     }
 
+    /// Get the list of tokens that are too old.
+    pub fn get_expired_prices(&self) -> Result<Vec<(u16, String)>> {
+        Ok(self
+            .get_prices_ttl()?
+            .filter_map(|(token, ttl)| {
+                if ttl > 0 {
+                    None
+                } else {
+                    Some((token, self.tokens.get(&token).unwrap().to_string()))
+                }
+            })
+            .collect())
+    }
+
     /// Log current prices
     /// Note: this uses local mapping
     pub fn log_prices(&self, current_slot: u64) -> Result<()> {
