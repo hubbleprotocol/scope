@@ -38,7 +38,8 @@
   "7": {
     "label": "scnSOL/SOL",
     "oracle_mapping": "5oc4nmbNTda9fx8Tw57ShLD132aqDK65vuHH4RU1K4LZ",
-    "oracle_type": "SplStake"
+    "oracle_type": "SplStake",
+    "max_age": 60
   },
   "8": {
     "label": "BNB/USD",
@@ -52,9 +53,9 @@
   },
   "10": {
     "label": "daoSOL/USDC",
-    "oracle_mapping": "5FtGB8YeMrAqxt2Zsw6WatQnc1R8vSpWEMyomvgFJnh6",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 400
+    "oracle_mapping": "7ge2xKsZXmqPxa3YmXxXmzCp9Hc2ezrTxh6PECaxCwrL",
+    "oracle_type": "SplStake",
+    "max_age": 60
   },
   "11": {
     "label": "SaberMSOL/SOL",
@@ -105,5 +106,10 @@
     "oracle_mapping": "9dCoWrkPYwyUAmb62UwTyewsiRS6c9GTcEpJy8id6WCE",
     "oracle_type": "SwitchboardV2",
     "max_age": 400
+  },
+  "20": {
+    "label": "USDC/USD",
+    "oracle_mapping": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
+    "oracle_type": "Pyth"
   }
 }

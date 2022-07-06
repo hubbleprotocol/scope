@@ -52,8 +52,8 @@
   },
   "10": {
     "label": "daoSOL/USDC",
-    "oracle_mapping": "AaWXEtDxSQYYF51yLBDdeDwiaLHBQNNxPEeMX77iYSq2",
-    "oracle_type": "SwitchboardV2"
+    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
+    "oracle_type": "SplStake"
   },
   "11": {
     "label": "SaberMSOL/SOL",
@@ -99,5 +99,10 @@
     "label": "LDO/USD",
     "oracle_mapping": "GQmDtUWV4TnntedyfGo5bbJ2WGQG3J2WzonQbDeDEevf",
     "oracle_type": "SwitchboardV2"
+  },
+  "20": {
+    "label": "USDC/USD",
+    "oracle_mapping": "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7",
+    "oracle_type": "Pyth"
   }
 }
