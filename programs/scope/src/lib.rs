@@ -4,6 +4,7 @@ pub mod utils;
 
 // Reexports to deal with eventual conflicts
 pub use anchor_lang;
+use decimal_wad::error::DecimalError;
 pub use num_enum;
 
 // Local use
@@ -141,5 +142,15 @@ where
 {
     fn from(_: TryFromPrimitiveError<T>) -> Self {
         ScopeError::ConversionFailure
+    }
+}
+
+pub type ScopeResult<T = ()> = std::result::Result<T, ScopeError>;
+
+impl From<DecimalError> for ScopeError {
+    fn from(err: DecimalError) -> ScopeError {
+        match err {
+            DecimalError::MathOverflow => ScopeError::IntegerOverflow,
+        }
     }
 }

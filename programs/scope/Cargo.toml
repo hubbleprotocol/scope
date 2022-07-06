@@ -29,10 +29,9 @@ cfg-if = "1.0.0"
 serde = "1.0.136"
 switchboard-program = "0.2.0"
 switchboard-v2 = "0.1.3"
-solend-program = { git = "https://github.com/solendprotocol/solana-program-library", features = [
-    "no-entrypoint",
-] }
 spl-stake-pool = { version = "0.6.3", features = ["no-entrypoint"] }
+arrayref = "0.3.6"
+decimal-wad = { git = "https://github.com/hubbleprotocol/decimal-wad", branch = "downscale-uint" }
 
 [dev-dependencies]
 proptest = "1.0"
