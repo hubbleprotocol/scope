@@ -3258,11 +3258,11 @@ dependencies = [
  "num_enum",
  "proptest",
  "pyth-client",
+ "rust_decimal",
  "serde",
  "spl-stake-pool",
  "spl-token",
  "switchboard-program",
- "switchboard-v2",
 ]
 
 [[package]]
