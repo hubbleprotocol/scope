@@ -1,4 +1,4 @@
-use crate::{DatedPrice, Price, Result, ScopeError};
+use crate::{DatedPrice, Price, ScopeError, ScopeResult};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::clock;
 use anchor_spl::token::{Mint, TokenAccount};
@@ -42,13 +42,13 @@ pub fn price_compute(tokens_amount: u64, mint_supply: u64) -> Option<Price> {
 pub fn get_price<'a, 'b>(
     yi_account: &AccountInfo,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
-) -> Result<DatedPrice>
+) -> ScopeResult<DatedPrice>
 where
     'a: 'b,
 {
     // Get the root account
     let yi_account_raw = yi_account.data.borrow();
-    let yi_account = YiToken::try_deserialize(&mut &yi_account_raw[..])?;
+    let yi_account = YiToken::try_deserialize(&mut &yi_account_raw[..]).unwrap();
 
     // extract the accounts from extra iterator
     let yi_mint_info = extra_accounts
@@ -65,8 +65,8 @@ where
     }
 
     // Parse them
-    let yi_mint = Account::<Mint>::try_from(yi_mint_info)?;
-    let yi_underlying_tokens = Account::<TokenAccount>::try_from(yi_token_info)?;
+    let yi_mint = Account::<Mint>::try_from(yi_mint_info).unwrap();
+    let yi_underlying_tokens = Account::<TokenAccount>::try_from(yi_token_info).unwrap();
 
     // Compute price
     let yi_underlying_tokens_amount = yi_underlying_tokens.amount;
@@ -75,7 +75,7 @@ where
         .ok_or(ScopeError::MathOverflow)?;
     let dated_price = DatedPrice {
         price,
-        last_updated_slot: clock::Clock::get()?.slot,
+        last_updated_slot: clock::Clock::get().unwrap().slot,
         ..Default::default()
     };
     Ok(dated_price)

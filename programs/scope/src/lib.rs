@@ -3,13 +3,22 @@ pub mod program_id;
 pub mod utils;
 
 // Reexports to deal with eventual conflicts
+use crate::anchor_lang::prelude::AccountInfo;
 pub use anchor_lang;
+use anchor_lang::{account, declare_id, prelude::Pubkey, program, zero_copy};
+use decimal_wad::error::DecimalError;
 pub use num_enum;
 
+use anchor_lang::error_code;
+use anchor_lang::prelude::Rent;
+use anchor_lang::prelude::SolanaSysvar;
+use anchor_lang::prelude::{borsh, ProgramError};
+use anchor_lang::Accounts;
+use anchor_lang::{AccountDeserialize, AccountSerialize, AccountsExit};
+use anchor_lang::{AnchorDeserialize, AnchorSerialize};
 // Local use
 use std::convert::TryInto;
 
-use anchor_lang::prelude::*;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 
 use handlers::*;
@@ -22,6 +31,8 @@ pub const MAX_ENTRIES: usize = 512;
 #[program]
 pub mod scope {
 
+    use anchor_lang::{prelude::Context, solana_program::entrypoint::ProgramResult};
+
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> ProgramResult {
@@ -32,7 +43,8 @@ pub mod scope {
     pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
         let token: usize = token
             .try_into()
-            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)
+            .unwrap();
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
@@ -47,7 +59,8 @@ pub mod scope {
     ) -> ProgramResult {
         let token: usize = token
             .try_into()
-            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)
+            .unwrap();
         handler_update_mapping::process(ctx, token, price_type)
     }
 }
@@ -101,7 +114,7 @@ pub struct Configuration {
     _padding: [u64; 1267],
 }
 
-#[error]
+#[error_code]
 #[derive(PartialEq, Eq)]
 pub enum ScopeError {
     #[msg("Integer overflow")]
@@ -141,5 +154,21 @@ where
 {
     fn from(_: TryFromPrimitiveError<T>) -> Self {
         ScopeError::ConversionFailure
+    }
+}
+
+pub type ScopeResult<T = ()> = std::result::Result<T, ScopeError>;
+
+impl From<DecimalError> for ScopeError {
+    fn from(err: DecimalError) -> ScopeError {
+        match err {
+            DecimalError::MathOverflow => ScopeError::IntegerOverflow,
+        }
+    }
+}
+
+impl Into<ProgramError> for ScopeError {
+    fn into(self: ScopeError) -> ProgramError {
+        ProgramError::Custom(self as u32)
     }
 }

@@ -3,14 +3,14 @@ use anchor_lang::solana_program::log::sol_log;
 use switchboard_v2::decimal::SwitchboardDecimal;
 use switchboard_v2::AggregatorAccountData;
 
-use crate::{DatedPrice, Price, Result, ScopeError};
+use crate::{DatedPrice, Price, ScopeError, ScopeResult};
 
 const MAX_EXPONENT: u32 = 10;
 
 const MIN_CONFIDENCE_PERCENTAGE: u64 = 2u64;
 const CONFIDENCE_FACTOR: u64 = 100 / MIN_CONFIDENCE_PERCENTAGE;
 
-pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
+pub fn get_price(switchboard_feed_info: &AccountInfo) -> ScopeResult<DatedPrice> {
     let feed = AggregatorAccountData::new(switchboard_feed_info)
         .map_err(|_| ScopeError::SwitchboardV2Error)?;
 

@@ -1,4 +1,4 @@
-use crate::{DatedPrice, Price, Result, ScopeError};
+use crate::{DatedPrice, Price, ScopeError};
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::borsh::try_from_slice_unchecked;

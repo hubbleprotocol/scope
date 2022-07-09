@@ -1,4 +1,4 @@
-use crate::{DatedPrice, Price, Result, ScopeError};
+use crate::{DatedPrice, Price, ScopeError, ScopeResult};
 use anchor_lang::prelude::*;
 use std::cmp::min;
 
@@ -11,16 +11,16 @@ const PRICE_MULTIPLIER: f64 = 10u64.pow(SWITCHBOARD_V1_PRICE_DECIMALS) as f64;
 const MAX_PRICE_FLOAT: f64 = 10_000_000_000f64; //we choose an arbitrarily high number to do a sanity check and avoid overflow in the multiplication below
 const MIN_NUM_SUCCESS: i32 = 3i32;
 
-pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
-    let account_buf = switchboard_feed_info.try_borrow_data()?;
+pub fn get_price(switchboard_feed_info: &AccountInfo) -> ScopeResult<DatedPrice> {
+    let account_buf = switchboard_feed_info.try_borrow_data().unwrap();
     // first byte type discriminator
     if account_buf[0] != SwitchboardAccountType::TYPE_AGGREGATOR as u8 {
         msg!("switchboard address not of type aggregator");
         return Err(ScopeError::UnexpectedAccount.into());
     }
 
-    let aggregator: AggregatorState = get_aggregator(switchboard_feed_info)?;
-    let round_result: RoundResult = get_aggregator_result(&aggregator)?;
+    let aggregator: AggregatorState = get_aggregator(switchboard_feed_info).unwrap();
+    let round_result: RoundResult = get_aggregator_result(&aggregator).unwrap();
 
     let price_float = round_result.result.ok_or(ScopeError::PriceNotValid)?;
 
@@ -37,7 +37,7 @@ pub fn validate_valid_price(
     slot: u64,
     aggregator: AggregatorState,
     round_result: RoundResult,
-) -> Result<DatedPrice> {
+) -> ScopeResult<DatedPrice> {
     let dated_price = DatedPrice {
         price: Price {
             value: price,

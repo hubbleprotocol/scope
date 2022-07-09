@@ -1,4 +1,5 @@
-use anchor_lang::prelude::{AccountInfo, Clock, ProgramResult, SolanaSysvar};
+use anchor_lang::prelude::{AccountInfo, Clock, SolanaSysvar};
+use anchor_lang::solana_program::entrypoint::ProgramResult;
 use anchor_lang::AnchorSerialize;
 use spl_stake_pool::state::StakePool;
 

@@ -14,8 +14,8 @@ name = "scope_client"
 path = "src/lib.rs"
 
 [dependencies]
-anchor-client = "~0.20.1"
-anchor-spl = { version = "~0.20.1", features = ["dex", "token"] }
+anchor-client = "~0.24.2"
+anchor-spl = { version = "~0.24.2", features = ["dex", "token"] }
 spl-token = { version = "3.1.1", features = ["no-entrypoint"] }
 scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
 anyhow = "1.0.0"

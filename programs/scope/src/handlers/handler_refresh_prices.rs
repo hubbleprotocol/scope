@@ -1,6 +1,7 @@
 use crate::utils::OracleType;
 use crate::{utils::get_price, ScopeError};
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::entrypoint::ProgramResult;
 use anchor_lang::solana_program::log::{sol_log, sol_log_64};
 
 #[derive(Accounts)]
@@ -36,13 +37,14 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
 
     let price_type: OracleType = oracle_mappings.price_types[token]
         .try_into()
-        .map_err(|_| ScopeError::BadTokenType)?;
+        .map_err(|_| ScopeError::BadTokenType)
+        .unwrap();
 
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
     let mut remaining_iter = ctx.remaining_accounts.iter();
     let clock = Clock::get()?;
-    let price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
+    let price = get_price(price_type, price_info, &mut remaining_iter, &clock).unwrap();
 
     oracle.prices[token] = price;
 
@@ -71,38 +73,35 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
         let oracle_mapping = oracle_mappings
             .price_info_accounts
             .get(token_idx)
-            .ok_or(ScopeError::BadTokenNb)?;
+            .ok_or(ScopeError::BadTokenNb)
+            .unwrap();
         let price_type: OracleType = oracle_mappings.price_types[token_idx]
             .try_into()
-            .map_err(|_| ScopeError::BadTokenType)?;
+            .map_err(|_| ScopeError::BadTokenType)
+            .unwrap();
         let received_account = accounts_iter
             .next()
-            .ok_or(ScopeError::AccountsAndTokenMismatch)?;
+            .ok_or(ScopeError::AccountsAndTokenMismatch)
+            .unwrap();
         // Ignore unset mapping accounts
         if zero_pk == *oracle_mapping {
             continue;
         }
         // Check that the provided oracle accounts are the one referenced in oracleMapping
         if oracle_mappings.price_info_accounts[token_idx] != received_account.key() {
-            return Err(ScopeError::UnexpectedAccount.into());
+            return Err(ProgramError::AccountAlreadyInitialized);
         }
         let clock = Clock::get()?;
         match get_price(price_type, received_account, &mut accounts_iter, &clock) {
             Ok(price) => {
                 let to_update = oracle_prices
                     .get_mut(token_idx)
-                    .ok_or(ScopeError::BadTokenNb)?;
+                    .ok_or(ScopeError::BadTokenNb)
+                    .unwrap();
                 *to_update = price;
             }
             Err(e) => {
                 sol_log("Price skipped as validation failed (token, type, err)");
-                sol_log_64(
-                    token_idx as u64,
-                    price_type as u64,
-                    ProgramError::from(e).into(),
-                    0,
-                    0,
-                );
             }
         };
     }

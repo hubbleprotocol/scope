@@ -9,7 +9,7 @@
 //! 2. Upon usage the current price state is checked in [`validate_valid_price`]
 //! 3. The confidence interval is also checked in this same function with [`ORACLE_CONFIDENCE_FACTOR`]
 
-use crate::{DatedPrice, Price, Result, ScopeError};
+use crate::{DatedPrice, Price, ScopeError, ScopeResult};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::log::sol_log;
 use pyth_client::{PriceStatus, PriceType};
@@ -18,10 +18,10 @@ use std::convert::{TryFrom, TryInto};
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
-pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
-    let pyth_price_data = &price_info.try_borrow_data()?;
+pub fn get_price(price_info: &AccountInfo) -> ScopeResult<DatedPrice> {
+    let pyth_price_data = &price_info.try_borrow_data().unwrap();
     let pyth_price = pyth_client::cast::<pyth_client::Price>(pyth_price_data);
-    let price = validate_valid_price(pyth_price)?;
+    let price = validate_valid_price(pyth_price).unwrap();
 
     Ok(DatedPrice {
         price: Price {

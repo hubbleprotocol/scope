@@ -7,7 +7,10 @@ pub mod yitoken;
 
 use crate::{DatedPrice, ScopeError};
 
-use anchor_lang::prelude::{AccountInfo, Clock, Context, ProgramResult};
+use anchor_lang::{
+    prelude::{AccountInfo, Clock, Context},
+    solana_program::entrypoint::ProgramResult,
+};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
@@ -45,7 +48,7 @@ pub fn get_price<'a, 'b>(
     base_account: &AccountInfo,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
     clock: &Clock,
-) -> crate::Result<DatedPrice>
+) -> crate::ScopeResult<DatedPrice>
 where
     'a: 'b,
 {
@@ -55,7 +58,7 @@ where
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
         OracleType::CToken => ctokens::get_price(base_account, clock),
-        OracleType::SplStake => spl_stake::get_price(base_account, clock),
+        OracleType::SplStake => Ok(spl_stake::get_price(base_account, clock).unwrap()),
     }
 }
 
@@ -66,9 +69,9 @@ where
 pub fn validate_oracle_account(
     price_type: OracleType,
     price_account: &AccountInfo,
-) -> crate::Result<()> {
+) -> crate::ScopeResult<()> {
     match price_type {
-        OracleType::Pyth => pyth::validate_pyth_price_info(price_account),
+        OracleType::Pyth => Ok(pyth::validate_pyth_price_info(price_account).unwrap()),
         OracleType::SwitchboardV1 => Ok(()), // TODO at least check account ownership?
         OracleType::SwitchboardV2 => Ok(()), // TODO at least check account ownership?
         OracleType::YiToken => Ok(()),       // TODO how shall we validate yi token account?

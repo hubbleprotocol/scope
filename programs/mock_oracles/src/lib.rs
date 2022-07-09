@@ -22,6 +22,7 @@ pub mod mock_oracles {
     use std::convert::TryInto;
     use std::ops::Div;
 
+    use anchor_lang::solana_program::entrypoint::ProgramResult;
     use switchboard_v2::AggregatorAccountData;
 
     use super::*;
@@ -304,3 +305,39 @@ pub struct Initialize<'info> {
     pub oracle_account: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }
+
+#[error_code]
+#[derive(PartialEq, Eq)]
+pub enum ScopeError {
+    #[msg("Integer overflow")]
+    IntegerOverflow,
+
+    #[msg("Conversion failure")]
+    ConversionFailure,
+
+    #[msg("Mathematical operation with overflow")]
+    MathOverflow,
+
+    #[msg("Out of range integral conversion attempted")]
+    OutOfRangeIntegralConversion,
+
+    #[msg("Unexpected account in instruction")]
+    UnexpectedAccount,
+
+    #[msg("Price is not valid")]
+    PriceNotValid,
+
+    #[msg("The number of tokens is different from the number of received accounts")]
+    AccountsAndTokenMismatch,
+
+    #[msg("The token index received is out of range")]
+    BadTokenNb,
+
+    #[msg("The token type received is invalid")]
+    BadTokenType,
+
+    #[msg("There was an error with the Switchboard V2 retrieval")]
+    SwitchboardV2Error,
+}
+
+pub type ScopeResult<T = ()> = std::result::Result<T, ScopeError>;
