@@ -8,8 +8,8 @@ on:
     branches:
       - master
 env:
-  solana_version: v1.9.5
-  anchor_version: 0.22.0
+  solana_version: v1.9.22
+  anchor_version: 0.20.1
 
 jobs:
   ts-test:
@@ -37,7 +37,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: cargo-${{ runner.os }}-v0000-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-v0001-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions/cache@v2
         name: Cache Solana Tool Suite
         id: cache-solana
@@ -45,14 +45,14 @@ jobs:
           path: |
             ~/.cache/solana/
             ~/.local/share/solana/
-          key: solana-${{ runner.os }}-v0000-${{ env.solana_version }}
+          key: solana-${{ runner.os }}-v0001-${{ env.solana_version }}
       - uses: actions/cache@v2
         name: Cache target folder
         id: cache-programs
         with:
           path: |
             ./target
-          key: solana-${{ runner.os }}-v0000-${{ hashFiles('**/programs/**/*.rs') }}-${{ hashFiles('**/programs/**/*.toml') }}
+          key: solana-${{ runner.os }}-v0001-${{ hashFiles('**/programs/**/*.rs') }}-${{ hashFiles('**/programs/**/*.toml') }}
       - uses: actions/cache@v2
         name: Cache Node Modules
         id: cache-node-modules
@@ -61,10 +61,10 @@ jobs:
             ~/.npm/
             ~/.yarn/
             ./node_modules
-          key: npm-${{ runner.os }}-v0000-${{ hashFiles('**/package-lock.json') }}
-      - uses: actions/setup-node@v2
+          key: npm-${{ runner.os }}-v0001-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/setup-node@v3
         with:
-          node-version: '17'
+          node-version: 18
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
