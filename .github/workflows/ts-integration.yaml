@@ -94,7 +94,6 @@ jobs:
       - name: build programs
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          rustc --version
           make build
       - name: test
         run: |
