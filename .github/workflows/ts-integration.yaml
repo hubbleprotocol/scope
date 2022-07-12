@@ -10,6 +10,7 @@ on:
 env:
   solana_version: v1.9.29
   anchor_version: 0.20.1
+  rustc_version: 1.59
 
 jobs:
   ts-test:
@@ -33,7 +34,12 @@ jobs:
           sudo apt-get update
           sudo apt-get upgrade
           sudo apt-get install -y pkg-config build-essential libudev-dev
-          rustup default 1.59
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt, clippy
+          toolchain: ${{ env.rustc_version }}
+          default: true
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1.4.0
         with:
@@ -86,6 +92,7 @@ jobs:
       - name: build programs
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
+          rustc --version
           make build
       - name: test
         run: |
