@@ -81,6 +81,7 @@ jobs:
           echo "#!/bin/bash" >> ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
           echo "unset RUSTC" >> ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
           echo '${BASH_SOURCE%/*}/cargo-build-bpf-orig' >> ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
+          chmod +x ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
           solana --version
       - name: install Anchor
         run: |
