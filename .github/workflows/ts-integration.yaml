@@ -64,10 +64,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
       - name: install global mocha
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
