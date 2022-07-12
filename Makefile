@@ -84,7 +84,7 @@ keys/$(CLUSTER)/%.json:
 # Rebuild the .so if any rust file change
 target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $(shell find programs -name "Cargo.toml") Cargo.lock CLUSTER
 >@ echo "*******Build $* *******"
->@ CLUSTER=$(CLUSTER) anchor build -p $*
+>@ CLUSTER=$(CLUSTER) RUSTC=~/.local/share/solana/install/active_release/bin/sdk/bpf/dependencies/bpf-tools/rust/bin/rustc anchor build -p $*
 >@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
 
 deploy-scope:
