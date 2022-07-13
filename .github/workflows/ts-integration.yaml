@@ -8,8 +8,9 @@ on:
     branches:
       - master
 env:
-  solana_version: v1.9.5
-  anchor_version: 0.22.0
+  solana_version: v1.9.29
+  anchor_version: 0.20.1
+  rustc_version: 1.59
 
 jobs:
   ts-test:
@@ -28,16 +29,21 @@ jobs:
       - name: test
         run: |
           echo "${{ matrix.test_name }}"
-      - uses: actions/cache@v2
-        name: Cache Cargo registry + index
-        id: cache-anchor
+      - name: Install dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get upgrade
+          sudo apt-get install -y pkg-config build-essential libudev-dev
+      - uses: actions-rs/toolchain@v1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: cargo-${{ runner.os }}-v0000-${{ hashFiles('**/Cargo.lock') }}
+          profile: minimal
+          components: rustfmt, clippy
+          toolchain: ${{ env.rustc_version }}
+          default: true
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.4.0
+        with:
+          cache-on-failure: true
       - uses: actions/cache@v2
         name: Cache Solana Tool Suite
         id: cache-solana
@@ -47,13 +53,6 @@ jobs:
             ~/.local/share/solana/
           key: solana-${{ runner.os }}-v0000-${{ env.solana_version }}
       - uses: actions/cache@v2
-        name: Cache target folder
-        id: cache-programs
-        with:
-          path: |
-            ./target
-          key: solana-${{ runner.os }}-v0000-${{ hashFiles('**/programs/**/*.rs') }}-${{ hashFiles('**/programs/**/*.toml') }}
-      - uses: actions/cache@v2
         name: Cache Node Modules
         id: cache-node-modules
         with:
@@ -61,14 +60,10 @@ jobs:
             ~/.npm/
             ~/.yarn/
             ./node_modules
-          key: npm-${{ runner.os }}-v0000-${{ hashFiles('**/package-lock.json') }}
-      - uses: actions/setup-node@v2
+          key: npm-${{ runner.os }}-v0001-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/setup-node@v3
         with:
-          node-version: '17'
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+          node-version: 18
       - name: install global mocha
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
@@ -76,22 +71,22 @@ jobs:
           npm install -g mocha
           npm install -g ts-mocha
           npm install -g typescript
-          npm install -g @project-serum/anchor
-          npm install -g @project-serum/anchor-cli
-      - name: install essential
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config build-essential libudev-dev
-      - name: install solana
+      - name: install Solana
         if: steps.cache-solana.outputs.cache-hit != 'true'
         run: |
           sh -c "$(curl -sSfL https://release.solana.com/${{ env.solana_version }}/install)"
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
+          # Avoid issues with RUSTC var being forced to rustup install instead of solana's
+          mv ~/.local/share/solana/install/active_release/bin/cargo-build-bpf ~/.local/share/solana/install/active_release/bin/cargo-build-bpf-orig
+          echo "#!/bin/bash" >> ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
+          echo "unset RUSTC" >> ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
+          echo '${BASH_SOURCE%/*}/cargo-build-bpf-orig' >> ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
+          chmod +x ~/.local/share/solana/install/active_release/bin/cargo-build-bpf
           solana --version
-      - name: setup solana
+      - name: install Anchor
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          solana --version
+          cargo install --git https://github.com/project-serum/anchor --tag v0.20.1 anchor-cli --locked
       - name: yarn install
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
