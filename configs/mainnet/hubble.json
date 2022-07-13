@@ -52,10 +52,9 @@
     "oracle_type": "Pyth"
   },
   "10": {
-    "label": "daoSOL/USDC",
+    "label": "daoSOL/SOL",
     "oracle_mapping": "7ge2xKsZXmqPxa3YmXxXmzCp9Hc2ezrTxh6PECaxCwrL",
-    "oracle_type": "SplStake",
-    "max_age": 60
+    "oracle_type": "SplStake"
   },
   "11": {
     "label": "SaberMSOL/SOL",
@@ -72,8 +71,7 @@
   "13": {
     "label": "STSOL/USD",
     "oracle_mapping": "Bt1hEbY62aMriY1SyQqbeZbm8VmSbQVGBFzSzMuVNWzN",
-    "oracle_type": "Pyth",
-    "max_age": 60
+    "oracle_type": "Pyth"
   },
   "14": {
     "label": "cSOL/SOL",
@@ -105,11 +103,16 @@
     "label": "LDO/USD",
     "oracle_mapping": "9dCoWrkPYwyUAmb62UwTyewsiRS6c9GTcEpJy8id6WCE",
     "oracle_type": "SwitchboardV2",
-    "max_age": 400
+    "max_age": 120
   },
   "20": {
     "label": "USDC/USD",
     "oracle_mapping": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
     "oracle_type": "Pyth"
+  },
+  "21": {
+    "label": "cUSDC/USDC",
+    "oracle_mapping": "GdJd6a8ZWQVjQFhoKpCJKrrG7dU3ov2MNQ8rj4EARCmw",
+    "oracle_type": "CToken"
   }
 }

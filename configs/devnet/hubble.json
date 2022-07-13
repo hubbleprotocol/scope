@@ -51,7 +51,7 @@
     "oracle_type": "Pyth"
   },
   "10": {
-    "label": "daoSOL/USDC",
+    "label": "daoSOL/SOL",
     "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
     "oracle_type": "SplStake"
   },
@@ -104,5 +104,10 @@
     "label": "USDC/USD",
     "oracle_mapping": "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7",
     "oracle_type": "Pyth"
+  },
+  "21": {
+    "label": "cUSDC/USDC",
+    "oracle_mapping": "FNNkz4RCQezSSS71rW2tvqZH1LCkTzaiG7Nd1LeA5x5y",
+    "oracle_type": "CToken"
   }
 }
