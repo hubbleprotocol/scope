@@ -3,9 +3,6 @@ use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
 
-#[cfg(not(feature = "skip_price_validation"))]
-use anchor_lang::solana_program::log::sol_log;
-
 use spl_stake_pool::state::StakePool;
 
 const DECIMALS: u32 = 15u32;
@@ -17,13 +14,6 @@ pub fn get_price(
 ) -> Result<DatedPrice> {
     let stake_pool = try_from_slice_unchecked::<StakePool>(&stake_pool_account_info.data.borrow())
         .map_err(|_| ScopeError::UnexpectedAccount)?;
-
-    #[cfg(not(feature = "skip_price_validation"))]
-    if stake_pool.last_update_epoch != current_clock.epoch {
-        // The price has not been refreshed this epoch
-        sol_log("SPL Stake account has not been refreshed in current epoch");
-        return Err(ScopeError::PriceNotValid.into());
-    }
 
     let value = scaled_rate(&stake_pool)?;
 
