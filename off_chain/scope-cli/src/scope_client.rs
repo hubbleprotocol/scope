@@ -509,7 +509,7 @@ impl ScopeClient {
             .send();
 
         match tx_res {
-            Ok(sig) => info!(signature = %sig, "Price list refreshed successfully"),
+            Ok(sig) => info!(signature = %sig, "Prices list refreshed successfully"),
             Err(err) => {
                 warn!("Price list refresh failed: {:#?}", err);
                 bail!(err);
