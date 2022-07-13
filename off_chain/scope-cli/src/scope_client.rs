@@ -504,11 +504,17 @@ impl ScopeClient {
 
         let tokens = tokens.to_vec();
 
-        let tx = request
+        let tx_res = request
             .args(instruction::RefreshPriceList { tokens })
-            .send()?;
+            .send();
 
-        info!(signature = %tx, "Prices list refreshed successfully");
+        match tx_res {
+            Ok(sig) => info!(signature = %sig, "Price list refreshed successfully"),
+            Err(err) => {
+                warn!("Price list refresh failed: {:#?}", err);
+                bail!(err);
+            }
+        }
 
         Ok(())
     }
