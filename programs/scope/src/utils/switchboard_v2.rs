@@ -207,13 +207,14 @@ mod switchboard {
 
         pub fn get_result(&self) -> std::result::Result<SwitchboardDecimal, ScopeError> {
             if self.min_oracle_results > self.latest_confirmed_round.num_success {
-                return Err(ScopeError::SwitchboardV2Error.into());
+                Err(ScopeError::SwitchboardV2Error)
+            } else {
+                Ok(self.latest_confirmed_round.result)
             }
-            Ok(self.latest_confirmed_round.result)
         }
 
         fn discriminator() -> [u8; 8] {
-            return [217, 230, 65, 101, 201, 162, 27, 125];
+            [217, 230, 65, 101, 201, 162, 27, 125]
         }
     }
 

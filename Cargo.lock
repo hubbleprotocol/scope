@@ -2372,10 +2372,10 @@ dependencies = [
  "quick-protobuf",
  "serde",
  "serde_json",
- "solend-program",
  "spl-stake-pool",
  "switchboard-program",
  "switchboard-v2",
+ "uint 0.9.0",
 ]
 
 [[package]]
@@ -4161,23 +4161,6 @@ dependencies = [
  "solana-metrics",
  "solana-sdk",
  "thiserror",
-]
-
-[[package]]
-name = "solend-program"
-version = "0.1.0"
-source = "git+https://github.com/solendprotocol/solana-program-library#0dc1fc6f3be8526e90f0c69e7d97699bc97d7d19"
-dependencies = [
- "arrayref",
- "bytemuck",
- "num-derive",
- "num-traits",
- "solana-program",
- "spl-token",
- "switchboard-program",
- "switchboard-v2",
- "thiserror",
- "uint 0.9.0",
 ]
 
 [[package]]

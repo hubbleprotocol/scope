@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 mod ctokens;
+mod externals;
 pub mod pc;
 mod spl_stake;
 
