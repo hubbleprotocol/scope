@@ -14,17 +14,16 @@ name = "scope_client"
 path = "src/lib.rs"
 
 [dependencies]
-anchor-client = "~0.20.1"
-anchor-spl = { version = "~0.20.1", features = ["dex", "token"] }
-spl-token = { version = "3.1.1", features = ["no-entrypoint"] }
+anchor-client = "0.25.0"
+anchor-spl = { version = "0.25.0", features = ["dex", "token"] }
 scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
 anyhow = "1.0.0"
-clap = { version = "3.1.0", features = ["derive", "env", "wrap_help"] }
+clap = { version = "3.2.11", features = ["derive", "env", "wrap_help"] }
 url = "2.2.2"
 serde = "1.0.136"
 serde_json = "1.0.79"
 tracing = "0.1.10"
 tracing-subscriber = { version = "0.3.9", features = ["std", "fmt", "json"] }
-tokio = "1.17.0"
+tokio = "1.14.1"
 warp = "0.3.2"
 nohash-hasher = "0.2.0"

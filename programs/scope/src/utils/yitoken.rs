@@ -61,7 +61,7 @@ where
 
     // Check that they are the expected accounts
     if yi_account.mint != yi_mint_info.key() || yi_account.token_account != yi_token_info.key() {
-        return Err(ScopeError::UnexpectedAccount.into());
+        return err!(ScopeError::UnexpectedAccount);
     }
 
     // Parse them

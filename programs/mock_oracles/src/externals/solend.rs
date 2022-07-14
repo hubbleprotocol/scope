@@ -26,8 +26,8 @@ pub struct Decimal(pub U192);
 impl Decimal {
     /// Return raw scaled value if it fits within u128
     #[allow(clippy::wrong_self_convention)]
-    pub fn to_scaled_val(&self) -> Result<u128, ()> {
-        Ok(u128::try_from(self.0).unwrap())
+    pub fn to_scaled_val(&self) -> u128 {
+        u128::try_from(self.0).unwrap()
     }
 
     /// Create decimal from scaled value
@@ -325,7 +325,7 @@ impl Pack for Reserve {
     }
 
     /// Unpacks a byte buffer into a [ReserveInfo](struct.ReserveInfo.html).
-    fn unpack_from_slice(input: &[u8]) -> Result<Self, ProgramError> {
+    fn unpack_from_slice(input: &[u8]) -> std::result::Result<Self, ProgramError> {
         let input = array_ref![input, 0, RESERVE_LEN];
         #[allow(clippy::ptr_offset_with_cast)]
         let (
@@ -446,10 +446,7 @@ impl Pack for Reserve {
 
 // Helpers
 fn pack_decimal(decimal: Decimal, dst: &mut [u8; 16]) {
-    *dst = decimal
-        .to_scaled_val()
-        .expect("Decimal cannot be packed")
-        .to_le_bytes();
+    *dst = decimal.to_scaled_val().to_le_bytes();
 }
 
 fn unpack_decimal(src: &[u8; 16]) -> Decimal {

@@ -25,13 +25,13 @@ pub struct RefreshList<'info> {
     // Note: use remaining accounts as price accounts
 }
 
-pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResult {
+pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let price_info = &ctx.accounts.price_info;
 
     // Check that the provided account is the one referenced in oracleMapping
     if oracle_mappings.price_info_accounts[token] != price_info.key() {
-        return Err(ScopeError::UnexpectedAccount.into());
+        return err!(ScopeError::UnexpectedAccount);
     }
 
     let price_type: OracleType = oracle_mappings.price_types[token]
@@ -49,17 +49,17 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> ProgramResul
     Ok(())
 }
 
-pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramResult {
+pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<()> {
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
     let oracle_prices = &mut ctx.accounts.oracle_prices.load_mut()?.prices;
 
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
-        return Err(ProgramError::InvalidArgument);
+        return Err(ProgramError::InvalidArgument.into());
     }
     // Check the received token list is at least as long as the number of provided accounts
     if tokens.len() > ctx.remaining_accounts.len() {
-        return Err(ScopeError::AccountsAndTokenMismatch.into());
+        return err!(ScopeError::AccountsAndTokenMismatch);
     }
 
     let zero_pk: Pubkey = Pubkey::default();
@@ -84,7 +84,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> ProgramR
         }
         // Check that the provided oracle accounts are the one referenced in oracleMapping
         if oracle_mappings.price_info_accounts[token_idx] != received_account.key() {
-            return Err(ScopeError::UnexpectedAccount.into());
+            return err!(ScopeError::UnexpectedAccount);
         }
         let clock = Clock::get()?;
         match get_price(price_type, received_account, &mut accounts_iter, &clock) {

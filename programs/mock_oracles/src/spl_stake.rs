@@ -1,4 +1,4 @@
-use anchor_lang::prelude::{AccountInfo, Clock, ProgramResult, SolanaSysvar};
+use anchor_lang::prelude::{AccountInfo, Clock, Result, SolanaSysvar};
 use anchor_lang::AnchorSerialize;
 use spl_stake_pool::state::StakePool;
 
@@ -6,7 +6,7 @@ pub fn initialize(
     stake_pool_account: &AccountInfo,
     mint_total_supply: u64,
     total_liquidity: u64,
-) -> ProgramResult {
+) -> Result<()> {
     let pool = StakePool {
         last_update_epoch: Clock::get()?.epoch,
         total_lamports: total_liquidity,
@@ -22,7 +22,7 @@ pub fn update(
     stake_pool_account: &AccountInfo,
     mint_total_supply: u64,
     total_liquidity: u64,
-) -> ProgramResult {
+) -> Result<()> {
     let pool = StakePool {
         last_update_epoch: Clock::get()?.epoch,
         total_lamports: total_liquidity,

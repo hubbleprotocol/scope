@@ -25,19 +25,19 @@ pub mod scope {
 
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> Result<()> {
         handler_initialize::process(ctx, feed_name)
     }
 
     //This handler only works for Pyth type tokens
-    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> ProgramResult {
+    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
-    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u16>) -> ProgramResult {
+    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u16>) -> Result<()> {
         handler_refresh_prices::refresh_price_list(ctx, &tokens)
     }
 
@@ -45,7 +45,7 @@ pub mod scope {
         ctx: Context<UpdateOracleMapping>,
         token: u64,
         price_type: u8,
-    ) -> ProgramResult {
+    ) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
@@ -102,7 +102,7 @@ pub struct Configuration {
     _padding: [u64; 1267],
 }
 
-#[error]
+#[error_code]
 #[derive(PartialEq, Eq)]
 pub enum ScopeError {
     #[msg("Integer overflow")]

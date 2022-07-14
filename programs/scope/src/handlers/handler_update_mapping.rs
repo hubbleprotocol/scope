@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct UpdateOracleMapping<'info> {
     pub admin: Signer<'info>,
-    #[account(constraint = program.programdata_address() == Some(program_data.key()))]
+    #[account(constraint = program.programdata_address()? == Some(program_data.key()))]
     pub program: Program<'info, Scope>,
     #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
     pub program_data: Account<'info, ProgramData>,
@@ -16,7 +16,7 @@ pub struct UpdateOracleMapping<'info> {
     pub price_info: AccountInfo<'info>,
 }
 
-pub fn process(ctx: Context<UpdateOracleMapping>, token: usize, price_type: u8) -> ProgramResult {
+pub fn process(ctx: Context<UpdateOracleMapping>, token: usize, price_type: u8) -> Result<()> {
     check_context(&ctx)?;
 
     let new_price_pubkey = ctx.accounts.price_info.key();

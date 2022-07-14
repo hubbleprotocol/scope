@@ -16,7 +16,7 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     // first byte type discriminator
     if account_buf[0] != SwitchboardAccountType::TYPE_AGGREGATOR as u8 {
         msg!("switchboard address not of type aggregator");
-        return Err(ScopeError::UnexpectedAccount.into());
+        return err!(ScopeError::UnexpectedAccount);
     }
 
     let aggregator: AggregatorState = get_aggregator(switchboard_feed_info)?;
@@ -25,7 +25,7 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     let price_float = round_result.result.ok_or(ScopeError::PriceNotValid)?;
 
     if price_float >= MAX_PRICE_FLOAT {
-        return Err(ScopeError::MathOverflow.into());
+        return err!(ScopeError::MathOverflow);
     }
     let price: u64 = (price_float * PRICE_MULTIPLIER) as u64;
     let slot: u64 = round_result.round_open_slot.unwrap();
@@ -59,7 +59,7 @@ pub fn validate_valid_price(
     let min_num_success_for_oracle = min(aggregator_min_confirmations, MIN_NUM_SUCCESS);
     let num_success = round_result.num_success.ok_or(ScopeError::PriceNotValid)?;
     if num_success < min_num_success_for_oracle {
-        return Err(ScopeError::PriceNotValid.into());
+        return err!(ScopeError::PriceNotValid);
     };
 
     Ok(dated_price)

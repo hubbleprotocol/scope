@@ -11,86 +11,86 @@
 
 use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::log::sol_log;
-use pyth_client::{PriceStatus, PriceType};
+use pyth_client::PriceType;
+use pyth_sdk_solana::state as pyth_client;
 use std::convert::{TryFrom, TryInto};
 
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
 pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
-    let pyth_price_data = &price_info.try_borrow_data()?;
-    let pyth_price = pyth_client::cast::<pyth_client::Price>(pyth_price_data);
-    let price = validate_valid_price(pyth_price)?;
+    let data = price_info.try_borrow_data()?;
+    let price_account =
+        pyth_client::load_price_account(*data).map_err(|_| error!(ScopeError::PriceNotValid))?;
+
+    let pyth_raw = price_account.to_price_feed(price_info.key);
+
+    let pyth_price = if cfg!(feature = "skip_price_validation") {
+        // Don't validate price in tests
+        pyth_raw.get_current_price_unchecked()
+    } else if let Some(pyth_price) = pyth_raw.get_current_price() {
+        // Or use the current valid price if available
+        pyth_price
+    } else {
+        msg!("No valid price in pyth account {}", price_info.key);
+        return err!(ScopeError::PriceNotValid);
+    };
+
+    let price = validate_valid_price(&pyth_price).map_err(|e| {
+        msg!("Invalid price on pyth account {}", price_info.key);
+        e
+    })?;
 
     Ok(DatedPrice {
         price: Price {
             value: price,
             exp: pyth_price.expo.abs().try_into().unwrap(),
         },
-        last_updated_slot: pyth_price.valid_slot,
+        last_updated_slot: price_account.valid_slot,
         ..Default::default()
     })
 }
 
 fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
     if cfg!(feature = "skip_price_validation") {
-        return Ok(u64::try_from(pyth_price.agg.price).unwrap());
-    }
-    let is_trading = get_status(&pyth_price.agg.status);
-    if !is_trading {
-        sol_log("Price is not trading");
-        return Err(ScopeError::PriceNotValid.into());
-    }
-    if pyth_price.num_qt < 3 {
-        msg!("Number of quotes is {} (less than 3)", pyth_price.num_qt);
-        return Err(ScopeError::PriceNotValid.into());
+        return Ok(u64::try_from(pyth_price.price).unwrap());
     }
 
-    let price = u64::try_from(pyth_price.agg.price).unwrap();
+    let price = u64::try_from(pyth_price.price).unwrap();
     if price == 0 {
-        return Err(ScopeError::PriceNotValid.into());
+        return err!(ScopeError::PriceNotValid);
     }
-    let conf: u64 = pyth_price.agg.conf;
+    let conf: u64 = pyth_price.conf;
     let conf_50x: u64 = conf.checked_mul(ORACLE_CONFIDENCE_FACTOR).unwrap();
     if conf_50x > price {
-        msg!(
-            "Price is not as not a valid confidence level: conf: {}, price: {}",
-            conf,
-            price
-        );
-        return Err(ScopeError::PriceNotValid.into());
+        return err!(ScopeError::PriceNotValid);
     };
     Ok(price)
 }
 
-fn get_status(st: &PriceStatus) -> bool {
-    matches!(st, PriceStatus::Trading)
-}
-
-fn validate_pyth_price(pyth_price: &pyth_client::Price) -> Result<()> {
+fn validate_pyth_price(pyth_price: &pyth_client::PriceAccount) -> Result<()> {
     if pyth_price.magic != pyth_client::MAGIC {
         msg!("Pyth price account provided is not a valid Pyth account");
-        return Err(ProgramError::InvalidArgument.into());
+        return err!(ScopeError::PriceNotValid);
     }
     if !matches!(pyth_price.ptype, PriceType::Price) {
         msg!("Pyth price account provided has invalid price type");
-        return Err(ProgramError::InvalidArgument.into());
+        return err!(ScopeError::PriceNotValid);
     }
     if pyth_price.ver != pyth_client::VERSION_2 {
         msg!("Pyth price account provided has a different version than the Pyth client");
-        return Err(ProgramError::InvalidArgument.into());
+        return err!(ScopeError::PriceNotValid);
     }
-    if !matches!(pyth_price.agg.status, PriceStatus::Trading) {
+    if !matches!(pyth_price.agg.status, pyth_client::PriceStatus::Trading) {
         msg!("Pyth price account provided is not active");
-        return Err(ProgramError::InvalidArgument.into());
+        return err!(ScopeError::PriceNotValid);
     }
     Ok(())
 }
 
 pub fn validate_pyth_price_info(pyth_price_info: &AccountInfo) -> Result<()> {
     let pyth_price_data = pyth_price_info.try_borrow_data()?;
-    let pyth_price = pyth_client::cast::<pyth_client::Price>(&pyth_price_data);
+    let pyth_price = pyth_client::load_price_account(&pyth_price_data).unwrap();
 
     validate_pyth_price(pyth_price)
 }
@@ -102,27 +102,25 @@ mod tests {
 
     const PRICE_MAGIC_OFFSET: usize = 0;
     const PRICE_VERSION_OFFSET: usize = 4;
+    const PRICE_ACCOUNT_TYPE_OFFSET: usize = 8;
     const PRICE_TYPE_OFFSET: usize = 16;
     const PRICE_STATUS_OFFSET: usize = 224;
 
-    /*fn assert_err<T>(res: Result<T>, err: ProgramError) {
+    fn assert_err<T>(res: Result<T>, err: ScopeError) {
         match res {
             Ok(_) => panic!("Expect error {err} received Ok"),
             // Expected branch
-            Err(Error::ProgramError(recv_e)) if recv_e.program_error == err => (),
+            Err(Error::ProgramError(recv_e)) => panic!("Expect error {err:?} received {recv_e:?}"),
             // Other errors
-            Err(recv_e) => panic!("Expect error {err:?} received {recv_e:?}"),
+            Err(recv_e) => assert_eq!(recv_e, error!(err)),
         };
-    }*/
-    fn assert_err<T>(res: Result<T>, err: ProgramError) {
-        assert_eq!(ProgramError::from(res.err().unwrap()), err);
     }
 
     #[test]
     pub fn test_validate_price() {
         let buff = valid_price_bytes();
-        let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert!(super::validate_pyth_price(price).err().is_none());
+        let price = pyth_client::load_price_account(&buff).unwrap();
+        assert!(super::validate_pyth_price(price).is_ok());
     }
 
     #[test]
@@ -130,11 +128,7 @@ mod tests {
         let incorrect_magic = 0xa1b2c3d3_u32.to_le_bytes();
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_magic, PRICE_MAGIC_OFFSET);
-        let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_err(
-            super::validate_pyth_price(price),
-            ProgramError::InvalidArgument,
-        );
+        assert!(pyth_client::load_price_account(&buff).is_err());
     }
 
     #[test]
@@ -142,11 +136,8 @@ mod tests {
         let incorrect_price_type: &[u8] = &[0];
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, incorrect_price_type, PRICE_TYPE_OFFSET);
-        let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_err(
-            super::validate_pyth_price(price),
-            ProgramError::InvalidArgument,
-        );
+        let price = pyth_client::load_price_account(&buff).unwrap();
+        assert_err(super::validate_pyth_price(price), ScopeError::PriceNotValid);
     }
 
     #[test]
@@ -154,11 +145,8 @@ mod tests {
         let incorrect_price_version = 1_u32.to_le_bytes();
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_price_version, PRICE_VERSION_OFFSET);
-        let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_err(
-            super::validate_pyth_price(price),
-            ProgramError::InvalidArgument,
-        );
+        // Error detected directly by pyth crate
+        assert!(pyth_client::load_price_account(&buff).is_err());
     }
 
     #[test]
@@ -166,11 +154,8 @@ mod tests {
         let incorrect_price_status = 0_u32.to_be_bytes();
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_price_status, PRICE_STATUS_OFFSET);
-        let price = pyth_client::cast::<pyth_client::Price>(&buff);
-        assert_err(
-            super::validate_pyth_price(price),
-            ProgramError::InvalidArgument,
-        );
+        let price = pyth_client::load_price_account(&buff).unwrap();
+        assert_err(super::validate_pyth_price(price), ScopeError::PriceNotValid);
     }
 
     fn valid_price_bytes() -> [u8; PRICE_ACCT_SIZE] {
@@ -186,54 +171,12 @@ mod tests {
             PRICE_VERSION_OFFSET,
         );
         write_bytes(&mut buff, &[1_u8], PRICE_TYPE_OFFSET); // price type = price
+        write_bytes(&mut buff, &[3_u8], PRICE_ACCOUNT_TYPE_OFFSET); // account type = price
         write_bytes(&mut buff, &[1_u8], PRICE_STATUS_OFFSET); // price status = trading
         buff
     }
 
     fn write_bytes(buff: &mut [u8], bytes: &[u8], offset: usize) {
         buff[offset..(bytes.len() + offset)].clone_from_slice(bytes);
-    }
-}
-
-pub mod utils {
-
-    use super::*;
-    pub const PROD_ACCT_SIZE: usize = 512;
-    pub const PROD_HDR_SIZE: usize = 48;
-    pub const PROD_ATTR_SIZE: usize = PROD_ACCT_SIZE - PROD_HDR_SIZE;
-
-    pub fn new_product() -> pyth_client::Product {
-        pyth_client::Product {
-            magic: pyth_client::MAGIC,
-            ver: pyth_client::VERSION_2,
-            atype: pyth_client::AccountType::Product as u32,
-            size: u32::try_from(PROD_ACCT_SIZE).unwrap(),
-            px_acc: pyth_client::AccKey {
-                val: Pubkey::new_unique().to_bytes(),
-            },
-            attr: [0_u8; PROD_ATTR_SIZE],
-        }
-    }
-
-    #[allow(clippy::same_item_push)]
-    #[allow(clippy::integer_arithmetic)]
-    pub fn new_product_attributes(key: &str, val: &str) -> [u8; PROD_ATTR_SIZE] {
-        let key_bytes = key.as_bytes();
-        let val_bytes = val.as_bytes();
-        let mut zero_vec: Vec<u8> = Vec::with_capacity(PROD_ATTR_SIZE);
-        // push the length discriminator
-        zero_vec.push(key_bytes.len().try_into().unwrap());
-        // push the value
-        key_bytes.iter().for_each(|i| zero_vec.push(*i));
-        // push the length discriminator
-        zero_vec.push(val_bytes.len().try_into().unwrap());
-        // push the value
-        val_bytes.iter().for_each(|i| zero_vec.push(*i));
-        // push zeroes
-
-        for _ in 0..PROD_ATTR_SIZE - (1 + key_bytes.len() + 1 + val_bytes.len()) {
-            zero_vec.push(0);
-        }
-        zero_vec.try_into().unwrap()
     }
 }
