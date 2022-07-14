@@ -1,17 +1,22 @@
-use anchor_lang::prelude::*;
 mod ctokens;
 mod externals;
 pub mod pc;
 mod spl_stake;
 
-use pc::{Price, PriceStatus};
+use std::convert::TryInto;
+use std::ops::Div;
+
+use quick_protobuf::deserialize_from_slice;
+use quick_protobuf::serialize_into_slice;
+
+use anchor_lang::prelude::*;
+
 use switchboard_program::{
     mod_AggregatorState, AggregatorState, RoundResult, SwitchboardAccountType,
 };
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use quick_protobuf::deserialize_from_slice;
-use quick_protobuf::serialize_into_slice;
+use crate::externals::switchboard_v2::{AggregatorAccountData, SwitchboardDecimal};
+use crate::pc::{Price, PriceStatus};
 
 const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(env!("OUT_DIR"), "/pubkey.rs")));
 
@@ -19,14 +24,8 @@ declare_id!(PROGRAM_ID);
 
 #[program]
 pub mod mock_oracles {
-
-    use std::convert::TryInto;
-    use std::ops::Div;
-
-    use switchboard_v2::AggregatorAccountData;
-
     use super::*;
-    use switchboard_v2::decimal::SwitchboardDecimal;
+
     pub fn initialize_pyth(
         ctx: Context<Initialize>,
         price: i64,
