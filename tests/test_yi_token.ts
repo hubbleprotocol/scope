@@ -95,7 +95,7 @@ describe('Yi Scope tests', () => {
   it('test_set_oracle_mappings', async () => {
     await Promise.all(
       fakeOraclesAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
-        console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
+        // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
 
         await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), {
           accounts: {

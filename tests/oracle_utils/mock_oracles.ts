@@ -62,7 +62,7 @@ export async function createFakeAccounts(
 ): Promise<ITokenEntry[]> {
   return await Promise.all(
     initialTokens.map(async (asset): Promise<any> => {
-      console.log(`Adding ${asset.ticker.toString()}`);
+      // console.log(`Adding ${asset.ticker.toString()}`);
       return await oracles[asset.priceType].createFakePriceAccount(
         mockOracleProgram,
         asset.ticker,

@@ -134,7 +134,7 @@ describe('Scope crank bot tests', () => {
           },
           signers: [admin],
         });
-        console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
+        // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
       })
     );
   });
