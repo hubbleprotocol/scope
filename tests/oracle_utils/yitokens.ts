@@ -4,7 +4,7 @@ import * as anchor from '@project-serum/anchor';
 import { IMockOracle, ITokenEntry, OracleType } from './mock_oracles';
 
 import { createMintToInstruction } from '@solana/spl-token';
-import { BN, Program, Provider, getProvider } from '@project-serum/anchor';
+import { BN, Program, AnchorProvider, getProvider } from '@project-serum/anchor';
 
 export const updateYiPrice = async () => {
   let provider = getProvider();
@@ -19,7 +19,12 @@ export const updateYiPrice = async () => {
     )
   );
 
-  await provider.send!(tx);
+  if (provider.sendAndConfirm === undefined) {
+    throw new Error(
+      "This function requires 'Provider.sendAndConfirm' to be implemented."
+    );
+  }
+  await provider.sendAndConfirm(tx);
 };
 
 export class YiMockToken implements ITokenEntry {

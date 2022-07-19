@@ -54,7 +54,7 @@ export class ScopeBot {
   }
 
   env() {
-    return Object.assign({}, process.env, { RUST_LOG: 'info,scope=trace,scope_client=trace' });
+    return Object.assign({}, process.env, { RUST_LOG: 'info,scope=trace,scope_client=trace', RUST_LOG_STYLE: 'never' });
   }
 
   async init(mappingPath: string) {
@@ -189,6 +189,7 @@ export class ScopeBot {
       }
 
       if (Date.now() > e) {
+        // console.log("Log not found in:", this.logChunks);
         throw new Error('missing expected output chunk within timeout');
       }
       await sleep(100);

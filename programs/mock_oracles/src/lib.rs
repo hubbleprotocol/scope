@@ -50,6 +50,8 @@ pub mod mock_oracles {
 
         let slot = ctx.accounts.clock.slot;
         price_oracle.valid_slot = slot;
+        price_oracle.last_slot = slot;
+        price_oracle.agg.pub_slot = slot;
 
         msg!(
             "Price {} initialized to {}, expo {}, conf {} at slot {}",
@@ -168,6 +170,8 @@ pub mod mock_oracles {
 
         let slot = ctx.accounts.clock.slot;
         price_oracle.valid_slot = slot;
+        price_oracle.last_slot = slot;
+        price_oracle.agg.pub_slot = slot;
         msg!(
             "Pyth price {} updated to {} at slot {}",
             oracle.key,

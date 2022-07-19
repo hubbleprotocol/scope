@@ -5,6 +5,7 @@ use anchor_client::{Client, Program};
 
 use anchor_client::solana_sdk::{
     clock::{self, Clock},
+    compute_budget::ComputeBudgetInstruction,
     instruction::AccountMeta,
     pubkey::Pubkey,
     signature::Keypair,
@@ -25,6 +26,9 @@ use crate::utils::{find_data_address, get_clock, price_to_f64};
 
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 27;
+
+/// Max compute units to request
+const MAX_COMPUTE_UNITS: u32 = 400_000;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {
@@ -505,6 +509,9 @@ impl ScopeClient {
         let tokens = tokens.to_vec();
 
         let tx_res = request
+            .instruction(ComputeBudgetInstruction::set_compute_unit_limit(
+                MAX_COMPUTE_UNITS,
+            ))
             .args(instruction::RefreshPriceList { tokens })
             .send();
 
