@@ -20,9 +20,7 @@ export const updateYiPrice = async () => {
   );
 
   if (provider.sendAndConfirm === undefined) {
-    throw new Error(
-      "This function requires 'Provider.sendAndConfirm' to be implemented."
-    );
+    throw new Error("This function requires 'Provider.sendAndConfirm' to be implemented.");
   }
   await provider.sendAndConfirm(tx);
 };

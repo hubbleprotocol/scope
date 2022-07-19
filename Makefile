@@ -63,7 +63,7 @@ SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_KEYPAIR)
 FAKE_ORACLES_PROGRAM_ID != solana-keygen pubkey $(FAKE_ORACLES_PROGRAM_KEYPAIR)
 PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
-.PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env
+.PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env format
 
 check-env:
 >@ echo "CLUSTER=$(CLUSTER)" 
@@ -174,3 +174,7 @@ get-prices: $(SCOPE_CLI)
    else\
        ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show;\
    fi
+
+format:
+> prettier --write "./**/*.ts"
+> cargo fmt
