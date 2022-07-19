@@ -8,7 +8,7 @@ import {
   SYSVAR_CLOCK_PUBKEY,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
-import { BN, Program, Provider, setProvider } from '@project-serum/anchor';
+import { AnchorProvider, BN, Program, Provider, setProvider } from '@project-serum/anchor';
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
 import { Decimal } from 'decimal.js';
 import * as chai from 'chai';
@@ -34,14 +34,12 @@ describe('Yi Scope tests', () => {
   );
   const admin = Keypair.fromSecretKey(keypair_acc);
 
-  let config: ConnectionConfig = {
-    commitment: Provider.defaultOptions().commitment,
-    confirmTransactionInitialTimeout: 220000,
-  };
+  const url = 'http://127.0.0.1:8899';
+  const options = AnchorProvider.defaultOptions();
+  const connection = new Connection(url, options.commitment);
 
-  const connection = new Connection('http://127.0.0.1:8899', config);
   const wallet = new NodeWallet(admin);
-  const provider = new Provider(connection, wallet, Provider.defaultOptions());
+  const provider = new AnchorProvider(connection, wallet, options);
   setProvider(provider);
 
   const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);

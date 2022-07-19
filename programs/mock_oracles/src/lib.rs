@@ -46,6 +46,7 @@ pub mod mock_oracles {
         price_oracle.num_qt = 3;
         price_oracle.magic = 0xa1b2c3d4;
         price_oracle.ver = 2;
+        price_oracle.atype = 3;
 
         let slot = ctx.accounts.clock.slot;
         price_oracle.valid_slot = slot;

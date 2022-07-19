@@ -7,7 +7,7 @@ import {
   SYSVAR_RENT_PUBKEY,
   Transaction,
 } from '@solana/web3.js';
-import { BN, Program, Provider, setProvider } from '@project-serum/anchor';
+import { AnchorProvider, BN, Program, setProvider } from '@project-serum/anchor';
 import { sleep } from '@project-serum/common';
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
 import { Decimal } from 'decimal.js';
@@ -49,14 +49,13 @@ describe('Scope crank bot tests', () => {
   const keypair_acc = Uint8Array.from(Buffer.from(JSON.parse(require('fs').readFileSync(keypair_path))));
   const admin = Keypair.fromSecretKey(keypair_acc);
 
-  let config: ConnectionConfig = {
-    commitment: Provider.defaultOptions().commitment,
-    confirmTransactionInitialTimeout: 220000,
-  };
+  const url = 'http://127.0.0.1:8899';
+  const options = AnchorProvider.defaultOptions();
+  options.skipPreflight = true;
+  const connection = new Connection(url, options.commitment);
 
-  const connection = new Connection('http://127.0.0.1:8899', config);
   const wallet = new NodeWallet(admin);
-  const provider = new Provider(connection, wallet, Provider.defaultOptions());
+  const provider = new AnchorProvider(connection, wallet, options);
   setProvider(provider);
 
   const program = new Program(global.ScopeIdl, global.getScopeProgramId(), provider);
@@ -125,7 +124,6 @@ describe('Scope crank bot tests', () => {
 
     await Promise.all(
       fakeAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
-        console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
         await program.rpc.updateMapping(new BN(getRevisedIndex(idx)), fakeOracleAccount.getType(), {
           accounts: {
             admin: admin.publicKey,
@@ -136,6 +134,7 @@ describe('Scope crank bot tests', () => {
           },
           signers: [admin],
         });
+        console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
       })
     );
   });

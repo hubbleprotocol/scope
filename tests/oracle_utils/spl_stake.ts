@@ -11,13 +11,14 @@ const createPriceFeedStakePooltoken = async (
   total_liquidity: BN
 ) => {
   const collateralTokenFeed = new web3.Keypair();
+  const provider_publickey = mockOracleProgram.provider.publicKey!;
 
   await mockOracleProgram.rpc.initializeStakePool(mint_total_supply, total_liquidity, {
     accounts: { oracleAccount: collateralTokenFeed.publicKey, clock: SYSVAR_CLOCK_PUBKEY },
     signers: [collateralTokenFeed],
     instructions: [
       web3.SystemProgram.createAccount({
-        fromPubkey: mockOracleProgram.provider.wallet.publicKey,
+        fromPubkey: provider_publickey,
         newAccountPubkey: collateralTokenFeed.publicKey,
         space: STAKE_POOL_ACCOUNT_SIZE,
         lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(

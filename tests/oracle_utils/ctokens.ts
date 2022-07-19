@@ -8,13 +8,14 @@ const CTOKEN_ACCOUNT_SIZE: number = 619;
 
 const createPriceFeedCtoken = async (mockOracleProgram: Program, mint_total_supply: BN, total_liquidity: BN) => {
   const collateralTokenFeed = new web3.Keypair();
+  const provider_publickey = mockOracleProgram.provider.publicKey!;
 
   await mockOracleProgram.rpc.initializeCtoken(mint_total_supply, total_liquidity, {
     accounts: { oracleAccount: collateralTokenFeed.publicKey, clock: SYSVAR_CLOCK_PUBKEY },
     signers: [collateralTokenFeed],
     instructions: [
       web3.SystemProgram.createAccount({
-        fromPubkey: mockOracleProgram.provider.wallet.publicKey,
+        fromPubkey: provider_publickey,
         newAccountPubkey: collateralTokenFeed.publicKey,
         space: CTOKEN_ACCOUNT_SIZE,
         lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(CTOKEN_ACCOUNT_SIZE),

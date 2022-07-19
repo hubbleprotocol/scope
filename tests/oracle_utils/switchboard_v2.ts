@@ -7,13 +7,14 @@ const SWITCHBOARD_V2_ACCOUNT_SIZE: number = 3851;
 
 export const createPriceFeedSwitchboardV2 = async (mockOracleProgram: Program, mantissa: BN, scale: BN) => {
   const collateralTokenFeed = new web3.Keypair();
+  const provider_publickey = mockOracleProgram.provider.publicKey!;
 
   await mockOracleProgram.rpc.initializeSwitchboardV2(mantissa, scale, {
     accounts: { oracleAccount: collateralTokenFeed.publicKey, clock: SYSVAR_CLOCK_PUBKEY },
     signers: [collateralTokenFeed],
     instructions: [
       web3.SystemProgram.createAccount({
-        fromPubkey: mockOracleProgram.provider.wallet.publicKey,
+        fromPubkey: provider_publickey,
         newAccountPubkey: collateralTokenFeed.publicKey,
         space: SWITCHBOARD_V2_ACCOUNT_SIZE,
         lamports: await mockOracleProgram.provider.connection.getMinimumBalanceForRentExemption(
