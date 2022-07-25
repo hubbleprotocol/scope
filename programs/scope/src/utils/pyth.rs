@@ -89,6 +89,9 @@ fn validate_pyth_price(pyth_price: &pyth_client::PriceAccount) -> Result<()> {
 }
 
 pub fn validate_pyth_price_info(pyth_price_info: &AccountInfo) -> Result<()> {
+    if cfg!(feature = "skip_price_validation") {
+        return Ok(());
+    }
     let pyth_price_data = pyth_price_info.try_borrow_data()?;
     let pyth_price = pyth_client::load_price_account(&pyth_price_data).unwrap();
 

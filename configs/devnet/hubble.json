@@ -109,5 +109,27 @@
     "label": "cUSDC/USDC",
     "oracle_mapping": "FNNkz4RCQezSSS71rW2tvqZH1LCkTzaiG7Nd1LeA5x5y",
     "oracle_type": "CToken"
+  },
+  "22": {
+    "label": "USDT/USD",
+    "oracle_mapping": "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto",
+    "oracle_type": "Pyth"
+  },
+  "23": {
+    "label": "ORCA/USD",
+    "oracle_mapping": "A1WttWF7X3Rg6ZRpB2YQUFHCRh1kiXV8sKKLV3S9neJV",
+    "oracle_type": "Pyth"
+  },
+  "24": {
+    "label": "MNDE/USD",
+    "oracle_mapping": "3MDuE5iGDv8KZL8MoeE9XdtXpHhTu8zhpNLjCpBFqRai",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 400
+  },
+  "25": {
+    "label": "HBB/USD",
+    "oracle_mapping": "4dxs8pDHMpJ8v8JC9rZKwzbLicm37gWrXcPUuFKi2Tpc",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 400
   }
 }

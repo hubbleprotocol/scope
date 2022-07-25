@@ -28,7 +28,8 @@ use crate::utils::{find_data_address, get_clock, price_to_f64};
 const MAX_REFRESH_CHUNK_SIZE: usize = 27;
 
 /// Max compute units to request
-const MAX_COMPUTE_UNITS: u32 = 400_000;
+// TODO: optimize this so the refresh lists costs less.
+const MAX_COMPUTE_UNITS: u32 = 1_000_000;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {
