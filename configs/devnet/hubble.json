@@ -130,6 +130,6 @@
     "label": "HBB/USD",
     "oracle_mapping": "4dxs8pDHMpJ8v8JC9rZKwzbLicm37gWrXcPUuFKi2Tpc",
     "oracle_type": "SwitchboardV2",
-    "max_age": 400
+    "max_age": 600
   }
 }

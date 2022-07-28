@@ -64,8 +64,8 @@
   },
   "12": {
     "label": "USDH/USD",
-    "oracle_mapping": "37NFcKPTgqUVx3gwTQ4c2Q94oJWk2xZy3NQUXtDixReb",
-    "oracle_type": "SwitchboardV1",
+    "oracle_mapping": "4wv7S1M1pxex1xaAy6HUDnsQ37TF152nmqiuktssJWt9",
+    "oracle_type": "SwitchboardV2",
     "max_age": 400
   },
   "13": {
@@ -135,6 +135,6 @@
     "label": "HBB/USD",
     "oracle_mapping": "Fz4tyRWTuwD3xdN5WVGxsZziFHJn4MucYf8MsfeZNqUp",
     "oracle_type": "SwitchboardV2",
-    "max_age": 400
+    "max_age": 600
   }
 }
