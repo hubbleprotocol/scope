@@ -161,5 +161,10 @@
     "label": "cSTSOL/STSOL",
     "oracle_mapping": "Ei2dC7hFxBhVq5pn4qNJLMxKBSojx7p7wnNoBz4HELKG",
     "oracle_type": "CToken"
+  },
+  "32": {
+    "label": "SLND/USD",
+    "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
+    "oracle_type": "SwitchboardV1"
   }
 }
