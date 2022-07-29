@@ -25,11 +25,11 @@ use crate::oracle_helpers::{entry_from_config, TokenEntry};
 use crate::utils::{find_data_address, get_clock, price_to_f64};
 
 /// Max number of refresh per tx
-const MAX_REFRESH_CHUNK_SIZE: usize = 27;
+const MAX_REFRESH_CHUNK_SIZE: usize = 26;
 
 /// Max compute units to request
 // TODO: optimize this so the refresh lists costs less.
-const MAX_COMPUTE_UNITS: u32 = 1_000_000;
+const MAX_COMPUTE_UNITS: u32 = 1_200_000;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {

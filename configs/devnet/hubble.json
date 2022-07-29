@@ -131,5 +131,35 @@
     "oracle_mapping": "4dxs8pDHMpJ8v8JC9rZKwzbLicm37gWrXcPUuFKi2Tpc",
     "oracle_type": "SwitchboardV2",
     "max_age": 600
+  },
+   "26": {
+    "label": "cORCA/ORCA",
+    "oracle_mapping": "HXYGC8UwRWcWc8GTSAnzC9qUnsyVmAAjmqrNAkkp5ieC",
+    "oracle_type": "CToken"
+  },
+  "27": {
+    "label": "cSLND/SLND",
+    "oracle_mapping": "HXYGC8UwRWcWc8GTSAnzC9qUnsyVmAAjmqrNAkkp5ieC",
+    "oracle_type": "CToken"
+  },
+  "28": {
+    "label": "cSRM/SRM",
+    "oracle_mapping": "5YKmMZcuWEdF5NavNK4MgKPRhnhw6jq22zwcdh1dvxbd",
+    "oracle_type": "CToken"
+  },
+  "29": {
+    "label": "cRAY/RAY",
+    "oracle_mapping": "FpKhrtU6nDjEcAi3SsSevRRgPzirLkZpmXD6nfeb7k8c",
+    "oracle_type": "CToken"
+  },
+  "30": {
+    "label": "cFTT/FTT",
+    "oracle_mapping": "8eUYeEiGXRMN7V9Xx7CehwSRfJB9iQfJW249zX1z7Uue",
+    "oracle_type": "CToken"
+  },
+  "31": {
+    "label": "cSTSOL/STSOL",
+    "oracle_mapping": "Ei2dC7hFxBhVq5pn4qNJLMxKBSojx7p7wnNoBz4HELKG",
+    "oracle_type": "CToken"
   }
 }
