@@ -166,5 +166,15 @@
     "label": "SLND/USD",
     "oracle_mapping": "FtwKARNAnZK2Nx1W4KVXzbyDzuRJqmApHRBtQpZ49HDv",
     "oracle_type": "Pyth"
+  },
+  "33": {
+    "label": "DAI/USD",
+    "oracle_mapping": "DahMqw2Gue2EnnKkeyHmqVMbF1vz31CoCsabnBTo3fif",
+    "oracle_type": "SwitchboardV2"
+  },
+  "34": {
+    "label": "JSOL/SOL",
+    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
+    "oracle_type": "SplStake"
   }
 }
