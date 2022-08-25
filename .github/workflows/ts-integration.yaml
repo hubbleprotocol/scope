@@ -9,7 +9,7 @@ on:
       - master
 env:
   solana_version: v1.10.29
-  anchor_version: 0.25.0
+  anchor_version: v0.25.0
   rustc_version: stable
 
 jobs:
@@ -51,7 +51,7 @@ jobs:
           path: |
             ~/.cache/solana/
             ~/.local/share/solana/
-          key: solana-${{ runner.os }}-v0000-${{ env.solana_version }}
+          key: solana-${{ runner.os }}-v0001-${{ env.solana_version }}
       - uses: actions/cache@v2
         name: Cache Node Modules
         id: cache-node-modules
@@ -80,7 +80,7 @@ jobs:
       - name: install Anchor
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          cargo install --git https://github.com/project-serum/anchor --tag v0.20.1 anchor-cli --locked
+          cargo install --git https://github.com/project-serum/anchor --tag ${{ env.anchor_version }} anchor-cli --locked
       - name: yarn install
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
