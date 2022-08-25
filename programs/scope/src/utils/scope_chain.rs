@@ -162,7 +162,8 @@ where
 #[account(zero_copy)]
 #[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct ScopeChainAccount {
-    chain_array: [RawChain; MAX_ENTRIES],
+    // Its an array of `RawChain` but anchor does not support type alias when generating IDL
+    chain_array: [[u16; MAX_CHAIN_LENGTH]; MAX_ENTRIES],
 }
 
 #[cfg(test)]

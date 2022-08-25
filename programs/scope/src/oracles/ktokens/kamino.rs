@@ -7,7 +7,7 @@ use decimal_wad::decimal::{Decimal, U192};
 use decimal_wad::rate::U128;
 
 use whirlpool::math::sqrt_price_from_tick_index;
-pub use whirlpool::state::{Position, Whirlpool};
+pub use whirlpool::state::{Position, PositionRewardInfo, Whirlpool, WhirlpoolRewardInfo};
 
 use crate::scope_chain::ScopeChainAccount;
 use crate::utils::zero_copy_deserialize;
@@ -351,36 +351,10 @@ pub struct RewardsAmounts {
     pub reward_2: u64,
 }
 
-#[derive(Copy, Clone, AnchorSerialize, AnchorDeserialize, Default, Debug, PartialEq, Eq)]
-pub struct PositionRewardInfo {
-    // Q64.64
-    pub growth_inside_checkpoint: u128,
-    pub amount_owed: u64,
-}
-
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct WithdrawalCaps {
     pub config_capacity: i64,
     pub current_total: i64,
     pub last_interval_start_timestamp: u64,
     pub config_interval_length_seconds: u64,
-}
-
-/// Stores the state relevant for tracking liquidity mining rewards at the `Whirlpool` level.
-/// These values are used in conjunction with `PositionRewardInfo`, `Tick.reward_growths_outside`,
-/// and `Whirlpool.reward_last_updated_timestamp` to determine how many rewards are earned by open
-/// positions.
-#[derive(Copy, Clone, AnchorSerialize, AnchorDeserialize, Default, Debug, PartialEq, Eq)]
-pub struct WhirlpoolRewardInfo {
-    /// Reward token mint.
-    pub mint: Pubkey,
-    /// Reward vault token account.
-    pub vault: Pubkey,
-    /// Authority account that has permission to initialize the reward and set emissions.
-    pub authority: Pubkey,
-    /// Q64.64 number that indicates how many tokens per second are earned per unit of liquidity.
-    pub emissions_per_second_x64: u128,
-    /// Q64.64 number that tracks the total tokens earned per unit of liquidity since the reward
-    /// emissions were turned on.
-    pub growth_global_x64: u128,
 }
