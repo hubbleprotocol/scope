@@ -80,6 +80,8 @@
 //! let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
 //! ```
 
+use std::fmt::Debug;
+
 use crate::{DatedPrice, OraclePrices, Price, ScopeError, MAX_ENTRIES};
 
 use anchor_lang::prelude::{account, borsh, zero_copy, AnchorDeserialize, AnchorSerialize, Pubkey};
@@ -161,6 +163,27 @@ where
 #[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct ScopeChainAccount {
     chain_array: [RawChain; MAX_ENTRIES],
+}
+
+#[cfg(test)]
+impl Debug for ScopeChainAccount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let chain_vec: Vec<Vec<u16>> = self
+            .chain_array
+            .iter()
+            .take_while(|chain| usize::from(chain[0]) < MAX_ENTRIES)
+            .map(|chain| {
+                chain
+                    .iter()
+                    .take_while(|&idx| usize::from(*idx) < MAX_ENTRIES)
+                    .copied()
+                    .collect::<Vec<u16>>()
+            })
+            .collect();
+        f.debug_struct("ScopeChainAccount")
+            .field("chain_array", &chain_vec)
+            .finish()
+    }
 }
 
 impl Default for ScopeChainAccount {
@@ -265,7 +288,11 @@ impl ScopeChainAccount {
             .ok_or(ScopeChainError::MathOverflow)?;
 
         // Final number of decimals is the last element one's which should be the quotation price.
-        let exp = price_chain.last().unwrap().unwrap().price.exp; // chain is never empty here by construction
+        let exp = price_chain
+            .iter()
+            .filter_map(|&opt| opt.map(|price| price.price.exp))
+            .last()
+            .unwrap(); // chain is never empty here by construction
 
         // Compute token value by multiplying all value of the chain
         let product = price_chain
@@ -326,7 +353,11 @@ impl From<ScopeChainError> for ScopeError {
 #[cfg(test)]
 mod test {
     use super::{PriceChain, ScopeChainAccount, ScopeChainError};
-    use strum::EnumIter;
+
+    use anchor_lang::solana_program::clock;
+    use strum::{EnumIter, IntoEnumIterator};
+
+    use crate::{DatedPrice, OraclePrices};
 
     #[test]
     fn create_chain_from_idx_array() {
@@ -341,14 +372,22 @@ mod test {
 
     #[derive(EnumIter)]
     #[allow(clippy::upper_case_acronyms)]
+    #[repr(usize)]
     enum CollateralToken {
         SOL,
         MSOL,
+        USDH,
+    }
+
+    impl From<CollateralToken> for usize {
+        fn from(v: CollateralToken) -> usize {
+            v as usize
+        }
     }
 
     #[repr(u16)]
     #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, EnumIter)]
     enum ScopeId {
         USDH,
         SOL_USDH,
@@ -361,12 +400,19 @@ mod test {
         }
     }
 
+    impl From<ScopeId> for usize {
+        fn from(v: ScopeId) -> usize {
+            v as usize
+        }
+    }
+
     impl TryFrom<CollateralToken> for PriceChain<ScopeId> {
         type Error = ScopeChainError;
         fn try_from(t: CollateralToken) -> Result<PriceChain<ScopeId>, ScopeChainError> {
             let chain_base: &[ScopeId] = match t {
                 CollateralToken::SOL => &[ScopeId::SOL_USDH, ScopeId::USDH],
                 CollateralToken::MSOL => &[ScopeId::MSOL_SOL, ScopeId::SOL_USDH, ScopeId::USDH],
+                CollateralToken::USDH => &[ScopeId::USDH],
             };
             chain_base.try_into()
         }
@@ -375,5 +421,217 @@ mod test {
     #[test]
     fn create_chain_from_token_id_conversions() {
         ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+    }
+
+    #[test]
+    fn compare_manual_and_auto_chain() {
+        let raw_chain: &[&[u16]] = &[
+            // SOL/USD
+            &[1_u16, 0],
+            // mSOL/USD
+            &[2, 1, 0],
+            // USDH
+            &[0],
+        ];
+        let chain1 = ScopeChainAccount::new(raw_chain).unwrap();
+        let chain2 = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+        assert_eq!(chain1, chain2);
+    }
+
+    // T0 of prices update with some margin to go in the past
+    const T0_SLOT: clock::Slot = 2 * (24 * 60 * 60 * 1000) / clock::DEFAULT_MS_PER_SLOT;
+
+    fn get_test_scope_prices() -> OraclePrices {
+        let zero_price = DatedPrice {
+            last_updated_slot: T0_SLOT,
+            ..DatedPrice::default()
+        };
+        let mut account = OraclePrices {
+            oracle_mappings: Default::default(),
+            prices: [zero_price; crate::MAX_ENTRIES],
+        };
+
+        for token in ScopeId::iter() {
+            let idx: usize = token.into();
+            account.prices[idx].price.value = 100_u64 * 10_u64.pow(8);
+            account.prices[idx].price.exp = 8;
+        }
+
+        account
+    }
+
+    #[test]
+    fn one_token_chain() {
+        let scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::USDH.into())
+            .unwrap();
+        assert_eq!(dated_price.price.value, 10_000_000_000);
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT);
+    }
+
+    #[test]
+    fn basic_two_token_chain() {
+        let scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::SOL.into())
+            .unwrap();
+        assert_eq!(dated_price.price.value, 100 * 100 * 10_u64.pow(8));
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT);
+    }
+
+    #[test]
+    fn basic_two_token_chain_array_values() {
+        let mut scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+        let test_values = [
+            //sol, usdh, res
+            (0.5, 5., 2.5),
+            (0.7, 8., 5.6),
+            (1.5, 10., 15.),
+            (1.2, 1., 1.2),
+        ];
+
+        for (sol, usdh, res) in test_values {
+            scope_prices.prices[usize::from(ScopeId::SOL_USDH)]
+                .price
+                .value = (sol * 10_f64.powf(8.)) as u64;
+            scope_prices.prices[usize::from(ScopeId::USDH)].price.value =
+                (usdh * 10_f64.powf(8.)) as u64;
+            let dated_price = chain
+                .get_price(&scope_prices, CollateralToken::SOL.into())
+                .unwrap();
+            assert_eq!(dated_price.price.value, (res * 10_f64.powf(8.)) as u64);
+            assert_eq!(dated_price.price.exp, 8);
+            assert_eq!(dated_price.last_updated_slot, T0_SLOT);
+        }
+    }
+
+    #[test]
+    fn two_token_chain_retained_precision() {
+        let mut scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+
+        // Check with a high precision rate of 1
+        scope_prices.prices[usize::from(ScopeId::SOL_USDH)]
+            .price
+            .value = 2 * 10_u64.pow(15);
+        scope_prices.prices[usize::from(ScopeId::SOL_USDH)]
+            .price
+            .exp = 15;
+
+        // Test with a custom chain
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::SOL.into())
+            .unwrap();
+        // Result decimals is from the quotation (last price of the chain)
+        assert_eq!(dated_price.price.value, 2 * 100 * 10_u64.pow(8));
+        assert_eq!(dated_price.price.exp, 8);
+    }
+
+    #[test]
+    fn two_token_chain_retained_precision_2() {
+        let mut scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+
+        // Check with a high precision rate of 1
+        scope_prices.prices[usize::from(ScopeId::SOL_USDH)]
+            .price
+            .value = 2 * 10_u64.pow(15);
+        scope_prices.prices[usize::from(ScopeId::SOL_USDH)]
+            .price
+            .exp = 15;
+        scope_prices.prices[usize::from(ScopeId::USDH)].price.value = 100 * 10_u64.pow(6);
+        scope_prices.prices[usize::from(ScopeId::USDH)].price.exp = 6;
+
+        // Test with a custom chain
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::SOL.into())
+            .unwrap();
+        // Result decimals is from the quotation (last price of the chain)
+        assert_eq!(dated_price.price.value, 2 * 100 * 10_u64.pow(6));
+        assert_eq!(dated_price.price.exp, 6);
+    }
+
+    #[test]
+    fn two_token_chain_retained_age() {
+        let mut scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+
+        // Check with a high precision rate of 1
+        scope_prices.prices[usize::from(ScopeId::SOL_USDH)].last_updated_slot = T0_SLOT - 10;
+
+        // Test with a custom chain
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::SOL.into())
+            .unwrap();
+        // Result decimals is from the quotation (last price of the chain)
+        assert_eq!(dated_price.price.value, 100 * 100 * 10_u64.pow(8));
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT - 10);
+    }
+
+    #[test]
+    fn two_token_chain_retained_age_2() {
+        let mut scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+
+        // Check with a high precision rate of 1
+        scope_prices.prices[usize::from(ScopeId::USDH)].last_updated_slot = T0_SLOT - 10;
+
+        // Test with a custom chain
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::SOL.into())
+            .unwrap();
+        // Result decimals is from the quotation (last price of the chain)
+        assert_eq!(dated_price.price.value, 100 * 100 * 10_u64.pow(8));
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT - 10);
+    }
+
+    #[test]
+    fn two_token_chain_retained_age_3() {
+        let mut scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+
+        // Check with a high precision rate of 1
+        scope_prices.prices[usize::from(ScopeId::USDH)].last_updated_slot = T0_SLOT + 10;
+
+        // Test with a custom chain
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::SOL.into())
+            .unwrap();
+        // Result decimals is from the quotation (last price of the chain)
+        assert_eq!(dated_price.price.value, 100 * 100 * 10_u64.pow(8));
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT);
+    }
+
+    #[test]
+    fn max_size_two_token_chain() {
+        let mut scope_prices = get_test_scope_prices();
+        let chain = ScopeChainAccount::auto_chain::<CollateralToken, ScopeId>().unwrap();
+
+        // Check with values at max but that the result of computation still (barely) fits in `Price`
+        scope_prices.prices[usize::from(ScopeId::SOL_USDH)]
+            .price
+            .value = u64::MAX;
+        scope_prices.prices[usize::from(ScopeId::SOL_USDH)]
+            .price
+            .exp = 20;
+        scope_prices.prices[usize::from(ScopeId::USDH)].price.value = u64::MAX;
+
+        // Test with a custom chain
+        let dated_price = chain
+            .get_price(&scope_prices, CollateralToken::SOL.into())
+            .unwrap();
+        // 2¹²⁸/10²⁰
+        assert_eq!(dated_price.price.value, 3_402_823_669_209_384_634);
+        // Result decimals is from the quotation (last price of the chain)
+        assert_eq!(dated_price.price.exp, 8);
     }
 }
