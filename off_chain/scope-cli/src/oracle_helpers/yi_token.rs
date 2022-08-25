@@ -9,8 +9,8 @@ use anchor_client::solana_client::rpc_client::RpcClient;
 use anchor_client::solana_sdk::clock;
 
 use scope::anchor_lang::{prelude::Pubkey, AccountDeserialize};
-use scope::utils::yitoken::{price_compute, YiToken};
-use scope::utils::OracleType;
+use scope::oracles::yitoken::{price_compute, YiToken};
+use scope::oracles::OracleType;
 use scope::{DatedPrice, Price};
 use tracing::trace;
 

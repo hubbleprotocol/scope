@@ -153,7 +153,7 @@ mod switchboard {
 
     #[zero_copy]
     #[repr(packed)]
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug)]
     pub struct AggregatorAccountData {
         pub name: [u8; 32],
         pub metadata: [u8; 128],

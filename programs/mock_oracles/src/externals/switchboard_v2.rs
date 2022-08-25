@@ -25,7 +25,7 @@ pub struct Hash {
 
 #[zero_copy]
 #[repr(packed)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AggregatorAccountData {
     pub name: [u8; 32],
     pub metadata: [u8; 128],

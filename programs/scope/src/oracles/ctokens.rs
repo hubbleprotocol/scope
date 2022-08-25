@@ -493,7 +493,7 @@ pub mod solend {
     }
 
     /// Reserve liquidity
-    #[derive(Clone, Debug, Default, PartialEq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct ReserveLiquidity {
         /// Reserve liquidity mint address
         pub mint_pubkey: Pubkey,
@@ -564,7 +564,7 @@ pub mod solend {
     }
 
     /// Reserve collateral
-    #[derive(Clone, Debug, Default, PartialEq)]
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
     pub struct ReserveCollateral {
         /// Reserve collateral mint address
         pub mint_pubkey: Pubkey,
@@ -592,7 +592,7 @@ pub mod solend {
     }
 
     /// Reserve configuration values
-    #[derive(Clone, Copy, Debug, Default, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
     pub struct ReserveConfig {
         /// Optimal utilization rate, as a percentage
         pub optimal_utilization_rate: u8,
@@ -628,7 +628,7 @@ pub mod solend {
     /// These exist separately from interest accrual fees, and are specifically for the program owner
     /// and frontend host. The fees are paid out as a percentage of liquidity token amounts during
     /// repayments and liquidations.
-    #[derive(Clone, Copy, Debug, Default, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
     pub struct ReserveFees {
         /// Fee assessed on `BorrowObligationLiquidity`, expressed as a Wad.
         /// Must be between 0 and 10^18, such that 10^18 = 1.  A few examples for
@@ -686,7 +686,7 @@ pub mod solend {
             collateral_amount: u64,
         ) -> std::result::Result<u64, DecimalError> {
             self.decimal_collateral_to_liquidity(collateral_amount.into())?
-                .try_floor_u64()
+                .try_floor()
         }
 
         /// Convert reserve collateral to liquidity
@@ -701,7 +701,7 @@ pub mod solend {
     // Helpers
     fn pack_decimal(decimal: Decimal, dst: &mut [u8; 16]) {
         *dst = decimal
-            .to_scaled_val()
+            .to_scaled_val::<u128>()
             .expect("Decimal cannot be packed")
             .to_le_bytes();
     }

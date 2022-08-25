@@ -29,8 +29,10 @@ serde = "1.0.136"
 switchboard-program = "0.2.0"
 spl-stake-pool = { version = "0.6.3", features = ["no-entrypoint"] }
 arrayref = "0.3.6"
-decimal-wad = { git = "https://github.com/hubbleprotocol/decimal-wad", branch = "downscale-uint" }
+decimal-wad = "0.1.7"
 rust_decimal = "1.18.0"
+whirlpool = { git = "https://github.com/orca-so/whirlpools", features = ["no-entrypoint", "cpi"]}
+strum = "0.24.0"
 
 [dev-dependencies]
 proptest = "1.0"

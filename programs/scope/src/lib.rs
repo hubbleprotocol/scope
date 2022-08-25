@@ -1,14 +1,19 @@
-pub mod handlers;
+pub mod oracles;
 pub mod program_id;
 pub mod utils;
 
+mod handlers;
+
 // Reexports to deal with eventual conflicts
+pub use crate::utils::scope_chain;
 pub use anchor_lang;
-use decimal_wad::error::DecimalError;
 pub use num_enum;
+
+use decimal_wad::error::DecimalError;
 
 // Local use
 use std::convert::TryInto;
+use std::num::TryFromIntError;
 
 use anchor_lang::prelude::*;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
@@ -134,6 +139,15 @@ pub enum ScopeError {
 
     #[msg("There was an error with the Switchboard V2 retrieval")]
     SwitchboardV2Error,
+
+    #[msg("Invalid account discriminator")]
+    InvalidAccountDiscriminator,
+
+    #[msg("Unable to deserialize account")]
+    UnableToDeserializeAccount,
+
+    #[msg("Error while computing price with ScopeChain")]
+    BadScopeChainOrPrices,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
@@ -142,6 +156,12 @@ where
 {
     fn from(_: TryFromPrimitiveError<T>) -> Self {
         ScopeError::ConversionFailure
+    }
+}
+
+impl From<TryFromIntError> for ScopeError {
+    fn from(_: TryFromIntError) -> Self {
+        ScopeError::OutOfRangeIntegralConversion
     }
 }
 

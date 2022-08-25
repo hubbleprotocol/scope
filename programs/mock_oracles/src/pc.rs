@@ -9,7 +9,7 @@ pub struct AccKey {
     pub val: [u8; 32],
 }
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 #[repr(C)]
 pub enum PriceStatus {
     Unknown = 0,

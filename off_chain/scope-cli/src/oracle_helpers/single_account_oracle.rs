@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display};
 
 use anchor_client::solana_client::rpc_client::RpcClient;
 use anyhow::Result;
-use scope::utils::OracleType;
+use scope::oracles::OracleType;
 use scope::{anchor_lang::prelude::Pubkey, DatedPrice};
 
 use crate::config::TokenConfig;

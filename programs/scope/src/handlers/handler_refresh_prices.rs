@@ -1,5 +1,5 @@
-use crate::utils::OracleType;
-use crate::{utils::get_price, ScopeError};
+use crate::oracles::OracleType;
+use crate::{oracles::get_price, ScopeError};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::log::{sol_log, sol_log_64};
 

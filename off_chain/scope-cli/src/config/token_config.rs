@@ -2,11 +2,11 @@ use std::num::NonZeroU64;
 
 use super::utils::serde_string;
 use scope::anchor_lang::prelude::Pubkey;
-use scope::utils::OracleType;
+use scope::oracles::OracleType;
 use serde::{Deserialize, Serialize};
 
 /// Configuration of the tokens
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TokenConfig {
     /// Name of the pair (used for display)
     /// eg. "SOL/USD"

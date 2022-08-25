@@ -67,7 +67,7 @@ pub fn validate_valid_price(
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::switchboard_v1;
+    use crate::oracles::switchboard_v1;
     use switchboard_program::{mod_AggregatorState, AggregatorState, RoundResult};
 
     fn get_structs_from_min_confirmations_and_num_success(

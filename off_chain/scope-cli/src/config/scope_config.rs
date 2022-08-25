@@ -8,7 +8,7 @@ use super::token_config::TokenConfig;
 use super::utils::serde_int_map;
 
 /// Format of storage of Scope configuration
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ScopeConfig {
     /// Default mage age in number of slot
     pub default_max_age: u64,
@@ -38,7 +38,7 @@ mod tests {
     use super::*;
     use crate::config::utils::remove_whitespace;
     use scope::anchor_lang::prelude::Pubkey;
-    use scope::utils::OracleType;
+    use scope::oracles::OracleType;
     use std::num::NonZeroU64;
     use std::str::FromStr;
 
