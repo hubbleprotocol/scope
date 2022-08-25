@@ -8,6 +8,7 @@ use anchor_lang::prelude::*;
 use orca_state::{Position as PositionParser, Whirlpool as WhirlpoolParser};
 
 use self::kamino::{get_price_per_full_share, TokenPrices};
+pub use kamino::WhirlpoolStrategy;
 
 const USD_DECIMALS_PRECISION: u8 = 8;
 
@@ -20,7 +21,7 @@ where
     'a: 'b,
 {
     // Get the root account
-    let strategy_account_ref = kamino::WhirlpoolStrategy::from_account(k_account)?;
+    let strategy_account_ref = WhirlpoolStrategy::from_account(k_account)?;
 
     // extract the accounts from extra iterator
     let whirlpool_account_info = extra_accounts
@@ -73,7 +74,7 @@ where
     let (scope_chain_pk, _) = Pubkey::find_program_address(
         &[
             r"ScopeChain".as_bytes(),
-            &strategy_account_ref.scope_prices.key().to_bytes(),
+            &strategy_account_ref.scope_prices.to_bytes(),
         ],
         k_account.owner,
     );
