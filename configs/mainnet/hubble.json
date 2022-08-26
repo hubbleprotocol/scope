@@ -182,5 +182,11 @@
     "label": "JSOL/SOL",
     "oracle_mapping": "CtMyWsrUtAwXWiGr9WjHT5fC3p3fgV8cyGpLTo2LJzG1",
     "oracle_type": "SplStake"
+  },
+  "35": {
+    "label": "USH/USD",
+    "oracle_mapping": "4HdDYqFfuDpUxyxMw5rU8RNNhJkNw3Ck5AqE9makfsFp",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   }
 }
