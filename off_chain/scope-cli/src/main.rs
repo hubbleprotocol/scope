@@ -83,7 +83,7 @@ enum Actions {
     Show {
         /// Optional configuration file to provide association between
         /// entries number and a price name.
-        /// If provided only the prices listed in configration file are displayed
+        /// If provided only the prices listed in configuration file are displayed
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
     },
@@ -110,6 +110,16 @@ enum Actions {
         /// Log old prices as errors when prices are still too old after all retries
         #[clap(long, env)]
         old_price_is_error: bool,
+    },
+
+    /// Get a list of all pubkeys that are needed for price refreshed according to the configuration.
+    /// This includes the extra pubkeys that are not directly referenced by the configuration.
+    #[clap()]
+    GetPubkeys {
+        /// Where is stored the mapping to use
+        /// This must be provided to get entries that are not yet in the onchain oracle mapping.
+        #[clap(long, env, parse(from_os_str))]
+        mapping: Option<PathBuf>,
     },
 }
 
@@ -162,6 +172,7 @@ fn main() -> Result<()> {
                     old_price_is_error,
                 )
             }
+            Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping),
         }
     }
 }
@@ -208,6 +219,17 @@ fn show(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Resul
     info!(current_slot);
 
     scope.log_prices(current_slot)
+}
+
+fn get_pubkeys(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Result<()> {
+    if let Some(mapping) = mapping_op {
+        let token_list = ScopeConfig::read_from_file(&mapping)?;
+        scope.set_local_mapping(&token_list)?;
+    } else {
+        scope.download_oracle_mapping(0)?;
+    }
+
+    scope.print_pubkeys()
 }
 
 fn crank(

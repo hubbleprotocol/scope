@@ -125,15 +125,16 @@ test-validator:
                          53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs \
                          --account JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T tests/deps/solustscope.json
 
-clone-mainnet-to-local-validator:
->@ export BASE_TOKEN_ACCOUNTS="${shell jq --compact-output 'del(.["default_max_age"]) | .[] | .oracle_mapping' < configs/mainnet/hubble.json | xargs echo}"
->@ export EXTRA_YI_TOKEN_ACCOUNTS="EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9 JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T"
-> solana-test-validator -r --url mainnet-beta --clone $$BASE_TOKEN_ACCOUNTS $$EXTRA_YI_TOKEN_ACCOUNTS
+print-pubkeys: $(SCOPE_CLI)
+>@ ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) get-pubkeys --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+
+clone-mainnet-to-local-validator: $(SCOPE_CLI)
+>@ export ORACLE_PUBKEYS="${shell CLUSTER=mainnet make print-pubkeys}"
+> solana-test-validator -r --url mainnet-beta --clone $$ORACLE_PUBKEYS
 
 clone-devnet-to-local-validator:
->@ export BASE_TOKEN_ACCOUNTS="${shell jq --compact-output 'del(.["default_max_age"]) | .[] | .oracle_mapping' < configs/devnet/hubble.json | xargs echo}"
->@ export EXTRA_YI_TOKEN_ACCOUNTS="B2a2MDAJxjcy2dqPaHMFk2y1Tb88Wave8pnhNjYzZXVe 6XyygxFmUeemaTvA9E9mhH9FvgpynZqARVyG3gUdCMt7"
-> solana-test-validator -r --url devnet --clone $$BASE_TOKEN_ACCOUNTS $$EXTRA_YI_TOKEN_ACCOUNTS
+>@ export ORACLE_PUBKEYS="${shell CLUSTER=devnet make print-pubkeys}"
+> solana-test-validator -r --url devnet --clone $$ORACLE_PUBKEYS
 
 test: test-rust test-ts
 

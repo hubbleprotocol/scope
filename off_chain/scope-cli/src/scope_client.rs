@@ -345,6 +345,20 @@ impl ScopeClient {
         Ok(())
     }
 
+    /// Print a list of all pubkeys that are needed for price refreshed.
+    pub fn print_pubkeys(&self) -> Result<()> {
+        for entry in self.tokens.values() {
+            let main_mapping = entry.get_mapping_account();
+            print!("{main_mapping} ");
+            let extra_accounts = entry.get_extra_accounts();
+            for account in extra_accounts {
+                print!("{account} ");
+            }
+        }
+        println!();
+        Ok(())
+    }
+
     /// Get an the rpc instance used by the ScopeClient
     pub fn get_rpc(&self) -> RpcClient {
         self.program.rpc()
