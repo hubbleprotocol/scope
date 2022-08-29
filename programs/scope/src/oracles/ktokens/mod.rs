@@ -72,10 +72,7 @@ where
         "scope_prices",
     )?;
     let (scope_chain_pk, _) = Pubkey::find_program_address(
-        &[
-            r"ScopeChain".as_bytes(),
-            &strategy_account_ref.scope_prices.to_bytes(),
-        ],
+        &[b"ScopeChain", &strategy_account_ref.scope_prices.to_bytes()],
         k_account.owner,
     );
     account_check(scope_chain_account_info, scope_chain_pk, "scope_chain")?;
