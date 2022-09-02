@@ -28,7 +28,7 @@
 //!
 //! The scope chain can be declared like this:
 //!
-//! ```
+//! ```ignore
 //! use scope::utils::scope_chain::ScopeChainAccount;
 //!
 //! let raw_chain: &[&[u16]] = &[
@@ -41,7 +41,7 @@
 //! ```
 //! ### Advanced code example
 //!
-//! ```
+//! ```ignore
 //! use scope::utils::scope_chain::{PriceChain, ScopeChainAccount, ScopeChainError};
 //! use strum::EnumIter;
 //!
@@ -84,7 +84,8 @@ use std::fmt::Debug;
 
 use crate::{DatedPrice, OraclePrices, Price, ScopeError, MAX_ENTRIES};
 
-use anchor_lang::prelude::{account, zero_copy, Pubkey};
+use anchor_lang::Discriminator;
+use bytemuck;
 use decimal_wad::rate::U128;
 pub use strum::IntoEnumIterator;
 
@@ -159,11 +160,17 @@ where
     }
 }
 
-#[account(zero_copy)]
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, bytemuck::Pod, bytemuck::Zeroable, Clone, Copy)]
+#[repr(C)]
 pub struct ScopeChainAccount {
     // Its an array of `RawChain` but anchor does not support type alias when generating IDL
     chain_array: [[u16; MAX_CHAIN_LENGTH]; MAX_ENTRIES],
+}
+
+impl Discriminator for ScopeChainAccount {
+    fn discriminator() -> [u8; 8] {
+        [32, 181, 0, 76, 44, 85, 181, 245]
+    }
 }
 
 #[cfg(test)]
@@ -362,6 +369,7 @@ mod test {
     use strum::{EnumIter, IntoEnumIterator};
 
     use crate::{DatedPrice, OraclePrices};
+    use anchor_lang::Discriminator;
 
     #[test]
     fn create_chain_from_idx_array() {
@@ -637,5 +645,23 @@ mod test {
         assert_eq!(dated_price.price.value, 3_402_823_669_209_384_634);
         // Result decimals is from the quotation (last price of the chain)
         assert_eq!(dated_price.price.exp, 8);
+    }
+
+    fn dispatch_sig(namespace: &str, name: &str) -> [u8; 8] {
+        let preimage = format!("{}:{}", namespace, name);
+
+        let mut sighash = [0; 8];
+        let mut hasher = <sha2::Sha256 as sha2::Digest>::new();
+        sha2::Digest::update(&mut hasher, preimage.as_bytes());
+        sighash.copy_from_slice(&sha2::Digest::finalize(hasher)[..8]);
+        sighash
+    }
+
+    #[test]
+    fn scope_chain_discriminator() {
+        assert_eq!(
+            dispatch_sig("global", "ScopeChainAccount"),
+            ScopeChainAccount::discriminator()
+        );
     }
 }
