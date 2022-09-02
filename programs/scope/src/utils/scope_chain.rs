@@ -187,6 +187,7 @@ impl Debug for ScopeChainAccount {
     }
 }
 
+#[cfg(test)]
 impl Default for ScopeChainAccount {
     fn default() -> Self {
         Self {
@@ -196,6 +197,7 @@ impl Default for ScopeChainAccount {
 }
 
 impl ScopeChainAccount {
+    #[cfg(test)]
     pub fn new<T>(base_chain_array: &[T]) -> std::result::Result<ScopeChainAccount, ScopeChainError>
     where
         T: TryInto<RawChainWrap> + Copy,
@@ -205,6 +207,7 @@ impl ScopeChainAccount {
         Ok(chain)
     }
 
+    #[cfg(test)]
     pub fn auto_chain<Token, ScopeId>() -> std::result::Result<ScopeChainAccount, ScopeChainError>
     where
         Token: TryInto<PriceChain<ScopeId>> + IntoEnumIterator,
