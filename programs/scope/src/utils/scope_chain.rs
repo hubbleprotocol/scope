@@ -84,7 +84,7 @@ use std::fmt::Debug;
 
 use crate::{DatedPrice, OraclePrices, Price, ScopeError, MAX_ENTRIES};
 
-use anchor_lang::prelude::{account, borsh, zero_copy, AnchorDeserialize, AnchorSerialize, Pubkey};
+use anchor_lang::prelude::{account, zero_copy, Pubkey};
 use decimal_wad::rate::U128;
 pub use strum::IntoEnumIterator;
 
@@ -160,7 +160,7 @@ where
 }
 
 #[account(zero_copy)]
-#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+#[derive(PartialEq, Eq)]
 pub struct ScopeChainAccount {
     // Its an array of `RawChain` but anchor does not support type alias when generating IDL
     chain_array: [[u16; MAX_CHAIN_LENGTH]; MAX_ENTRIES],
