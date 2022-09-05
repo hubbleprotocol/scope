@@ -62,7 +62,7 @@
   },
   "12": {
     "label": "USDH/USD",
-    "oracle_mapping": "DahMqw2Gue2EnnKkeyHmqVMbF1vz31CoCsabnBTo3fif",
+    "oracle_mapping": "6Hn9n8eKbbzxMCpkkZBYjS9kHktfMDucQ77jhHmjasuq",
     "oracle_type": "SwitchboardV2"
   },
   "13": {
@@ -186,6 +186,30 @@
   "36": {
     "label": "UXD/USD",
     "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "37": {
+    "label": "USDH/USD Twap",
+    "oracle_mapping": "CtMESf6QwBh9UTCeEsjSkzcsYwiQPftCXGmApqDmj77k",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "38": {
+    "label": "USH/USD Twap",
+    "oracle_mapping": "3BunSmKzRNxMFuddjeV6sD76T5LsRmvMJLDeHUVLY9D5",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "39": {
+    "label": "UXD/USD Twap",
+    "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "40": {
+    "label": "HDG/USD",
+    "oracle_mapping": "68xwqTvcF8ECdSvq3eWPdQEikakcbSqm8GzdVcL4ZMSZ",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   }
