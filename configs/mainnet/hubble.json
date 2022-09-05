@@ -218,5 +218,11 @@
     "oracle_mapping": "Gwn6gRTuDRRA8RAkmKdULX4kW8As33nbBN99oKZ9yXLv",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
+  },
+  "41": {
+    "label": "DUST/USD",
+    "oracle_mapping": "C5tuUPi7xJHBHZGZX6wWYf1Svm6jtTVwYrYrBCiEVejK",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   }
 }
