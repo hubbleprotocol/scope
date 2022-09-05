@@ -1,0 +1,20 @@
+{
+    "tasks": [
+        {
+            "anchorFetchTask": {
+                "programId": "3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX",
+                "accountAddress": "3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"
+            }
+        },
+        {
+            "jsonParseTask": {
+                "path": "$.prices[idx].price.value" /* idx here to change to the index of the price to fetch */
+            }
+        },
+        {
+            "divideTask": {
+                "scalar": 100000000
+            }
+        }
+    ]
+}

@@ -1,0 +1,70 @@
+{
+    "tasks": [
+        {
+            "anchorFetchTask": {
+                "programId": "3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX", /* Note devnet here */
+                "accountAddress": "Aprk2sZNvxZNUpgq2WuS3VNkbxh35aCqJd1GbtBZzkG5"
+            }
+        },
+        {
+            "jsonParseTask": {
+                "path": "$.prices[idx].price.value" /* idx here to change to the index of the price to fetch */
+            }
+        },
+        {
+            "divideTask": {
+                "scalar": 100000000
+            }
+        }
+    ]
+}
+{
+    "tasks": [
+        {
+            "cacheTask": {
+                "cacheItems": [
+                    {
+                        "variableName": "CURRENT_TIMESTAMP",
+                        "job": {
+                            "tasks": [
+                                {
+                                    "cronParseTask": {
+                                        "cronPattern": "* * * * * *",
+                                        "clockOffset": 0,
+                                        "clock": 0
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "anchorFetchTask": {
+                "programId": "3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX", /* Note devnet here */
+                "accountAddress": "Aprk2sZNvxZNUpgq2WuS3VNkbxh35aCqJd1GbtBZzkG5"
+            }
+        },
+        {
+            "conditionalTask": {
+                "attempt": [
+                    {
+                        "jsonParseTask": {
+                            "path": "$.data[?(@.timestamp > ${CURRENT_TIMESTAMP})].timestamp"
+                        }
+                    },
+                    /** if comparison successful, return the value you want here */
+                    {
+                        "valueTask": {
+                            "value": 1
+                        }
+                    }
+                ],
+                "onFailure": [
+                    /** Nothing is done here if timestamp is less than the current timestamp */
+                ]
+            }
+        }
+    ]
+}
