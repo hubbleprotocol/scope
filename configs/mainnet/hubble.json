@@ -220,8 +220,32 @@
     "max_age": 300
   },
   "41": {
+    "label": "DUST/USD",
+    "oracle_mapping": "C5tuUPi7xJHBHZGZX6wWYf1Svm6jtTVwYrYrBCiEVejK",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "42": {
     "label": "kUSDH-USDC_Orca/USD",
     "oracle_mapping": "Cfuy5T6osdazUeLego5LFycBQebm9PP3H7VNdCndXXEN",
+    "oracle_type": "KToken",
+    "max_age": 300
+  },
+  "43": {
+    "label": "kSOL-STSOL_Orca/USD",
+    "oracle_mapping": "ByXB4xCxVhmUEmQj3Ut7byZ1Hbva1zhKjaVcv3jBMN7E",
+    "oracle_type": "KToken",
+    "max_age": 300
+  },
+  "44": {
+    "label": "kUSDC-USDT_Orca/USD",
+    "oracle_mapping": "98kNMp1aqWoYAaUU8m5REBAYVwhFb4aX9yoSpgq8kUFu",
+    "oracle_type": "KToken",
+    "max_age": 300
+  },
+  "45": {
+    "label": "kUSH-USDC_Orca/USD",
+    "oracle_mapping": "FshxiQWH1kTya19d186VyCSLT8PAVKn6wpVU4wP26S2M",
     "oracle_type": "KToken",
     "max_age": 300
   }
