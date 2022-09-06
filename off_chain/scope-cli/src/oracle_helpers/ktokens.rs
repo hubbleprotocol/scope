@@ -16,6 +16,8 @@ use scope::DatedPrice;
 use super::{OracleHelper, TokenEntry};
 use crate::config::TokenConfig;
 
+const NB_EXTRA_ACCOUNT: usize = 4;
+
 #[derive(Debug)]
 pub struct KTokenOracle {
     label: String,
@@ -27,7 +29,7 @@ pub struct KTokenOracle {
     /// 1. The [`whirlpool::state::Position`] position taken by Kamino.
     /// 2. The [`scope::OraclePrices`] storing the prices of the underlying tokens.
     /// 3. The [`scope::utils::scope_chain::ScopeChainAccount`] allowing to find the right prices.
-    extra_accounts: [Pubkey; 4],
+    extra_accounts: [Pubkey; NB_EXTRA_ACCOUNT],
 
     /// Configured max age
     max_age: clock::Slot,
@@ -65,11 +67,11 @@ impl KTokenOracle {
 
 impl OracleHelper for KTokenOracle {
     fn get_type(&self) -> OracleType {
-        OracleType::YiToken
+        OracleType::KToken
     }
 
     fn get_number_of_extra_accounts(&self) -> usize {
-        2
+        NB_EXTRA_ACCOUNT
     }
 
     fn get_mapping_account(&self) -> &Pubkey {
