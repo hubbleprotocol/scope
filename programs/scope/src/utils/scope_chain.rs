@@ -169,7 +169,7 @@ pub struct ScopeChainAccount {
 
 impl Discriminator for ScopeChainAccount {
     fn discriminator() -> [u8; 8] {
-        [32, 181, 0, 76, 44, 85, 181, 245]
+        [180, 51, 138, 247, 240, 173, 119, 79]
     }
 }
 

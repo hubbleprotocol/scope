@@ -222,10 +222,12 @@ fn ten_pow(exponent: u8) -> U128 {
 // Zero copy
 #[account(zero_copy)]
 pub struct WhirlpoolStrategy {
+    // Admin
     pub admin_authority: Pubkey,
 
     pub global_config: Pubkey,
 
+    // this is an u8 but we need to keep it as u64 for memory allignment
     pub base_vault_authority: Pubkey,
     pub base_vault_authority_bump: u64,
 
@@ -307,10 +309,23 @@ pub struct WhirlpoolStrategy {
 
     pub strategy_type: u64,
 
-    pub padding_0: u64,
-    pub padding_1: [u128; 23],
+    // Fees taken by strategy
+    pub deposit_fee: u64,
+    pub withdraw_fee: u64,
+    pub fees_fee: u64,
+    pub reward_0_fee: u64,
+    pub reward_1_fee: u64,
+    pub reward_2_fee: u64,
+
+    // Timestamp when current position was opened.
+    pub position_timestamp: u64,
+
+    pub padding_1: [u128; 20],
     pub padding_2: [u128; 32],
     pub padding_3: [u128; 32],
+    pub padding_4: [u128; 32],
+    pub padding_5: [u128; 32],
+    pub padding_6: [u128; 32],
 }
 
 impl WhirlpoolStrategy {
@@ -333,7 +348,7 @@ impl TokenPrices {
         strategy: &WhirlpoolStrategy,
     ) -> ScopeResult<TokenPrices> {
         let price_a = scope_chain.get_price(prices, strategy.token_a_collateral_id.try_into()?)?;
-        let price_b = scope_chain.get_price(prices, strategy.token_a_collateral_id.try_into()?)?;
+        let price_b = scope_chain.get_price(prices, strategy.token_b_collateral_id.try_into()?)?;
         Ok(TokenPrices { price_a, price_b })
     }
 }

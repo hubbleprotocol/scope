@@ -26,16 +26,16 @@ pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
 )]
 #[repr(u8)]
 pub enum OracleType {
-    Pyth,
-    SwitchboardV1,
-    SwitchboardV2,
-    YiToken,
+    Pyth = 0,
+    SwitchboardV1 = 1,
+    SwitchboardV2 = 2,
+    YiToken = 3,
     /// Solend tokens
-    CToken,
+    CToken = 4,
     /// SPL Stake Pool token (like scnSol)
-    SplStake,
+    SplStake = 5,
     /// KTokens from Kamino
-    KToken,
+    KToken = 6,
 }
 
 /// Get the price for a given oracle type
