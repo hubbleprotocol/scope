@@ -667,7 +667,7 @@ mod test {
     #[test]
     fn scope_chain_discriminator() {
         assert_eq!(
-            dispatch_sig("global", "ScopeChainAccount"),
+            dispatch_sig("account", "ScopeChainAccount"),
             ScopeChainAccount::discriminator()
         );
     }
