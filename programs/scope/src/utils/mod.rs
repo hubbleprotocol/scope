@@ -4,8 +4,8 @@ use std::cell::Ref;
 
 use crate::{ScopeError, ScopeResult};
 use anchor_lang::__private::bytemuck;
-use anchor_lang::prelude::{AccountDeserialize, AccountInfo};
-use anchor_lang::Discriminator;
+use anchor_lang::prelude::{msg, AccountDeserialize, AccountInfo};
+use anchor_lang::{Discriminator, Key};
 
 pub fn account_deserialize<T: AccountDeserialize + Discriminator>(
     account: &AccountInfo<'_>,
@@ -28,9 +28,14 @@ pub fn zero_copy_deserialize<'info, T: bytemuck::AnyBitPattern + Discriminator>(
 ) -> ScopeResult<Ref<'info, T>> {
     let data = account.data.try_borrow().unwrap();
 
-    let mut disc_bytes = [0u8; 8];
-    disc_bytes.copy_from_slice(&data[..8]);
+    let disc_bytes = &data[..8];
     if disc_bytes != T::discriminator() {
+        msg!(
+            "Expected discriminator for account {:?} ({:?}) is different from received {:?}",
+            account.key(),
+            T::discriminator(),
+            disc_bytes
+        );
         return Err(ScopeError::InvalidAccountDiscriminator);
     }
 
