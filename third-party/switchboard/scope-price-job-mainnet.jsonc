@@ -1,19 +1,48 @@
 {
     "tasks": [
         {
+            "cacheTask": {
+                "cacheItems": [
+                    {
+                        "variableName": "CURRENT_TIMESTAMP",
+                        "job": {
+                            "tasks": [
+                                {
+                                    "cronParseTask": {
+                                        "cronPattern": "* * * * * *",
+                                        "clockOffset": 0,
+                                        "clock": 1
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
             "anchorFetchTask": {
-                "programId": "3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX",
+                "programId": "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ", /* mainnet here */
                 "accountAddress": "3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"
             }
         },
         {
-            "jsonParseTask": {
-                "path": "$.prices[idx].price.value" /* idx here to change to the index of the price to fetch */
-            }
-        },
-        {
-            "divideTask": {
-                "scalar": 100000000
+            "conditionalTask": {
+                "attempt": [
+                    {
+                        "jsonParseTask": {
+                            "path": "$.prices[?((@.idx==\"42\") && (@.unix_timestamp > (${CURRENT_TIMESTAMP} - 70)))].price.value"
+                        }
+                    },
+                    {
+                        "divideTask": {
+                            "scalar": 100000000
+                        }
+                    }
+                ],
+                "onFailure": [
+                    /** Nothing is done here if timestamp is less than the current timestamp */
+                ]
             }
         }
     ]

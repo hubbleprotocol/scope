@@ -1,26 +1,6 @@
 {
     "tasks": [
         {
-            "anchorFetchTask": {
-                "programId": "3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX", /* Note devnet here */
-                "accountAddress": "Aprk2sZNvxZNUpgq2WuS3VNkbxh35aCqJd1GbtBZzkG5"
-            }
-        },
-        {
-            "jsonParseTask": {
-                "path": "$.prices[idx].price.value" /* idx here to change to the index of the price to fetch */
-            }
-        },
-        {
-            "divideTask": {
-                "scalar": 100000000
-            }
-        }
-    ]
-}
-{
-    "tasks": [
-        {
             "cacheTask": {
                 "cacheItems": [
                     {
@@ -31,7 +11,7 @@
                                     "cronParseTask": {
                                         "cronPattern": "* * * * * *",
                                         "clockOffset": 0,
-                                        "clock": 0
+                                        "clock": 1
                                     }
                                 }
                             ]
@@ -51,13 +31,12 @@
                 "attempt": [
                     {
                         "jsonParseTask": {
-                            "path": "$.data[?(@.timestamp > ${CURRENT_TIMESTAMP})].timestamp"
+                            "path": "$.prices[?((@.idx==\"42\") && (@.unix_timestamp > (${CURRENT_TIMESTAMP} - 70)))].price.value"
                         }
                     },
-                    /** if comparison successful, return the value you want here */
                     {
-                        "valueTask": {
-                            "value": 1
+                        "divideTask": {
+                            "scalar": 100000000
                         }
                     }
                 ],
