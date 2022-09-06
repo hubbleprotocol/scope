@@ -190,19 +190,19 @@
     "max_age": 300
   },
   "37": {
-    "label": "USDH/USD Twap",
+    "label": "TWAP USDH/USD",
     "oracle_mapping": "CtMESf6QwBh9UTCeEsjSkzcsYwiQPftCXGmApqDmj77k",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
   "38": {
-    "label": "USH/USD Twap",
+    "label": "TWAP USH/USD",
     "oracle_mapping": "3BunSmKzRNxMFuddjeV6sD76T5LsRmvMJLDeHUVLY9D5",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
   "39": {
-    "label": "UXD/USD Twap",
+    "label": "TWAP UXD/USD",
     "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
@@ -217,6 +217,30 @@
     "label": "DUST/USD",
     "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
     "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "42": {
+    "label": "kUSDH-USDC_Orca/USD",
+    "oracle_mapping": "2H4xebnp2M9JYgPPfUw58uUQahWF8f1YTNxwwtmdqVYV",
+    "oracle_type": "KToken",
+    "max_age": 300
+  },
+  "43": {
+    "label": "kSOL-STSOL_Orca/USD",
+    "oracle_mapping": "AvRMXt1MM9bdyE4yrnbVYjzYWWx8sdhkXPFbmxeb3rq6",
+    "oracle_type": "KToken",
+    "max_age": 300
+  },
+  "44": {
+    "label": "kUSDC-USDT_Orca/USD",
+    "oracle_mapping": "yT2bBMrE4AVG3BM8LHjDSr1yketzabmfp3rYimS36C9",
+    "oracle_type": "KToken",
+    "max_age": 300
+  },
+  "45": {
+    "label": "Fake kUSH-USDC_Orca/USD",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
     "max_age": 300
   }
 }

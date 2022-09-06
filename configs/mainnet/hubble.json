@@ -196,19 +196,19 @@
     "max_age": 300
   },
   "37": {
-    "label": "USDH/USD Twap",
+    "label": "TWAP USDH/USD",
     "oracle_mapping": "3DCCiwqtbyZAb15FG1QBh6pSHtJFk1hFHBdaqvRHDnWy",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
   "38": {
-    "label": "USH/USD Twap",
+    "label": "TWAP USH/USD",
     "oracle_mapping": "61RRCiCUvktys9paE6yL8mSMcmerEse5JdPS5J5bEEKP",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
   "39": {
-    "label": "UXD/USD Twap",
+    "label": "TWAP UXD/USD",
     "oracle_mapping": "3B9tzM8DHr2KCSzU27jaZDMtBDFNyndJnYEstxLxdmoo",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
