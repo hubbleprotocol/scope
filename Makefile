@@ -72,7 +72,7 @@ check-env:
 
 build: $(SCOPE_PROGRAM_SO) $(FAKE_ORACLES_PROGRAM_SO) $(SCOPE_CLI)
 
-$(SCOPE_CLI): $(shell find off_chain -name "*.rs") $(shell find off_chain -name "Cargo.toml") Cargo.lock
+$(SCOPE_CLI): $(shell find programs -name "*.rs") $(shell find off_chain -name "*.rs") $(shell find off_chain -name "Cargo.toml") Cargo.lock
 > cargo build -p scope-cli
 
 # Don't autodelete the keys, we want to keep them as much as possible 
