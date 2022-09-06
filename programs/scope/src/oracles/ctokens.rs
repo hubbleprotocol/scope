@@ -1,5 +1,6 @@
 use crate::{DatedPrice, Price, Result, ScopeResult};
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::clock;
 use anchor_lang::solana_program::program_pack::Pack;
 
 use self::solend::Reserve;
@@ -11,13 +12,21 @@ pub fn get_price(solend_reserve_account: &AccountInfo, clock: &Clock) -> Result<
     let mut reserve = Reserve::unpack(&solend_reserve_account.data.borrow())?;
 
     // Manual refresh of the reserve to ensure the most accurate price
-    let last_updated_slot = if reserve.accrue_interest(clock.slot).is_ok() {
+    let (last_updated_slot, unix_timestamp) = if reserve.accrue_interest(clock.slot).is_ok() {
         // We have just refreshed the price so we can use the current slot
-        clock.slot
+        (clock.slot, u64::try_from(clock.unix_timestamp).unwrap())
     } else {
         // This should never happen but on simulations when the current slot is not valid
         // yet we have a default value
-        reserve.last_update.slot
+        (
+            reserve.last_update.slot,
+            u64::try_from(clock.unix_timestamp).unwrap().saturating_sub(
+                clock
+                    .slot
+                    .saturating_sub(reserve.last_update.slot)
+                    .saturating_mul(clock::SLOT_MS),
+            ),
+        )
     };
 
     let value = scaled_rate(&reserve)?;
@@ -29,7 +38,8 @@ pub fn get_price(solend_reserve_account: &AccountInfo, clock: &Clock) -> Result<
     let dated_price = DatedPrice {
         price,
         last_updated_slot,
-        _reserved: Default::default(),
+        unix_timestamp,
+        ..Default::default()
     };
 
     Ok(dated_price)

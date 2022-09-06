@@ -1,6 +1,7 @@
+use std::convert::TryInto;
+
 use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::clock;
 use anchor_spl::token::{Mint, TokenAccount};
 
 const YI_DECIMAL_NUMBER: u32 = 8;
@@ -42,6 +43,7 @@ pub fn price_compute(tokens_amount: u64, mint_supply: u64) -> Option<Price> {
 pub fn get_price<'a, 'b>(
     yi_account: &AccountInfo,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
+    clock: &Clock,
 ) -> Result<DatedPrice>
 where
     'a: 'b,
@@ -75,7 +77,8 @@ where
         .ok_or(ScopeError::MathOverflow)?;
     let dated_price = DatedPrice {
         price,
-        last_updated_slot: clock::Clock::get()?.slot,
+        last_updated_slot: clock.slot,
+        unix_timestamp: clock.unix_timestamp.try_into().unwrap(),
         ..Default::default()
     };
     Ok(dated_price)

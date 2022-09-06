@@ -23,7 +23,9 @@ use program_id::PROGRAM_ID;
 
 declare_id!(PROGRAM_ID);
 
-pub const MAX_ENTRIES: usize = 512;
+pub const MAX_ENTRIES_U16: u16 = 512;
+
+pub const MAX_ENTRIES: usize = MAX_ENTRIES_U16 as usize;
 
 #[program]
 pub mod scope {
@@ -76,11 +78,27 @@ pub struct Price {
 }
 
 #[zero_copy]
-#[derive(Debug, Eq, PartialEq, Default)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct DatedPrice {
     pub price: Price,
     pub last_updated_slot: u64,
-    pub _reserved: [u64; 4],
+    pub unix_timestamp: u64,
+    pub _reserved: [u64; 2],
+    pub _reserved2: [u16; 3],
+    pub index: u16, // Current index of the dated price.
+}
+
+impl Default for DatedPrice {
+    fn default() -> Self {
+        Self {
+            price: Default::default(),
+            last_updated_slot: Default::default(),
+            unix_timestamp: Default::default(),
+            _reserved: Default::default(),
+            _reserved2: Default::default(),
+            index: MAX_ENTRIES_U16,
+        }
+    }
 }
 
 // Account to store dated prices

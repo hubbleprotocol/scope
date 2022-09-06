@@ -1,6 +1,7 @@
 use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
 use std::cmp::min;
+use std::convert::TryInto;
 
 use switchboard_program::{
     get_aggregator, get_aggregator_result, AggregatorState, RoundResult, SwitchboardAccountType,
@@ -29,12 +30,18 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     }
     let price: u64 = (price_float * PRICE_MULTIPLIER) as u64;
     let slot: u64 = round_result.round_open_slot.unwrap();
-    validate_valid_price(price, slot, aggregator, round_result)
+    let timestamp = round_result
+        .round_open_timestamp
+        .unwrap()
+        .try_into()
+        .unwrap();
+    validate_valid_price(price, slot, timestamp, aggregator, round_result)
 }
 
 pub fn validate_valid_price(
     price: u64,
     slot: u64,
+    unix_timestamp: u64,
     aggregator: AggregatorState,
     round_result: RoundResult,
 ) -> Result<DatedPrice> {
@@ -44,6 +51,7 @@ pub fn validate_valid_price(
             exp: SWITCHBOARD_V1_PRICE_DECIMALS.into(),
         },
         last_updated_slot: slot,
+        unix_timestamp,
         ..Default::default()
     };
     if cfg!(feature = "skip_price_validation") {
@@ -93,30 +101,30 @@ mod tests {
     #[test]
     fn test_valid_switchboard_v1_price() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(1, 1);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_ok());
+        assert!(switchboard_v1::validate_valid_price(1, 1, 1, aggregator, round_result).is_ok());
     }
 
     #[test]
     fn test_valid_switchboard_v1_price_min_1_success_2() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(1, 2);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_ok());
+        assert!(switchboard_v1::validate_valid_price(1, 1, 1, aggregator, round_result).is_ok());
     }
 
     #[test]
     fn test_valid_switchboard_v1_price_default_min_success() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(4, 3);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_ok());
+        assert!(switchboard_v1::validate_valid_price(1, 1, 1, aggregator, round_result).is_ok());
     }
 
     #[test]
     fn test_invalid_switchboard_v1_price_1() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(2, 1);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_err());
+        assert!(switchboard_v1::validate_valid_price(1, 1, 1, aggregator, round_result).is_err());
     }
 
     #[test]
     fn test_invalid_switchboard_v1_price_2() {
         let (aggregator, round_result) = get_structs_from_min_confirmations_and_num_success(4, 2);
-        assert!(switchboard_v1::validate_valid_price(1, 1, aggregator, round_result).is_err());
+        assert!(switchboard_v1::validate_valid_price(1, 1, 1, aggregator, round_result).is_err());
     }
 }

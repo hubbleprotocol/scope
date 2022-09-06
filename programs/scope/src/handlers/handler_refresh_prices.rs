@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::oracles::OracleType;
 use crate::{oracles::get_price, ScopeError};
 use anchor_lang::prelude::*;
@@ -41,7 +43,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     let mut remaining_iter = ctx.remaining_accounts.iter();
     let clock = Clock::get()?;
-    let price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
+    let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
+    price.index = token.try_into().unwrap();
 
     oracle.prices[token] = price;
 
@@ -92,6 +95,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     .get_mut(token_idx)
                     .ok_or(ScopeError::BadTokenNb)?;
                 *to_update = price;
+                to_update.index = token_nb;
             }
             Err(e) => {
                 msg!(

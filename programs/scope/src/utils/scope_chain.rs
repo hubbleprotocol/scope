@@ -292,6 +292,12 @@ impl ScopeChainAccount {
             .reduce(|acc, val| acc.min(val))
             .ok_or(ScopeChainError::NoChainForToken)?;
 
+        let unix_timestamp = price_chain
+            .iter()
+            .filter_map(|&opt| opt.map(|price| price.unix_timestamp))
+            .reduce(|acc, val| acc.min(val))
+            .ok_or(ScopeChainError::NoChainForToken)?;
+
         let total_decimals: u64 = price_chain
             .iter()
             .filter_map(|&opt| opt.map(|price| price.price.exp))
@@ -327,6 +333,7 @@ impl ScopeChainAccount {
 
         Ok(DatedPrice {
             last_updated_slot,
+            unix_timestamp,
             price: Price { value, exp },
             ..Default::default()
         })

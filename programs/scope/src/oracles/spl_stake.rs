@@ -24,7 +24,8 @@ pub fn get_price(
     let dated_price = DatedPrice {
         price,
         last_updated_slot: current_clock.slot,
-        _reserved: Default::default(),
+        unix_timestamp: u64::try_from(current_clock.unix_timestamp).unwrap(),
+        ..Default::default()
     };
 
     Ok(dated_price)

@@ -56,7 +56,7 @@ where
         OracleType::Pyth => pyth::get_price(base_account),
         OracleType::SwitchboardV1 => switchboard_v1::get_price(base_account),
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
-        OracleType::YiToken => yitoken::get_price(base_account, extra_accounts),
+        OracleType::YiToken => yitoken::get_price(base_account, extra_accounts, clock),
         OracleType::CToken => ctokens::get_price(base_account, clock),
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
         OracleType::KToken => ktokens::get_price(base_account, extra_accounts),

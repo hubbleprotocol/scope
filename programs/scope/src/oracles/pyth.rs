@@ -47,6 +47,7 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
             exp: pyth_price.expo.abs().try_into().unwrap(),
         },
         last_updated_slot: price_account.valid_slot,
+        unix_timestamp: u64::try_from(price_account.timestamp).unwrap(),
         ..Default::default()
     })
 }

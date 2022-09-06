@@ -98,12 +98,17 @@ where
         .price_a
         .last_updated_slot
         .min(collateral_token_prices.price_b.last_updated_slot);
+    let unix_timestamp = collateral_token_prices
+        .price_a
+        .unix_timestamp
+        .min(collateral_token_prices.price_b.unix_timestamp);
     let value: u64 = token_price.as_u64();
     let exp = USD_DECIMALS_PRECISION.into();
 
     Ok(DatedPrice {
         price: Price { value, exp },
         last_updated_slot,
+        unix_timestamp,
         ..Default::default()
     })
 }
