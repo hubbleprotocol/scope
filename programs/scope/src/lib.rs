@@ -23,9 +23,10 @@ use program_id::PROGRAM_ID;
 
 declare_id!(PROGRAM_ID);
 
+// Note: Need to be directly integer value to not confuse the IDL generator
 pub const MAX_ENTRIES_U16: u16 = 512;
-
-pub const MAX_ENTRIES: usize = MAX_ENTRIES_U16 as usize;
+// Note: Need to be directly integer value to not confuse the IDL generator
+pub const MAX_ENTRIES: usize = 512;
 
 #[program]
 pub mod scope {
@@ -85,7 +86,8 @@ pub struct DatedPrice {
     pub unix_timestamp: u64,
     pub _reserved: [u64; 2],
     pub _reserved2: [u16; 3],
-    pub index: u16, // Current index of the dated price.
+    // Current index of the dated price.
+    pub index: u16,
 }
 
 impl Default for DatedPrice {
