@@ -81,10 +81,12 @@ pub mod mock_oracles {
         let denominator = (10u128.pow(scale)) as f64;
         let price = mantissa_f64.div(denominator);
         let slot = ctx.accounts.clock.slot;
+        let timestamp = ctx.accounts.clock.unix_timestamp;
         let last_round_result = Some(RoundResult {
             num_success: Some(3),
             result: Some(price),
             round_open_slot: Some(slot),
+            round_open_timestamp: Some(timestamp),
             ..RoundResult::default()
         });
         let aggregator_state = AggregatorState {
@@ -117,6 +119,9 @@ pub mod mock_oracles {
         aggregator_account_data
             .latest_confirmed_round
             .round_open_slot = slot;
+        aggregator_account_data
+            .latest_confirmed_round
+            .round_open_timestamp = ctx.accounts.clock.unix_timestamp;
         aggregator_account_data.latest_confirmed_round.num_success = 3;
         aggregator_account_data.min_oracle_results = 3;
         let key = &ctx.accounts.oracle_account.key.to_string();
@@ -195,7 +200,9 @@ pub mod mock_oracles {
         let mut last_round_result = aggregator_state.last_round_result.unwrap();
         last_round_result.result = Some(price);
         let slot = ctx.accounts.clock.slot;
+        let timestamp = ctx.accounts.clock.unix_timestamp;
         last_round_result.round_open_slot = Some(slot);
+        last_round_result.round_open_timestamp = Some(timestamp);
         aggregator_state.last_round_result = Some(last_round_result);
         serialize_into_slice(&aggregator_state, &mut account_data[1..]).unwrap();
         let key = &ctx.accounts.oracle_account.key.to_string();
@@ -218,9 +225,13 @@ pub mod mock_oracles {
             SwitchboardDecimal::new(0, 1);
         aggregator_account_data.latest_confirmed_round.num_success = 3;
         let slot = ctx.accounts.clock.slot;
+        let timestamp = ctx.accounts.clock.unix_timestamp;
         aggregator_account_data
             .latest_confirmed_round
             .round_open_slot = slot;
+        aggregator_account_data
+            .latest_confirmed_round
+            .round_open_timestamp = timestamp;
         let key = &ctx.accounts.oracle_account.key.to_string();
         msg!("Switchboard V2 Price {} updated at slot {}", key, slot);
 
