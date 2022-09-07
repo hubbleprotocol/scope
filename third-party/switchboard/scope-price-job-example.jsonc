@@ -1,0 +1,44 @@
+{
+    "jobs": [
+        {
+            "tasks": [
+                {
+                    "cacheTask": {
+                        "cacheItems": [
+                            {
+                                "variableName": "CURRENT_TIMESTAMP",
+                                "job": {
+                                    "tasks": [
+                                        {
+                                            "cronParseTask": {
+                                                "cronPattern": "* * * * * *",
+                                                "clockOffset": 0,
+                                                "clock": 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "anchorFetchTask": {
+                        "programId": "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ", /* always mainnet here */
+                        "accountAddress": "3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"
+                    }
+                },
+                {
+                    "jsonParseTask": {
+                        "path": "$.prices[?((@.index==\"42\") && (@.unix_timestamp > (${CURRENT_TIMESTAMP} - 70)))].price.value"
+                    }
+                },
+                {
+                    "divideTask": {
+                        "scalar": 100000000
+                    }
+                }
+            ]
+        }
+    ]
+}
