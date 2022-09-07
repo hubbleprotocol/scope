@@ -11,7 +11,13 @@ pub fn account_deserialize<T: AccountDeserialize + Discriminator>(
     account: &AccountInfo<'_>,
 ) -> ScopeResult<T> {
     let data = account.clone().data.borrow().to_owned();
-    let discriminator = &data[..8];
+    let discriminator = data.get(..8).ok_or_else(|| {
+        msg!(
+            "Account {:?} does not have enough bytes to be deserialized",
+            account.key()
+        );
+        ScopeError::UnableToDeserializeAccount
+    })?;
     if discriminator != T::discriminator() {
         return Err(ScopeError::InvalidAccountDiscriminator);
     }
@@ -28,7 +34,13 @@ pub fn zero_copy_deserialize<'info, T: bytemuck::AnyBitPattern + Discriminator>(
 ) -> ScopeResult<Ref<'info, T>> {
     let data = account.data.try_borrow().unwrap();
 
-    let disc_bytes = &data[..8];
+    let disc_bytes = data.get(..8).ok_or_else(|| {
+        msg!(
+            "Account {:?} does not have enough bytes to be deserialized",
+            account.key()
+        );
+        ScopeError::UnableToDeserializeAccount
+    })?;
     if disc_bytes != T::discriminator() {
         msg!(
             "Expected discriminator for account {:?} ({:?}) is different from received {:?}",
