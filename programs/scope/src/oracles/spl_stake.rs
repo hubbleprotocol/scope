@@ -15,6 +15,13 @@ pub fn get_price(
     let stake_pool = try_from_slice_unchecked::<StakePool>(&stake_pool_account_info.data.borrow())
         .map_err(|_| ScopeError::UnexpectedAccount)?;
 
+    #[cfg(not(feature = "skip_price_validation"))]
+    if stake_pool.last_update_epoch != current_clock.epoch {
+        // The price has not been refreshed this epoch
+        msg!("SPL Stake account has not been refreshed in current epoch");
+        return Err(ScopeError::PriceNotValid.into());
+    }
+
     let value = scaled_rate(&stake_pool)?;
 
     let price = Price {
