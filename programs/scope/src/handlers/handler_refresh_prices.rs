@@ -39,13 +39,13 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
         .try_into()
         .map_err(|_| ScopeError::BadTokenType)?;
 
-    let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
-
     let mut remaining_iter = ctx.remaining_accounts.iter();
     let clock = Clock::get()?;
     let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
     price.index = token.try_into().unwrap();
 
+    // Only load when needed, allows prices computation to use scope chain
+    let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
     oracle.prices[token] = price;
 
     Ok(())
@@ -53,7 +53,6 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
 pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<()> {
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
-    let oracle_prices = &mut ctx.accounts.oracle_prices.load_mut()?.prices;
 
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
@@ -91,7 +90,11 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
         let clock = Clock::get()?;
         match get_price(price_type, received_account, &mut accounts_iter, &clock) {
             Ok(price) => {
+                // Only temporary load as mut to allow prices to be computed based on a scope chain
+                // from the price feed that is currently updated
+                let mut oracle_prices = ctx.accounts.oracle_prices.load_mut()?;
                 let to_update = oracle_prices
+                    .prices
                     .get_mut(token_idx)
                     .ok_or(ScopeError::BadTokenNb)?;
                 *to_update = price;
