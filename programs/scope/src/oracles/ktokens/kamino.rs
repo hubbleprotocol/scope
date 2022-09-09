@@ -1,4 +1,5 @@
 use std::cell::Ref;
+use std::convert::TryInto;
 
 use anchor_lang::prelude::*;
 
@@ -29,7 +30,7 @@ pub fn get_price_per_full_share(
     if shares_issued == 0 {
         Ok(U128::from(0_u128))
     } else {
-        Ok(Decimal::from(underlying_unit(shares_decimals).as_u128())
+        Ok(Decimal::from(underlying_unit(shares_decimals))
             .try_mul(holdings)?
             .try_div(shares_issued)?
             .try_ceil()?)
@@ -104,7 +105,7 @@ fn amounts_usd_token(
 
 /// The decimal scalar for vault underlying and operations involving exchangeRate().
 fn underlying_unit(share_decimals: u64) -> U128 {
-    U128::from(10_u64.pow(share_decimals as u32))
+    ten_pow(share_decimals.try_into().unwrap())
 }
 
 fn amounts_available(strategy: &WhirlpoolStrategy) -> TokenAmounts {
