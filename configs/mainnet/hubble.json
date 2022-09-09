@@ -251,7 +251,13 @@
   },
   "46": {
     "label": "USDr/USD",
-    "oracle_mapping": "4HdDYqFfuDpUxyxMw5rU8RNNhJkNw3Ck5AqE9makfsFp",
+    "oracle_mapping": "3kQwNesSZdbFagwER26mBveGeLSWLLdsnE7tbsJCeoTt",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "47": {
+    "label": "TWAP USDr/USD",
+    "oracle_mapping": "HThezphcuNK2uTATxJWjVA4NDQbxn8EEYWvzv3qNb8iX",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   }
