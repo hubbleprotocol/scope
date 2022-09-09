@@ -78,8 +78,18 @@ impl OracleHelper for KTokenOracle {
         &self.mapping
     }
 
-    fn get_extra_accounts(&self) -> &[Pubkey] {
-        &self.extra_accounts
+    fn get_extra_accounts(&self, rpc: Option<&RpcClient>) -> Result<Vec<Pubkey>> {
+        let mut res = self.extra_accounts.to_vec();
+        if let Some(rpc) = rpc {
+            let strategy_account_raw = rpc
+                .get_account(&self.mapping)
+                .context("Retrieving Kamino strategy account")?;
+
+            let strategy_account: &WhirlpoolStrategy =
+                bytemuck::from_bytes(&strategy_account_raw.data[8..]);
+            res[1] = strategy_account.position;
+        }
+        Ok(res)
     }
 
     fn get_max_age(&self) -> clock::Slot {

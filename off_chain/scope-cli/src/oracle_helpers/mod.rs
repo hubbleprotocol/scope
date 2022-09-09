@@ -43,7 +43,7 @@ pub trait OracleHelper {
     fn get_mapping_account(&self) -> &Pubkey;
 
     /// Get the extra accounts needed for the refresh price ix
-    fn get_extra_accounts(&self) -> &[Pubkey];
+    fn get_extra_accounts(&self, rpc: Option<&RpcClient>) -> Result<Vec<Pubkey>>;
 
     /// Get max age after which a refresh must be forced.
     ///

@@ -350,7 +350,7 @@ impl ScopeClient {
         for entry in self.tokens.values() {
             let main_mapping = entry.get_mapping_account();
             print!("{main_mapping} ");
-            let extra_accounts = entry.get_extra_accounts();
+            let extra_accounts = entry.get_extra_accounts(None)?;
             for account in extra_accounts {
                 print!("{account} ");
             }
@@ -483,8 +483,8 @@ impl ScopeClient {
                 token: token.into(),
             });
 
-        for extra in entry.get_extra_accounts() {
-            request = request.accounts(AccountMeta::new_readonly(*extra, false));
+        for extra in entry.get_extra_accounts(None)? {
+            request = request.accounts(AccountMeta::new_readonly(extra, false));
         }
 
         let tx = request.send()?;
@@ -502,6 +502,8 @@ impl ScopeClient {
             clock: Clock::id(),
         };
 
+        let rpc = self.program.rpc();
+
         let request = self.program.request();
 
         let mut request = request.accounts(refresh_account);
@@ -516,8 +518,8 @@ impl ScopeClient {
                 *entry.get_mapping_account(),
                 false,
             ));
-            for extra in entry.get_extra_accounts() {
-                request = request.accounts(AccountMeta::new_readonly(*extra, false));
+            for extra in entry.get_extra_accounts(Some(&rpc))? {
+                request = request.accounts(AccountMeta::new_readonly(extra, false));
             }
         }
 

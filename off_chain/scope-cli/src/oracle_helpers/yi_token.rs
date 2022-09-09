@@ -82,8 +82,8 @@ impl OracleHelper for YiOracle {
         &self.mapping
     }
 
-    fn get_extra_accounts(&self) -> &[Pubkey] {
-        &self.extra_accounts
+    fn get_extra_accounts(&self, _rpc: Option<&RpcClient>) -> Result<Vec<Pubkey>> {
+        Ok(self.extra_accounts.to_vec())
     }
 
     fn get_max_age(&self) -> clock::Slot {

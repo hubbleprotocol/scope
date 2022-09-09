@@ -44,8 +44,8 @@ impl OracleHelper for SingleAccountOracle {
         &self.oracle_account
     }
 
-    fn get_extra_accounts(&self) -> &[Pubkey] {
-        &[]
+    fn get_extra_accounts(&self, _rpc: Option<&RpcClient>) -> Result<Vec<Pubkey>> {
+        Ok(Vec::with_capacity(0))
     }
 
     fn get_max_age(&self) -> clock::Slot {
