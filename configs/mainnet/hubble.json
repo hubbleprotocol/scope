@@ -248,5 +248,11 @@
     "oracle_mapping": "FshxiQWH1kTya19d186VyCSLT8PAVKn6wpVU4wP26S2M",
     "oracle_type": "KToken",
     "max_age": 300
+  },
+  "46": {
+    "label": "USDr/USD",
+    "oracle_mapping": "4HdDYqFfuDpUxyxMw5rU8RNNhJkNw3Ck5AqE9makfsFp",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   }
 }
