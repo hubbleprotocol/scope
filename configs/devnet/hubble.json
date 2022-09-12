@@ -248,5 +248,11 @@
     "oracle_mapping": "3BunSmKzRNxMFuddjeV6sD76T5LsRmvMJLDeHUVLY9D5",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
+  },
+  "47": {
+    "label": "TWAP USDr/USD",
+    "oracle_mapping": "3BunSmKzRNxMFuddjeV6sD76T5LsRmvMJLDeHUVLY9D5",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   }
 }
