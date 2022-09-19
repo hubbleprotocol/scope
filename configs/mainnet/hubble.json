@@ -176,7 +176,8 @@
   "33": {
     "label": "DAI/USD",
     "oracle_mapping": "3HPBDPdnHguCWtHDVgjhozniSM2AZAhyGkmGiG5QHZYp",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 650
   },
   "34": {
     "label": "JSOL/SOL",
@@ -260,7 +261,7 @@
     "oracle_mapping": "HThezphcuNK2uTATxJWjVA4NDQbxn8EEYWvzv3qNb8iX",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
-  }, 
+  },
   "48": {
     "label": "RATIO/USD",
     "oracle_mapping": "6vmBbqQDd1YNkt1qVFueDDi4DTVz9mUykAbko7mni5Wa",
