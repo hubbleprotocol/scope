@@ -339,8 +339,14 @@ impl ScopeClient {
             let price = format!("{price:.5}");
             let price_type = entry.get_type();
             let age_in_slots: i64 = current_slot as i64 - dated_price.last_updated_slot as i64;
+            let max_age = entry.get_max_age() as i64;
+            let age_string = if age_in_slots > max_age {
+                format!("\x1b[1m\x1b[31m{}\x1b[0m", age_in_slots)
+            } else {
+                format!("\x1b[32m{}\x1b[0m", age_in_slots)
+            };
             trace!(id, %entry, price = ?dated_price.price);
-            info!(id, %entry, %price, ?price_type, "slot" = dated_price.last_updated_slot, age_in_slots);
+            info!(id, %entry, %price, ?price_type, "age" = %age_string, max_age);
         }
         Ok(())
     }
