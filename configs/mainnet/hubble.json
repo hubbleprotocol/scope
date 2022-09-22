@@ -1,5 +1,5 @@
 {
-  "default_max_age": 30,
+  "default_max_age": 60,
   "0": {
     "label": "SOL/USD",
     "oracle_mapping": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
@@ -103,7 +103,7 @@
     "label": "LDO/USD",
     "oracle_mapping": "9dCoWrkPYwyUAmb62UwTyewsiRS6c9GTcEpJy8id6WCE",
     "oracle_type": "SwitchboardV2",
-    "max_age": 120
+    "max_age": 300
   },
   "20": {
     "label": "USDC/USD",
@@ -175,9 +175,9 @@
   },
   "33": {
     "label": "DAI/USD",
-    "oracle_mapping": "3HPBDPdnHguCWtHDVgjhozniSM2AZAhyGkmGiG5QHZYp",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 650
+    "oracle_mapping": "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
+    "oracle_type": "Pyth",
+    "max_age": 100
   },
   "34": {
     "label": "JSOL/SOL",

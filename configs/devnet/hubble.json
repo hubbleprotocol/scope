@@ -1,5 +1,5 @@
 {
-  "default_max_age": 30,
+  "default_max_age": 500,
   "0": {
     "label": "SOL/USD",
     "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
@@ -169,8 +169,8 @@
   },
   "33": {
     "label": "DAI/USD",
-    "oracle_mapping": "DahMqw2Gue2EnnKkeyHmqVMbF1vz31CoCsabnBTo3fif",
-    "oracle_type": "SwitchboardV2"
+    "oracle_mapping": "A8XFp1YSUqyDDvTwRXM1vmhPHCLxzncG45t1ZH9CMYq7",
+    "oracle_type": "Pyth"
   },
   "34": {
     "label": "JSOL/SOL",
