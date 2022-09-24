@@ -13,6 +13,7 @@ no-entrypoint = []
 cpi = ["no-entrypoint"]
 skip_price_validation = []
 test-bpf = []
+debug = []
 
 # If none of the following is set, one will be selected based on env $CLUSTER variable
 # If $CLUSTER is not set either, default will be mainnet

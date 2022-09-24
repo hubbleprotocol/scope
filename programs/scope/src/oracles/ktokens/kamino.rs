@@ -1,5 +1,3 @@
-use num::integer::Roots;
-use num_traits::Pow;
 use std::cell::Ref;
 use std::convert::TryInto;
 
@@ -12,6 +10,7 @@ use decimal_wad::rate::U128;
 use whirlpool::math::sqrt_price_from_tick_index;
 pub use whirlpool::state::{Position, PositionRewardInfo, Whirlpool, WhirlpoolRewardInfo};
 
+use crate::oracles::ktokens::kamino::tests::calc_price_from_sqrt_price;
 use crate::scope_chain::ScopeChainAccount;
 use crate::utils::zero_copy_deserialize;
 use crate::{DatedPrice, OraclePrices, ScopeError, ScopeResult};
@@ -46,11 +45,28 @@ fn holdings(
     prices: &TokenPrices,
 ) -> ScopeResult<U128> {
     let available = amounts_available(strategy);
-    let invested = amounts_invested(whirlpool, position);
+    let sqrt_price_from_oracle = price_utils::sqrt_price_from_scope_prices(
+        prices.price_a.price,
+        prices.price_b.price,
+        strategy.token_a_mint_decimals,
+        strategy.token_b_mint_decimals,
+    )?;
+
+    if cfg!(feature = "debug") {
+        let decimals_a = strategy.token_a_mint_decimals;
+        let decimals_b = strategy.token_b_mint_decimals;
+
+        let w = calc_price_from_sqrt_price(whirlpool.sqrt_price, decimals_a, decimals_b);
+        let o = calc_price_from_sqrt_price(sqrt_price_from_oracle, decimals_a, decimals_b);
+        let diff = (w - o).abs() / w;
+
+        msg!("o: {} w: {} d: {}%", w, o, diff * 100.0);
+    }
+
+    let invested = amounts_invested(position, sqrt_price_from_oracle);
+
     // We want the minimum price we would get in the event of a liquidation so ignore pending fees and pending rewards
-
     let available_usd = amounts_usd(strategy, &available, prices)?;
-
     let invested_usd = amounts_usd(strategy, &invested, prices)?;
 
     let total_sum = available_usd
@@ -117,13 +133,13 @@ fn amounts_available(strategy: &WhirlpoolStrategy) -> TokenAmounts {
     }
 }
 
-fn amounts_invested(whirlpool: &Whirlpool, position: &Position) -> TokenAmounts {
+fn amounts_invested(position: &Position, pool_sqrt_price: u128) -> TokenAmounts {
     let (a, b) = if position.liquidity > 0 {
         let sqrt_price_lower = sqrt_price_from_tick_index(position.tick_lower_index);
         let sqrt_price_upper = sqrt_price_from_tick_index(position.tick_upper_index);
 
         let (delta_a, delta_b) = get_amounts_for_liquidity(
-            whirlpool.sqrt_price,
+            pool_sqrt_price,
             sqrt_price_lower,
             sqrt_price_upper,
             position.liquidity,
