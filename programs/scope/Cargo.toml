@@ -12,6 +12,7 @@ name = "scope"
 no-entrypoint = []
 cpi = ["no-entrypoint"]
 skip_price_validation = []
+test-bpf = []
 
 # If none of the following is set, one will be selected based on env $CLUSTER variable
 # If $CLUSTER is not set either, default will be mainnet
@@ -23,6 +24,8 @@ mainnet = []
 anchor-lang = "0.25.0"
 anchor-spl = { version = "0.25.0", features = ["token"] }
 num_enum = "0.5.7"
+num = "0.4"
+num-traits = "0.2"
 pyth-sdk-solana = "0.4.2"
 cfg-if = "1.0.0"
 serde = "1.0.136"

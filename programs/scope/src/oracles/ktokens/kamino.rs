@@ -1,3 +1,5 @@
+use num::integer::Roots;
+use num_traits::Pow;
 use std::cell::Ref;
 use std::convert::TryInto;
 
@@ -373,4 +375,266 @@ pub struct WithdrawalCaps {
     pub current_total: i64,
     pub last_interval_start_timestamp: u64,
     pub config_interval_length_seconds: u64,
+}
+
+mod price_utils {
+    use crate::Price;
+
+    use super::*;
+
+    // Helper
+    fn sub(a: u64, b: u64) -> ScopeResult<u32> {
+        let res = a.checked_sub(b).ok_or(ScopeError::IntegerOverflow)?;
+        u32::try_from(res).map_err(|_e| ScopeError::IntegerOverflow)
+    }
+
+    fn pow(base: u64, exp: u64) -> U128 {
+        U128::from(base).pow(U128::from(exp))
+    }
+
+    fn decimals_factor(decimals_a: u64, decimals_b: u64) -> ScopeResult<u64> {
+        let decimals_a = i32::try_from(decimals_a).map_err(|_e| ScopeError::IntegerOverflow)?;
+        let decimals_b = i32::try_from(decimals_b).map_err(|_e| ScopeError::IntegerOverflow)?;
+
+        let diff = i32::abs_diff(decimals_a, decimals_b);
+        Ok(10_u64.pow(diff))
+    }
+
+    pub fn a_to_b(a: Price, b: Price) -> ScopeResult<Price> {
+        let exp = 12;
+        let exp = u64::max(exp, a.exp);
+        let exp = u64::max(exp, b.exp);
+
+        let extra_factor_a = 10_u64.pow(sub(exp, a.exp)?);
+        let extra_factor_b = 10_u64.pow(sub(exp, b.exp)?);
+
+        let px_a = U128::from(a.value.checked_mul(extra_factor_a).unwrap());
+        let px_b = U128::from(b.value.checked_mul(extra_factor_b).unwrap());
+
+        let final_factor = pow(10, exp);
+        let price_a_to_b = px_a
+            .checked_mul(final_factor)
+            .unwrap()
+            .checked_div(px_b)
+            .unwrap();
+
+        Ok(Price {
+            value: price_a_to_b.as_u64(),
+            exp,
+        })
+    }
+
+    pub fn calc_sqrt_price_from_scope_price(
+        price: Price,
+        decimals_a: u64,
+        decimals_b: u64,
+    ) -> ScopeResult<u128> {
+        // Normally we calculate sqrt price from a float price as following:
+        // px = sqrt(price * 10 ^ (decimals_b - decimals_a)) * 2 ** 64
+
+        // But scope price is scaled by 10 ** exp so, to obtain it, we need to divide by sqrt(10 ** exp)
+        // x = sqrt(scaled_price * 10 ^ (decimals_b - decimals_a)) * 2 ** 64
+        // px = x / sqrt(10 ** exp)
+
+        let decimals_factor = U128::from(decimals_factor(decimals_a, decimals_b)?);
+        let px = U128::from(price.value);
+        let scaled_price = U128::from(if decimals_b > decimals_a {
+            px.checked_mul(decimals_factor).unwrap()
+        } else {
+            px.checked_div(decimals_factor).unwrap()
+        });
+
+        let two_factor = pow(2, 64);
+        let x = scaled_price
+            .integer_sqrt()
+            .checked_mul(two_factor)
+            .ok_or(ScopeError::IntegerOverflow)?;
+
+        let sqrt_factor = pow(10, price.exp).integer_sqrt();
+        Ok(x.checked_div(sqrt_factor)
+            .ok_or(ScopeError::IntegerOverflow)?
+            .as_u128())
+    }
+
+    pub fn sqrt_price_from_scope_prices(
+        price_a: Price,
+        price_b: Price,
+        decimals_a: u64,
+        decimals_b: u64,
+    ) -> ScopeResult<u128> {
+        calc_sqrt_price_from_scope_price(a_to_b(price_a, price_b)?, decimals_a, decimals_b)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use num::traits::Pow;
+
+    use crate::{
+        oracles::ktokens::kamino::price_utils::{a_to_b, calc_sqrt_price_from_scope_price},
+        Price,
+    };
+
+    use super::price_utils::sqrt_price_from_scope_prices;
+
+    pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
+        let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
+        (px * 2.0_f64.powf(64.0)) as u128
+    }
+
+    pub fn calc_price_from_sqrt_price(price: u128, decimals_a: u64, decimals_b: u64) -> f64 {
+        let sqrt_price_x_64 = price as f64;
+        (sqrt_price_x_64 / 2.0_f64.powf(64.0)).powf(2.0)
+            * 10.0_f64.pow(decimals_a as i32 - decimals_b as i32)
+    }
+
+    fn f(price: Price) -> f64 {
+        let factor = 10_f64.pow(price.exp as f64);
+        price.value as f64 / factor
+    }
+
+    fn p(price: f64, exp: u64) -> Price {
+        let factor = 10_f64.pow(exp as f64);
+        Price {
+            value: (price * factor) as u64,
+            exp,
+        }
+    }
+
+    #[test]
+    fn test_sqrt_price_from_scope_price() {
+        // To USD
+        let token_a_price = Price {
+            value: 1_000_000_000,
+            exp: 9,
+        };
+
+        // To USD
+        let token_b_price = Price {
+            value: 1_000_000_000,
+            exp: 9,
+        };
+
+        let a_to_b_price = a_to_b(token_a_price, token_b_price);
+        println!("a_to_b_price: {:?}", a_to_b_price);
+
+        // assert_eq!(sqrt_price_from_scope_price(scope_price), sqrt_price);
+    }
+
+    #[test]
+
+    fn test_sqrt_price_from_float() {
+        let price = 1.0;
+        let px1 = calc_sqrt_price_from_float_price(price, 6, 6);
+        let px2 = calc_sqrt_price_from_float_price(price, 9, 9);
+        let px3 = calc_sqrt_price_from_float_price(price, 6, 9);
+        let px4 = calc_sqrt_price_from_float_price(price, 9, 6);
+
+        println!("px1: {}", px1);
+        println!("px2: {}", px2);
+        println!("px3: {}", px3);
+        println!("px4: {}", px4);
+    }
+
+    #[test]
+
+    fn test_sqrt_price_from_price() {
+        let px = Price {
+            value: 1_000_000_000,
+            exp: 9,
+        };
+
+        // sqrt_price_from_price = (price * 10 ^ (decimals_b - decimals_a)).sqrt() * 2 ^ 64;
+
+        let x = calc_sqrt_price_from_scope_price(px, 6, 6).unwrap();
+        let y = calc_sqrt_price_from_float_price(f(px), 6, 6);
+
+        println!("x: {}", x);
+        println!("y: {}", y);
+
+        for (decimals_a, decimals_b) in
+            [(1, 10), (6, 6), (9, 6), (6, 9), (9, 9), (10, 1)].into_iter()
+        {
+            let x = calc_sqrt_price_from_float_price(f(px), decimals_a, decimals_b);
+            let y = calc_sqrt_price_from_scope_price(px, decimals_a, decimals_b).unwrap();
+
+            let px_x = calc_price_from_sqrt_price(x, decimals_a, decimals_b);
+            let px_y = calc_price_from_sqrt_price(y, decimals_a, decimals_b);
+
+            let diff = (px_x - px_y).abs();
+            println!("x: {}, y: {} diff: {}", x, y, diff);
+        }
+    }
+
+    #[test]
+    fn scope_prices_to_sqrt_prices() {
+        let decimals_a: u64 = 6;
+        let decimals_b: u64 = 6;
+
+        let a = 1.0;
+        let b = 2.0;
+
+        let price = a / b;
+        let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
+
+        // Now go the other way around
+        let a = p(a, decimals_a.into());
+        let b = p(b, decimals_b.into());
+        let actual = sqrt_price_from_scope_prices(a, b, decimals_a, decimals_b).unwrap();
+
+        println!("expected: {}", expected);
+        println!("actual: {}", actual);
+
+        println!(
+            "initial: {}, final: {}",
+            price,
+            calc_price_from_sqrt_price(actual, decimals_a, decimals_b)
+        );
+    }
+
+    fn run_test(decimals_a: u64, decimals_b: u64, a: f64, b: f64) -> f64 {
+        let price = a / b;
+        let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
+
+        // Now go the other way around
+        let a = p(a, decimals_a.into());
+        let b = p(b, decimals_b.into());
+        let actual = sqrt_price_from_scope_prices(a, b, decimals_a, decimals_b).unwrap();
+
+        println!("expected: {}", expected);
+        println!("actual: {}", actual);
+
+        let float_expected = price;
+        let float_actual = calc_price_from_sqrt_price(actual, decimals_a, decimals_b);
+        let float_diff = (float_expected - float_actual).abs() / float_expected;
+        println!(
+            "initial: {}, final: {}, diff: {}%",
+            float_expected,
+            float_actual,
+            float_diff * 100.0
+        );
+        float_diff
+    }
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn scope_prices_to_sqrt_prices_prop(
+            decimals_a in 1..12,
+            decimals_b in 1..12,
+            a in 1..200_000_000,
+            b in 1..200_000_000,
+        ) {
+
+            let price_float_factor = 10_000.0;
+            let a = a as f64 / price_float_factor;
+            let b = b as f64 / price_float_factor;
+            let decimals_a = u64::try_from(decimals_a).unwrap();
+            let decimals_b = u64::try_from(decimals_b).unwrap();
+
+            let float_diff = run_test(decimals_a, decimals_b, a, b);
+
+            prop_assert!(float_diff < 0.001);
+        }
+    }
 }
