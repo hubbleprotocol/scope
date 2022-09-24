@@ -45,27 +45,27 @@ fn holdings(
     prices: &TokenPrices,
 ) -> ScopeResult<U128> {
     let available = amounts_available(strategy);
+
+    let decimals_a = strategy.token_a_mint_decimals;
+    let decimals_b = strategy.token_b_mint_decimals;
+
     let sqrt_price_from_oracle = price_utils::sqrt_price_from_scope_prices(
         prices.price_a.price,
         prices.price_b.price,
-        strategy.token_a_mint_decimals,
-        strategy.token_b_mint_decimals,
+        decimals_a,
+        decimals_b,
     )?;
 
     if cfg!(feature = "debug") {
-        let decimals_a = strategy.token_a_mint_decimals;
-        let decimals_b = strategy.token_b_mint_decimals;
-
         let w = calc_price_from_sqrt_price(whirlpool.sqrt_price, decimals_a, decimals_b);
         let o = calc_price_from_sqrt_price(sqrt_price_from_oracle, decimals_a, decimals_b);
         let diff = (w - o).abs() / w;
-
         msg!("o: {} w: {} d: {}%", w, o, diff * 100.0);
     }
 
     let invested = amounts_invested(position, sqrt_price_from_oracle);
-
     // We want the minimum price we would get in the event of a liquidation so ignore pending fees and pending rewards
+
     let available_usd = amounts_usd(strategy, &available, prices)?;
     let invested_usd = amounts_usd(strategy, &invested, prices)?;
 
