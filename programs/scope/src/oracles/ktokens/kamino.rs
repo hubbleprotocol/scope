@@ -10,10 +10,11 @@ use decimal_wad::rate::U128;
 use whirlpool::math::sqrt_price_from_tick_index;
 pub use whirlpool::state::{Position, PositionRewardInfo, Whirlpool, WhirlpoolRewardInfo};
 
-use crate::oracles::ktokens::kamino::tests::calc_price_from_sqrt_price;
+use crate::oracles::ktokens::kamino::price_utils::calc_price_from_sqrt_price;
 use crate::scope_chain::ScopeChainAccount;
 use crate::utils::zero_copy_deserialize;
 use crate::{DatedPrice, OraclePrices, ScopeError, ScopeResult};
+use num::traits::Pow;
 
 use super::USD_DECIMALS_PRECISION;
 
@@ -67,6 +68,7 @@ fn holdings(
     // We want the minimum price we would get in the event of a liquidation so ignore pending fees and pending rewards
 
     let available_usd = amounts_usd(strategy, &available, prices)?;
+
     let invested_usd = amounts_usd(strategy, &invested, prices)?;
 
     let total_sum = available_usd
@@ -408,11 +410,19 @@ mod price_utils {
         U128::from(base).pow(U128::from(exp))
     }
 
+    fn abs_diff(a: i32, b: i32) -> u32 {
+        if a > b {
+            a.checked_sub(b).unwrap().try_into().unwrap()
+        } else {
+            b.checked_sub(a).unwrap().try_into().unwrap()
+        }
+    }
+
     fn decimals_factor(decimals_a: u64, decimals_b: u64) -> ScopeResult<u64> {
         let decimals_a = i32::try_from(decimals_a).map_err(|_e| ScopeError::IntegerOverflow)?;
         let decimals_b = i32::try_from(decimals_b).map_err(|_e| ScopeError::IntegerOverflow)?;
 
-        let diff = i32::abs_diff(decimals_a, decimals_b);
+        let diff = abs_diff(decimals_a, decimals_b);
         Ok(10_u64.pow(diff))
     }
 
@@ -428,6 +438,16 @@ mod price_utils {
         let px_b = U128::from(b.value.checked_mul(extra_factor_b).unwrap());
 
         let final_factor = pow(10, exp);
+
+        println!(
+            "a_to_b: a:{} b:{} px_a:{} px_b:{} final_factor:{} px_x*ff:{}",
+            a.value,
+            b.value,
+            px_a,
+            px_b,
+            final_factor,
+            px_a.checked_mul(final_factor).unwrap()
+        );
         let price_a_to_b = px_a
             .checked_mul(final_factor)
             .unwrap()
@@ -480,6 +500,12 @@ mod price_utils {
     ) -> ScopeResult<u128> {
         calc_sqrt_price_from_scope_price(a_to_b(price_a, price_b)?, decimals_a, decimals_b)
     }
+
+    pub fn calc_price_from_sqrt_price(price: u128, decimals_a: u64, decimals_b: u64) -> f64 {
+        let sqrt_price_x_64 = price as f64;
+        (sqrt_price_x_64 / 2.0_f64.powf(64.0)).powf(2.0)
+            * 10.0_f64.pow(decimals_a as i32 - decimals_b as i32)
+    }
 }
 
 #[cfg(test)]
@@ -487,7 +513,9 @@ mod tests {
     use num::traits::Pow;
 
     use crate::{
-        oracles::ktokens::kamino::price_utils::{a_to_b, calc_sqrt_price_from_scope_price},
+        oracles::ktokens::kamino::price_utils::{
+            a_to_b, calc_price_from_sqrt_price, calc_sqrt_price_from_scope_price,
+        },
         Price,
     };
 
@@ -496,12 +524,6 @@ mod tests {
     pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
         let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
         (px * 2.0_f64.powf(64.0)) as u128
-    }
-
-    pub fn calc_price_from_sqrt_price(price: u128, decimals_a: u64, decimals_b: u64) -> f64 {
-        let sqrt_price_x_64 = price as f64;
-        (sqrt_price_x_64 / 2.0_f64.powf(64.0)).powf(2.0)
-            * 10.0_f64.pow(decimals_a as i32 - decimals_b as i32)
     }
 
     fn f(price: Price) -> f64 {
@@ -608,14 +630,36 @@ mod tests {
         );
     }
 
-    fn run_test(decimals_a: u64, decimals_b: u64, a: f64, b: f64) -> f64 {
-        let price = a / b;
+    enum TestResult {
+        Res(f64),
+        Dismiss,
+    }
+
+    fn run_test(decimals_a: i32, decimals_b: i32, ua: i32, ub: i32) -> TestResult {
+        let price_float_factor = 10_000.0;
+        let fa = ua as f64 / price_float_factor; // float a
+        let fb = ub as f64 / price_float_factor; // float b
+        let decimals_a = u64::try_from(decimals_a).unwrap();
+        let decimals_b = u64::try_from(decimals_b).unwrap();
+
+        let sa = p(fa, decimals_a.into()); // scope a
+        let sb = p(fb, decimals_b.into()); // scope b
+
+        println!("uA: {}, uB: {}", ua, ub);
+        println!("fA: {}, fB: {}", fa, fb);
+        println!("sA: {:?}, sB: {:?}", sa, sb);
+        println!("dA: {}, dB: {}", decimals_a, decimals_b);
+
+        if sa.value == 0 || sb.value == 0 {
+            return TestResult::Dismiss;
+        }
+
+        let price = fa / fb;
         let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
 
         // Now go the other way around
-        let a = p(a, decimals_a.into());
-        let b = p(b, decimals_b.into());
-        let actual = sqrt_price_from_scope_prices(a, b, decimals_a, decimals_b).unwrap();
+
+        let actual = sqrt_price_from_scope_prices(sa, sb, decimals_a, decimals_b).unwrap();
 
         println!("expected: {}", expected);
         println!("actual: {}", actual);
@@ -629,10 +673,25 @@ mod tests {
             float_actual,
             float_diff * 100.0
         );
-        float_diff
+        TestResult::Res(float_diff)
     }
 
-    use proptest::prelude::*;
+    #[test]
+    fn scope_prices_to_sqrt_prices_prop_single() {
+        let decimals_a = 10;
+        let decimals_b = 1;
+
+        let a = 1;
+        let b = 1;
+
+        if let TestResult::Res(diff) = run_test(decimals_a, decimals_b, a, b) {
+            assert!(diff < 0.001);
+        } else {
+            println!("Test result dismissed");
+        }
+    }
+
+    use proptest::{prelude::*, test_runner::Reason};
     proptest! {
         #[test]
         fn scope_prices_to_sqrt_prices_prop(
@@ -642,15 +701,11 @@ mod tests {
             b in 1..200_000_000,
         ) {
 
-            let price_float_factor = 10_000.0;
-            let a = a as f64 / price_float_factor;
-            let b = b as f64 / price_float_factor;
-            let decimals_a = u64::try_from(decimals_a).unwrap();
-            let decimals_b = u64::try_from(decimals_b).unwrap();
-
-            let float_diff = run_test(decimals_a, decimals_b, a, b);
-
-            prop_assert!(float_diff < 0.001);
+            if let TestResult::Res(float_diff) = run_test(decimals_a, decimals_b, a, b) {
+                prop_assert!(float_diff < 0.001);
+            } else {
+                return Err(TestCaseError::Reject(Reason::from("Bad input")));
+            }
         }
     }
 }
