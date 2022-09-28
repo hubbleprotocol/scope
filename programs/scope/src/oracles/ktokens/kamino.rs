@@ -643,12 +643,7 @@ mod tests {
         );
     }
 
-    enum TestResult {
-        Res(f64),
-        Dismiss,
-    }
-
-    fn run_test(decimals_a: i32, decimals_b: i32, ua: i32, ub: i32) -> TestResult {
+    fn run_test(decimals_a: i32, decimals_b: i32, ua: i32, ub: i32) -> Option<f64> {
         let price_float_factor = 10_000.0;
         let fa = ua as f64 / price_float_factor; // float a
         let fb = ub as f64 / price_float_factor; // float b
@@ -664,7 +659,7 @@ mod tests {
         println!("dA: {}, dB: {}", decimals_a, decimals_b);
 
         if sa.value == 0 || sb.value == 0 {
-            return TestResult::Dismiss;
+            return None;
         }
 
         let price = fa / fb;
@@ -687,7 +682,7 @@ mod tests {
             float_actual,
             float_diff * 100.0
         );
-        TestResult::Res(float_diff)
+        Some(float_diff)
     }
 
     #[test]
@@ -698,7 +693,7 @@ mod tests {
         let a = 1;
         let b = 1048;
 
-        if let TestResult::Res(diff) = run_test(decimals_a, decimals_b, a, b) {
+        if let Some(diff) = run_test(decimals_a, decimals_b, a, b) {
             assert!(diff < 0.001);
         } else {
             println!("Test result dismissed");
@@ -715,7 +710,7 @@ mod tests {
             b in 1..200_000_000,
         ) {
 
-            if let TestResult::Res(float_diff) = run_test(decimals_a, decimals_b, a, b) {
+            if let Some(float_diff) = run_test(decimals_a, decimals_b, a, b) {
                 prop_assert!(float_diff < 0.001, "float_diff: {}", float_diff);
             } else {
                 return Err(TestCaseError::Reject(Reason::from("Bad input")));
