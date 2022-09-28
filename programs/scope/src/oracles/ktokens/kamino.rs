@@ -16,6 +16,7 @@ use crate::utils::zero_copy_deserialize;
 use crate::{DatedPrice, OraclePrices, ScopeError, ScopeResult};
 use num::traits::Pow;
 
+const TARGET_EXPONENT: u64 = 12;
 use super::USD_DECIMALS_PRECISION;
 
 pub fn get_price_per_full_share(
@@ -428,7 +429,7 @@ mod price_utils {
     }
 
     pub fn a_to_b(a: Price, b: Price) -> ScopeResult<Price> {
-        let exp = 12;
+        let exp = TARGET_EXPONENT;
         let exp = u64::max(exp, a.exp);
         let exp = u64::max(exp, b.exp);
 
@@ -714,10 +715,75 @@ mod tests {
 
     #[test]
     fn test_numerical_examples() {
-        // USDH-USDC
-        // USDC-USDT
-        // SOL-STSOL
-        // USH-USDC
-        // SOL-DUST
+        let sol = Price {
+            exp: 8,
+            value: 3232064150,
+        };
+        let eth = Price {
+            exp: 8,
+            value: 128549278944,
+        };
+        let btc = Price {
+            exp: 8,
+            value: 1871800000000,
+        };
+        let usdh = Price {
+            exp: 10,
+            value: 9984094565,
+        };
+        let stsol = Price {
+            exp: 8,
+            value: 3420000000,
+        };
+        let usdc = Price {
+            exp: 8,
+            value: 99998498,
+        };
+        let usdt = Price {
+            exp: 8,
+            value: 99985005,
+        };
+        let ush = Price {
+            exp: 10,
+            value: 9942477073,
+        };
+        let uxd = Price {
+            exp: 10,
+            value: 10007754362,
+        };
+        let dust = Price {
+            exp: 10,
+            value: 11962756205,
+        };
+        let usdr = Price {
+            exp: 10,
+            value: 9935635809,
+        };
+
+        for (price_a, price_b, expected_sqrt, decimals_a, decimals_b, tolerance) in [
+            (usdh, usdc, 18432369086522948808, 6, 6, 0.07),
+            (sol, stsol, 17927878403230908080, 9, 9, 0.07),
+            (usdc, usdt, 18446488013153244324, 6, 6, 0.07),
+            (ush, usdc, 581657083814290012, 9, 6, 0.07),
+            (usdr, usdc, 18387972314427037052, 6, 6, 0.07),
+            (sol, dust, 95888115807158641354, 9, 9, 0.07),
+            (sol, usdh, 3317976242955018545, 9, 6, 0.07),
+            (uxd, usdc, 18454272046764295796, 6, 6, 0.07),
+            (usdh, eth, 5149554401170243770, 6, 8, 0.4),
+            (usdh, btc, 134876121531740447, 6, 6, 0.4),
+        ] {
+            let actual =
+                sqrt_price_from_scope_prices(price_a, price_b, decimals_a, decimals_b).unwrap();
+
+            let expected = calc_price_from_sqrt_price(expected_sqrt, decimals_a, decimals_b);
+            let actual = calc_price_from_sqrt_price(actual, decimals_a, decimals_b);
+            let diff_pct = (actual - expected) / expected * 100.0;
+            println!("expected_sqrt: {}", expected_sqrt);
+            println!("actual: {}", actual);
+            println!("expected: {}", expected);
+            println!("diff: {}%", diff_pct);
+            println!("---");
+            assert!(diff_pct.abs() < tolerance) // 0.07% diff
+        }
     }
 }
