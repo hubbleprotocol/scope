@@ -273,5 +273,11 @@
     "oracle_mapping": "EsQkrtuJdRnDp6JvAcmRiYGoQbWL668TEZDW8VmrNcm3",
     "oracle_type": "SwitchboardV2",
     "max_age": 120
+  },
+  "50": {
+    "label": "kUXD-USDC_Orca/USD",
+    "oracle_mapping": "BfyQYYr2T9eJfMfq5gPXcq3SUkJSh2ahtk7ZNUCzkx9e",
+    "oracle_type": "KToken",
+    "max_age": 300
   }
 }

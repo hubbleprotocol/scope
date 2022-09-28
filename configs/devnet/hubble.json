@@ -265,5 +265,11 @@
     "label": "UXP/USD",
     "oracle_mapping": "5Uu6Lvyoanx2Q5vDMwuov6i8z5YSfz5cguqrHA7nsUqP",
     "oracle_type": "SwitchboardV2"
+  },
+  "50": {
+    "label": "Fake kUXD-USDC_Orca/USD",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 300
   }
 }
