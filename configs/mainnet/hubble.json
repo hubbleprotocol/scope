@@ -267,5 +267,11 @@
     "oracle_mapping": "6vmBbqQDd1YNkt1qVFueDDi4DTVz9mUykAbko7mni5Wa",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
+  },
+  "49": {
+    "label": "UXP/USD",
+    "oracle_mapping": "EsQkrtuJdRnDp6JvAcmRiYGoQbWL668TEZDW8VmrNcm3",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 120
   }
 }
