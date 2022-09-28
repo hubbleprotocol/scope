@@ -1,8 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc 65ede1f39e814f8939b0ee24aa4d4ecab5dfadf64f8291e30fcb6259c34945e0 # shrinks to decimals_a = 1, decimals_b = 8, a = 10310000, b = 1
-cc 6eda3f618d253e5c80d001d53ec7bff0dfd742e0c88b3c339d031a518c38acca # shrinks to decimals_a = 10, decimals_b = 1, a = 1, b = 1

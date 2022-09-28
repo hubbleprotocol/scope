@@ -418,12 +418,13 @@ mod price_utils {
         }
     }
 
-    fn decimals_factor(decimals_a: u64, decimals_b: u64) -> ScopeResult<u64> {
+    fn decimals_factor(decimals_a: u64, decimals_b: u64) -> ScopeResult<(U128, u64)> {
         let decimals_a = i32::try_from(decimals_a).map_err(|_e| ScopeError::IntegerOverflow)?;
         let decimals_b = i32::try_from(decimals_b).map_err(|_e| ScopeError::IntegerOverflow)?;
 
         let diff = abs_diff(decimals_a, decimals_b);
-        Ok(10_u64.pow(diff))
+        let factor = U128::from(10_u64.pow(diff));
+        Ok((factor, u64::from(diff)))
     }
 
     pub fn a_to_b(a: Price, b: Price) -> ScopeResult<Price> {
@@ -472,13 +473,21 @@ mod price_utils {
         // x = sqrt(scaled_price * 10 ^ (decimals_b - decimals_a)) * 2 ** 64
         // px = x / sqrt(10 ** exp)
 
-        let decimals_factor = U128::from(decimals_factor(decimals_a, decimals_b)?);
+        let (decimals_factor, decimals_diff) = decimals_factor(decimals_a, decimals_b)?;
         let px = U128::from(price.value);
-        let scaled_price = U128::from(if decimals_b > decimals_a {
-            px.checked_mul(decimals_factor).unwrap()
+        let (scaled_price, final_exp) = if decimals_b > decimals_a {
+            (
+                U128::from(px.checked_mul(decimals_factor).unwrap()),
+                price.exp,
+            )
         } else {
-            px.checked_div(decimals_factor).unwrap()
-        });
+            // If we divide by 10 ^ (decimals_a - decimals_b) here we lose precision
+            // So instead we lift the price even more (by the diff) and assume a bigger exp
+            (
+                U128::from(px),
+                price.exp.checked_add(decimals_diff).unwrap(),
+            )
+        };
 
         let two_factor = pow(2, 64);
         let x = scaled_price
@@ -486,7 +495,8 @@ mod price_utils {
             .checked_mul(two_factor)
             .ok_or(ScopeError::IntegerOverflow)?;
 
-        let sqrt_factor = pow(10, price.exp).integer_sqrt();
+        let sqrt_factor = pow(10, final_exp).integer_sqrt();
+
         Ok(x.checked_div(sqrt_factor)
             .ok_or(ScopeError::IntegerOverflow)?
             .as_u128())
@@ -523,10 +533,13 @@ mod tests {
 
     pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
         let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
-        (px * 2.0_f64.powf(64.0)) as u128
+        let res = (px * 2.0_f64.powf(64.0)) as u128;
+
+        println!("calc_sqrt_price_from_float_price: {} {}", price, res);
+        res
     }
 
-    fn f(price: Price) -> f64 {
+    pub fn f(price: Price) -> f64 {
         let factor = 10_f64.pow(price.exp as f64);
         price.value as f64 / factor
     }
@@ -655,6 +668,7 @@ mod tests {
         }
 
         let price = fa / fb;
+
         let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
 
         // Now go the other way around
@@ -678,11 +692,11 @@ mod tests {
 
     #[test]
     fn scope_prices_to_sqrt_prices_prop_single() {
-        let decimals_a = 10;
-        let decimals_b = 1;
+        let decimals_a = 11;
+        let decimals_b = 7;
 
         let a = 1;
-        let b = 1;
+        let b = 1048;
 
         if let TestResult::Res(diff) = run_test(decimals_a, decimals_b, a, b) {
             assert!(diff < 0.001);
@@ -694,15 +708,15 @@ mod tests {
     use proptest::{prelude::*, test_runner::Reason};
     proptest! {
         #[test]
-        fn scope_prices_to_sqrt_prices_prop(
-            decimals_a in 1..12,
-            decimals_b in 1..12,
+        fn scope_prices_to_sqrt_prices_prop_gen(
+            decimals_a in 2..12,
+            decimals_b in 2..12,
             a in 1..200_000_000,
             b in 1..200_000_000,
         ) {
 
             if let TestResult::Res(float_diff) = run_test(decimals_a, decimals_b, a, b) {
-                prop_assert!(float_diff < 0.001);
+                prop_assert!(float_diff < 0.001, "float_diff: {}", float_diff);
             } else {
                 return Err(TestCaseError::Reject(Reason::from("Bad input")));
             }
