@@ -51,6 +51,9 @@ fn holdings(
     let decimals_a = strategy.token_a_mint_decimals;
     let decimals_b = strategy.token_b_mint_decimals;
 
+    // https://github.com/0xparashar/UniV3NFTOracle/blob/master/contracts/UniV3NFTOracle.sol#L27
+    // We are using the sqrt price derived from price_a and price_b
+    // instead of the whirlpool price which could be manipulated/stale
     let sqrt_price_from_oracle = price_utils::sqrt_price_from_scope_prices(
         prices.price_a.price,
         prices.price_b.price,
@@ -441,15 +444,6 @@ mod price_utils {
 
         let final_factor = pow(10, exp);
 
-        println!(
-            "a_to_b: a:{} b:{} px_a:{} px_b:{} final_factor:{} px_x*ff:{}",
-            a.value,
-            b.value,
-            px_a,
-            px_b,
-            final_factor,
-            px_a.checked_mul(final_factor).unwrap()
-        );
         let price_a_to_b = px_a
             .checked_mul(final_factor)
             .unwrap()
@@ -530,7 +524,6 @@ mod tests {
         let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
         let res = (px * 2.0_f64.powf(64.0)) as u128;
 
-        println!("calc_sqrt_price_from_float_price: {} {}", price, res);
         res
     }
 
