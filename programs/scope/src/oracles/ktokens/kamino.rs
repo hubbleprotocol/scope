@@ -476,17 +476,11 @@ mod price_utils {
         let (decimals_factor, decimals_diff) = decimals_factor(decimals_a, decimals_b)?;
         let px = U128::from(price.value);
         let (scaled_price, final_exp) = if decimals_b > decimals_a {
-            (
-                U128::from(px.checked_mul(decimals_factor).unwrap()),
-                price.exp,
-            )
+            (px.checked_mul(decimals_factor).unwrap(), price.exp)
         } else {
             // If we divide by 10 ^ (decimals_a - decimals_b) here we lose precision
             // So instead we lift the price even more (by the diff) and assume a bigger exp
-            (
-                U128::from(px),
-                price.exp.checked_add(decimals_diff).unwrap(),
-            )
+            (px, price.exp.checked_add(decimals_diff).unwrap())
         };
 
         let two_factor = pow(2, 64);
@@ -716,5 +710,14 @@ mod tests {
                 return Err(TestCaseError::Reject(Reason::from("Bad input")));
             }
         }
+    }
+
+    #[test]
+    fn test_numerical_examples() {
+        // USDH-USDC
+        // USDC-USDT
+        // SOL-STSOL
+        // USH-USDC
+        // SOL-DUST
     }
 }
