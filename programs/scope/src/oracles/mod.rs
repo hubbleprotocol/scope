@@ -1,6 +1,7 @@
 pub mod ctokens;
 pub mod ktokens;
 pub mod pyth;
+pub mod pyth_ema;
 pub mod spl_stake;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
@@ -36,6 +37,8 @@ pub enum OracleType {
     SplStake = 5,
     /// KTokens from Kamino
     KToken = 6,
+    /// Pyth Exponentially-Weighted Moving Average
+    PythEMA = 7,
 }
 
 /// Get the price for a given oracle type
@@ -60,6 +63,7 @@ where
         OracleType::CToken => ctokens::get_price(base_account, clock),
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
         OracleType::KToken => ktokens::get_price(base_account, extra_accounts),
+        OracleType::PythEMA => pyth_ema::get_price(base_account),
     }
 }
 
@@ -79,5 +83,6 @@ pub fn validate_oracle_account(
         OracleType::CToken => Ok(()),        // TODO how shall we validate ctoken account?
         OracleType::SplStake => Ok(()),
         OracleType::KToken => Ok(()),
+        OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
     }
 }

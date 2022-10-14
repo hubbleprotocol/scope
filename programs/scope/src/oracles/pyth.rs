@@ -36,7 +36,7 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
         return err!(ScopeError::PriceNotValid);
     };
 
-    let price = validate_valid_price(&pyth_price).map_err(|e| {
+    let price = validate_valid_price(&pyth_price, ORACLE_CONFIDENCE_FACTOR).map_err(|e| {
         msg!("Invalid price on pyth account {}", price_info.key);
         e
     })?;
@@ -52,7 +52,10 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
     })
 }
 
-fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
+pub fn validate_valid_price(
+    pyth_price: &pyth_client::Price,
+    oracle_confidence_factor: u64,
+) -> Result<u64> {
     if cfg!(feature = "skip_price_validation") {
         return Ok(u64::try_from(pyth_price.price).unwrap());
     }
@@ -62,7 +65,7 @@ fn validate_valid_price(pyth_price: &pyth_client::Price) -> Result<u64> {
         return err!(ScopeError::PriceNotValid);
     }
     let conf: u64 = pyth_price.conf;
-    let conf_50x: u64 = conf.checked_mul(ORACLE_CONFIDENCE_FACTOR).unwrap();
+    let conf_50x: u64 = conf.checked_mul(oracle_confidence_factor).unwrap();
     if conf_50x > price {
         return err!(ScopeError::PriceNotValid);
     };
