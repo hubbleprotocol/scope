@@ -45,6 +45,6 @@ service-base-chart:
   #      value: "TRUE"
   secrets:
     keypair.json:
-    VALIDATOR_RPC_URL:
+#    VALIDATOR_RPC_URL:
   config:
     mapping.json:
