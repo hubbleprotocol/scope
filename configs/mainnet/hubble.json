@@ -281,72 +281,72 @@
     "max_age": 300
   },
   "51": {
-    "label": "SOL/USD",
+    "label": "SOL/USD EMA",
     "oracle_mapping": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
     "oracle_type": "PythEMA"
   },
   "52": {
-    "label": "ETH/USD",
+    "label": "ETH/USD EMA",
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
     "oracle_type": "PythEMA"
   },
   "53": {
-    "label": "BTC/USD",
+    "label": "BTC/USD EMA",
     "oracle_mapping": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU",
     "oracle_type": "PythEMA"
   },
   "54": {
-    "label": "SRM/USD",
+    "label": "SRM/USD EMA",
     "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym",
     "oracle_type": "PythEMA"
   },
   "55": {
-    "label": "RAY/USD",
+    "label": "RAY/USD EMA",
     "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB",
     "oracle_type": "PythEMA"
   },
   "56": {
-    "label": "FTT/USD",
+    "label": "FTT/USD EMA",
     "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF",
     "oracle_type": "PythEMA"
   },
   "57": {
-    "label": "MSOL/USD",
+    "label": "MSOL/USD EMA",
     "oracle_mapping": "E4v1BBgoso9s64TQvmyownAVJbhbEPGyzA3qn4n46qj9",
     "oracle_type": "PythEMA"
   },
   "58": {
-    "label": "BNB/USD",
+    "label": "BNB/USD EMA",
     "oracle_mapping": "4CkQJBxhU8EZ2UjhigbtdaPbpTe6mqf811fipYBFbSYN",
     "oracle_type": "PythEMA"
   },
   "59": {
-    "label": "AVAX/USD",
+    "label": "AVAX/USD EMA",
     "oracle_mapping": "Ax9ujW5B9oqcv59N8m6f1BpTBq2rGeGaBcpKjC5UYsXU",
     "oracle_type": "PythEMA"
   },
   "60": {
-    "label": "STSOL/USD",
+    "label": "STSOL/USD EMA",
     "oracle_mapping": "Bt1hEbY62aMriY1SyQqbeZbm8VmSbQVGBFzSzMuVNWzN",
     "oracle_type": "PythEMA"
   },
   "61": {
-    "label": "USDC/USD",
+    "label": "USDC/USD EMA",
     "oracle_mapping": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
     "oracle_type": "PythEMA"
   },
   "62": {
-    "label": "USDT/USD",
+    "label": "USDT/USD EMA",
     "oracle_mapping": "3vxLXJqLqF3JG5TCbYycbKWRBbCJQLxQmBGCkyqEEefL",
     "oracle_type": "PythEMA"
   },
   "63": {
-    "label": "SLND/USD",
+    "label": "SLND/USD EMA",
     "oracle_mapping": "HkGEau5xY1e8REXUFbwvWWvyJGywkgiAZZFpryyraWqJ",
     "oracle_type": "PythEMA"
   },
   "64": {
-    "label": "DAI/USD",
+    "label": "DAI/USD EMA",
     "oracle_mapping": "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
     "oracle_type": "PythEMA",
     "max_age": 100
