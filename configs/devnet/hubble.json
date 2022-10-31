@@ -341,5 +341,23 @@
     "label": "DAI/USD EMA",
     "oracle_mapping": "A8XFp1YSUqyDDvTwRXM1vmhPHCLxzncG45t1ZH9CMYq7",
     "oracle_type": "PythEMA"
+  },
+  "65": {
+    "label": "TWAP STSOL/USD",
+    "oracle_mapping": "Dh4mUxa7mjDvGTTfUuMyCmr4LPQCNtrccr6EaEi7fceZ",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "66": {
+    "label": "TWAP wstETH/USD",
+    "oracle_mapping": "JCg21XRg6iKMow6kd3HatiEmFYBqcnm4FswHfebW5sy1",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "67": {
+    "label": "TWAP DUST/USD",
+    "oracle_mapping": "7eWM63Q7x23E6GGbTUkJXYgo1C1AoNeifomxbxNFwBwy",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   }
 }

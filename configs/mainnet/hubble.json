@@ -350,5 +350,17 @@
     "oracle_mapping": "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
     "oracle_type": "PythEMA",
     "max_age": 100
+  },
+  "65": {
+    "label": "TWAP wstETH/USD",
+    "oracle_mapping": "DheBkWbYZU46umAa2tj9bEwrK2p88wN5HZzScCTxUZns",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "66": {
+    "label": "TWAP DUST/USD",
+    "oracle_mapping": "BKjEX3KhRLhm2SCrcAospDC8brpwSHkCXwTYGXni7fxJ",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   }
 }
