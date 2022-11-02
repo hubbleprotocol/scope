@@ -353,5 +353,10 @@
     "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
+  },
+  "67": {
+    "label": "JITOSOL/SOL",
+    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
+    "oracle_type": "SplStake"
   }
 }
