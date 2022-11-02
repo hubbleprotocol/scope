@@ -349,7 +349,7 @@
     "label": "DAI/USD EMA",
     "oracle_mapping": "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
     "oracle_type": "PythEMA",
-    "max_age": 100
+    "max_age": 300
   },
   "65": {
     "label": "TWAP wstETH/USD",

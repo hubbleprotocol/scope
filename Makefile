@@ -128,13 +128,19 @@ test-validator:
 print-pubkeys: $(SCOPE_CLI)
 >@ ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) get-pubkeys --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
+## For these two commands to work you must set URL=RPC for the cluster you try to clone
+## NOTE: Default RPC might be rate limited, use a custom one
+##
+## For example:
+## $ export URL="https://misty-frosty-pond.solana-mainnet.quiknode.pro/3dae9f501117a5bc43a15e9aeb052b03732bdc52/"
+## $ make clone-mainnet-to-local-validator
 clone-mainnet-to-local-validator: $(SCOPE_CLI)
 >@ export ORACLE_PUBKEYS="${shell CLUSTER=mainnet make print-pubkeys}"
-> solana-test-validator -r --url mainnet-beta --clone $$ORACLE_PUBKEYS
+> solana-test-validator -r --url $(URL) --clone $$ORACLE_PUBKEYS
 
 clone-devnet-to-local-validator:
 >@ export ORACLE_PUBKEYS="${shell CLUSTER=devnet make print-pubkeys}"
-> solana-test-validator -r --url devnet --clone $$ORACLE_PUBKEYS
+> solana-test-validator -r --url $(URL) --clone $$ORACLE_PUBKEYS
 
 test: test-rust test-ts
 

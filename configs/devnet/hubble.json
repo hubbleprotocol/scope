@@ -67,8 +67,8 @@
   },
   "13": {
     "label": "STSOL/USD",
-    "oracle_mapping": "9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA",
-    "oracle_type": "SwitchboardV2"
+    "oracle_mapping": "2LwhbcswZekofMNRtDRMukZJNSRUiKYMFbqtBwqjDfke",
+    "oracle_type": "Pyth"
   },
   "14": {
     "label": "cSOL/SOL",
@@ -318,18 +318,18 @@
     "oracle_type": "PythEMA"
   },
   "60": {
+    "label": "STSOL/USD EMA",
+    "oracle_mapping": "2LwhbcswZekofMNRtDRMukZJNSRUiKYMFbqtBwqjDfke",
+    "oracle_type": "PythEMA"
+  },
+  "61": {
     "label": "USDC/USD EMA",
     "oracle_mapping": "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7",
     "oracle_type": "PythEMA"
   },
-  "61": {
+  "62": {
     "label": "USDT/USD EMA",
     "oracle_mapping": "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto",
-    "oracle_type": "PythEMA"
-  },
-  "62": {
-    "label": "ORCA/USD EMA",
-    "oracle_mapping": "A1WttWF7X3Rg6ZRpB2YQUFHCRh1kiXV8sKKLV3S9neJV",
     "oracle_type": "PythEMA"
   },
   "63": {
@@ -343,20 +343,14 @@
     "oracle_type": "PythEMA"
   },
   "65": {
-    "label": "TWAP STSOL/USD",
-    "oracle_mapping": "Dh4mUxa7mjDvGTTfUuMyCmr4LPQCNtrccr6EaEi7fceZ",
+    "label": "TWAP wstETH/USD",
+    "oracle_mapping": "EAZWGNvNAB8gizuGyyBPQHEPyqUwscrDmQE11eWVbJrQ",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
   "66": {
-    "label": "TWAP wstETH/USD",
-    "oracle_mapping": "JCg21XRg6iKMow6kd3HatiEmFYBqcnm4FswHfebW5sy1",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 300
-  },
-  "67": {
     "label": "TWAP DUST/USD",
-    "oracle_mapping": "7eWM63Q7x23E6GGbTUkJXYgo1C1AoNeifomxbxNFwBwy",
+    "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   }
