@@ -279,5 +279,10 @@
     "oracle_mapping": "BfyQYYr2T9eJfMfq5gPXcq3SUkJSh2ahtk7ZNUCzkx9e",
     "oracle_type": "KToken",
     "max_age": 300
+  },
+  "51": {
+    "label": "JITOSOL/SOL",
+    "oracle_mapping": "Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb",
+    "oracle_type": "SplStake"
   }
 }
