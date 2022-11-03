@@ -273,90 +273,90 @@
     "max_age": 300
   },
   "51": {
+    "label": "JITOSOL/SOL",
+    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
+    "oracle_type": "SplStake"
+  },
+  "52": {
     "label": "SOL/USD EMA",
     "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
     "oracle_type": "PythEMA"
   },
-  "52": {
+  "53": {
     "label": "ETH/USD EMA",
     "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw",
     "oracle_type": "PythEMA"
   },
-  "53": {
+  "54": {
     "label": "BTC/USD EMA",
     "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J",
     "oracle_type": "PythEMA"
   },
-  "54": {
+  "55": {
     "label": "SRM/USD EMA",
     "oracle_mapping": "992moaMQKs32GKZ9dxi8keyM2bUmbrwBZpK4p2K6X5Vs",
     "oracle_type": "PythEMA"
   },
-  "55": {
+  "56": {
     "label": "RAY/USD EMA",
     "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6",
     "oracle_type": "PythEMA"
   },
-  "56": {
+  "57": {
     "label": "FTT/USD EMA",
     "oracle_mapping": "6vivTRs5ZPeeXbjo7dfburfaYDWoXjBtdtuYgQRuGfu",
     "oracle_type": "PythEMA"
   },
-  "57": {
+  "58": {
     "label": "MSOL/USD EMA",
     "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ",
     "oracle_type": "PythEMA"
   },
-  "58": {
+  "59": {
     "label": "BNB/USD EMA",
     "oracle_mapping": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b",
     "oracle_type": "PythEMA"
   },
-  "59": {
+  "60": {
     "label": "AVAX/USD EMA",
     "oracle_mapping": "FVb5h1VmHPfVb1RfqZckchq18GxRv4iKt8T4eVTQAqdz",
     "oracle_type": "PythEMA"
   },
-  "60": {
+  "61": {
     "label": "STSOL/USD EMA",
     "oracle_mapping": "2LwhbcswZekofMNRtDRMukZJNSRUiKYMFbqtBwqjDfke",
     "oracle_type": "PythEMA"
   },
-  "61": {
+  "62": {
     "label": "USDC/USD EMA",
     "oracle_mapping": "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7",
     "oracle_type": "PythEMA"
   },
-  "62": {
+  "63": {
     "label": "USDT/USD EMA",
     "oracle_mapping": "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto",
     "oracle_type": "PythEMA"
   },
-  "63": {
+  "64": {
     "label": "SLND/USD EMA",
     "oracle_mapping": "FtwKARNAnZK2Nx1W4KVXzbyDzuRJqmApHRBtQpZ49HDv",
     "oracle_type": "PythEMA"
   },
-  "64": {
+  "65": {
     "label": "DAI/USD EMA",
     "oracle_mapping": "A8XFp1YSUqyDDvTwRXM1vmhPHCLxzncG45t1ZH9CMYq7",
     "oracle_type": "PythEMA"
   },
-  "65": {
+  "66": {
     "label": "TWAP wstETH/USD",
     "oracle_mapping": "EAZWGNvNAB8gizuGyyBPQHEPyqUwscrDmQE11eWVbJrQ",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
-  "66": {
+  "67": {
     "label": "TWAP DUST/USD",
     "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
-  },
-  "67": {
-    "label": "JITOSOL/SOL",
-    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
-    "oracle_type": "SplStake"
   }
 }
