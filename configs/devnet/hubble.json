@@ -278,72 +278,72 @@
     "oracle_type": "SplStake"
   },
   "52": {
-    "label": "SOL/USD EMA",
+    "label": "EMA SOL/USD",
     "oracle_mapping": "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
     "oracle_type": "PythEMA"
   },
   "53": {
-    "label": "ETH/USD EMA",
+    "label": "EMA ETH/USD",
     "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw",
     "oracle_type": "PythEMA"
   },
   "54": {
-    "label": "BTC/USD EMA",
+    "label": "EMA BTC/USD",
     "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J",
     "oracle_type": "PythEMA"
   },
   "55": {
-    "label": "SRM/USD EMA",
+    "label": "EMA SRM/USD",
     "oracle_mapping": "992moaMQKs32GKZ9dxi8keyM2bUmbrwBZpK4p2K6X5Vs",
     "oracle_type": "PythEMA"
   },
   "56": {
-    "label": "RAY/USD EMA",
+    "label": "EMA RAY/USD",
     "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6",
     "oracle_type": "PythEMA"
   },
   "57": {
-    "label": "FTT/USD EMA",
+    "label": "EMA FTT/USD",
     "oracle_mapping": "6vivTRs5ZPeeXbjo7dfburfaYDWoXjBtdtuYgQRuGfu",
     "oracle_type": "PythEMA"
   },
   "58": {
-    "label": "MSOL/USD EMA",
+    "label": "EMA MSOL/USD",
     "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ",
     "oracle_type": "PythEMA"
   },
   "59": {
-    "label": "BNB/USD EMA",
+    "label": "EMA BNB/USD",
     "oracle_mapping": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b",
     "oracle_type": "PythEMA"
   },
   "60": {
-    "label": "AVAX/USD EMA",
+    "label": "EMA AVAX/USD",
     "oracle_mapping": "FVb5h1VmHPfVb1RfqZckchq18GxRv4iKt8T4eVTQAqdz",
     "oracle_type": "PythEMA"
   },
   "61": {
-    "label": "STSOL/USD EMA",
+    "label": "EMA STSOL/USD",
     "oracle_mapping": "2LwhbcswZekofMNRtDRMukZJNSRUiKYMFbqtBwqjDfke",
     "oracle_type": "PythEMA"
   },
   "62": {
-    "label": "USDC/USD EMA",
+    "label": "EMA USDC/USD",
     "oracle_mapping": "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7",
     "oracle_type": "PythEMA"
   },
   "63": {
-    "label": "USDT/USD EMA",
+    "label": "EMA USDT/USD",
     "oracle_mapping": "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto",
     "oracle_type": "PythEMA"
   },
   "64": {
-    "label": "SLND/USD EMA",
+    "label": "EMA SLND/USD",
     "oracle_mapping": "FtwKARNAnZK2Nx1W4KVXzbyDzuRJqmApHRBtQpZ49HDv",
     "oracle_type": "PythEMA"
   },
   "65": {
-    "label": "DAI/USD EMA",
+    "label": "EMA DAI/USD",
     "oracle_mapping": "A8XFp1YSUqyDDvTwRXM1vmhPHCLxzncG45t1ZH9CMYq7",
     "oracle_type": "PythEMA"
   },

@@ -19,6 +19,7 @@ export enum OracleType {
   YiToken = 3,
   CToken = 4,
   SplStake = 5,
+  PythEMA = 6,
 }
 
 export interface ITokenInput {
@@ -54,6 +55,7 @@ export const oracles: Record<OracleType, IMockOracle> = {
   [OracleType.YiToken]: new yi.YiMockOracle(),
   [OracleType.CToken]: new ctokens.CTokenMockOracle(),
   [OracleType.SplStake]: new spl_stake.StakePoolMockOracle(),
+  [OracleType.PythEMA]: new pyth.PythMockOracle(),
 };
 
 export async function createFakeAccounts(
