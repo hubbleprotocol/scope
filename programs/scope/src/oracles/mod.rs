@@ -1,4 +1,5 @@
 pub mod ctokens;
+pub mod fixed_price;
 pub mod ktokens;
 pub mod pyth;
 pub mod pyth_ema;
@@ -39,6 +40,8 @@ pub enum OracleType {
     KToken = 6,
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA = 7,
+    /// Fixed price 9k
+    FixedPrice = 8,
 }
 
 /// Get the price for a given oracle type
@@ -64,6 +67,7 @@ where
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
         OracleType::KToken => ktokens::get_price(base_account, extra_accounts),
         OracleType::PythEMA => pyth_ema::get_price(base_account),
+        OracleType::FixedPrice => fixed_price::get_price(),
     }
 }
 
@@ -84,5 +88,6 @@ pub fn validate_oracle_account(
         OracleType::SplStake => Ok(()),
         OracleType::KToken => Ok(()),
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
+        OracleType::FixedPrice => Ok(()),
     }
 }

@@ -72,7 +72,8 @@ pub fn entry_from_config(
         | OracleType::SwitchboardV2
         | OracleType::CToken
         | OracleType::SplStake
-        | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
+        | OracleType::PythEMA
+        | OracleType::FixedPrice => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
         OracleType::YiToken => Box::new(YiOracle::new(token_conf, default_max_age, rpc)?),
         OracleType::KToken => Box::new(KTokenOracle::new(token_conf, default_max_age, rpc)?),
     })

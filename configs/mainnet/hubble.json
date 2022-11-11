@@ -13,7 +13,7 @@
   "2": {
     "label": "BTC/USD",
     "oracle_mapping": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU",
-    "oracle_type": "Pyth"
+    "oracle_type": "FixedPrice"
   },
   "3": {
     "label": "SRM/USD",
