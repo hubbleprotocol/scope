@@ -17,8 +17,8 @@
   },
   "3": {
     "label": "SRM/USD",
-    "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym",
-    "oracle_type": "Pyth"
+    "oracle_mapping": "BxT1HHvUCKLNijG7WJuGMRDE9abYmwpASgaSC7LCFoZj",
+    "oracle_type": "SwitchboardV2"
   },
   "4": {
     "label": "RAY/USD",
