@@ -32,8 +32,8 @@
   },
   "6": {
     "label": "MSOL/USD",
-    "oracle_mapping": "E4v1BBgoso9s64TQvmyownAVJbhbEPGyzA3qn4n46qj9",
-    "oracle_type": "Pyth"
+    "oracle_mapping": "B9jFac7bixjUX4zayL2J2qn1YqdbFqNseGbSL5pVForc",
+    "oracle_type": "SwitchboardV2"
   },
   "7": {
     "label": "scnSOL/SOL",
@@ -70,8 +70,8 @@
   },
   "13": {
     "label": "STSOL/USD",
-    "oracle_mapping": "Bt1hEbY62aMriY1SyQqbeZbm8VmSbQVGBFzSzMuVNWzN",
-    "oracle_type": "Pyth"
+    "oracle_mapping": "6SUi9aFGMoXKFucmMMoTpZjXx1d8tZ5nrAJuxkUWwYeM",
+    "oracle_type": "SwitchboardV2"
   },
   "14": {
     "label": "cSOL/SOL",
