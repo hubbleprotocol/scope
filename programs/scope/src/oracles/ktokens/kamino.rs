@@ -522,9 +522,7 @@ mod tests {
 
     pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
         let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
-        let res = (px * 2.0_f64.powf(64.0)) as u128;
-
-        res
+        (px * 2.0_f64.powf(64.0)) as u128
     }
 
     pub fn f(price: Price) -> f64 {
@@ -617,8 +615,8 @@ mod tests {
         let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
 
         // Now go the other way around
-        let a = p(a, decimals_a.into());
-        let b = p(b, decimals_b.into());
+        let a = p(a, decimals_a);
+        let b = p(b, decimals_b);
         let actual = sqrt_price_from_scope_prices(a, b, decimals_a, decimals_b).unwrap();
 
         println!("expected: {}", expected);
@@ -638,8 +636,8 @@ mod tests {
         let decimals_a = u64::try_from(decimals_a).unwrap();
         let decimals_b = u64::try_from(decimals_b).unwrap();
 
-        let sa = p(fa, decimals_a.into()); // scope a
-        let sb = p(fb, decimals_b.into()); // scope b
+        let sa = p(fa, decimals_a); // scope a
+        let sb = p(fb, decimals_b); // scope b
 
         println!("uA: {}, uB: {}", ua, ub);
         println!("fA: {}, fB: {}", fa, fb);

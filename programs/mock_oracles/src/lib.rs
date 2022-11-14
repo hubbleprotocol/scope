@@ -1,3 +1,4 @@
+#![allow(clippy::result_large_err)] //Needed because we can't change Anchor result type
 mod ctokens;
 mod externals;
 pub mod pc;

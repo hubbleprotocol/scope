@@ -166,7 +166,7 @@ fn main() -> Result<()> {
                 }
                 crank(
                     &mut scope,
-                    (&mapping).as_ref(),
+                    (mapping).as_ref(),
                     refresh_interval_slot,
                     num_retries_before_error,
                     old_price_is_error,
@@ -203,7 +203,7 @@ fn upload(scope: &mut ScopeClient, mapping: &impl AsRef<Path>) -> Result<()> {
 fn download(scope: &mut ScopeClient, mapping: &impl AsRef<Path>) -> Result<()> {
     scope.download_oracle_mapping(0)?;
     let token_list = scope.get_local_mapping()?;
-    token_list.save_to_file(&mapping)
+    token_list.save_to_file(mapping)
 }
 
 fn show(scope: &mut ScopeClient, mapping_op: &Option<impl AsRef<Path>>) -> Result<()> {

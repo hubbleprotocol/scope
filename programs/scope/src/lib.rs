@@ -1,3 +1,4 @@
+#![allow(clippy::result_large_err)] //Needed because we can't change Anchor result type
 pub mod oracles;
 pub mod program_id;
 pub mod utils;
