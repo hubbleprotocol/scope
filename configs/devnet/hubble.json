@@ -55,11 +55,6 @@
     "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
     "oracle_type": "SplStake"
   },
-  "11": {
-    "label": "SaberMSOL/SOL",
-    "oracle_mapping": "2CpB8n1hntXDCQ3E7wEARZH8S8mrtdpZhG2FdYZs8NoU",
-    "oracle_type": "SwitchboardV1"
-  },
   "12": {
     "label": "USDH/USD",
     "oracle_mapping": "6Hn9n8eKbbzxMCpkkZBYjS9kHktfMDucQ77jhHmjasuq",
