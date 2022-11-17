@@ -216,7 +216,7 @@
   },
   "41": {
     "label": "DUST/USD",
-    "oracle_mapping": "C5tuUPi7xJHBHZGZX6wWYf1Svm6jtTVwYrYrBCiEVejK",
+    "oracle_mapping": "5WQJQmgDCeDRAqqqtTRdzb4WZcZs7TkTq1fjtHRxmpGk",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
