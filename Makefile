@@ -38,12 +38,15 @@ ifeq ($(CLUSTER),localnet)
 	URL ?= "http://127.0.0.1:8899"
 endif
 ifeq ($(CLUSTER),mainnet)
-	URL ?= "https://solana-api.projectserum.com"
+   SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
+	URL ?= "https://misty-frosty-pond.solana-mainnet.quiknode.pro/3dae9f501117a5bc43a15e9aeb052b03732bdc52/"
 endif
 ifeq ($(CLUSTER),mainnet-beta)
+   SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
 	URL ?= "https://api.mainnet-beta.solana.com"
 endif
 ifeq ($(CLUSTER),devnet)
+   SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/2/
 	URL ?= "https://api.devnet.solana.com"
 endif
 ifeq ($(URL),)
@@ -63,7 +66,7 @@ SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_KEYPAIR)
 FAKE_ORACLES_PROGRAM_ID != solana-keygen pubkey $(FAKE_ORACLES_PROGRAM_KEYPAIR)
 PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
-.PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env format
+.PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env format print-switchboard-links
 
 check-env:
 >@ echo "CLUSTER=$(CLUSTER)" 
@@ -179,3 +182,6 @@ get-prices: $(SCOPE_CLI)
 format:
 > prettier --write "./**/*.ts"
 > cargo fmt
+
+print-switchboard-links:
+>@ jq 'to_entries | map(.value) | .[]' ./configs/$(CLUSTER)/$(FEED_NAME).json | tail -n +2 | jq 'select(.oracle_type=="SwitchboardV2")' | jq '.oracle_mapping' | xargs -I % echo "$(SWITCHBOARD_BASE_URL)%"

@@ -12,13 +12,15 @@
   },
   "2": {
     "label": "BTC/USD",
-    "oracle_mapping": "9TUfh7phZqBAYDDLEuQy6q9rVt7qJ5kaeNt3htt2KP4e",
-    "oracle_type": "SwitchboardV2"
+    "oracle_mapping": "67VLKBe7jcqY8hDY9TL19sT4gNrCXhHUVCfJN4YdXvYy",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "3": {
     "label": "SRM/USD",
     "oracle_mapping": "BxT1HHvUCKLNijG7WJuGMRDE9abYmwpASgaSC7LCFoZj",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "4": {
     "label": "RAY/USD",
@@ -33,7 +35,8 @@
   "6": {
     "label": "MSOL/USD",
     "oracle_mapping": "B9jFac7bixjUX4zayL2J2qn1YqdbFqNseGbSL5pVForc",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "7": {
     "label": "scnSOL/SOL",
@@ -65,7 +68,8 @@
   "13": {
     "label": "STSOL/USD",
     "oracle_mapping": "6SUi9aFGMoXKFucmMMoTpZjXx1d8tZ5nrAJuxkUWwYeM",
-    "oracle_type": "SwitchboardV2"
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "14": {
     "label": "cSOL/SOL",
