@@ -24,7 +24,7 @@ endef
 
 # TODO: not sure if it really works
 ifneq (,$(wildcard ./.env))
-	include ./.env
+   include ./.env
 endif
 
 CLUSTER ?= localnet
@@ -35,24 +35,24 @@ FEED_NAME ?= hubble
 $(eval $(call DEPENDABLE_VAR,CLUSTER))
 
 ifeq ($(CLUSTER),localnet)
-	URL ?= "http://127.0.0.1:8899"
+   URL ?= "http://127.0.0.1:8899"
 endif
 ifeq ($(CLUSTER),mainnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
-	URL ?= "https://misty-frosty-pond.solana-mainnet.quiknode.pro/3dae9f501117a5bc43a15e9aeb052b03732bdc52/"
+   URL ?= "https://misty-frosty-pond.solana-mainnet.quiknode.pro/3dae9f501117a5bc43a15e9aeb052b03732bdc52/"
 endif
 ifeq ($(CLUSTER),mainnet-beta)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
-	URL ?= "https://api.mainnet-beta.solana.com"
+   URL ?= "https://api.mainnet-beta.solana.com"
 endif
 ifeq ($(CLUSTER),devnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/2/
-	URL ?= "https://api.devnet.solana.com"
+   URL ?= "https://api.devnet.solana.com"
 endif
 ifeq ($(URL),)
 # URL is still empty, CLUSTER is probably set to an URL directly
 # TODO: is this logical?
-	URL = $(CLUSTER)
+   URL = $(CLUSTER)
 endif
 
 SCOPE_PROGRAM_KEYPAIR := keys/$(CLUSTER)/scope.json
@@ -96,7 +96,7 @@ deploy-scope:
 deploy:
 >@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
 >@ if [ $(CLUSTER) = "localnet" ]; then\
-	   # Deploy fake oracles (mock_oracles, Switchboard V1 and Switchboard V2) only on localnet\
+       # Deploy fake oracles (mock_oracles, Switchboard V1 and Switchboard V2) only on localnet\
        PROGRAM_SO=$(FAKE_ORACLES_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_ORACLES_PROGRAM_KEYPAIR) $(MAKE) deploy-int;\
    fi
 
