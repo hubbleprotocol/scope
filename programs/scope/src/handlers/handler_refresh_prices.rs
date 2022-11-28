@@ -46,6 +46,18 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     // Only load when needed, allows prices computation to use scope chain
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
+
+    msg!(
+        "setting token {}, type {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, current_solana_slot: {:?}",
+        token,
+        price_type,
+        oracle.prices[token].price.value as f64 / 10u64.pow(oracle.prices[token].price.exp as u32) as f64,
+        price.price.value as f64 / 10u64.pow(price.price.exp as u32) as f64,
+        oracle.prices[token].last_updated_slot,
+        price.last_updated_slot,
+        clock.slot,
+    );
+
     oracle.prices[token] = price;
 
     Ok(())
@@ -97,13 +109,15 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     .prices
                     .get_mut(token_idx)
                     .ok_or(ScopeError::BadTokenNb)?;
-
                 msg!(
-                    "setting token {}, type {:?}: {:?} to {:?}",
+                    "setting token {}, type {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, current_solana_slot: {:?}",
                     token_idx,
                     price_type,
                     to_update.price.value as f64 / 10u64.pow(to_update.price.exp as u32) as f64,
                     price.price.value as f64 / 10u64.pow(price.price.exp as u32) as f64,
+                    to_update.last_updated_slot,
+                    price.last_updated_slot,
+                    clock.slot,
                 );
                 *to_update = price;
                 to_update.index = token_nb;
