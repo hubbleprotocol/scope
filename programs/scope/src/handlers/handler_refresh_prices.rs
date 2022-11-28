@@ -102,10 +102,8 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     "setting token {}, type {:?}: {:?} to {:?}",
                     token_idx,
                     price_type,
-                    to_update.price.value as f64 / 
-                        10u64.pow(to_update.price.exp as u32) as f64,
-                    price.price.value as f64 / 
-                        10u64.pow(price.price.exp as u32) as f64,
+                    to_update.price.value as f64 / 10u64.pow(to_update.price.exp as u32) as f64,
+                    price.price.value as f64 / 10u64.pow(price.price.exp as u32) as f64,
                 );
                 *to_update = price;
                 to_update.index = token_nb;
