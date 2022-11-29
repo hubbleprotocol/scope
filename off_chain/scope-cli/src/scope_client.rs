@@ -29,7 +29,7 @@ const MAX_REFRESH_CHUNK_SIZE: usize = 26;
 
 /// Max compute units to request
 // TODO: optimize this so the refresh lists costs less.
-const MAX_COMPUTE_UNITS: u32 = 1_325_000;
+const MAX_COMPUTE_UNITS: u32 = 1_350_000;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {
