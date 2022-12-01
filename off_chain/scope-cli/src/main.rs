@@ -105,7 +105,7 @@ enum Actions {
         #[clap(long, env, default_value = "8080")]
         server_port: u16,
         /// Number of tx retries before logging an error for prices being too old
-        #[clap(long, env, default_value = "3")]
+        #[clap(long, env, default_value = "10")]
         num_retries_before_error: usize,
         /// Log old prices as errors when prices are still too old after all retries
         #[clap(long, env)]
@@ -261,7 +261,7 @@ fn crank(
     loop {
         let start = Instant::now();
 
-        if let Err(e) = scope.refresh_all_prices() {
+        if let Err(e) = scope.refresh_expired_prices() {
             warn!("Error while refreshing prices {:?}", e);
         }
 
@@ -281,12 +281,8 @@ fn crank(
             num_retries_before_err = init_num_retries_before_err;
             // Time to sleep if we consider slot age
             let sleep_ms_from_slots = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
-            // Time to sleep if we consider a forced period of 20s refresh rate
-            let sleep_ms_from_forced_period =
-                20000_u64.saturating_sub(start.elapsed().as_millis().try_into().unwrap());
-            let sleep_ms = std::cmp::min(sleep_ms_from_slots, sleep_ms_from_forced_period);
-            trace!(sleep_ms);
-            sleep(Duration::from_millis(sleep_ms));
+            trace!(sleep_ms_from_slots);
+            sleep(Duration::from_millis(sleep_ms_from_slots));
         } else {
             num_retries_before_err -= 1;
         }
