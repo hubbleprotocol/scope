@@ -39,6 +39,8 @@ whirlpool = { git = "https://github.com/orca-so/whirlpools", features = ["no-ent
 strum = { git = "https://github.com/hubbleprotocol/strum", features = ["derive"], branch = "checked_arithmetics" }
 bytemuck = "1.4.0"
 sha2 = "0.10.0"
+arrform = "0.1.1"
+solana-program = "1.10.29"
 
 [dev-dependencies]
 proptest = "1.0"

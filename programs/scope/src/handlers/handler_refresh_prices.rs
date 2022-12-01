@@ -4,6 +4,9 @@ use crate::oracles::OracleType;
 use crate::{oracles::get_price, ScopeError};
 use anchor_lang::prelude::*;
 
+use arrform::ArrForm;
+use solana_program::log::sol_log;
+
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
     #[account(mut, has_one = oracle_mappings)]
@@ -27,6 +30,9 @@ pub struct RefreshList<'info> {
 }
 
 pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
+    // Buffer for logs
+    let mut af = ArrForm::<128>::new();
+
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let price_info = &ctx.accounts.price_info;
 
@@ -47,8 +53,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     // Only load when needed, allows prices computation to use scope chain
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
-    msg!(
-        "setting token {}, type {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, current_solana_slot: {:?}",
+    af.format(format_args!(
+        "tk {}, {:?}: {:?} to {:?} | pslot: {:?}, nslot: {:?}, slot: {:?}",
         token,
         price_type,
         oracle.prices[token].price.value as f64 / 10u64.pow(oracle.prices[token].price.exp as u32) as f64,
@@ -56,7 +62,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
         oracle.prices[token].last_updated_slot,
         price.last_updated_slot,
         clock.slot,
-    );
+    )).unwrap();
+    sol_log(af.as_str());
 
     oracle.prices[token] = price;
 
@@ -64,6 +71,9 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 }
 
 pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<()> {
+    // Buffer for logs
+    let mut af = ArrForm::<128>::new();
+
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
 
     // Check that the received token list is not too long
@@ -109,8 +119,9 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     .prices
                     .get_mut(token_idx)
                     .ok_or(ScopeError::BadTokenNb)?;
-                msg!(
-                    "setting token {}, type {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, current_solana_slot: {:?}",
+
+                af.format(format_args!(
+                    "tk {}, {:?}: {:?} to {:?} | pslot: {:?}, nslot: {:?}, slot: {:?}",
                     token_idx,
                     price_type,
                     to_update.price.value as f64 / 10u64.pow(to_update.price.exp as u32) as f64,
@@ -118,17 +129,20 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     to_update.last_updated_slot,
                     price.last_updated_slot,
                     clock.slot,
-                );
+                )).unwrap();
+                sol_log(af.as_str());
+
                 *to_update = price;
                 to_update.index = token_nb;
             }
             Err(e) => {
-                msg!(
+                af.format(format_args!(
                     "Price skipped as validation failed (token {}, type {:?}, err {:?})",
                     token_idx,
                     price_type,
                     e
-                );
+                )).unwrap();
+                sol_log(af.as_str());
             }
         };
     }
