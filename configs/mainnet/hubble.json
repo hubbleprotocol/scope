@@ -362,7 +362,7 @@
   },
   "67": {
     "label": "TWAP DUST/USD",
-    "oracle_mapping": "BKjEX3KhRLhm2SCrcAospDC8brpwSHkCXwTYGXni7fxJ",
+    "oracle_mapping": "72osS12hcMSCsEZupwXmV9j5MPtwAVDrhEDHMNUafkCz",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   }
