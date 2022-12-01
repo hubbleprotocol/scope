@@ -1,0 +1,233 @@
+{
+  "jobs": [
+    {
+      "name": "Pyth SOL/USD",
+      "tasks": [
+        {
+          "oracleTask": {
+            "pythAddress": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
+            "pythAllowedConfidenceInterval": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coinbase SOL/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.coinbase.com/v2/prices/SOL-USD/spot"
+          }
+        },
+        {
+          "jsonParseTask": {
+            "path": "$.data.amount"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Kraken SOL/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.kraken.com/0/public/Ticker?pair=SOLUSD"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.result.SOLUSD.a[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.SOLUSD.b[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.SOLUSD.c[0]"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "MEXC Global SOL/USDC/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.mexc.com/open/api/v2/market/ticker?symbol=SOL_USDC"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].ask"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].bid"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].last"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Binance SOL/USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.binance.com/api/v3/ticker/price?symbol=SOLUSDT"
+          }
+        },
+        {
+          "jsonParseTask": {
+            "path": "$.price"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Binance.us SOL/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.binance.us/api/v3/ticker/price?symbol=SOLUSD"
+          }
+        },
+        {
+          "jsonParseTask": {
+            "path": "$.price"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Huobi SOL/USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.huobi.pro/market/detail/merged?symbol=solusdt"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.tick.bid[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.tick.ask[0]"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "OKEx SOL/USDT/USD",
+      "tasks": [
+        {
+          "websocketTask": {
+            "url": "wss://ws.okex.com:8443/ws/v5/public",
+            "subscription": "{\"op\":\"subscribe\",\"args\":[{\"channel\":\"tickers\",\"instId\":\"SOL-USDT\"}]}",
+            "maxDataAgeSeconds": 15,
+            "filter": "$[?(@.event != 'subscribe' && @.arg.channel == 'tickers' && @.arg.instId == 'SOL-USDT' && @.data[0].instType == 'SPOT' && @.data[0].instId == 'SOL-USDT')]"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].bidPx"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].askPx"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].last"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bitfinex SOL/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api-pub.bitfinex.com/v2/tickers?symbols=tSOLUSD"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$[0][1]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$[0][3]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$[0][7]"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

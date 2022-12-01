@@ -1,0 +1,137 @@
+{
+  "jobs": [
+    {
+      "name": "Pyth USDT/USD",
+      "tasks": [
+        {
+          "oracleTask": {
+            "pythAddress": "3vxLXJqLqF3JG5TCbYycbKWRBbCJQLxQmBGCkyqEEefL",
+            "pythAllowedConfidenceInterval": 0.1
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coinbase USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.coinbase.com/v2/prices/USDT-USD/spot"
+          }
+        },
+        {
+          "jsonParseTask": {
+            "path": "$.data.amount"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Binance.us USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.binance.us/api/v3/ticker/price?symbol=USDTUSD"
+          }
+        },
+        {
+          "jsonParseTask": {
+            "path": "$.price"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bittrex USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.bittrex.com/v3/markets/usdt-usd/ticker"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.askRate"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.bidRate"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.lastTradeRate"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bitstamp USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.bitstamp.net/api/v2/ticker/usdtusd"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.ask"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.bid"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.last"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,419 @@
+{
+  "jobs": [
+    {
+      "name": "Pyth mSOL/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "oracleTask": {
+            "pythAddress": "E4v1BBgoso9s64TQvmyownAVJbhbEPGyzA3qn4n46qj9",
+            "pythAllowedConfidenceInterval": 2
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raydium mSOL/USDC/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "ZfvDXXUhZDzDVsapffUyXHj9ByCoPjP4thL6YXcZ9ix"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca aquafarm mSOL/USDT/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "Afofkb7JTc32rdpqiyc3RDmGF5s9N6W1ujcdYVfGZ5Je"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca whirlpool mSOL/SOL/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "valueTask": {
+            "value": 1
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "HQcY5n2zP6rW74fyFEhWeBd3LnJpBcZechkvJpmdb8cx"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Kraken mSOL/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "httpTask": {
+            "url": "https://api.kraken.com/0/public/Ticker?pair=MSOLUSD"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.result.MSOLUSD.a[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.MSOLUSD.b[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.MSOLUSD.c[0]"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saber mSOL/SOL/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "lpExchangeRateTask": {
+            "saberPoolAddress": "Lee1XZJfJ9Hm2K1qTyeCz1LXNc1YBZaKZszvNY4KCDw"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

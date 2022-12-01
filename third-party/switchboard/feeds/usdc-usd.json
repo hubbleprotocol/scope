@@ -1,0 +1,174 @@
+{
+  "jobs": [
+    {
+      "name": "Pyth USDC/USD",
+      "tasks": [
+        {
+          "oracleTask": {
+            "pythAddress": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
+            "pythAllowedConfidenceInterval": 0.1
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coinbase USDC/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.coinbase.com/v2/prices/USDC-USD/spot"
+          }
+        },
+        {
+          "jsonParseTask": {
+            "path": "$.data.amount"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Kraken USDC/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.kraken.com/0/public/Ticker?pair=USDCUSD"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.result.USDCUSD.a[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.USDCUSD.b[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.USDCUSD.c[0]"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Binance.us USDC/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.binance.us/api/v3/ticker/price?symbol=USDCUSD"
+          }
+        },
+        {
+          "jsonParseTask": {
+            "path": "$.price"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bittrex USDC/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.bittrex.com/v3/markets/usdc-usd/ticker"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.askRate"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.bidRate"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.lastTradeRate"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bitstamp USDC/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.bitstamp.net/api/v2/ticker/usdcusd"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.ask"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.bid"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.last"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBoundValue": 0.98,
+            "upperBoundValue": 1.02
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,338 @@
+{
+  "jobs": [
+    {
+      "name": "Pyth stSOL/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "oracleTask": {
+            "pythAddress": "Bt1hEbY62aMriY1SyQqbeZbm8VmSbQVGBFzSzMuVNWzN",
+            "pythAllowedConfidenceInterval": 2
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raydium stSOL/USDC/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "6a1CsrpeZubDjEJE9s1CMVheB6HWM5d7m1cj2jkhyXhj"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca aquafarm stSOL/USDC/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "EfK84vYEKT1PoTJr6fBVKFbyA7ZoftfPo2LQPAJG1exL"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca whirlpool stSOL/SOL/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "valueTask": {
+            "value": 1
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "2AEWSvUds1wsufnsDPCXjFsJCMJH5SNNm7fSF4kxys9a"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saber stSOL/SOL/USD",
+      "tasks": [
+        {
+          "cacheTask": {
+            "cacheItems": [
+              {
+                "variableName": "SOL_USD",
+                "job": {
+                  "tasks": [
+                    {
+                      "valueTask": {
+                        "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "lpExchangeRateTask": {
+            "saberPoolAddress": "Lid8SLUxQ9RmF7XMqUA8c24RitTwzja8VSKngJxRcUa"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "GvDMxPzN1sCj7L26YDK2HnMRXEQmQ2aemov8YBtPS7vR"
+          }
+        },
+        {
+          "boundTask": {
+            "lowerBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 0.8
+                  }
+                }
+              ]
+            },
+            "upperBound": {
+              "tasks": [
+                {
+                  "valueTask": {
+                    "big": "${SOL_USD}"
+                  }
+                },
+                {
+                  "multiplyTask": {
+                    "scalar": 1.2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
