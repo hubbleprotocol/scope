@@ -54,7 +54,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
     af.format(format_args!(
-        "tk {}, {:?}: {:?} to {:?} | pslot: {:?}, nslot: {:?}, slot: {:?}",
+        "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
         token,
         price_type,
         oracle.prices[token].price.value as f64 / 10u64.pow(oracle.prices[token].price.exp as u32) as f64,
@@ -121,7 +121,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     .ok_or(ScopeError::BadTokenNb)?;
 
                 af.format(format_args!(
-                    "tk {}, {:?}: {:?} to {:?} | pslot: {:?}, nslot: {:?}, slot: {:?}",
+                    "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
                     token_idx,
                     price_type,
                     to_update.price.value as f64 / 10u64.pow(to_update.price.exp as u32) as f64,
