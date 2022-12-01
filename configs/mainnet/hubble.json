@@ -36,6 +36,7 @@
     "label": "MSOL/USD",
     "oracle_mapping": "856a1KbnQa7gWzaqmjaYWWAGqcqegZxmaatRig3hzfv9",
     "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "7": {
     "label": "scnSOL/SOL",
@@ -68,6 +69,7 @@
     "label": "STSOL/USD",
     "oracle_mapping": "AMtCwAExNkNiFFMF7QCDA2RqbWi816K7woQq8KB6emHj",
     "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "14": {
     "label": "cSOL/SOL",
