@@ -74,22 +74,26 @@
   "14": {
     "label": "cSOL/SOL",
     "oracle_mapping": "8PbodeaosQP19SjYFx855UMqWxH2HynZLdBXmsrbac36",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "15": {
     "label": "cETH/ETH",
     "oracle_mapping": "CPDiKagfozERtJ33p7HHhEfJERjvfk1VAjMXAFLrvrKP",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "16": {
     "label": "cBTC/BTC",
     "oracle_mapping": "GYzjMCXTDue12eUGKKWAqtF5jcBYNmewr6Db6LaguEaX",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "17": {
     "label": "cMSOL/MSOL",
     "oracle_mapping": "CCpirWrgNuBVLdkP2haxLTbD6XqEgaYuVXixbbpxUB6",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "18": {
     "label": "wstETH/USD",
@@ -111,7 +115,8 @@
   "21": {
     "label": "cUSDC/USDC",
     "oracle_mapping": "BgxfHJDzm44T7XG68MYKx7YisTjZu73tVovyZSjJMpmw",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "22": {
     "label": "USDT/USD",
@@ -139,32 +144,38 @@
   "26": {
     "label": "cORCA/ORCA",
     "oracle_mapping": "FKZTsydxPShJ8baThobis6qFxTjALMkVC49EA88wqvm7",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "27": {
     "label": "cSLND/SLND",
     "oracle_mapping": "CviGNzD2C9ZCMmjDt5DKCce5cLV4Emrcm3NFvwudBFKA",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "28": {
     "label": "cSRM/SRM",
     "oracle_mapping": "5suXmvdbKQ98VonxGCXqViuWRu8k4zgZRxndYKsH2fJg",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "29": {
     "label": "cRAY/RAY",
     "oracle_mapping": "9n2exoMQwMTzfw6NFoFFujxYPndWVLtKREJePssrKb36",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "30": {
     "label": "cFTT/FTT",
     "oracle_mapping": "8bDyV3N7ctLKoaSVqUoEwUzw6msS2F65yyNPgAVUisKm",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "31": {
     "label": "cSTSOL/STSOL",
     "oracle_mapping": "5sjkv6HD8wycocJ4tC4U36HHbvgcXYqcyiPRUkncnwWs",
-    "oracle_type": "CToken"
+    "oracle_type": "CToken",
+    "max_age": 600
   },
   "32": {
     "label": "SLND/USD",
