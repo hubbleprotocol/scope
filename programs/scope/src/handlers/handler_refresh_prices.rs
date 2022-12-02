@@ -51,7 +51,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
         "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
         token,
         price_type,
-        oracle.prices[token].price.value as f64 / 10u64.pow(oracle.prices[token].price.exp as u32) as f64,
+        oracle.prices[token].price.value as f64
+            / 10u64.pow(oracle.prices[token].price.exp as u32) as f64,
         price.price.value as f64 / 10u64.pow(price.price.exp as u32) as f64,
         oracle.prices[token].last_updated_slot,
         price.last_updated_slot,
@@ -125,7 +126,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                 to_update.index = token_nb;
             }
             Err(e) => {
-               msg!(
+                msg!(
                     "Price skipped as validation failed (token {}, type {:?}, err {:?})",
                     token_idx,
                     price_type,
