@@ -490,12 +490,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 
 [[package]]
-name = "arrform"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7cf566ecc5c9d82b973e81d30babf6583c9b497f86295c952d538c3254ef4e6"
-
-[[package]]
 name = "asn1-rs"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3466,7 +3460,6 @@ dependencies = [
  "anchor-lang 0.25.0",
  "anchor-spl 0.25.0",
  "arrayref",
- "arrform",
  "bytemuck",
  "cfg-if",
  "decimal-wad",
@@ -3478,7 +3471,6 @@ dependencies = [
  "rust_decimal",
  "serde",
  "sha2 0.10.5",
- "solana-program",
  "spl-stake-pool",
  "strum 0.24.0",
  "switchboard-program",
