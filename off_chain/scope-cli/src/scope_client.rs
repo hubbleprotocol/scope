@@ -22,7 +22,7 @@ use tracing::{debug, error, event, info, trace, warn, Level};
 
 use crate::config::{ScopeConfig, TokenConfig, TokenList};
 use crate::oracle_helpers::{entry_from_config, TokenEntry};
-use crate::utils::{find_data_address, get_clock, price_to_f64};
+use crate::utils::{get_clock, price_to_f64};
 
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 26;
@@ -34,7 +34,8 @@ const MAX_COMPUTE_UNITS: u32 = 1_300_000;
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {
     program: Program,
-    program_data_acc: Pubkey,
+    feed_name: String,
+    configuration_acc: Pubkey,
     oracle_prices_acc: Pubkey,
     oracle_mappings_acc: Pubkey,
     tokens: TokenEntryList,
@@ -44,7 +45,6 @@ impl ScopeClient {
     #[tracing::instrument(skip(client))] //Skip client that does not impl Debug
     pub fn new(client: Client, program_id: Pubkey, price_feed: &str) -> Result<Self> {
         let program = client.program(program_id);
-        let program_data_acc = find_data_address(&program_id);
 
         // Retrieve accounts in configuration PDA
         let (configuration_acc, _) =
@@ -54,11 +54,12 @@ impl ScopeClient {
             .account::<Configuration>(configuration_acc)
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
-        debug!(%oracle_prices_pbk, %oracle_mappings_pbk, %configuration_acc);
+        debug!(%oracle_prices_pbk, %oracle_mappings_pbk, %configuration_acc, %price_feed);
 
         Ok(Self {
             program,
-            program_data_acc,
+            feed_name: price_feed.to_string(),
+            configuration_acc,
             oracle_prices_acc: oracle_prices_pbk,
             oracle_mappings_acc: oracle_mappings_pbk,
             tokens: IntMap::default(),
@@ -66,15 +67,13 @@ impl ScopeClient {
     }
 
     /// Create a new client instance after initializing the program accounts
-    #[tracing::instrument(skip(client))]
+    //#[tracing::instrument(skip(client))]
     pub fn new_init_program(
         client: &Client,
         program_id: &Pubkey,
         price_feed: &str,
     ) -> Result<Self> {
         let program = client.program(*program_id);
-
-        let program_data_acc = find_data_address(program_id);
 
         // Generate accounts keypairs.
         let oracle_prices_acc = Keypair::new();
@@ -86,7 +85,6 @@ impl ScopeClient {
 
         Self::ix_initialize(
             &program,
-            &program_data_acc,
             &configuration_acc,
             &oracle_prices_acc,
             &oracle_mappings_acc,
@@ -97,7 +95,8 @@ impl ScopeClient {
 
         Ok(Self {
             program,
-            program_data_acc,
+            feed_name: price_feed.to_string(),
+            configuration_acc,
             oracle_prices_acc: oracle_prices_acc.pubkey(),
             oracle_mappings_acc: oracle_mappings_acc.pubkey(),
             tokens: IntMap::default(),
@@ -385,7 +384,6 @@ impl ScopeClient {
     #[tracing::instrument(skip(program))]
     fn ix_initialize(
         program: &Program,
-        program_data_acc: &Pubkey,
         configuration_acc: &Pubkey,
         oracle_prices_acc: &Keypair,
         oracle_mappings_acc: &Keypair,
@@ -396,8 +394,6 @@ impl ScopeClient {
         // Prepare init instruction accounts
         let init_account = accounts::Initialize {
             admin: program.payer(),
-            program: program.id(),
-            program_data: *program_data_acc,
             system_program: system_program::ID,
             configuration: *configuration_acc,
             oracle_prices: oracle_prices_acc.pubkey(),
@@ -443,10 +439,9 @@ impl ScopeClient {
     #[tracing::instrument(skip(self))]
     fn ix_update_mapping(&self, oracle_account: &Pubkey, token: u64, price_type: u8) -> Result<()> {
         let update_account = accounts::UpdateOracleMapping {
+            configuration: self.configuration_acc,
             oracle_mappings: self.oracle_mappings_acc,
             price_info: *oracle_account,
-            program: self.program.id(),
-            program_data: self.program_data_acc,
             admin: self.program.payer(),
         };
 
@@ -454,7 +449,11 @@ impl ScopeClient {
 
         let res = request
             .accounts(update_account)
-            .args(instruction::UpdateMapping { token, price_type })
+            .args(instruction::UpdateMapping {
+                token,
+                price_type,
+                feed_name: self.feed_name.clone(),
+            })
             .send();
 
         match res {

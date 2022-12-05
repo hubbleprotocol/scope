@@ -39,10 +39,6 @@ ifeq ($(CLUSTER),localnet)
 endif
 ifeq ($(CLUSTER),mainnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
-   URL ?= "https://misty-frosty-pond.solana-mainnet.quiknode.pro/3dae9f501117a5bc43a15e9aeb052b03732bdc52/"
-endif
-ifeq ($(CLUSTER),mainnet-beta)
-   SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
    URL ?= "https://api.mainnet-beta.solana.com"
 endif
 ifeq ($(CLUSTER),devnet)

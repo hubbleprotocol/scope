@@ -54,11 +54,12 @@ pub mod scope {
         ctx: Context<UpdateOracleMapping>,
         token: u64,
         price_type: u8,
+        feed_name: String,
     ) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
-        handler_update_mapping::process(ctx, token, price_type)
+        handler_update_mapping::process(ctx, token, price_type, feed_name)
     }
 }
 
@@ -122,7 +123,7 @@ pub struct OracleMappings {
 // Configuration account of the program
 #[account(zero_copy)]
 pub struct Configuration {
-    pub admin_pbk: Pubkey,
+    pub admin: Pubkey,
     pub oracle_mappings_pbk: Pubkey,
     pub oracle_prices_pbk: Pubkey,
     _padding: [u64; 1267],

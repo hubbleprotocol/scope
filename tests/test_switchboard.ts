@@ -69,8 +69,6 @@ describe('Switchboard Scope tests', () => {
     await program.rpc.initialize(PRICE_FEED, {
       accounts: {
         admin: admin.publicKey,
-        program: program.programId,
-        programData: programDataAddress,
         systemProgram: SystemProgram.programId,
         configuration: confAccount,
         oraclePrices: oracleAccount,
@@ -94,11 +92,10 @@ describe('Switchboard Scope tests', () => {
       testTokens.map(async (fakeOracleAccount, idx): Promise<any> => {
         // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
 
-        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), {
+        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), PRICE_FEED, {
           accounts: {
             admin: admin.publicKey,
-            program: program.programId,
-            programData: programDataAddress,
+            configuration: confAccount,
             oracleMappings: oracleMappingAccount,
             priceInfo: fakeOracleAccount.account,
           },
