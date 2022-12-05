@@ -308,9 +308,10 @@
     "oracle_type": "PythEMA"
   },
   "58": {
-    "label": "EMA MSOL/USD",
-    "oracle_mapping": "E4v1BBgoso9s64TQvmyownAVJbhbEPGyzA3qn4n46qj9",
-    "oracle_type": "PythEMA"
+    "label": "TWAP MSOL/USD",
+    "oracle_mapping": "H8BUVDG7hBbBacPbv3QM6cH3iqJ6kMdpJF9HnaPHKRyn",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "59": {
     "label": "EMA BNB/USD",
@@ -323,9 +324,10 @@
     "oracle_type": "PythEMA"
   },
   "61": {
-    "label": "EMA STSOL/USD",
-    "oracle_mapping": "Bt1hEbY62aMriY1SyQqbeZbm8VmSbQVGBFzSzMuVNWzN",
-    "oracle_type": "PythEMA"
+    "label": "TWAP STSOL/USD",
+    "oracle_mapping": "9NxKa8tjkyVyCEf42HnepyLzbN2ZrY4ebzoqF6jGAb6s",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "62": {
     "label": "EMA USDC/USD",

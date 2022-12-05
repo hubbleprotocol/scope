@@ -1,0 +1,17 @@
+{
+  "jobs": [
+    {
+      "name": "Switchboard mSOL/USD (bound)",
+      "tasks": [
+        {
+          "twapTask": {
+            "aggregatorPubkey": "856a1KbnQa7gWzaqmjaYWWAGqcqegZxmaatRig3hzfv9",
+            "period": 3600,
+            "weightByPropagationTime": true,
+            "minSamples": 40
+          }
+        }
+      ]
+    }
+  ]
+}

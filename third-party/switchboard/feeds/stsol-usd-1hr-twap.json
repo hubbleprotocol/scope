@@ -1,0 +1,17 @@
+{
+  "jobs": [
+    {
+      "name": "Switchboard stSOL/USD (bound)",
+      "tasks": [
+        {
+          "twapTask": {
+            "aggregatorPubkey": "AMtCwAExNkNiFFMF7QCDA2RqbWi816K7woQq8KB6emHj",
+            "period": 3600,
+            "weightByPropagationTime": true,
+            "minSamples": 40
+          }
+        }
+      ]
+    }
+  ]
+}
