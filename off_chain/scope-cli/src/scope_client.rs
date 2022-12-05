@@ -67,7 +67,7 @@ impl ScopeClient {
     }
 
     /// Create a new client instance after initializing the program accounts
-    //#[tracing::instrument(skip(client))]
+    #[tracing::instrument(skip(client))]
     pub fn new_init_program(
         client: &Client,
         program_id: &Pubkey,
