@@ -1,31 +1,39 @@
-FROM amazonlinux AS base
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
 
-RUN yum -y update
-RUN yum -y install libudev-devel
+RUN apt-get update \
+    && apt-get install -y git unzip build-essential autoconf libtool libssl-dev
 
-FROM base AS build
-
-ARG TOOLCHAIN=stable
-
-RUN yum -y install git unzip build-essential autoconf libtool openssl-devel
-
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $TOOLCHAIN
-ENV PATH=$PATH:/root/.cargo/bin
+# Authorize SSH Host
+RUN mkdir -p -m 0600 ~/.ssh && \
+    ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 # Allow cargo to fetch with git cli
-RUN echo -e "[net]\ngit-fetch-with-cli = true" > /root/.cargo/config
+RUN mkdir -p /root/.cargo \
+    && echo -e "[net]\ngit-fetch-with-cli = true" > /root/.cargo/config
 
-COPY / /scope
+WORKDIR scope
 
-# Just simulate a valid scope program
-WORKDIR /scope
+FROM chef AS prepare
 
-WORKDIR /scope/off_chain/scope-cli
-RUN CLUSTER=mainnet cargo install --root /bot --path . --locked
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-FROM base AS release
+FROM chef AS build
 
-COPY --from=build /bot/bin/scope ./
+ENV CLUSTER=mainnet
+
+COPY --from=prepare /scope/recipe.json recipe.json
+
+# Build dependencies - this is the caching Docker layer!
+RUN --mount=type=ssh cargo chef cook --release --bin scope --recipe-path recipe.json
+
+# Build application
+COPY . .
+RUN cargo build --release --bin scope --locked
+
+FROM debian:buster-slim AS runtime
+
+COPY --from=build /scope/target/release/scope ./
 COPY ./off_chain/docker-bot/docker-entrypoint.sh .
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
@@ -33,4 +41,4 @@ ENTRYPOINT ["./docker-entrypoint.sh"]
 # use scratch to dump binary from
 FROM scratch AS release-bin
 
-COPY --from=release /scope .
+COPY --from=runtime /scope .

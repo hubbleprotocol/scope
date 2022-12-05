@@ -29,6 +29,13 @@ jobs:
         shell: bash
         working-directory: ./off_chain/scope-cli
         run: ../../.github/scripts/set-cargo-build-versions.sh
+      - name: Set docker cache key
+        env:
+          BRANCH: "${{ github.head_ref || github.ref_name }}"
+        run: |
+          DOCKER_CACHE_KEY=${{ env.BRANCH }}
+          DOCKER_CACHE_KEY=$(echo $DOCKER_CACHE_KEY | sed 's#/#_#g') # replace all slashes with underscores
+          echo DOCKER_CACHE_KEY=${DOCKER_CACHE_KEY} >> $GITHUB_ENV # update GitHub ENV vars
       - name: Docker buildx (build)
         id: docker_build
         uses: docker/build-push-action@v2
@@ -36,9 +43,11 @@ jobs:
           file: off_chain/docker-bot/Dockerfile
           tags: hubbleprotocol/scope-bot:${{ steps.set_versions.outputs.build_version }}
           push: true
-          target: release
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
+          target: runtime
+          cache-from: |
+            type=registry,ref=hubbleprotocol/scope-bot:${{ env.DOCKER_CACHE_KEY }} 
+            type=registry,ref=hubbleprotocol/scope-bot:master
+          cache-to: type=registry,mode=max,ref=hubbleprotocol/scope-bot:${{ env.DOCKER_CACHE_KEY }}
   build_helm:
     needs: build_docker
     runs-on: ubuntu-latest
@@ -84,7 +93,8 @@ jobs:
           push: false
           target: release-bin
           outputs: 'type=tar,dest=scope-bot-${{ needs.build_docker.outputs.build_version }}.tar'
-          cache-from: type=gha
+          cache-from: |
+            type=registry,ref=hubbleprotocol/scope-bot:master
       - name: Create pre-release
         id: pre_release
         uses: marvinpinto/action-automatic-releases@latest
