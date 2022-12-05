@@ -85,11 +85,6 @@
     "oracle_mapping": "Ei2dC7hFxBhVq5pn4qNJLMxKBSojx7p7wnNoBz4HELKG",
     "oracle_type": "CToken"
   },
-  "18": {
-    "label": "wstETH/USD",
-    "oracle_mapping": "EAZWGNvNAB8gizuGyyBPQHEPyqUwscrDmQE11eWVbJrQ",
-    "oracle_type": "SwitchboardV2"
-  },
   "19": {
     "label": "LDO/USD",
     "oracle_mapping": "GQmDtUWV4TnntedyfGo5bbJ2WGQG3J2WzonQbDeDEevf",
@@ -132,11 +127,6 @@
     "oracle_mapping": "HXYGC8UwRWcWc8GTSAnzC9qUnsyVmAAjmqrNAkkp5ieC",
     "oracle_type": "CToken"
   },
-  "27": {
-    "label": "cSLND/SLND",
-    "oracle_mapping": "HXYGC8UwRWcWc8GTSAnzC9qUnsyVmAAjmqrNAkkp5ieC",
-    "oracle_type": "CToken"
-  },
   "28": {
     "label": "cSRM/SRM",
     "oracle_mapping": "5YKmMZcuWEdF5NavNK4MgKPRhnhw6jq22zwcdh1dvxbd",
@@ -156,11 +146,6 @@
     "label": "cSTSOL/STSOL",
     "oracle_mapping": "Ei2dC7hFxBhVq5pn4qNJLMxKBSojx7p7wnNoBz4HELKG",
     "oracle_type": "CToken"
-  },
-  "32": {
-    "label": "SLND/USD",
-    "oracle_mapping": "FtwKARNAnZK2Nx1W4KVXzbyDzuRJqmApHRBtQpZ49HDv",
-    "oracle_type": "Pyth"
   },
   "33": {
     "label": "DAI/USD",
@@ -341,12 +326,6 @@
     "label": "EMA DAI/USD",
     "oracle_mapping": "A8XFp1YSUqyDDvTwRXM1vmhPHCLxzncG45t1ZH9CMYq7",
     "oracle_type": "PythEMA"
-  },
-  "66": {
-    "label": "TWAP wstETH/USD",
-    "oracle_mapping": "EAZWGNvNAB8gizuGyyBPQHEPyqUwscrDmQE11eWVbJrQ",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 300
   },
   "67": {
     "label": "TWAP DUST/USD",
