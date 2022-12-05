@@ -33,6 +33,9 @@ RUN cargo build --release --bin scope --locked
 
 FROM debian:buster-slim AS runtime
 
+RUN apt-get update \
+    && apt-get install -y ca-certificates libssl1.1
+
 COPY --from=build /scope/target/release/scope ./
 COPY ./off_chain/docker-bot/docker-entrypoint.sh .
 
