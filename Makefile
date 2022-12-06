@@ -22,7 +22,6 @@ $1: phony
 
 endef
 
-# TODO: not sure if it really works
 ifneq (,$(wildcard ./.env))
    include ./.env
 endif

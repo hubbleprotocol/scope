@@ -31,7 +31,7 @@ RUN --mount=type=ssh cargo chef cook --release --bin scope --recipe-path recipe.
 COPY . .
 RUN cargo build --release --bin scope --locked
 
-FROM debian:buster-slim AS runtime
+FROM debian:bullseye-slim AS runtime
 
 COPY --from=build /scope/target/release/scope ./
 COPY ./off_chain/docker-bot/docker-entrypoint.sh .
