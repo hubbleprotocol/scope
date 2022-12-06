@@ -350,6 +350,20 @@ impl ScopeClient {
         Ok(())
     }
 
+    /// Return a list (label if available) of expired prices
+    pub fn get_expired_prices(&self) -> Result<Vec<String>> {
+        Ok(self
+            .get_prices_ttl()?
+            .filter_map(|(index, ttl)| {
+                if ttl > 0 {
+                    self.tokens.get(&index).map(|t| t.to_string())
+                } else {
+                    None
+                }
+            })
+            .collect())
+    }
+
     /// Print a list of all pubkeys that are needed for price refreshed.
     pub fn print_pubkeys(&self) -> Result<()> {
         for entry in self.tokens.values() {

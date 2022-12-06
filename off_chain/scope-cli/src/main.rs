@@ -289,9 +289,9 @@ fn crank(
 
         if num_retries_before_err == 0 {
             if old_price_is_error {
-                error!(%error_log);
+                error!(%error_log, old_prices=?scope.get_expired_prices().unwrap_or_default());
             } else {
-                warn!(%error_log);
+                warn!(%error_log, old_prices=?scope.get_expired_prices().unwrap_or_default());
             }
             num_retries_before_err = init_num_retries_before_err;
         }
