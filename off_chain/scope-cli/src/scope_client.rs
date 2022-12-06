@@ -29,7 +29,7 @@ const MAX_REFRESH_CHUNK_SIZE: usize = 26;
 
 /// Max compute units to request
 // TODO: optimize this so the refresh lists costs less.
-const MAX_COMPUTE_UNITS: u32 = 1_300_000;
+const MAX_COMPUTE_UNITS: u32 = 1_400_000;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 pub struct ScopeClient {
@@ -539,10 +539,16 @@ impl ScopeClient {
 
         match tx_res {
             Ok(sig) => info!(signature = %sig, "Prices list refreshed successfully"),
-            Err(err) => {
-                warn!("Price list refresh failed: {:#?}", err);
-                bail!(err);
-            }
+            Err(err) => match err {
+                anchor_client::ClientError::SolanaClientError(e) => {
+                    info!("Prices list refresh failed: RPC Client error: {e:#?}");
+                    // We could `bail!` here but we want to avoid double logs,
+                }
+                _ => {
+                    warn!("Price list refresh failed: {:#?}", err);
+                    // We could `bail!` here but we want to avoid double logs,
+                }
+            },
         }
 
         Ok(())
