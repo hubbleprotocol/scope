@@ -5,7 +5,7 @@
       "tasks": [
         {
           "twapTask": {
-            "aggregatorPubkey": "856a1KbnQa7gWzaqmjaYWWAGqcqegZxmaatRig3hzfv9",
+            "aggregatorPubkey": "81muJBhUKQmiRbRrATu5GEaKpeXsFLcFAdaknVDZvE6p",
             "period": 3600,
             "weightByPropagationTime": true,
             "minSamples": 40
