@@ -10,24 +10,9 @@
     "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw",
     "oracle_type": "Pyth"
   },
-  "2": {
-    "label": "BTC/USD",
-    "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J",
-    "oracle_type": "Pyth"
-  },
-  "3": {
-    "label": "SRM/USD",
-    "oracle_mapping": "992moaMQKs32GKZ9dxi8keyM2bUmbrwBZpK4p2K6X5Vs",
-    "oracle_type": "Pyth"
-  },
   "4": {
     "label": "RAY/USD",
     "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6",
-    "oracle_type": "Pyth"
-  },
-  "5": {
-    "label": "FTT/USD",
-    "oracle_mapping": "6vivTRs5ZPeeXbjo7dfburfaYDWoXjBtdtuYgQRuGfu",
     "oracle_type": "Pyth"
   },
   "6": {
@@ -73,11 +58,6 @@
   "15": {
     "label": "cETH/ETH",
     "oracle_mapping": "CuQcLfN3iTWqyEEbAHNZp7awChbR4KQPFJsTUhsAxrcu",
-    "oracle_type": "CToken"
-  },
-  "16": {
-    "label": "cBTC/BTC",
-    "oracle_mapping": "FNXBRv3saDgVoaoDLV5ho28D4AvZikG9r7QpThTLak9f",
     "oracle_type": "CToken"
   },
   "17": {
@@ -127,19 +107,9 @@
     "oracle_mapping": "HXYGC8UwRWcWc8GTSAnzC9qUnsyVmAAjmqrNAkkp5ieC",
     "oracle_type": "CToken"
   },
-  "28": {
-    "label": "cSRM/SRM",
-    "oracle_mapping": "5YKmMZcuWEdF5NavNK4MgKPRhnhw6jq22zwcdh1dvxbd",
-    "oracle_type": "CToken"
-  },
   "29": {
     "label": "cRAY/RAY",
     "oracle_mapping": "FpKhrtU6nDjEcAi3SsSevRRgPzirLkZpmXD6nfeb7k8c",
-    "oracle_type": "CToken"
-  },
-  "30": {
-    "label": "cFTT/FTT",
-    "oracle_mapping": "8eUYeEiGXRMN7V9Xx7CehwSRfJB9iQfJW249zX1z7Uue",
     "oracle_type": "CToken"
   },
   "31": {
@@ -267,24 +237,9 @@
     "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw",
     "oracle_type": "PythEMA"
   },
-  "54": {
-    "label": "EMA BTC/USD",
-    "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J",
-    "oracle_type": "PythEMA"
-  },
-  "55": {
-    "label": "EMA SRM/USD",
-    "oracle_mapping": "992moaMQKs32GKZ9dxi8keyM2bUmbrwBZpK4p2K6X5Vs",
-    "oracle_type": "PythEMA"
-  },
   "56": {
     "label": "EMA RAY/USD",
     "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6",
-    "oracle_type": "PythEMA"
-  },
-  "57": {
-    "label": "EMA FTT/USD",
-    "oracle_mapping": "6vivTRs5ZPeeXbjo7dfburfaYDWoXjBtdtuYgQRuGfu",
     "oracle_type": "PythEMA"
   },
   "58": {
@@ -315,11 +270,6 @@
   "63": {
     "label": "EMA USDT/USD",
     "oracle_mapping": "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto",
-    "oracle_type": "PythEMA"
-  },
-  "64": {
-    "label": "EMA SLND/USD",
-    "oracle_mapping": "FtwKARNAnZK2Nx1W4KVXzbyDzuRJqmApHRBtQpZ49HDv",
     "oracle_type": "PythEMA"
   },
   "65": {
