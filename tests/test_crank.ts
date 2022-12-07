@@ -104,8 +104,6 @@ describe('Scope crank bot tests', () => {
     await program.rpc.initialize(PRICE_FEED, {
       accounts: {
         admin: admin.publicKey,
-        program: program.programId,
-        programData: programDataAddress,
         systemProgram: SystemProgram.programId,
         configuration: confAccount,
         oraclePrices: oracleAccount,
@@ -125,11 +123,10 @@ describe('Scope crank bot tests', () => {
 
     await Promise.all(
       fakeAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
-        await program.rpc.updateMapping(new BN(getRevisedIndex(idx)), fakeOracleAccount.getType(), {
+        await program.rpc.updateMapping(new BN(getRevisedIndex(idx)), fakeOracleAccount.getType(), PRICE_FEED, {
           accounts: {
             admin: admin.publicKey,
-            program: program.programId,
-            programData: programDataAddress,
+            configuration: confAccount,
             oracleMappings: oracleMappingAccount,
             priceInfo: fakeOracleAccount.account,
           },

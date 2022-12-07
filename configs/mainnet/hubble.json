@@ -10,31 +10,14 @@
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
     "oracle_type": "Pyth"
   },
-  "2": {
-    "label": "BTC/USD",
-    "oracle_mapping": "67VLKBe7jcqY8hDY9TL19sT4gNrCXhHUVCfJN4YdXvYy",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 300
-  },
-  "3": {
-    "label": "SRM/USD",
-    "oracle_mapping": "BxT1HHvUCKLNijG7WJuGMRDE9abYmwpASgaSC7LCFoZj",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 300
-  },
   "4": {
     "label": "RAY/USD",
     "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB",
     "oracle_type": "Pyth"
   },
-  "5": {
-    "label": "FTT/USD",
-    "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF",
-    "oracle_type": "Pyth"
-  },
   "6": {
     "label": "MSOL/USD",
-    "oracle_mapping": "856a1KbnQa7gWzaqmjaYWWAGqcqegZxmaatRig3hzfv9",
+    "oracle_mapping": "81muJBhUKQmiRbRrATu5GEaKpeXsFLcFAdaknVDZvE6p",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
@@ -67,7 +50,7 @@
   },
   "13": {
     "label": "STSOL/USD",
-    "oracle_mapping": "AMtCwAExNkNiFFMF7QCDA2RqbWi816K7woQq8KB6emHj",
+    "oracle_mapping": "CXvUqgvtdbHaTRZgJVQhxkeWuEQutYiUz488NdL97SdG",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
   },
@@ -80,12 +63,6 @@
   "15": {
     "label": "cETH/ETH",
     "oracle_mapping": "CPDiKagfozERtJ33p7HHhEfJERjvfk1VAjMXAFLrvrKP",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
-  "16": {
-    "label": "cBTC/BTC",
-    "oracle_mapping": "GYzjMCXTDue12eUGKKWAqtF5jcBYNmewr6Db6LaguEaX",
     "oracle_type": "CToken",
     "max_age": 600
   },
@@ -141,21 +118,9 @@
     "oracle_type": "CToken",
     "max_age": 600
   },
-  "28": {
-    "label": "cSRM/SRM",
-    "oracle_mapping": "5suXmvdbKQ98VonxGCXqViuWRu8k4zgZRxndYKsH2fJg",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
   "29": {
     "label": "cRAY/RAY",
     "oracle_mapping": "9n2exoMQwMTzfw6NFoFFujxYPndWVLtKREJePssrKb36",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
-  "30": {
-    "label": "cFTT/FTT",
-    "oracle_mapping": "8bDyV3N7ctLKoaSVqUoEwUzw6msS2F65yyNPgAVUisKm",
     "oracle_type": "CToken",
     "max_age": 600
   },
@@ -287,30 +252,16 @@
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
     "oracle_type": "PythEMA"
   },
-  "54": {
-    "label": "EMA BTC/USD",
-    "oracle_mapping": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU",
-    "oracle_type": "PythEMA"
-  },
-  "55": {
-    "label": "EMA SRM/USD",
-    "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym",
-    "oracle_type": "PythEMA"
-  },
   "56": {
     "label": "EMA RAY/USD",
     "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB",
     "oracle_type": "PythEMA"
   },
-  "57": {
-    "label": "EMA FTT/USD",
-    "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF",
-    "oracle_type": "PythEMA"
-  },
   "58": {
-    "label": "EMA MSOL/USD",
-    "oracle_mapping": "E4v1BBgoso9s64TQvmyownAVJbhbEPGyzA3qn4n46qj9",
-    "oracle_type": "PythEMA"
+    "label": "TWAP MSOL/USD",
+    "oracle_mapping": "BTTEnNKBaiFvwX9uAYzeWwaEwprToRiKJCuHCiK1uwYT",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "59": {
     "label": "EMA BNB/USD",
@@ -323,9 +274,10 @@
     "oracle_type": "PythEMA"
   },
   "61": {
-    "label": "EMA STSOL/USD",
-    "oracle_mapping": "Bt1hEbY62aMriY1SyQqbeZbm8VmSbQVGBFzSzMuVNWzN",
-    "oracle_type": "PythEMA"
+    "label": "TWAP STSOL/USD",
+    "oracle_mapping": "2xjosYMbYZqb8aTQADcdKDgFM9KWqxtGzt9m92D36MSC",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   },
   "62": {
     "label": "EMA USDC/USD",
@@ -335,11 +287,6 @@
   "63": {
     "label": "EMA USDT/USD",
     "oracle_mapping": "3vxLXJqLqF3JG5TCbYycbKWRBbCJQLxQmBGCkyqEEefL",
-    "oracle_type": "PythEMA"
-  },
-  "64": {
-    "label": "EMA SLND/USD",
-    "oracle_mapping": "HkGEau5xY1e8REXUFbwvWWvyJGywkgiAZZFpryyraWqJ",
     "oracle_type": "PythEMA"
   },
   "65": {

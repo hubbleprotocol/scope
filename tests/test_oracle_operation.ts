@@ -67,8 +67,6 @@ describe('Scope tests', () => {
     await program.rpc.initialize(PRICE_FEED, {
       accounts: {
         admin: admin.publicKey,
-        program: program.programId,
-        programData: programDataAddress,
         systemProgram: SystemProgram.programId,
         configuration: confAccount,
         oraclePrices: oracleAccount,
@@ -100,11 +98,10 @@ describe('Scope tests', () => {
       testTokens.map(async (fakeOracleAccount, idx): Promise<any> => {
         // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
 
-        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), {
+        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), PRICE_FEED, {
           accounts: {
             admin: admin.publicKey,
-            program: program.programId,
-            programData: programDataAddress,
+            configuration: confAccount,
             oracleMappings: oracleMappingAccount,
             priceInfo: fakeOracleAccount.account,
           },
@@ -176,11 +173,10 @@ describe('Scope tests', () => {
     // In this test set the tokens from the end of the mapping for limit testing
     await Promise.all(
       testTokensExtra.map(async (fakeOracleAccount, idx): Promise<any> => {
-        await program.rpc.updateMapping(new BN(global.MAX_NB_TOKENS - idx - 1), OracleType.Pyth, {
+        await program.rpc.updateMapping(new BN(global.MAX_NB_TOKENS - idx - 1), OracleType.Pyth, PRICE_FEED, {
           accounts: {
             admin: admin.publicKey,
-            program: program.programId,
-            programData: programDataAddress,
+            configuration: confAccount,
             oracleMappings: oracleMappingAccount,
             priceInfo: fakeOracleAccount.account,
           },
