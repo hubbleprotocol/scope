@@ -1,0 +1,49 @@
+{
+    "jobs": [
+        {
+            "name": "Orca aquafarm MNDE/MSOL/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "orcaPoolAddress": "vjHagYsgZwG9icyFLHu2xWHWdtiS5gfeNzRhDcPt5xq"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "81muJBhUKQmiRbRrATu5GEaKpeXsFLcFAdaknVDZvE6p"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Orca aquafarm MNDE/USDC/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "orcaPoolAddress": "2yNwARmTmc3NzYMETCZQjAE5GGCPgviH6hiBsxaeikTK"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Raydium MNDE/MSOL/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "raydiumPoolAddress": "2kPA9XUuHUifcCYTnjSuN7ZrC3ma8EKPrtzUhC86zj3m"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "81muJBhUKQmiRbRrATu5GEaKpeXsFLcFAdaknVDZvE6p"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -355,7 +355,7 @@ impl ScopeClient {
         Ok(self
             .get_prices_ttl()?
             .filter_map(|(index, ttl)| {
-                if ttl > 0 {
+                if ttl == 0 {
                     self.tokens.get(&index).map(|t| t.to_string())
                 } else {
                     None

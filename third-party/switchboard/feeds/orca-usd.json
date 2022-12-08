@@ -1,0 +1,108 @@
+{
+    "jobs": [
+        {
+            "name": "Orca whirlpool ORCA/USDC/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "orcaPoolTokenMintAddress": "5Z66YYYaTmmx1R4mATAGLSc8aV4Vfy5tNdJQzk1GP9RF"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Mexc ORCA/USDT/USD",
+            "tasks": [
+                {
+                    "httpTask": {
+                        "url": "https://www.mexc.com/open/api/v2/market/ticker?symbol=ORCA_USDT"
+                    }
+                },
+                {
+                    "medianTask": {
+                        "tasks": [
+                            {
+                                "jsonParseTask": {
+                                    "path": "$.data[0].ask"
+                                }
+                            },
+                            {
+                                "jsonParseTask": {
+                                    "path": "$.data[0].bid"
+                                }
+                            },
+                            {
+                                "jsonParseTask": {
+                                    "path": "$.data[0].last"
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Gate.io ORCA/USDT/USD",
+            "tasks": [
+                {
+                    "httpTask": {
+                        "url": "https://api.gateio.ws/api/v4/spot/tickers?currency_pair=ORCA_USDT"
+                    }
+                },
+                {
+                    "medianTask": {
+                        "tasks": [
+                            {
+                                "jsonParseTask": {
+                                    "path": "$[0].lowest_ask"
+                                }
+                            },
+                            {
+                                "jsonParseTask": {
+                                    "path": "$[0].highest_bid"
+                                }
+                            },
+                            {
+                                "jsonParseTask": {
+                                    "path": "$[0].last"
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Coinbase ORCA/USD",
+            "tasks": [
+                {
+                    "httpTask": {
+                        "url": "https://api.exchange.coinbase.com/products/ORCA-USD/ticker",
+                        "method": "METHOD_GET"
+                    }
+                },
+                {
+                    "jsonParseTask": {
+                        "path": "$.price",
+                        "aggregationMethod": "NONE"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,5 +1,5 @@
 {
-  "default_max_age": 60,
+  "default_max_age": 75,
   "0": {
     "label": "SOL/USD",
     "oracle_mapping": "H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG",
@@ -96,9 +96,9 @@
   },
   "23": {
     "label": "ORCA/USD",
-    "oracle_mapping": "7ySvXU4NSxBuuQZj3pG5qwqNTepMFa8XQNLGivM4qkEy",
+    "oracle_mapping": "3Jo3gPFkH1ov54LJVJaS9NMYuMvZAbtHk4aSUPHTzAMU",
     "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "max_age": 300
   },
   "24": {
     "label": "MNDE/USD",
@@ -227,9 +227,9 @@
   },
   "49": {
     "label": "UXP/USD",
-    "oracle_mapping": "EsQkrtuJdRnDp6JvAcmRiYGoQbWL668TEZDW8VmrNcm3",
+    "oracle_mapping": "4X9Yz6WdjhXSBPQMLUntEreZbZxmWZfEqrJrkrytW1Ur",
     "oracle_type": "SwitchboardV2",
-    "max_age": 120
+    "max_age": 300
   },
   "50": {
     "label": "kUXD-USDC_Orca/USD",

@@ -1,0 +1,34 @@
+{
+    "jobs": [
+        {
+            "name": "Orca aquafarm ORCA/USDC/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "orcaPoolAddress": "eKuTPdMHmnVzLP63oWwdUH6bBAVcdvBfg4zvH2nWWCj"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Raydium ORCA/USDC/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "raydiumPoolAddress": "6tmFJbMk5yVHFcFy7X2K8RwHjKLr6KVFLYXpgpBNeAxB"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+                    }
+                }
+            ]
+        }
+    ]
+}
