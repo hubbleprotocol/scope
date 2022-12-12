@@ -4,4 +4,6 @@ Every epoch the SPL stake pool need to be refreshed with the rewards from all va
 
 ## Pre-requirement
 
-The provided script requires to have a valid solana config (`solana config get`) targeting mainnet.
+- The provided script requires to have a valid solana config (`solana config get`) targeting mainnet.
+- [`jq`](https://stedolan.github.io/jq/) to parse the configuration and find automatically the accounts to refresh from mainnet conf
+- Solana's [spl stake pool cli](https://spl.solana.com/stake-pool/cli): can be installed with `cargo install spl-stake-pool-cli`
