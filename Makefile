@@ -38,7 +38,7 @@ ifeq ($(CLUSTER),localnet)
 endif
 ifeq ($(CLUSTER),mainnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
-   URL ?= "https://api.mainnet-beta.solana.com"
+   URL ?= "https://solana-mainnet.rpc.extrnode.com"
 endif
 ifeq ($(CLUSTER),devnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/2/
@@ -128,11 +128,11 @@ print-pubkeys: $(SCOPE_CLI)
 
 clone-mainnet-to-local-validator: $(SCOPE_CLI)
 >@ export ORACLE_PUBKEYS="${shell CLUSTER=mainnet make print-pubkeys}"
-> solana-test-validator -r --url "https://misty-frosty-pond.solana-mainnet.quiknode.pro/3dae9f501117a5bc43a15e9aeb052b03732bdc52/" --clone $$ORACLE_PUBKEYS
+> solana-test-validator -r --url "https://solana-mainnet.rpc.extrnode.com" --clone $$ORACLE_PUBKEYS
 
 clone-devnet-to-local-validator:
 >@ export ORACLE_PUBKEYS="${shell CLUSTER=devnet make print-pubkeys}"
-> solana-test-validator -r --url "https://wandering-restless-darkness.solana-devnet.quiknode.pro/8eca9fa5ccdf04e4a0f558cdd6420a6805038a1f/" --clone $$ORACLE_PUBKEYS
+> solana-test-validator -r --url "https://rpc.ankr.com/solana_devnet" --clone $$ORACLE_PUBKEYS
 
 test: test-rust test-ts
 
