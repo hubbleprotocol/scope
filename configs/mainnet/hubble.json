@@ -15,6 +15,11 @@
     "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB",
     "oracle_type": "Pyth"
   },
+  "5": {
+    "label": "FTT/USD",
+    "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF",
+    "oracle_type": "Pyth"
+  },
   "6": {
     "label": "MSOL/USD",
     "oracle_mapping": "81muJBhUKQmiRbRrATu5GEaKpeXsFLcFAdaknVDZvE6p",
