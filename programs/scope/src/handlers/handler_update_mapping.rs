@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 #[instruction(token:usize, price_type: u8, feed_name: String)]
 pub struct UpdateOracleMapping<'info> {
     pub admin: Signer<'info>,
-    #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin)]
+    #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin, has_one = oracle_mappings)]
     pub configuration: AccountLoader<'info, crate::Configuration>,
     #[account(mut)]
     pub oracle_mappings: AccountLoader<'info, OracleMappings>,

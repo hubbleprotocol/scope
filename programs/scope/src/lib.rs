@@ -124,8 +124,8 @@ pub struct OracleMappings {
 #[account(zero_copy)]
 pub struct Configuration {
     pub admin: Pubkey,
-    pub oracle_mappings_pbk: Pubkey,
-    pub oracle_prices_pbk: Pubkey,
+    pub oracle_mappings: Pubkey,
+    pub oracle_prices: Pubkey,
     _padding: [u64; 1267],
 }
 

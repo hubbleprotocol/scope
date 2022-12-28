@@ -17,7 +17,7 @@ pub struct RefreshOne<'info> {
 
 #[derive(Accounts)]
 pub struct RefreshList<'info> {
-    #[account(mut)]
+    #[account(mut, has_one = oracle_mappings)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,

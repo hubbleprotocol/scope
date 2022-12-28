@@ -37,8 +37,8 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     let admin = ctx.accounts.admin.key();
     let mut configuration = ctx.accounts.configuration.load_init()?;
     configuration.admin = admin;
-    configuration.oracle_mappings_pbk = oracle_pbk;
-    configuration.oracle_prices_pbk = prices_pbk;
+    configuration.oracle_mappings = oracle_pbk;
+    configuration.oracle_prices = prices_pbk;
 
     Ok(())
 }

@@ -32,6 +32,8 @@ const MAX_REFRESH_CHUNK_SIZE: usize = 26;
 const MAX_COMPUTE_UNITS: u32 = 1_400_000;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
+
+#[derive(Debug)]
 pub struct ScopeClient {
     program: Program,
     feed_name: String,
@@ -50,18 +52,18 @@ impl ScopeClient {
         let (configuration_acc, _) =
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], &program_id);
 
-        let Configuration { oracle_mappings_pbk, oracle_prices_pbk, .. } = program
+        let Configuration { oracle_mappings, oracle_prices, .. } = program
             .account::<Configuration>(configuration_acc)
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
-        debug!(%oracle_prices_pbk, %oracle_mappings_pbk, %configuration_acc, %price_feed);
+        debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %price_feed);
 
         Ok(Self {
             program,
             feed_name: price_feed.to_string(),
             configuration_acc,
-            oracle_prices_acc: oracle_prices_pbk,
-            oracle_mappings_acc: oracle_mappings_pbk,
+            oracle_prices_acc: oracle_prices,
+            oracle_mappings_acc: oracle_mappings,
             tokens: IntMap::default(),
         })
     }
@@ -453,10 +455,10 @@ impl ScopeClient {
     #[tracing::instrument(skip(self))]
     fn ix_update_mapping(&self, oracle_account: &Pubkey, token: u64, price_type: u8) -> Result<()> {
         let update_account = accounts::UpdateOracleMapping {
+            admin: self.program.payer(),
             configuration: self.configuration_acc,
             oracle_mappings: self.oracle_mappings_acc,
             price_info: *oracle_account,
-            admin: self.program.payer(),
         };
 
         let request = self.program.request();
