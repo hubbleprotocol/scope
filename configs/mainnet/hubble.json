@@ -10,6 +10,11 @@
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
     "oracle_type": "Pyth"
   },
+  "3": {
+    "label": "SRM/USD",
+    "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym",
+    "oracle_type": "Pyth"
+  },
   "4": {
     "label": "RAY/USD",
     "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB",
@@ -255,6 +260,11 @@
   "53": {
     "label": "EMA ETH/USD",
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
+    "oracle_type": "PythEMA"
+  },
+  "55": {
+    "label": "EMA SRM/USD",
+    "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym",
     "oracle_type": "PythEMA"
   },
   "56": {
