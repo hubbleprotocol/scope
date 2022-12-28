@@ -257,6 +257,11 @@
     "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB",
     "oracle_type": "PythEMA"
   },
+  "57": {
+    "label": "EMA FTT/USD",
+    "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF",
+    "oracle_type": "PythEMA"
+  },
   "58": {
     "label": "TWAP MSOL/USD",
     "oracle_mapping": "BTTEnNKBaiFvwX9uAYzeWwaEwprToRiKJCuHCiK1uwYT",
