@@ -1,0 +1,72 @@
+{
+  "jobs": [
+    {
+      "name": "Raydium BONK/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "G7mw1d83ismcQJKkzt62Ug4noXCjVhu3eV7U5EMgge6Z"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raydium BONK/SOL/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "HVNwzt7Pxfu76KHCMQPTLuTCLTm6WnQ1esLv4eizseSv"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca BONK/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "5P6n5omLbLbP4kaPGL8etqQAHEx2UCkaUyvjLDnwV4EY"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca BONK/SOL/USD",
+      "tasks": [
+        {
+          "valueTask": {
+            "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "BqnpCdDLPV2pFdAaLnVidmn3G93RP2p5oRdGEY2sJGez"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

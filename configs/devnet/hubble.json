@@ -302,5 +302,17 @@
     "oracle_mapping": "BV9mGAy5MJLYWJT5HF74izYKjF9CmL4BqkswfTu9gW2w",
     "oracle_type": "SwitchboardV2",
     "max_age": 300
+  },
+  "68": {
+    "label": "BONK/USD",
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
+  },
+  "69": {
+    "label": "TWAP BONK/USD",
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 300
   }
 }
