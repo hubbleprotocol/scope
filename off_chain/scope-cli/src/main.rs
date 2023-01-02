@@ -126,6 +126,8 @@ enum Actions {
 fn main() -> Result<()> {
     let args: Args = Args::parse();
 
+    info!("Starting with args {:#?}", args);
+
     if args.json {
         tracing_subscriber::fmt().json().init();
     } else {

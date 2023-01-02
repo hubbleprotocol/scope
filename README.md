@@ -21,9 +21,9 @@ The repository contains two software:
 
 ## Future updates/ideas
 
-- Support of switchboard as a price source.
-- Support different refresh rates in the bot (stacked stable coin price change less often than other token).
-- Open creation of price feed to any user who will became admin of the feed.
+- [x] Support of switchboard as a price source.
+- [x] Support different refresh rates in the bot (stacked stable coin price change less often than other token).
+- [x] Open creation of price feed to any user who will became admin of the feed.
 - Allow extensible price feed (when resizable account feature is available in Solana mainnet)
 
 ## Example of crank refresh operation:
@@ -59,3 +59,13 @@ The repository contains two software:
 - After refresh operation new price ages is: A: 15, B: 20, C: 3, D: 5, E: 3, F: 22, G: 13, H: 13, I: 20, J: 25
 - Get the new oldest price: J: 25, so sleep for 5 slot (400ms\*5).
 - Loop
+
+
+### Running the bot 
+- For your price feed 
+```
+$ make build
+$ export CLUSTER=mainnet
+$ export URL=<url>
+$ RUST_BACKTRACE=1 cargo run -p scope-cli -- --keypair <keypair.json> --program-id HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ --price-feed hubble crank --mapping ./configs/mainnet/hubble.json
+```

@@ -337,7 +337,8 @@ impl ScopeClient {
         for (&id, entry) in &self.tokens {
             let dated_price = prices[usize::from(id)];
             let price = price_to_f64(&dated_price.price);
-            let price = format!("{price:.5}");
+            let exponent = (dated_price.price.exp + 1) as usize;
+            let price = format!("{price:.exponent$}");
             let price_type = entry.get_type();
             let age_in_slots: i64 = current_slot as i64 - dated_price.last_updated_slot as i64;
             let max_age = entry.get_max_age() as i64;
