@@ -67,6 +67,73 @@
           }
         }
       ]
+    },
+    {
+      "name": "MEXC BONK/USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.mexc.com/open/api/v2/market/ticker?symbol=BONK_USDT"
+          }
+        },
+        {
+          "meanTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].ask"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].bid"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].last"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Huobi BONK/USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.huobi.pro/market/detail/merged?symbol=bonkusdt"
+          }
+        },
+        {
+          "meanTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.tick.bid[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.tick.ask[0]"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
     }
   ]
 }
