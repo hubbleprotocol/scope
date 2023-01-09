@@ -2,11 +2,11 @@ use warp::Filter;
 
 use serde::Serialize;
 
-pub fn routes() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+pub fn routes() -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     healthcheck()
 }
 
-fn healthcheck() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+fn healthcheck() -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path("health")
         .and(warp::get())
         .map(|| warp::reply::json(&Healthcheck::up()))
