@@ -1,0 +1,219 @@
+{
+  "jobs": [
+    {
+      "name": "MEXC Global SAMO/USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.mexc.com/open/api/v2/market/ticker?symbol=SAMO_USDT"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].ask"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].bid"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[0].last"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "OKX SAMO/USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://www.okx.com/api/v5/market/ticker?instId=SAMO-USDT"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.data[?(@.instId == \"SAMO-USDT\")].last"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[?(@.instId == \"SAMO-USDT\")].bidPx"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.data[?(@.instId == \"SAMO-USDT\")].askPx"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Kraken SAMO/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.kraken.com/0/public/Ticker?pair=SAMOUSD"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.result.SAMOUSD.a[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.SAMOUSD.b[0]"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.result.SAMOUSD.c[0]"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ORCA Aquafarm SAMO/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolTokenMintAddress": "6VK1ksrmYGMBWUUZfygGF8tHRGpNxQEWv8pfvzQHdyyc"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca Whirlpool SAMO/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "9vqYJjDUFecLL2xPUC4Rc7hyCtZ6iJ4mDiVZX7aFXoAe"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raydium SAMO/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "7oYaghDwJ6ZbZwzdzcPqQtW6r4cojSLJDKB6U7tqAK1x"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gateio SAMO/USDT/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.gateio.ws/api/v4/spot/tickers?currency_pair=SAMO_USDT"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$[0].lowest_ask"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$[0].highest_bid"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$[0].last"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gemini SAMO/USD",
+      "tasks": [
+        {
+          "httpTask": {
+            "url": "https://api.gemini.com/v2/ticker/samousd"
+          }
+        },
+        {
+          "medianTask": {
+            "tasks": [
+              {
+                "jsonParseTask": {
+                  "path": "$.close"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.bid"
+                }
+              },
+              {
+                "jsonParseTask": {
+                  "path": "$.ask"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
