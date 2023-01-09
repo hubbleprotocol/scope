@@ -19,6 +19,7 @@ pub fn get_price(
     if stake_pool.last_update_epoch != current_clock.epoch {
         // The price has not been refreshed this epoch
         msg!("SPL Stake account has not been refreshed in current epoch");
+        #[cfg(not(feature = "localnet"))]
         return Err(ScopeError::PriceNotValid.into());
     }
 
