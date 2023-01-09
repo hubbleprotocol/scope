@@ -138,9 +138,9 @@ fn main() -> Result<()> {
 
     let commitment = if let Actions::Crank { .. } = args.action {
         // For crank we don't want to wait for proper confirmation of the refresh transaction
-        CommitmentConfig::confirmed()
+        CommitmentConfig::processed()
     } else {
-        CommitmentConfig::finalized()
+        CommitmentConfig::confirmed()
     };
 
     let client = Client::new_with_options(args.cluster, Rc::new(payer), commitment);
