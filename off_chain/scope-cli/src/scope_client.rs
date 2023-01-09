@@ -25,11 +25,16 @@ use crate::oracle_helpers::{entry_from_config, TokenEntry};
 use crate::utils::{get_clock, price_to_f64};
 
 /// Max number of refresh per tx
-const MAX_REFRESH_CHUNK_SIZE: usize = 26;
+const MAX_REFRESH_CHUNK_SIZE: usize = 24;
 
 /// Max compute units to request
 // TODO: optimize this so the refresh lists costs less.
 const MAX_COMPUTE_UNITS: u32 = 1_400_000;
+
+const EXTRA_LAMPORT_PER_TX: u64 = 10;
+
+const EXTRA_MICRO_LAMPORT_PER_CU: u64 =
+    EXTRA_LAMPORT_PER_TX * 1_000_000 / (MAX_COMPUTE_UNITS as u64);
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 
@@ -550,6 +555,10 @@ impl ScopeClient {
         let tx_res = request
             .instruction(ComputeBudgetInstruction::set_compute_unit_limit(
                 MAX_COMPUTE_UNITS,
+            ))
+            // 10 extra lamports per tx
+            .instruction(ComputeBudgetInstruction::set_compute_unit_price(
+                EXTRA_MICRO_LAMPORT_PER_CU,
             ))
             .args(instruction::RefreshPriceList { tokens })
             .send();
