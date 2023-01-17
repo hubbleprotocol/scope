@@ -168,8 +168,10 @@ pub struct ScopeChainAccount {
 }
 
 impl Discriminator for ScopeChainAccount {
+    const DISCRIMINATOR: [u8; 8] = [180, 51, 138, 247, 240, 173, 119, 79];
+
     fn discriminator() -> [u8; 8] {
-        [180, 51, 138, 247, 240, 173, 119, 79]
+        Self::DISCRIMINATOR
     }
 }
 

@@ -22,11 +22,11 @@ localnet = []
 default = ["localnet"]
 
 [dependencies]
-anchor-lang = "0.25.0"
+anchor-lang = "0.26.0"
 arrayref = "0.3.6"
 bytemuck = { version = "1.7.2" }
 switchboard-program = "0.2.1"
-quick-protobuf = "=0.8.0"
+quick-protobuf = "0.8.0"
 spl-stake-pool = { version = "0.6.3", features = ["no-entrypoint"] }
 uint = "0.9.0"
 rust_decimal = "1.25.0"

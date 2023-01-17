@@ -35,34 +35,35 @@ $(eval $(call DEPENDABLE_VAR,CLUSTER))
 
 ifeq ($(CLUSTER),localnet)
    URL ?= "http://127.0.0.1:8899"
+   SCOPE_PROGRAM_DEPLOY_TARGET := keys/$(CLUSTER)/scope.json
+   FAKE_ORACLES_PROGRAM_DEPLOY_TARGET := keys/$(CLUSTER)/mock_oracles.json
+   SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_DEPLOY_TARGET)
+   FAKE_ORACLES_PROGRAM_ID != solana-keygen pubkey $(FAKE_ORACLES_PROGRAM_DEPLOY_TARGET)
+   deploy: $(SCOPE_PROGRAM_DEPLOY_TARGET) $(FAKE_ORACLES_PROGRAM_DEPLOY_TARGET) airdrop
 endif
 ifeq ($(CLUSTER),mainnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
    URL ?= "https://solana-mainnet.rpc.extrnode.com"
+   SCOPE_PROGRAM_ID ?= "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ"
 endif
 ifeq ($(CLUSTER),devnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/2/
    URL ?= "https://api.devnet.solana.com"
+   SCOPE_PROGRAM_ID ?= "3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX"
 endif
-ifeq ($(URL),)
-# URL is still empty, CLUSTER is probably set to an URL directly
-# TODO: is this logical?
-   URL = $(CLUSTER)
+ifndef URL
+   $(error Cluster is set to an unknown value: $(CLUSTER))
 endif
-
-SCOPE_PROGRAM_KEYPAIR := keys/$(CLUSTER)/scope.json
-FAKE_ORACLES_PROGRAM_KEYPAIR := keys/$(CLUSTER)/mock_oracles.json
 
 SCOPE_PROGRAM_SO := target/deploy/scope.so
 FAKE_ORACLES_PROGRAM_SO := target/deploy/mock_oracles.so
 SCOPE_CLI := target/debug/scope
 
-SCOPE_PROGRAM_ID != solana-keygen pubkey $(SCOPE_PROGRAM_KEYPAIR)
-FAKE_ORACLES_PROGRAM_ID != solana-keygen pubkey $(FAKE_ORACLES_PROGRAM_KEYPAIR)
 PROGRAM_DEPLOY_ACCOUNT != solana-keygen pubkey $(OWNER_KEYPAIR)
 
 PROGRAM_SO ?= $(SCOPE_PROGRAM_SO)
-PROGRAM_KEYPAIR ?= $(SCOPE_PROGRAM_KEYPAIR)
+SCOPE_PROGRAM_DEPLOY_TARGET ?= $(SCOPE_PROGRAM_ID)
+PROGRAM_DEPLOY_TARGET ?= $(SCOPE_PROGRAM_DEPLOY_TARGET)
 
 .PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env format print-switchboard-links
 
@@ -89,31 +90,50 @@ target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $
 >@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
 
 deploy-scope:
->@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
-
-deploy:
->@ PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_KEYPAIR=$(SCOPE_PROGRAM_KEYPAIR) $(MAKE) deploy-int
->@ if [ $(CLUSTER) = "localnet" ]; then\
-       # Deploy fake oracles (mock_oracles, Switchboard V1 and Switchboard V2) only on localnet\
-       PROGRAM_SO=$(FAKE_ORACLES_PROGRAM_SO) PROGRAM_KEYPAIR=$(FAKE_ORACLES_PROGRAM_KEYPAIR) $(MAKE) deploy-int;\
+>@ if [ $(CLUSTER) = "mainnet" ]; then\
+      PROGRAM_SO=$(SCOPE_PROGRAM_SO) $(MAKE) write-buffer;\
+   else\
+      CLUSTER=$(CLUSTER) URL=$(URL) PROGRAM_SO=$(SCOPE_PROGRAM_SO) PROGRAM_DEPLOY_TARGET=$(SCOPE_PROGRAM_DEPLOY_TARGET) $(MAKE) deploy-int;\
    fi
 
-deploy-int: $(PROGRAM_SO) $(PROGRAM_KEYPAIR) $(OWNER_KEYPAIR)
+deploy:
+>@ if [ $(CLUSTER) = "localnet" ]; then\
+      PROGRAM_SO=$(FAKE_ORACLES_PROGRAM_SO) PROGRAM_DEPLOY_TARGET=$(FAKE_ORACLES_PROGRAM_DEPLOY_TARGET) $(MAKE) deploy-int;\
+   fi
+>@ if [ $(CLUSTER) = "mainnet" ]; then\
+      PROGRAM_SO=$(SCOPE_PROGRAM_SO) $(MAKE) write-buffer;\
+   else\
+      CLUSTER=$(CLUSTER) URL=$(URL) $(MAKE) deploy-scope;\
+   fi
+
+deploy-int: $(PROGRAM_SO) $(OWNER_KEYPAIR)
+>@ if [ $(CLUSTER) = "mainnet" ]; then echo "mainnet shall be behind multisig, use `make write-buffer` instead" && exit 1; fi
 >@ echo "*******Deploy $(PROGRAM_SO) to $(URL)*******"
 >@ if [ $(shell uname -s) = "Darwin" ]; then \
-      PROGRAM_SIZE=$(shell stat -f '%z' "$(PROGRAM_SO)");\
+      PROGRAM_SIZE=$(shell stat -f '%z' "$(PROGRAM_SO)" 2> /dev/null);\
    else \
-      PROGRAM_SIZE=$(shell stat -c%s "$(PROGRAM_SO)"); \
+      PROGRAM_SIZE=$(shell stat -c '%s' "$(PROGRAM_SO)");\
    fi
 >@ PROGRAM_SIZE=$$(( PROGRAM_SIZE * 4 ))
 >@ echo "Program allocated size: $$PROGRAM_SIZE"
 >@ solana program deploy -v \
     -u $(URL) \
-    --program-id $(PROGRAM_KEYPAIR) \
+    --program-id $(PROGRAM_DEPLOY_TARGET) \
     --keypair $(OWNER_KEYPAIR) \
     --upgrade-authority $(OWNER_KEYPAIR) \
     --max-len $$PROGRAM_SIZE \
     $(PROGRAM_SO)
+
+write-buffer: $(PROGRAM_SO)
+>@ echo ""
+>@ echo "********************************************************************************"
+>@ echo "*******Write $(PROGRAM_SO) to a buffer account*******"
+>@ echo "Scope program will be written to a buffer account using the default solana configuration. Please check that the following parameters are correct."
+>@ echo "Your keypair must be set with an absolute path"
+>@ solana config get
+>@ echo "Your current balance is $(shell solana balance)"
+>@ echo -n "Do you wish to continue? [y/N] " && read ans && [ $${ans:-N} = y ]
+>@ solana program write-buffer $(PROGRAM_SO)
 
 ## Listen to on-chain logs
 listen:
