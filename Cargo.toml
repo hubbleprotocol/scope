@@ -1,5 +1,6 @@
 [workspace]
-members = ["programs/*", "off_chain/scope-cli"]
+members = ["programs/*", "off_chain/scope-cli", "off_chain/orbit-link"]
+resolver = "2"
 
 [profile.dev]
 overflow-checks = true
