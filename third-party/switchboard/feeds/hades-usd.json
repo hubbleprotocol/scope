@@ -1,0 +1,57 @@
+{
+  "jobs": [
+    {
+      "name": "Raydium HADES/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "9fhw3moJmx1jxSsVW6gWBUndNmdukpejKwhTJtCJB4gc"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca HADES/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "2QK4n92cVZvAW8WjSYz4imyFECJunKHETDDu6X3w29b8"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca HADES/SOL/USD",
+      "tasks": [
+        {
+          "valueTask": {
+            "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "DjfEf8RqbBytbq2oyG5oSrdfGYgtXhk24zgwapswNTfZ"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

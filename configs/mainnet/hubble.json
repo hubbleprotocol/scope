@@ -353,5 +353,17 @@
     "label": "LaineSOL/SOL",
     "oracle_mapping": "2qyEeSAWKfU18AFthrF7JA8z8ZCi1yt76Tqs917vwQTV",
     "oracle_type": "SplStake"
+  },
+  "74": {
+    "label": "HADES/USD",
+    "oracle_mapping": "8c4F9FDkhzjNKEHGFtKA3ZZkg7rAowxGbLsZyyh3QzNB",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "75": {
+    "label": "TWAP HADES/USD",
+    "oracle_mapping": "Dk56aJYsAuYxZsrQ3UXjirP43ZWyRw5v1hHJoC81Jr4c",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
