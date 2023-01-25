@@ -17,16 +17,13 @@ use tracing::{error, info, trace, warn};
 
 use anyhow::Result;
 
-mod cluster_parse;
 mod web;
-
-use cluster_parse::parse;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// Connect to solana validator
-    #[clap(long, env, parse(try_from_str=parse), default_value = "localnet")]
+    #[clap(long, env, parse(try_from_str), default_value = "localnet")]
     cluster: Cluster,
 
     /// Account keypair to pay for the transactions
