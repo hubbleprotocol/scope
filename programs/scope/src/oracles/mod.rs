@@ -5,7 +5,6 @@ pub mod pyth_ema;
 pub mod spl_stake;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
-pub mod yitoken;
 
 use crate::{DatedPrice, ScopeError};
 
@@ -30,7 +29,7 @@ pub enum OracleType {
     Pyth = 0,
     SwitchboardV1 = 1,
     SwitchboardV2 = 2,
-    YiToken = 3,
+    // Depracated YiToken = 3,
     /// Solend tokens
     CToken = 4,
     /// SPL Stake Pool token (like scnSol)
@@ -59,7 +58,6 @@ where
         OracleType::Pyth => pyth::get_price(base_account),
         OracleType::SwitchboardV1 => switchboard_v1::get_price(base_account),
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
-        OracleType::YiToken => yitoken::get_price(base_account, extra_accounts, clock),
         OracleType::CToken => ctokens::get_price(base_account, clock),
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
         OracleType::KToken => ktokens::get_price(base_account, extra_accounts),
@@ -79,7 +77,6 @@ pub fn validate_oracle_account(
         OracleType::Pyth => pyth::validate_pyth_price_info(price_account),
         OracleType::SwitchboardV1 => Ok(()), // TODO at least check account ownership?
         OracleType::SwitchboardV2 => Ok(()), // TODO at least check account ownership?
-        OracleType::YiToken => Ok(()),       // TODO how shall we validate yi token account?
         OracleType::CToken => Ok(()),        // TODO how shall we validate ctoken account?
         OracleType::SplStake => Ok(()),
         OracleType::KToken => Ok(()),

@@ -23,7 +23,6 @@ mainnet = []
 
 [dependencies]
 anchor-lang = "0.26.0"
-anchor-spl = { version = "0.26.0", features = ["token"] }
 solana-program = "1.14.10"
 num_enum = "0.5.7"
 num = "0.4"

@@ -140,11 +140,7 @@ listen:
 > solana logs -u $(URL) ${SCOPE_PROGRAM_ID}
 
 test-validator:
-> solana-test-validator -r --url mainnet-beta --clone \
-                         EDLcx5J9aBkA6a7V5aQLqb8nnBByNhhNn8Qr9QksHobc \
-                         CGczF9uYdSVXmSr9swMafhF1ktHsi6ygcgTHWL71XNZ9 \
-                         53bbgS6eK2iBL4iKv8C3tzCLwtoidyssCmosV2ESTXAs \
-                         --account JAa3gQySiTi8tH3dpkvgztJWHQC1vGXr5m6SQ9LEM55T tests/deps/solustscope.json
+> solana-test-validator -r
 
 print-pubkeys: $(SCOPE_CLI)
 >@ ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) get-pubkeys --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json

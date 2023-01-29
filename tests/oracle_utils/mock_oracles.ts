@@ -6,7 +6,6 @@ import Decimal from 'decimal.js';
 import * as pyth from './pyth';
 import * as switchboardV1 from './switchboard_v1';
 import * as switchboardV2 from './switchboard_v2';
-import * as yi from './yitokens';
 import * as ctokens from './ctokens';
 import * as spl_stake from './spl_stake';
 
@@ -16,7 +15,6 @@ export enum OracleType {
   Pyth = 0,
   SwitchboardV1 = 1,
   SwitchboardV2 = 2,
-  YiToken = 3,
   CToken = 4,
   SplStake = 5,
   PythEMA = 6,
@@ -52,7 +50,6 @@ export const oracles: Record<OracleType, IMockOracle> = {
   [OracleType.Pyth]: new pyth.PythMockOracle(),
   [OracleType.SwitchboardV1]: new switchboardV1.Sb1MockOracle(),
   [OracleType.SwitchboardV2]: new switchboardV2.Sb2MockOracle(),
-  [OracleType.YiToken]: new yi.YiMockOracle(),
   [OracleType.CToken]: new ctokens.CTokenMockOracle(),
   [OracleType.SplStake]: new spl_stake.StakePoolMockOracle(),
   [OracleType.PythEMA]: new pyth.PythMockOracle(),

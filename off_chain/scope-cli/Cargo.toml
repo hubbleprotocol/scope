@@ -20,7 +20,6 @@ banks-client = ["orbit-link/banks-client"]
 
 [dependencies]
 anchor-client = "0.26.0"
-anchor-spl = { version = "0.26.0", features = ["dex", "token"] }
 scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
 anyhow = "1.0.0"
 clap = { version = "3.2.11", features = ["derive", "env", "wrap_help"] }

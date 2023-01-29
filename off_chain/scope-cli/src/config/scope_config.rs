@@ -39,7 +39,6 @@ mod tests {
     // use crate::config::utils::remove_whitespace;
     use scope::anchor_lang::prelude::Pubkey;
     use scope::oracles::OracleType;
-    use std::num::NonZeroU64;
     use std::str::FromStr;
 
     #[test]
@@ -69,17 +68,7 @@ mod tests {
             },
         );
         token_conf_list.tokens.insert(
-            4, // 4 to test actual holes
-            TokenConfig {
-                label: "UST/stSolUST".to_string(),
-                max_age: NonZeroU64::new(800),
-                oracle_mapping: Pubkey::from_str("HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J")
-                    .unwrap(),
-                oracle_type: OracleType::YiToken,
-            },
-        );
-        token_conf_list.tokens.insert(
-            13,
+            13, // 13 to test actual holes
             TokenConfig {
                 label: "STSOL/USD".to_string(),
                 max_age: None,
@@ -120,12 +109,6 @@ mod tests {
                 "label": "ETH/USD",
                 "oracle_type": "SwitchboardV1",
                 "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw"
-            },
-            "4": {
-                "label": "UST/stSolUST",
-                "oracle_type": "YiToken",
-                "max_age": 800,
-                "oracle_mapping": "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J"
             },
             "13": {
                 "label": "STSOL/USD",

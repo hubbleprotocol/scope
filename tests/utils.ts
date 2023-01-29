@@ -17,7 +17,6 @@ export enum HubbleTokens {
   UST,
   BNB,
   AVAX,
-  STSOLUST,
   SABERMSOLSOL,
   USDHUSD,
   STSOLUSD,
@@ -91,12 +90,6 @@ export const initialTokens: ITokenInput[] = [
     priceType: OracleType.Pyth,
   },
   {
-    price: new Decimal('0.90987600'),
-    ticker: 'STSOLUST',
-    decimals: 8,
-    priceType: OracleType.YiToken,
-  },
-  {
     price: new Decimal('343.92109348'),
     ticker: 'SABERMSOLSOL',
     decimals: 8,
@@ -161,11 +154,6 @@ export function getScopePriceDecimal(token: number, oraclePrices: any) {
 
 export function checkOraclePrice(token: number, oraclePrices: any, testTokens: ITokenEntry[]) {
   //console.log(`Check ${testTokens[token].ticker} price`);
-
-  // Just ignore Yi token as it's not properly mocked
-  if (testTokens[token].getType() == OracleType.YiToken) {
-    return;
-  }
 
   let price = oraclePrices.prices[token].price;
   let value = price.value.toNumber();
