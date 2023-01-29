@@ -9,8 +9,8 @@ description = "OrbitLink is convenience layer over Solana's async client for Anc
 
 [features]
 default = ["rpc-client"]
-rpc-client = ["dep:solana-client"]
-banks-client = ["dep:solana-banks-client", "dep:solana-banks-interface"]
+rpc-client = ["solana-client"]
+banks-client = ["solana-banks-client", "solana-banks-interface"]
 
 [dependencies]
 anchor-client = "0.26.0"

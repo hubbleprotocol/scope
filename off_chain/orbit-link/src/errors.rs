@@ -24,6 +24,7 @@ pub enum ErrorKind {
     NoInstructions,
 }
 
+#[cfg(feature = "banks-client")]
 impl From<solana_banks_client::BanksClientError> for ErrorKind {
     fn from(err: solana_banks_client::BanksClientError) -> Self {
         ErrorKind::SolanaBanksError(Box::new(err))
