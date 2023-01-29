@@ -1,28 +1,29 @@
 use std::mem::size_of;
 
-use anchor_client::solana_client::rpc_client::RpcClient;
-use anchor_client::{Client, Program};
-
-use anchor_client::solana_sdk::{
-    clock::{self, Clock},
-    compute_budget::ComputeBudgetInstruction,
-    instruction::AccountMeta,
-    pubkey::Pubkey,
-    signature::Keypair,
-    signer::Signer,
-    system_instruction, system_program,
-    sysvar::SysvarId,
+use anchor_client::{
+    solana_client::rpc_client::RpcClient,
+    solana_sdk::{
+        clock::{self, Clock},
+        compute_budget::ComputeBudgetInstruction,
+        instruction::AccountMeta,
+        pubkey::Pubkey,
+        signature::Keypair,
+        signer::Signer,
+        system_instruction, system_program,
+        sysvar::SysvarId,
+    },
+    Client, Program,
 };
-
 use anyhow::{anyhow, bail, Context, Result};
-
 use nohash_hasher::IntMap;
 use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
 use tracing::{debug, error, event, info, trace, warn, Level};
 
-use crate::config::{ScopeConfig, TokenConfig, TokenList};
-use crate::oracle_helpers::{entry_from_config, TokenEntry};
-use crate::utils::{get_clock, price_to_f64};
+use crate::{
+    config::{ScopeConfig, TokenConfig, TokenList},
+    oracle_helpers::{entry_from_config, TokenEntry},
+    utils::{get_clock, price_to_f64},
+};
 
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 24;

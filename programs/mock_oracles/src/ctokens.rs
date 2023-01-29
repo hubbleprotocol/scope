@@ -1,8 +1,11 @@
+use anchor_lang::{
+    prelude::{AccountInfo, Clock, Pubkey, Result, SolanaSysvar},
+    solana_program::program_pack::Pack,
+};
+
 use crate::externals::solend::{
     LastUpdate, Reserve, ReserveCollateral, ReserveLiquidity, PROGRAM_VERSION,
 };
-use anchor_lang::prelude::{AccountInfo, Clock, Pubkey, Result, SolanaSysvar};
-use anchor_lang::solana_program::program_pack::Pack;
 
 pub fn initialize(
     ctoken_account: &AccountInfo,

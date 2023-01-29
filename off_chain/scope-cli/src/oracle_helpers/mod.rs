@@ -8,11 +8,9 @@
 //! - [`std::fmt::Display`] for basic logging of a reference to a token.
 //! - [`std::fmt::Debug`] for detailled debug and error logs.
 
-use anchor_client::solana_client::rpc_client::RpcClient;
-use anchor_client::solana_sdk::clock;
+use anchor_client::{solana_client::rpc_client::RpcClient, solana_sdk::clock};
 use anyhow::Result;
-use scope::oracles::OracleType;
-use scope::{anchor_lang::prelude::Pubkey, DatedPrice};
+use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
 pub mod ktokens;
 pub mod single_account_oracle;

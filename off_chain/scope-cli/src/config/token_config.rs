@@ -1,9 +1,9 @@
 use std::num::NonZeroU64;
 
-use super::utils::serde_string;
-use scope::anchor_lang::prelude::Pubkey;
-use scope::oracles::OracleType;
+use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType};
 use serde::{Deserialize, Serialize};
+
+use super::utils::serde_string;
 
 /// Configuration of the tokens
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -23,9 +23,10 @@ pub struct TokenConfig {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
     use crate::config::utils::remove_whitespace;
-    use std::str::FromStr;
 
     #[test]
     fn conf_de_ser() {

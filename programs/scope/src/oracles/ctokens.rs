@@ -1,9 +1,10 @@
-use crate::{DatedPrice, Price, Result, ScopeResult};
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::clock;
-use anchor_lang::solana_program::program_pack::Pack;
+use anchor_lang::{
+    prelude::*,
+    solana_program::{clock, program_pack::Pack},
+};
 
 use self::solend::Reserve;
+use crate::{DatedPrice, Price, Result, ScopeResult};
 
 const DECIMALS: u32 = 15u32;
 
@@ -56,7 +57,6 @@ fn scaled_rate(reserve: &Reserve) -> ScopeResult<u64> {
 #[cfg(test)]
 mod test {
     use self::solend::*;
-
     use super::*;
 
     #[test]
@@ -131,16 +131,15 @@ pub mod solend {
         pubkey::PUBKEY_BYTES,
     };
     use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
-    use decimal_wad::decimal::Decimal;
-    use decimal_wad::rate::Rate;
     use decimal_wad::{
         common::{TryAdd, TryDiv, TryMul, TrySub, WAD},
+        decimal::Decimal,
         error::DecimalError,
+        rate::Rate,
     };
 
-    use crate::{ScopeError, ScopeResult};
-
     use super::*;
+    use crate::{ScopeError, ScopeResult};
 
     /// Current version of the program and all new accounts created
     pub const PROGRAM_VERSION: u8 = 1;

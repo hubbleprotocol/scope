@@ -1,11 +1,11 @@
-use crate::{DatedPrice, Price, Result, ScopeError};
-use anchor_lang::prelude::*;
-use std::cmp::min;
-use std::convert::TryInto;
+use std::{cmp::min, convert::TryInto};
 
+use anchor_lang::prelude::*;
 use switchboard_program::{
     get_aggregator, get_aggregator_result, AggregatorState, RoundResult, SwitchboardAccountType,
 };
+
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 const SWITCHBOARD_V1_PRICE_DECIMALS: u32 = 8u32;
 const PRICE_MULTIPLIER: f64 = 10u64.pow(SWITCHBOARD_V1_PRICE_DECIMALS) as f64;
@@ -75,8 +75,9 @@ pub fn validate_valid_price(
 
 #[cfg(test)]
 mod tests {
-    use crate::oracles::switchboard_v1;
     use switchboard_program::{mod_AggregatorState, AggregatorState, RoundResult};
+
+    use crate::oracles::switchboard_v1;
 
     fn get_structs_from_min_confirmations_and_num_success(
         min_confirmations: i32,

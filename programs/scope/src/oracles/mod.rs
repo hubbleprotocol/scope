@@ -6,11 +6,11 @@ pub mod spl_stake;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
 
-use crate::{DatedPrice, ScopeError};
-
 use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
+
+use crate::{DatedPrice, ScopeError};
 
 pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
     //make sure there are no extra accounts

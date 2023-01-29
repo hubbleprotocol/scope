@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
-use anchor_client::solana_client::rpc_client::RpcClient;
-use anchor_client::solana_sdk::{clock::Clock, pubkey::Pubkey, sysvar::SysvarId};
+use anchor_client::{
+    solana_client::rpc_client::RpcClient,
+    solana_sdk::{clock::Clock, pubkey::Pubkey, sysvar::SysvarId},
+};
 use anyhow::Result;
-
 use scope::Price;
 
 /// Get the program data address of the given program id

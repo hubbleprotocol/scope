@@ -1,6 +1,5 @@
 use async_trait::async_trait;
-use solana_banks_client::BanksClient;
-use solana_banks_client::TransactionStatus as BankTransactionStatus;
+use solana_banks_client::{BanksClient, TransactionStatus as BankTransactionStatus};
 use solana_banks_interface::TransactionConfirmationStatus as BankTransactionConfirmationStatus;
 use solana_transaction_status::TransactionConfirmationStatus;
 use tokio::sync::Mutex;

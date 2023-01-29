@@ -2,10 +2,13 @@ pub mod scope_chain;
 
 use std::cell::Ref;
 
+use anchor_lang::{
+    __private::bytemuck,
+    prelude::{msg, AccountDeserialize, AccountInfo},
+    Discriminator, Key,
+};
+
 use crate::{ScopeError, ScopeResult};
-use anchor_lang::__private::bytemuck;
-use anchor_lang::prelude::{msg, AccountDeserialize, AccountInfo};
-use anchor_lang::{Discriminator, Key};
 
 pub fn account_deserialize<T: AccountDeserialize + Discriminator>(
     account: &AccountInfo<'_>,

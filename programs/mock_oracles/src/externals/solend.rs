@@ -1,13 +1,14 @@
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::{
-    clock::Slot,
-    program_pack::{IsInitialized, Pack, Sealed},
-    pubkey::{Pubkey, PUBKEY_BYTES},
-};
 use std::{cmp::Ordering, convert::TryFrom};
 
+use anchor_lang::{
+    prelude::*,
+    solana_program::{
+        clock::Slot,
+        program_pack::{IsInitialized, Pack, Sealed},
+        pubkey::{Pubkey, PUBKEY_BYTES},
+    },
+};
 use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
-
 use uint_internal::U192;
 
 // U192 with 192 bits consisting of 3 x 64-bit words

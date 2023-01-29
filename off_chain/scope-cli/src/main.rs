@@ -1,21 +1,20 @@
-use anchor_client::solana_sdk::signature::read_keypair_file;
-use anchor_client::{solana_sdk::pubkey::Pubkey, Client, Cluster};
+use std::{
+    path::{Path, PathBuf},
+    rc::Rc,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
-use anchor_client::solana_sdk::clock;
-use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
-use scope_client::utils::get_clock;
-use scope_client::{ScopeClient, ScopeConfig};
-use std::path::Path;
-use std::path::PathBuf;
-use std::rc::Rc;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
-
-use clap::{Parser, Subcommand};
-
-use tracing::{error, info, trace, warn};
-
+use anchor_client::{
+    solana_sdk::{
+        clock, commitment_config::CommitmentConfig, pubkey::Pubkey, signature::read_keypair_file,
+    },
+    Client, Cluster,
+};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
+use scope_client::{utils::get_clock, ScopeClient, ScopeConfig};
+use tracing::{error, info, trace, warn};
 
 mod web;
 

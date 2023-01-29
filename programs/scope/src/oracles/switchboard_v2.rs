@@ -1,7 +1,6 @@
 use std::convert::TryInto;
 
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::log::sol_log;
+use anchor_lang::{prelude::*, solana_program::log::sol_log};
 
 use self::switchboard::*;
 use crate::{DatedPrice, Price, Result, ScopeError};
@@ -133,8 +132,7 @@ mod switchboard {
 
     use std::cell::Ref;
 
-    use anchor_lang::__private::bytemuck::Pod;
-    use anchor_lang::__private::bytemuck::{self, Zeroable};
+    use anchor_lang::__private::bytemuck::{self, Pod, Zeroable};
     use rust_decimal::{prelude::FromPrimitive, Decimal};
 
     use super::*;
@@ -275,8 +273,9 @@ mod switchboard {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     const U64_MAX: i128 = std::u64::MAX as i128;
 

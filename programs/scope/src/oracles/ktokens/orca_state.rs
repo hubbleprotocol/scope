@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
-use whirlpool::state::Position as OrcaPosition;
-use whirlpool::state::PositionRewardInfo as OrcaPositionRewardInfo;
-use whirlpool::state::Whirlpool as OrcaWhirlpool;
-use whirlpool::state::WhirlpoolRewardInfo as OrcaWhirlpoolRewardInfo;
+use whirlpool::state::{
+    Position as OrcaPosition, PositionRewardInfo as OrcaPositionRewardInfo,
+    Whirlpool as OrcaWhirlpool, WhirlpoolRewardInfo as OrcaWhirlpoolRewardInfo,
+};
 
-use crate::utils::account_deserialize;
-use crate::ScopeResult;
+use crate::{utils::account_deserialize, ScopeResult};
 
 // Number of rewards supported by Whirlpools
 pub const NUM_REWARDS_ORCA: usize = 3;

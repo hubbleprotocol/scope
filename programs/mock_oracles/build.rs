@@ -1,6 +1,6 @@
+use std::{env, fs, path::PathBuf, str::FromStr};
+
 use anyhow::Result;
-use std::fs;
-use std::{env, path::PathBuf, str::FromStr};
 
 const PUBKEY_RS_FILENAME: &str = "pubkey.rs";
 

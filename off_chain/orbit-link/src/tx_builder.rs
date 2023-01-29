@@ -1,16 +1,14 @@
-use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
-use anchor_client::solana_sdk::message::Message;
-use anchor_client::solana_sdk::pubkey::Pubkey;
-use anchor_client::solana_sdk::signer::Signer;
-use anchor_client::solana_sdk::transaction::VersionedTransaction;
 use anchor_client::{
     anchor_lang::{InstructionData, ToAccountMetas},
-    solana_sdk::instruction::Instruction,
+    solana_sdk::{
+        address_lookup_table_account::AddressLookupTableAccount,
+        compute_budget::ComputeBudgetInstruction, instruction::Instruction, message::Message,
+        pubkey::Pubkey, signer::Signer, transaction::VersionedTransaction,
+    },
 };
+use base64::engine::{general_purpose::STANDARD as BS64, Engine};
 
 use crate::{errors, OrbitLink, Result};
-
-use base64::engine::{general_purpose::STANDARD as BS64, Engine};
 
 pub const DEFAULT_IX_BUDGET: u32 = 200_000;
 
@@ -21,6 +19,7 @@ where
     S: Signer,
 {
     instructions: Vec<Instruction>,
+    lookup_tables: Vec<AddressLookupTableAccount>,
     total_budget: u32,
     link: &'link OrbitLink<T, S>,
 }
@@ -34,9 +33,15 @@ where
     pub fn new(link: &'link OrbitLink<T, S>) -> Self {
         TxBuilder {
             instructions: vec![],
+            lookup_tables: vec![],
             total_budget: 0,
             link,
         }
+    }
+
+    pub fn add_lookup_table(mut self, lookup_table: AddressLookupTableAccount) -> Self {
+        self.lookup_tables.push(lookup_table);
+        self
     }
 
     pub fn add_ix_with_budget(mut self, instruction: Instruction, budget: u32) -> Self {
@@ -94,7 +99,13 @@ where
     }
 
     pub async fn build(self, extra_signers: &[&dyn Signer]) -> Result<VersionedTransaction> {
-        self.link.create_tx(&self.instructions, extra_signers).await
+        self.link
+            .create_tx_with_extra_lookup_tables(
+                &self.instructions,
+                extra_signers,
+                &self.lookup_tables,
+            )
+            .await
     }
 
     fn get_budget_ix(&self) -> Option<Instruction> {
@@ -115,12 +126,17 @@ where
         if self.instructions.is_empty() {
             return Err(errors::ErrorKind::NoInstructions);
         }
+
         let mut instructions = Vec::with_capacity(self.instructions.len() + 1);
         if let Some(ix_budget) = self.get_budget_ix() {
             instructions.push(ix_budget);
         }
+
         instructions.extend(self.instructions);
-        self.link.create_tx(&instructions, extra_signers).await
+
+        self.link
+            .create_tx_with_extra_lookup_tables(&instructions, extra_signers, &self.lookup_tables)
+            .await
     }
 
     pub async fn build_with_budget_and_fee(
@@ -130,27 +146,45 @@ where
         if self.instructions.is_empty() {
             return Err(errors::ErrorKind::NoInstructions);
         }
+
         let mut instructions = Vec::with_capacity(self.instructions.len() + 2);
+
         if let Some(ix_budget) = self.get_budget_ix() {
             instructions.push(ix_budget);
         }
-        instructions.push(ComputeBudgetInstruction::set_compute_unit_price(
-            self.link.client.get_recommended_micro_lamport_fee().await?,
-        ));
+
+        let fee = self.link.client.get_recommended_micro_lamport_fee().await?;
+        if fee > 0 {
+            instructions.push(ComputeBudgetInstruction::set_compute_unit_price(fee));
+        }
+
         instructions.extend(self.instructions);
-        self.link.create_tx(&instructions, extra_signers).await
+
+        self.link
+            .create_tx_with_extra_lookup_tables(&instructions, extra_signers, &self.lookup_tables)
+            .await
     }
 
+    /// Build a raw message from the known instructions
+    ///
+    /// The message is not signed, and the blockhash is not set allowing future signing by a multisig.
+    /// Note: This is not compatible with versioned transactions yet and does not include lookup tables.
     pub fn build_raw_msg(&self) -> Vec<u8> {
         let msg = Message::new(&self.instructions, Some(&self.link.payer.pubkey()));
         msg.serialize()
     }
 
+    /// Build a base64 encoded raw message from the known instructions.
+    ///
+    /// See `build_raw_msg` for more details.
     pub fn to_base64(&self) -> String {
         let raw_msg = self.build_raw_msg();
         BS64.encode(raw_msg)
     }
 
+    /// Build a base58 encoded raw message from the known instructions.
+    ///
+    /// See `build_raw_msg` for more details.
     pub fn to_base58(&self) -> String {
         let raw_msg = self.build_raw_msg();
         bs58::encode(raw_msg).into_string()

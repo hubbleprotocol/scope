@@ -4,8 +4,7 @@ use anyhow::Result;
 use nohash_hasher::IntMap;
 use serde::{Deserialize, Serialize};
 
-use super::token_config::TokenConfig;
-use super::utils::serde_int_map;
+use super::{token_config::TokenConfig, utils::serde_int_map};
 
 /// Format of storage of Scope configuration
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -35,11 +34,13 @@ impl ScopeConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::str::FromStr;
+
     // use crate::config::utils::remove_whitespace;
     use scope::anchor_lang::prelude::Pubkey;
     use scope::oracles::OracleType;
-    use std::str::FromStr;
+
+    use super::*;
 
     #[test]
     fn conf_list_de_ser() {

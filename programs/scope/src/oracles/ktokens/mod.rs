@@ -1,14 +1,12 @@
 mod kamino;
 mod orca_state;
 
-use crate::utils::zero_copy_deserialize;
-use crate::{DatedPrice, Price, Result, ScopeError};
 use anchor_lang::prelude::*;
-
+pub use kamino::WhirlpoolStrategy;
 use orca_state::{Position as PositionParser, Whirlpool as WhirlpoolParser};
 
 use self::kamino::{get_price_per_full_share, TokenPrices};
-pub use kamino::WhirlpoolStrategy;
+use crate::{utils::zero_copy_deserialize, DatedPrice, Price, Result, ScopeError};
 
 const USD_DECIMALS_PRECISION: u8 = 8;
 

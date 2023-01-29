@@ -1,12 +1,13 @@
 #![doc = include_str!("../Readme.md")]
 
-use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
-use anchor_client::solana_sdk::instruction::Instruction;
-use anchor_client::solana_sdk::message::{v0, VersionedMessage};
-use anchor_client::solana_sdk::signature::Signature;
-use anchor_client::solana_sdk::transaction::{TransactionError, VersionedTransaction};
 use anchor_client::solana_sdk::{
-    address_lookup_table_account::AddressLookupTableAccount, signer::Signer,
+    address_lookup_table_account::AddressLookupTableAccount,
+    commitment_config::CommitmentConfig,
+    instruction::Instruction,
+    message::{v0, VersionedMessage},
+    signature::Signature,
+    signer::Signer,
+    transaction::{TransactionError, VersionedTransaction},
 };
 use errors::ErrorKind;
 use futures::future::join_all;
@@ -42,15 +43,19 @@ where
     pub fn new(
         client: T,
         payer: S,
-        lookup_tables: Vec<AddressLookupTableAccount>,
+        lookup_tables: Option<Vec<AddressLookupTableAccount>>,
         commitment_config: CommitmentConfig,
     ) -> Self {
         OrbitLink {
             client,
             payer,
-            lookup_tables,
+            lookup_tables: lookup_tables.unwrap_or_default(),
             commitment_config,
         }
+    }
+
+    pub fn add_lookup_table(&mut self, table: AddressLookupTableAccount) {
+        self.lookup_tables.push(table);
     }
 
     pub fn tx_builder(&self) -> tx_builder::TxBuilder<T, S> {
@@ -72,6 +77,34 @@ where
                     &self.payer.pubkey(),
                     instructions,
                     &self.lookup_tables,
+                    // TODO: cache blockhash
+                    self.client.get_latest_blockhash().await?,
+                )
+                .map_err(|e| ErrorKind::TransactionCompileError(e.to_string()))?,
+            ),
+            &signers,
+        )?)
+    }
+
+    pub async fn create_tx_with_extra_lookup_tables(
+        &self,
+        instructions: &[Instruction],
+        extra_signers: &[&dyn Signer],
+        lookup_tables_extra: &[AddressLookupTableAccount],
+    ) -> Result<VersionedTransaction> {
+        let mut signers: Vec<&dyn Signer> = Vec::with_capacity(extra_signers.len() + 1);
+        signers.push(&self.payer);
+        signers.extend_from_slice(extra_signers);
+
+        let mut lookup_tables = self.lookup_tables.clone();
+        lookup_tables.extend_from_slice(lookup_tables_extra);
+
+        Ok(VersionedTransaction::try_new(
+            VersionedMessage::V0(
+                v0::Message::try_compile(
+                    &self.payer.pubkey(),
+                    instructions,
+                    &lookup_tables,
                     // TODO: cache blockhash
                     self.client.get_latest_blockhash().await?,
                 )

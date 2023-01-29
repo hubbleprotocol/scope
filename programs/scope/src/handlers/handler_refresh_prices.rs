@@ -1,8 +1,11 @@
 use std::convert::TryInto;
 
-use crate::oracles::OracleType;
-use crate::{oracles::get_price, ScopeError};
 use anchor_lang::prelude::*;
+
+use crate::{
+    oracles::{get_price, OracleType},
+    ScopeError,
+};
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {

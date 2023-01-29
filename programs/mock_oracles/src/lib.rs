@@ -4,20 +4,18 @@ mod externals;
 pub mod pc;
 mod spl_stake;
 
-use std::convert::TryInto;
-use std::ops::Div;
-
-use quick_protobuf::deserialize_from_slice;
-use quick_protobuf::serialize_into_slice;
+use std::{convert::TryInto, ops::Div};
 
 use anchor_lang::prelude::*;
-
+use quick_protobuf::{deserialize_from_slice, serialize_into_slice};
 use switchboard_program::{
     mod_AggregatorState, AggregatorState, RoundResult, SwitchboardAccountType,
 };
 
-use crate::externals::switchboard_v2::{AggregatorAccountData, SwitchboardDecimal};
-use crate::pc::{Price, PriceStatus};
+use crate::{
+    externals::switchboard_v2::{AggregatorAccountData, SwitchboardDecimal},
+    pc::{Price, PriceStatus},
+};
 
 const PROGRAM_ID: Pubkey = Pubkey::new_from_array(include!(concat!(env!("OUT_DIR"), "/pubkey.rs")));
 

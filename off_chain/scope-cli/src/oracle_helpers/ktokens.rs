@@ -2,16 +2,15 @@
 
 use std::fmt::{Debug, Display};
 
-use anchor_client::anchor_lang::__private::bytemuck;
+use anchor_client::{
+    anchor_lang::__private::bytemuck, solana_client::rpc_client::RpcClient, solana_sdk::clock,
+};
 use anyhow::{Context, Result};
-
-use anchor_client::solana_client::rpc_client::RpcClient;
-use anchor_client::solana_sdk::clock;
-
-use scope::anchor_lang::prelude::Pubkey;
-use scope::oracles::ktokens::WhirlpoolStrategy;
-use scope::oracles::OracleType;
-use scope::DatedPrice;
+use scope::{
+    anchor_lang::prelude::Pubkey,
+    oracles::{ktokens::WhirlpoolStrategy, OracleType},
+    DatedPrice,
+};
 
 use super::{OracleHelper, TokenEntry};
 use crate::config::TokenConfig;

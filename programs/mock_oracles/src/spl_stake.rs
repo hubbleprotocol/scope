@@ -1,5 +1,7 @@
-use anchor_lang::prelude::{AccountInfo, Clock, Result, SolanaSysvar};
-use anchor_lang::AnchorSerialize;
+use anchor_lang::{
+    prelude::{AccountInfo, Clock, Result, SolanaSysvar},
+    AnchorSerialize,
+};
 use spl_stake_pool::state::StakePool;
 
 pub fn initialize(

@@ -3,15 +3,12 @@
 
 use std::fmt::{Debug, Display};
 
-use anchor_client::solana_client::rpc_client::RpcClient;
+use anchor_client::{solana_client::rpc_client::RpcClient, solana_sdk::clock};
 use anyhow::Result;
-use scope::oracles::OracleType;
-use scope::{anchor_lang::prelude::Pubkey, DatedPrice};
-
-use crate::config::TokenConfig;
+use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
 use super::{OracleHelper, TokenEntry};
-use anchor_client::solana_sdk::clock;
+use crate::config::TokenConfig;
 
 pub struct SingleAccountOracle {
     pub label: String,

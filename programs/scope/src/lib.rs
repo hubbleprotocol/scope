@@ -6,21 +6,18 @@ pub mod utils;
 mod handlers;
 
 // Reexports to deal with eventual conflicts
-pub use crate::utils::scope_chain;
-pub use anchor_lang;
-pub use num_enum;
-
-use decimal_wad::error::DecimalError;
-
 // Local use
-use std::convert::TryInto;
-use std::num::TryFromIntError;
+use std::{convert::TryInto, num::TryFromIntError};
 
+pub use anchor_lang;
 use anchor_lang::prelude::*;
-use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
-
+use decimal_wad::error::DecimalError;
 use handlers::*;
+pub use num_enum;
+use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
+
+pub use crate::utils::scope_chain;
 
 declare_id!(PROGRAM_ID);
 

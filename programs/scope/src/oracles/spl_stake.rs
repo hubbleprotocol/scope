@@ -1,9 +1,7 @@
-use crate::{DatedPrice, Price, Result, ScopeError};
-
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
-
+use anchor_lang::{prelude::*, solana_program::borsh::try_from_slice_unchecked};
 use spl_stake_pool::state::StakePool;
+
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 const DECIMALS: u32 = 15u32;
 

@@ -1,20 +1,20 @@
-use std::cell::Ref;
-use std::convert::TryInto;
+use std::{cell::Ref, convert::TryInto};
 
 use anchor_lang::prelude::*;
-
-use decimal_wad::common::{TryDiv, TryMul};
-use decimal_wad::decimal::{Decimal, U192};
-use decimal_wad::rate::U128;
-
+use decimal_wad::{
+    common::{TryDiv, TryMul},
+    decimal::{Decimal, U192},
+    rate::U128,
+};
+use num::traits::Pow;
 use whirlpool::math::sqrt_price_from_tick_index;
 pub use whirlpool::state::{Position, PositionRewardInfo, Whirlpool, WhirlpoolRewardInfo};
 
-use crate::oracles::ktokens::kamino::price_utils::calc_price_from_sqrt_price;
-use crate::scope_chain::ScopeChainAccount;
-use crate::utils::zero_copy_deserialize;
-use crate::{DatedPrice, OraclePrices, ScopeError, ScopeResult};
-use num::traits::Pow;
+use crate::{
+    oracles::ktokens::kamino::price_utils::calc_price_from_sqrt_price,
+    scope_chain::ScopeChainAccount, utils::zero_copy_deserialize, DatedPrice, OraclePrices,
+    ScopeError, ScopeResult,
+};
 
 const TARGET_EXPONENT: u64 = 12;
 use super::USD_DECIMALS_PRECISION;
@@ -400,9 +400,8 @@ pub struct WithdrawalCaps {
 }
 
 mod price_utils {
-    use crate::Price;
-
     use super::*;
+    use crate::Price;
 
     // Helper
     fn sub(a: u64, b: u64) -> ScopeResult<u32> {
@@ -511,14 +510,13 @@ mod price_utils {
 mod tests {
     use num::traits::Pow;
 
+    use super::price_utils::sqrt_price_from_scope_prices;
     use crate::{
         oracles::ktokens::kamino::price_utils::{
             a_to_b, calc_price_from_sqrt_price, calc_sqrt_price_from_scope_price,
         },
         Price,
     };
-
-    use super::price_utils::sqrt_price_from_scope_prices;
 
     pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
         let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();

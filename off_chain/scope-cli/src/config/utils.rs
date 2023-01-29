@@ -1,6 +1,5 @@
 pub mod serde_string {
-    use std::fmt::Display;
-    use std::str::FromStr;
+    use std::{fmt::Display, str::FromStr};
 
     use serde::{de, Deserialize, Deserializer, Serializer};
 
@@ -25,12 +24,10 @@ pub mod serde_string {
 }
 
 pub mod serde_int_map {
+    use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr};
+
     use nohash_hasher::{BuildNoHashHasher, IntMap};
     use serde::{de, Deserialize, Deserializer};
-    use std::collections::HashMap;
-    use std::fmt::Display;
-    use std::hash::Hash;
-    use std::str::FromStr;
 
     // workaround this serde issue https://github.com/serde-rs/serde/issues/1183
     pub fn deserialize<'de, D, K, V>(deserializer: D) -> Result<IntMap<K, V>, D::Error>
