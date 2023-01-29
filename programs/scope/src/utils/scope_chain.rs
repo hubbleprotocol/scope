@@ -657,7 +657,7 @@ mod test {
     }
 
     fn dispatch_sig(namespace: &str, name: &str) -> [u8; 8] {
-        let preimage = format!("{}:{}", namespace, name);
+        let preimage = format!("{namespace}:{name}");
 
         let mut sighash = [0; 8];
         let mut hasher = <sha2::Sha256 as sha2::Digest>::new();
