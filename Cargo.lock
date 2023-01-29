@@ -2295,7 +2295,6 @@ dependencies = [
  "arrayref",
  "bytemuck",
  "quick-protobuf",
- "rust_decimal",
  "serde",
  "serde_json",
  "spl-stake-pool",
@@ -3506,7 +3505,6 @@ dependencies = [
  "cfg-if",
  "decimal-wad",
  "num 0.4.0",
- "num-traits",
  "num_enum",
  "proptest",
  "pyth-sdk-solana",
@@ -3535,7 +3533,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "url",
  "warp",
 ]
 

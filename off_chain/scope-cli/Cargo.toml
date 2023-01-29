@@ -23,7 +23,6 @@ anchor-client = "0.26.0"
 scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
 anyhow = "1.0.0"
 clap = { version = "3.2.11", features = ["derive", "env", "wrap_help"] }
-url = "2.2.2"
 serde = "1.0.136"
 serde_json = "1.0.79"
 tracing = "0.1.10"
