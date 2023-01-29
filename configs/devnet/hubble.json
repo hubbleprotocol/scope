@@ -30,11 +30,6 @@
     "oracle_mapping": "9a6RNx3tCu1TSs6TBSfV2XRXEPEZXQ6WB7jRojZRvyeZ",
     "oracle_type": "Pyth"
   },
-  "7": {
-    "label": "scnSOL/SOL",
-    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
-    "oracle_type": "SplStake"
-  },
   "8": {
     "label": "BNB/USD",
     "oracle_mapping": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b",
