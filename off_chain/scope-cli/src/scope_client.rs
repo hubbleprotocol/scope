@@ -1,13 +1,12 @@
 use std::mem::size_of;
 
-use anchor_client::solana_sdk::signature::Signature;
 use anchor_client::{
     anchor_lang::ToAccountMetas,
     solana_sdk::{
         clock::{self, Clock},
         instruction::AccountMeta,
         pubkey::Pubkey,
-        signature::Keypair,
+        signature::{Keypair, Signature},
         signer::Signer,
         system_program,
         sysvar::SysvarId,
@@ -28,6 +27,8 @@ use crate::{
 
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 24;
+/// Token gap to max age that still trigger refresh (in slots)
+const REMAINING_AGE_TO_REFRESH: u64 = 10;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 
@@ -221,10 +222,12 @@ where
         let mut acc_account_num = 0_usize;
         let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
 
+        let mut refresh_futures = Vec::new();
+
         for (id, entry) in &self.tokens {
             // if current entry would overflow the token count > send and reset
             if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
-                self.refresh_price_list_print_res(&acc_token_id).await;
+                refresh_futures.push(self.refresh_price_list_print_res(acc_token_id.clone()));
                 acc_account_num = 0;
                 acc_token_id.clear()
             }
@@ -235,8 +238,10 @@ where
 
         // last tokens refresh
         if !acc_token_id.is_empty() {
-            self.refresh_price_list_print_res(&acc_token_id).await;
+            refresh_futures.push(self.refresh_price_list_print_res(acc_token_id));
         }
+
+        join_all(refresh_futures).await;
 
         Ok(())
     }
@@ -246,7 +251,7 @@ where
     /// As an optimization for number of tx, we complete tx with not 0 ttl
     /// if some room is left.
     #[tracing::instrument(skip(self))]
-    pub async fn refresh_expired_prices(&self) -> Result<()> {
+    pub async fn refresh_old_prices(&self) -> Result<()> {
         let mut prices_ttl: Vec<(u16, clock::Slot)> = self.get_prices_ttl().await?.collect();
 
         // Sort the prices ttl from the smallest to biggest.
@@ -254,25 +259,24 @@ where
 
         trace!(?prices_ttl);
 
+        // Keep only the prices that are below REMAINING_AGE_TO_REFRESH
+        prices_ttl.retain(|(_, ttl)| *ttl < REMAINING_AGE_TO_REFRESH);
+
         // Create chunk of tokens of max `MAX_REFRESH_CHUNK_SIZE` accounts
         let mut acc_account_num = 0_usize;
         let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
+        let mut refresh_futures = Vec::new();
 
-        for (id, ttl) in &prices_ttl {
+        for (id, _ttl) in &prices_ttl {
             let entry = self
                 .tokens
                 .get(id)
                 .ok_or_else(|| anyhow!("Unknown price at index {id}"))?;
             // if current entry would overflow the token count > send and reset
             if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
-                self.refresh_price_list_print_res(&acc_token_id).await;
+                refresh_futures.push(self.refresh_price_list_print_res(acc_token_id.clone()));
                 acc_account_num = 0;
                 acc_token_id.clear();
-
-                if *ttl > 0 {
-                    // Current entry is not old enough yet: stop refresh procedure
-                    break;
-                }
             }
             // accumulate
             acc_account_num += entry.get_number_of_extra_accounts() + 1;
@@ -281,8 +285,10 @@ where
 
         // last tokens refresh
         if !acc_token_id.is_empty() {
-            self.refresh_price_list_print_res(&acc_token_id).await;
+            refresh_futures.push(self.refresh_price_list_print_res(acc_token_id));
         }
+
+        join_all(refresh_futures).await;
 
         Ok(())
     }
@@ -564,6 +570,7 @@ where
         .to_account_metas(None);
 
         let rpc = self.get_rpc();
+        let mut cu_budget = 10_000;
 
         for token_idx in tokens {
             let entry = self
@@ -578,6 +585,7 @@ where
             for extra in entry.get_extra_accounts(Some(rpc)).await? {
                 refresh_accounts.push(AccountMeta::new_readonly(extra, false));
             }
+            cu_budget += entry.get_update_cu_budget();
         }
 
         let tokens = tokens.to_vec();
@@ -589,8 +597,7 @@ where
                 &self.program_id,
                 refresh_accounts,
                 instruction::RefreshPriceList { tokens },
-                // TODO: compute dynamically
-                1_400_000,
+                cu_budget,
             )
             .build_with_budget_and_fee(&[])
             .await?;
@@ -604,8 +611,8 @@ where
     }
 
     #[tracing::instrument(skip(self))]
-    async fn refresh_price_list_print_res(&self, tokens: &[u16]) {
-        match self.ix_refresh_price_list(tokens).await {
+    async fn refresh_price_list_print_res(&self, tokens: Vec<u16>) {
+        match self.ix_refresh_price_list(&tokens).await {
             Err(err) => warn!(err = ?err, "Failed to refresh price list"),
             Ok(sig) => info!(signature = %sig, "Prices list refreshed successfully"),
         }

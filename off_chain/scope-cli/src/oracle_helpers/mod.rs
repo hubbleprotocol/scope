@@ -57,6 +57,11 @@ pub trait OracleHelper: Sync {
     /// **Note:** For prices that constantly changes implementation
     /// should always return false so refresh only happen on max_age.
     async fn need_refresh(&self, scope_price: &DatedPrice, rpc: &dyn AsyncClient) -> Result<bool>;
+
+    /// Give the number of compute units needed to refresh the price of the token
+    fn get_update_cu_budget(&self) -> u32 {
+        self.get_type().get_update_cu_budget()
+    }
 }
 
 pub async fn entry_from_config(

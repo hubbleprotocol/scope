@@ -279,7 +279,7 @@ async fn crank<T: AsyncClient, S: Signer>(
     loop {
         let start = Instant::now();
 
-        if let Err(e) = scope.refresh_expired_prices().await {
+        if let Err(e) = scope.refresh_old_prices().await {
             warn!("Error while refreshing prices {:?}", e);
         }
 
