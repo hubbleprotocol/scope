@@ -4,11 +4,11 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum ErrorKind {
     #[cfg(feature = "rpc-client")]
-    #[error("Solana rpc client error: {0}")]
+    #[error("Solana rpc client error: {0:#?}")]
     SolanaRpcError(#[from] solana_client::client_error::ClientError),
 
     #[cfg(feature = "banks-client")]
-    #[error("Solana banks client error: {0}")]
+    #[error("Solana banks client error: {0:#?}")]
     SolanaBanksError(Box<solana_banks_client::BanksClientError>),
 
     #[error(transparent)]
@@ -23,10 +23,10 @@ pub enum ErrorKind {
     #[error("No instruction to include in the transaction")]
     NoInstructions,
 
-    #[error("Anchor error: {0}")]
+    #[error("Anchor error: {0:#?}")]
     AnchorError(anchor_client::anchor_lang::prelude::AnchorError),
 
-    #[error("Anchor program error: {0}")]
+    #[error("Anchor program error: {0:#?}")]
     AnchorProgramError(anchor_client::anchor_lang::prelude::ProgramErrorWithOrigin),
 }
 
