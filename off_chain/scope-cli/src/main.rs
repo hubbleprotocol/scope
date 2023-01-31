@@ -1,6 +1,5 @@
 use std::{
     path::{Path, PathBuf},
-    thread::sleep,
     time::{Duration, Instant},
 };
 
@@ -16,6 +15,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope_client::{utils::get_clock, ScopeClient, ScopeConfig};
+use tokio::time::sleep;
 use tracing::{error, info, trace, warn};
 
 mod web;
@@ -300,7 +300,7 @@ async fn crank<T: AsyncClient, S: Signer>(
             // Time to sleep if we consider slot age
             let sleep_ms_from_slots = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
             trace!(sleep_ms_from_slots);
-            sleep(Duration::from_millis(sleep_ms_from_slots));
+            sleep(Duration::from_millis(sleep_ms_from_slots)).await;
         } else {
             num_retries_before_err -= 1;
         }

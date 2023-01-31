@@ -1,5 +1,6 @@
 use std::mem::size_of;
 
+use anchor_client::solana_sdk::signature::Signature;
 use anchor_client::{
     anchor_lang::ToAccountMetas,
     solana_sdk::{
@@ -17,7 +18,7 @@ use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
-use tracing::{debug, error, info, trace};
+use tracing::{debug, error, info, trace, warn};
 
 use crate::{
     config::{ScopeConfig, TokenConfig, TokenList},
@@ -223,7 +224,7 @@ where
         for (id, entry) in &self.tokens {
             // if current entry would overflow the token count > send and reset
             if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
-                self.refresh_price_list_print_err(&acc_token_id).await;
+                self.refresh_price_list_print_res(&acc_token_id).await;
                 acc_account_num = 0;
                 acc_token_id.clear()
             }
@@ -234,7 +235,7 @@ where
 
         // last tokens refresh
         if !acc_token_id.is_empty() {
-            self.refresh_price_list_print_err(&acc_token_id).await;
+            self.refresh_price_list_print_res(&acc_token_id).await;
         }
 
         Ok(())
@@ -264,7 +265,7 @@ where
                 .ok_or_else(|| anyhow!("Unknown price at index {id}"))?;
             // if current entry would overflow the token count > send and reset
             if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
-                self.refresh_price_list_print_err(&acc_token_id).await;
+                self.refresh_price_list_print_res(&acc_token_id).await;
                 acc_account_num = 0;
                 acc_token_id.clear();
 
@@ -280,7 +281,7 @@ where
 
         // last tokens refresh
         if !acc_token_id.is_empty() {
-            self.refresh_price_list_print_err(&acc_token_id).await;
+            self.refresh_price_list_print_res(&acc_token_id).await;
         }
 
         Ok(())
@@ -554,7 +555,7 @@ where
         }
     }
 
-    async fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<()> {
+    async fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<Signature> {
         let mut refresh_accounts = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
@@ -599,12 +600,14 @@ where
         tx_res
             .ok_or_else(|| anyhow!("Transaction failed to confirm: {signature}"))?
             .context(format!("Failed transaction: {signature}"))
+            .map(|_| signature)
     }
 
     #[tracing::instrument(skip(self))]
-    async fn refresh_price_list_print_err(&self, tokens: &[u16]) {
-        if let Err(err) = self.ix_refresh_price_list(tokens).await {
-            error!(err = ?err, "Failed to refresh price list");
+    async fn refresh_price_list_print_res(&self, tokens: &[u16]) {
+        match self.ix_refresh_price_list(tokens).await {
+            Err(err) => warn!(err = ?err, "Failed to refresh price list"),
+            Ok(sig) => info!(signature = %sig, "Prices list refreshed successfully"),
         }
     }
 }
