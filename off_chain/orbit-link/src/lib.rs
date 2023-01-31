@@ -1,13 +1,18 @@
 #![doc = include_str!("../Readme.md")]
 
-use anchor_client::solana_sdk::{
-    address_lookup_table_account::AddressLookupTableAccount,
-    commitment_config::CommitmentConfig,
-    instruction::Instruction,
-    message::{v0, VersionedMessage},
-    signature::Signature,
-    signer::Signer,
-    transaction::{TransactionError, VersionedTransaction},
+use anchor_client::{
+    anchor_lang::AccountDeserialize,
+    solana_sdk::{
+        address_lookup_table_account::AddressLookupTableAccount,
+        commitment_config::CommitmentConfig,
+        instruction::Instruction,
+        message::{v0, VersionedMessage},
+        pubkey::Pubkey,
+        signature::Signature,
+        signer::Signer,
+        system_instruction,
+        transaction::{TransactionError, VersionedTransaction},
+    },
 };
 use errors::ErrorKind;
 use futures::future::join_all;
@@ -20,7 +25,8 @@ pub mod tx_builder;
 pub use consts::*;
 
 type Result<T> = std::result::Result<T, errors::ErrorKind>;
-/// Transaction result. `Ok` if the transaction was successful, `Err` otherwise.
+
+/// Transaction result. `Ok` if the transaction was successful, `Err` from the transaction otherwise.
 type TransactionResult = std::result::Result<(), TransactionError>;
 
 pub struct OrbitLink<T, S>
@@ -34,18 +40,18 @@ where
     commitment_config: CommitmentConfig,
 }
 
-impl<T, S, E> OrbitLink<T, S>
+impl<T, S> OrbitLink<T, S>
 where
-    T: async_client::AsyncClient<Error = E>,
+    T: async_client::AsyncClient,
     S: Signer,
-    errors::ErrorKind: From<E>,
 {
     pub fn new(
         client: T,
         payer: S,
-        lookup_tables: Option<Vec<AddressLookupTableAccount>>,
+        lookup_tables: impl Into<Option<Vec<AddressLookupTableAccount>>>,
         commitment_config: CommitmentConfig,
     ) -> Self {
+        let lookup_tables: Option<Vec<AddressLookupTableAccount>> = lookup_tables.into();
         OrbitLink {
             client,
             payer,
@@ -54,12 +60,44 @@ where
         }
     }
 
+    pub fn payer(&self) -> Pubkey {
+        self.payer.pubkey()
+    }
+
     pub fn add_lookup_table(&mut self, table: AddressLookupTableAccount) {
         self.lookup_tables.push(table);
     }
 
+    pub async fn get_anchor_account<AccDeser: AccountDeserialize>(
+        &self,
+        pubkey: &Pubkey,
+    ) -> Result<AccDeser> {
+        let account = self.client.get_account(pubkey).await?;
+        let mut data: &[u8] = &account.data;
+        Ok(AccDeser::try_deserialize(&mut data)?)
+    }
+
     pub fn tx_builder(&self) -> tx_builder::TxBuilder<T, S> {
         tx_builder::TxBuilder::new(self)
+    }
+
+    pub async fn ix_create_account(
+        &self,
+        account_to_create: &Pubkey,
+        space: usize,
+        new_owner: &Pubkey,
+    ) -> Result<Instruction> {
+        Ok(system_instruction::create_account(
+            &self.payer(),
+            account_to_create,
+            self.client
+                .get_minimum_balance_for_rent_exemption(space)
+                .await?,
+            space
+                .try_into()
+                .expect("usize representing size to allocate to u64 conversion failed"),
+            new_owner,
+        ))
     }
 
     pub async fn create_tx(
@@ -115,7 +153,7 @@ where
     }
 
     pub async fn send_transaction(&self, tx: &VersionedTransaction) -> Result<Signature> {
-        Ok(self.client.send_transaction(tx).await?)
+        self.client.send_transaction(tx).await
     }
 
     /// Send a group of transactions and wait for them to be confirmed.
@@ -203,6 +241,30 @@ where
         .await?;
 
         Ok(tx_to_confirm)
+    }
+
+    pub async fn send_and_confirm_transaction(
+        &self,
+        transaction: VersionedTransaction,
+    ) -> Result<(Signature, Option<TransactionResult>)> {
+        let res = self.send_and_confirm_transactions(&[transaction]).await?;
+        Ok(res
+            .into_iter()
+            .next()
+            .expect("Sent and confirm one transaction, expect one result"))
+    }
+
+    pub async fn send_retry_and_confirm_transaction(
+        &self,
+        transaction: VersionedTransaction,
+    ) -> Result<(Signature, Option<TransactionResult>)> {
+        let res = self
+            .send_retry_and_confirm_transactions(&[transaction])
+            .await?;
+        Ok(res
+            .into_iter()
+            .next()
+            .expect("Sent and confirm one transaction, expect one result"))
     }
 
     // internal tools

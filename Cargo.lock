@@ -3524,7 +3524,9 @@ version = "0.2.0-SNAPSHOT"
 dependencies = [
  "anchor-client",
  "anyhow",
+ "async-trait",
  "clap 3.2.23",
+ "futures",
  "nohash-hasher",
  "orbit-link",
  "scope",

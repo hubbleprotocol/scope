@@ -1,23 +1,23 @@
 use std::mem::size_of;
 
 use anchor_client::{
-    solana_client::rpc_client::RpcClient,
+    anchor_lang::ToAccountMetas,
     solana_sdk::{
         clock::{self, Clock},
-        compute_budget::ComputeBudgetInstruction,
         instruction::AccountMeta,
         pubkey::Pubkey,
         signature::Keypair,
         signer::Signer,
-        system_instruction, system_program,
+        system_program,
         sysvar::SysvarId,
     },
-    Client, Program,
 };
 use anyhow::{anyhow, bail, Context, Result};
+use futures::future::join_all;
 use nohash_hasher::IntMap;
+use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
-use tracing::{debug, error, event, info, trace, warn, Level};
+use tracing::{debug, error, info, trace};
 
 use crate::{
     config::{ScopeConfig, TokenConfig, TokenList},
@@ -28,20 +28,11 @@ use crate::{
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 24;
 
-/// Max compute units to request
-// TODO: optimize this so the refresh lists costs less.
-const MAX_COMPUTE_UNITS: u32 = 1_400_000;
-
-const EXTRA_LAMPORT_PER_TX: u64 = 10;
-
-const EXTRA_MICRO_LAMPORT_PER_CU: u64 =
-    EXTRA_LAMPORT_PER_TX * 1_000_000 / (MAX_COMPUTE_UNITS as u64);
-
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 
-#[derive(Debug)]
-pub struct ScopeClient {
-    program: Program,
+pub struct ScopeClient<T: AsyncClient, S: Signer> {
+    client: OrbitLink<T, S>,
+    program_id: Pubkey,
     feed_name: String,
     configuration_acc: Pubkey,
     oracle_prices_acc: Pubkey,
@@ -49,23 +40,30 @@ pub struct ScopeClient {
     tokens: TokenEntryList,
 }
 
-impl ScopeClient {
+impl<T, S> ScopeClient<T, S>
+where
+    T: AsyncClient,
+    S: Signer,
+{
     #[tracing::instrument(skip(client))] //Skip client that does not impl Debug
-    pub fn new(client: Client, program_id: Pubkey, price_feed: &str) -> Result<Self> {
-        let program = client.program(program_id);
-
+    pub async fn new(
+        client: OrbitLink<T, S>,
+        program_id: Pubkey,
+        price_feed: &str,
+    ) -> Result<Self> {
         // Retrieve accounts in configuration PDA
         let (configuration_acc, _) =
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], &program_id);
 
-        let Configuration { oracle_mappings, oracle_prices, .. } = program
-            .account::<Configuration>(configuration_acc)
+        let Configuration { oracle_mappings, oracle_prices, .. } = client
+            .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
         debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %price_feed);
 
         Ok(Self {
-            program,
+            client,
+            program_id,
             feed_name: price_feed.to_string(),
             configuration_acc,
             oracle_prices_acc: oracle_prices,
@@ -76,13 +74,11 @@ impl ScopeClient {
 
     /// Create a new client instance after initializing the program accounts
     #[tracing::instrument(skip(client))]
-    pub fn new_init_program(
-        client: &Client,
+    pub async fn new_init_program(
+        client: OrbitLink<T, S>,
         program_id: &Pubkey,
         price_feed: &str,
     ) -> Result<Self> {
-        let program = client.program(*program_id);
-
         // Generate accounts keypairs.
         let oracle_prices_acc = Keypair::new();
         let oracle_mappings_acc = Keypair::new();
@@ -92,17 +88,20 @@ impl ScopeClient {
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], program_id);
 
         Self::ix_initialize(
-            &program,
+            &client,
+            program_id,
             &configuration_acc,
             &oracle_prices_acc,
             &oracle_mappings_acc,
             price_feed,
-        )?;
+        )
+        .await?;
 
         debug!(?oracle_prices_acc, "oracle_prices_pbk" = %oracle_prices_acc.pubkey(), ?oracle_mappings_acc, "oracle_mappings_pbk" = %oracle_prices_acc.pubkey(), %configuration_acc);
 
         Ok(Self {
-            program,
+            client,
+            program_id: *program_id,
             feed_name: price_feed.to_string(),
             configuration_acc,
             oracle_prices_acc: oracle_prices_acc.pubkey(),
@@ -112,27 +111,27 @@ impl ScopeClient {
     }
 
     /// Set the locally known oracle mapping according to the provided configuration list.
-    pub fn set_local_mapping(&mut self, token_list: &ScopeConfig) -> Result<()> {
+    pub async fn set_local_mapping(&mut self, token_list: &ScopeConfig) -> Result<()> {
         let default_max_age = token_list.default_max_age;
-        let rpc = self.program.rpc();
+        let rpc = self.get_rpc();
         // Transform the configuration entries in appropriate local token entries
         // Local implies to get a copy of needed onchain data (as a cache)
-        let tokens_res: Result<TokenEntryList> = token_list
-            .tokens
-            .iter()
-            .map(|(id, token_conf)| {
+        let tokens_res: Result<TokenEntryList> =
+            join_all(token_list.tokens.iter().map(|(id, token_conf)| async {
                 let token_entry: Box<dyn TokenEntry> =
-                    entry_from_config(token_conf, default_max_age, &rpc)?;
+                    entry_from_config(token_conf, default_max_age, rpc).await?;
                 Ok((*id, token_entry))
-            })
+            }))
+            .await
+            .into_iter()
             .collect();
         self.tokens = tokens_res?;
         Ok(())
     }
 
     /// Update the remote oracle mapping from the local
-    pub fn upload_oracle_mapping(&self) -> Result<()> {
-        let program_mapping = self.get_program_mapping()?;
+    pub async fn upload_oracle_mapping(&self) -> Result<()> {
+        let program_mapping = self.get_program_mapping().await?;
         let onchain_accounts_mapping = program_mapping.price_info_accounts;
         let onchain_price_type_mapping = program_mapping.price_types;
 
@@ -145,39 +144,43 @@ impl ScopeClient {
             let local_mapping_pk = local_entry.get_mapping_account();
             let loc_price_type_u8: u8 = local_entry.get_type().into();
             if rem_mapping != local_mapping_pk || rem_price_type != loc_price_type_u8 {
-                self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)?;
+                self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)
+                    .await?;
             }
         }
         Ok(())
     }
 
     /// Update the local oracle mapping from the on-chain version
-    pub fn download_oracle_mapping(&mut self, default_max_age: clock::Slot) -> Result<()> {
-        let onchain_oracle_mapping = self.get_program_mapping()?;
+    pub async fn download_oracle_mapping(&mut self, default_max_age: clock::Slot) -> Result<()> {
+        let onchain_oracle_mapping = self.get_program_mapping().await?;
         let onchain_mapping = onchain_oracle_mapping.price_info_accounts;
         let onchain_types = onchain_oracle_mapping.price_types;
 
         let zero_pk = Pubkey::default();
-        let rpc = self.program.rpc();
+        let rpc = self.get_rpc();
 
-        let tokens_res: Result<TokenEntryList> = onchain_mapping
+        let entry_builders = onchain_mapping
             .iter()
             .enumerate()
             .zip(onchain_types)
             .filter(|((_, &oracle_mapping), _)| oracle_mapping != zero_pk)
-            .map(|((idx, oracle_mapping), oracle_type)| {
+            .map(|((idx, &oracle_mapping), oracle_type)| async move {
                 let id: u16 = idx.try_into()?;
                 let oracle_conf = TokenConfig {
                     label: "".to_string(),
                     oracle_type: oracle_type.try_into()?,
                     max_age: None,
-                    oracle_mapping: *oracle_mapping,
+                    oracle_mapping,
                 };
-                let entry = entry_from_config(&oracle_conf, default_max_age, &rpc)?;
-                Ok((id, entry))
-            })
-            .collect();
-        self.tokens = tokens_res?;
+                let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
+                Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
+            });
+
+        self.tokens = join_all(entry_builders)
+            .await
+            .into_iter()
+            .collect::<Result<TokenEntryList>>()?;
         Ok(())
     }
 
@@ -211,21 +214,16 @@ impl ScopeClient {
     /// to be carefully taken care of since the number of accounts varies from
     /// one token to another.
     #[tracing::instrument(skip(self))]
-    pub fn refresh_all_prices(&self) -> Result<()> {
+    pub async fn refresh_all_prices(&self) -> Result<()> {
         info!("Refresh all prices");
         // Create chunk of tokens of max `MAX_REFRESH_CHUNK_SIZE` accounts
         let mut acc_account_num = 0_usize;
         let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
-        let refresh_acc = |token_ids: &[u16]| {
-            if let Err(e) = self.ix_refresh_price_list(token_ids) {
-                event!(Level::WARN, "err" = ?e, "Refresh of some prices failed");
-            }
-        };
 
         for (id, entry) in &self.tokens {
             // if current entry would overflow the token count > send and reset
             if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
-                refresh_acc(&acc_token_id);
+                self.refresh_price_list_print_err(&acc_token_id).await;
                 acc_account_num = 0;
                 acc_token_id.clear()
             }
@@ -236,7 +234,7 @@ impl ScopeClient {
 
         // last tokens refresh
         if !acc_token_id.is_empty() {
-            refresh_acc(&acc_token_id);
+            self.refresh_price_list_print_err(&acc_token_id).await;
         }
 
         Ok(())
@@ -247,8 +245,8 @@ impl ScopeClient {
     /// As an optimization for number of tx, we complete tx with not 0 ttl
     /// if some room is left.
     #[tracing::instrument(skip(self))]
-    pub fn refresh_expired_prices(&self) -> Result<()> {
-        let mut prices_ttl: Vec<(u16, clock::Slot)> = self.get_prices_ttl()?.collect();
+    pub async fn refresh_expired_prices(&self) -> Result<()> {
+        let mut prices_ttl: Vec<(u16, clock::Slot)> = self.get_prices_ttl().await?.collect();
 
         // Sort the prices ttl from the smallest to biggest.
         prices_ttl.sort_by(|(_, a), (_, b)| a.cmp(b));
@@ -258,11 +256,6 @@ impl ScopeClient {
         // Create chunk of tokens of max `MAX_REFRESH_CHUNK_SIZE` accounts
         let mut acc_account_num = 0_usize;
         let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
-        let refresh_acc = |token_ids: &[u16]| {
-            if let Err(e) = self.ix_refresh_price_list(token_ids) {
-                event!(Level::WARN, "err" = ?e, "Refresh of some prices failed");
-            }
-        };
 
         for (id, ttl) in &prices_ttl {
             let entry = self
@@ -271,7 +264,7 @@ impl ScopeClient {
                 .ok_or_else(|| anyhow!("Unknown price at index {id}"))?;
             // if current entry would overflow the token count > send and reset
             if entry.get_number_of_extra_accounts() + 1 + acc_account_num > MAX_REFRESH_CHUNK_SIZE {
-                refresh_acc(&acc_token_id);
+                self.refresh_price_list_print_err(&acc_token_id).await;
                 acc_account_num = 0;
                 acc_token_id.clear();
 
@@ -287,7 +280,7 @@ impl ScopeClient {
 
         // last tokens refresh
         if !acc_token_id.is_empty() {
-            refresh_acc(&acc_token_id);
+            self.refresh_price_list_print_err(&acc_token_id).await;
         }
 
         Ok(())
@@ -297,37 +290,32 @@ impl ScopeClient {
     ///
     /// i.e. the number of slot until at the price currently known by scope has reached its `max_age`
     /// Note: If a price `need_refresh` then ttl is forced to 0.
-    pub fn get_prices_ttl(&self) -> Result<impl Iterator<Item = (u16, clock::Slot)> + '_> {
-        let oracle_prices = self.get_prices()?;
+    pub async fn get_prices_ttl(&self) -> Result<impl Iterator<Item = (u16, clock::Slot)> + '_> {
+        let oracle_prices = self.get_prices().await?;
 
-        let current_slot = get_clock(&self.get_rpc())?.slot;
+        let rpc = self.get_rpc();
+
+        let current_slot = get_clock(rpc).await?.slot;
 
         let it = self.tokens.iter().map(move |(id, entry)| {
             let price = &oracle_prices.prices[usize::from(*id)];
             let price_slot = price.last_updated_slot;
             // default to no remaning slot (ttl=0)
             let age = current_slot.saturating_sub(price_slot);
-            let mut remaining_slots = entry.get_max_age().saturating_sub(age);
-            match entry.need_refresh(price, &self.get_rpc()) {
-                Ok(true) => remaining_slots = 0,
-                Err(e) => error!(
-                    ?e,
-                    "token" = id,
-                    "Error while checking if price need refresh"
-                ),
-                Ok(false) => (), // Nothing to do
-            }
+            let remaining_slots = entry.get_max_age().saturating_sub(age);
             (*id, remaining_slots)
         });
         Ok(it)
+        //TODO: filter prices that cannot be refreshed
     }
 
     /// Get the minimum remaining time to live of all prices.
     ///
     /// i.e. the number of slot until at least one price has reached its `max_age`
-    pub fn get_prices_shortest_ttl(&self) -> Result<clock::Slot> {
+    pub async fn get_prices_shortest_ttl(&self) -> Result<clock::Slot> {
         let shortest_ttl = self
-            .get_prices_ttl()?
+            .get_prices_ttl()
+            .await?
             .map(|(_, ttl)| ttl)
             .min()
             .unwrap_or(0);
@@ -337,8 +325,8 @@ impl ScopeClient {
 
     /// Log current prices
     /// Note: this uses local mapping
-    pub fn log_prices(&self, current_slot: u64) -> Result<()> {
-        let prices = self.get_prices()?.prices;
+    pub async fn log_prices(&self, current_slot: u64) -> Result<()> {
+        let prices = self.get_prices().await?.prices;
 
         for (&id, entry) in &self.tokens {
             let dated_price = prices[usize::from(id)];
@@ -360,9 +348,10 @@ impl ScopeClient {
     }
 
     /// Return a list (label if available) of expired prices
-    pub fn get_expired_prices(&self) -> Result<Vec<String>> {
+    pub async fn get_expired_prices(&self) -> Result<Vec<String>> {
         Ok(self
-            .get_prices_ttl()?
+            .get_prices_ttl()
+            .await?
             .filter_map(|(index, ttl)| {
                 if ttl == 0 {
                     self.tokens.get(&index).map(|t| t.to_string())
@@ -374,11 +363,11 @@ impl ScopeClient {
     }
 
     /// Print a list of all pubkeys that are needed for price refreshed.
-    pub fn print_pubkeys(&self) -> Result<()> {
+    pub async fn print_pubkeys(&self) -> Result<()> {
         for entry in self.tokens.values() {
             let main_mapping = entry.get_mapping_account();
             print!("{main_mapping} ");
-            let extra_accounts = entry.get_extra_accounts(None)?;
+            let extra_accounts = entry.get_extra_accounts(None).await?;
             for account in extra_accounts {
                 print!("{account} ");
             }
@@ -388,25 +377,32 @@ impl ScopeClient {
     }
 
     /// Get an the rpc instance used by the ScopeClient
-    pub fn get_rpc(&self) -> RpcClient {
-        self.program.rpc()
+    pub fn get_rpc(&self) -> &T {
+        &self.client.client
     }
 
     /// Get all prices
-    fn get_prices(&self) -> Result<OraclePrices> {
-        let prices: OraclePrices = self.program.account(self.oracle_prices_acc)?;
+    async fn get_prices(&self) -> Result<OraclePrices> {
+        let prices: OraclePrices = self
+            .client
+            .get_anchor_account(&self.oracle_prices_acc)
+            .await?;
         Ok(prices)
     }
 
     /// Get program oracle mapping
-    fn get_program_mapping(&self) -> Result<OracleMappings> {
-        let mapping: OracleMappings = self.program.account(self.oracle_mappings_acc)?;
+    async fn get_program_mapping(&self) -> Result<OracleMappings> {
+        let mapping: OracleMappings = self
+            .client
+            .get_anchor_account(&self.oracle_mappings_acc)
+            .await?;
         Ok(mapping)
     }
 
-    #[tracing::instrument(skip(program))]
-    fn ix_initialize(
-        program: &Program,
+    #[tracing::instrument(skip(client))]
+    async fn ix_initialize(
+        client: &OrbitLink<T, S>,
+        program_id: &Pubkey,
         configuration_acc: &Pubkey,
         oracle_prices_acc: &Keypair,
         oracle_mappings_acc: &Keypair,
@@ -416,74 +412,96 @@ impl ScopeClient {
 
         // Prepare init instruction accounts
         let init_account = accounts::Initialize {
-            admin: program.payer(),
+            admin: client.payer(),
             system_program: system_program::ID,
             configuration: *configuration_acc,
             oracle_prices: oracle_prices_acc.pubkey(),
             oracle_mappings: oracle_mappings_acc.pubkey(),
         };
 
-        let rpc = program.rpc();
-
-        let init_res = program
-            .request()
+        let init_tx = client
+            .tx_builder()
             // Create the price account
-            .instruction(system_instruction::create_account(
-                &program.payer(),
-                &oracle_prices_acc.pubkey(),
-                rpc.get_minimum_balance_for_rent_exemption(8_usize + size_of::<OraclePrices>())?,
-                8_u64 + u64::try_from(size_of::<OraclePrices>()).unwrap(), //constant, it cannot fail
-                &program.id(),
-            ))
+            .add_ix_with_budget(
+                client
+                    .ix_create_account(
+                        &oracle_prices_acc.pubkey(),
+                        size_of::<OraclePrices>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
             // Create the oracle mapping account
-            .instruction(system_instruction::create_account(
-                &program.payer(),
-                &oracle_mappings_acc.pubkey(),
-                rpc.get_minimum_balance_for_rent_exemption(8_usize + size_of::<OracleMappings>())?,
-                8_u64 + u64::try_from(size_of::<OracleMappings>()).unwrap(), //constant, it cannot fail
-                &program.id(),
-            ))
-            .signer(oracle_prices_acc)
-            .signer(oracle_mappings_acc)
-            .accounts(init_account)
-            .args(instruction::Initialize {
-                feed_name: price_feed.to_string(),
-            })
-            .send();
+            .add_ix_with_budget(
+                client
+                    .ix_create_account(
+                        &oracle_mappings_acc.pubkey(),
+                        size_of::<OracleMappings>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
+            .add_anchor_ix(
+                program_id,
+                init_account,
+                instruction::Initialize {
+                    feed_name: price_feed.to_string(),
+                },
+            )
+            .build_with_budget_and_fee(&[oracle_prices_acc, oracle_mappings_acc])
+            .await?;
 
-        debug!("Init ix result: {:#?}", init_res);
-        init_res.context("Failed to initialize the account")?;
+        let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
 
-        info!("Accounts initialized successfully");
-
-        Ok(())
+        info!(%signature, "Init tx");
+        match init_res {
+            Some(r) => r.context(format!("Init transaction: {signature}")),
+            None => bail!("Init transaction failed to confirm: {signature}"),
+        }
     }
 
     #[tracing::instrument(skip(self))]
-    fn ix_update_mapping(&self, oracle_account: &Pubkey, token: u64, price_type: u8) -> Result<()> {
-        let update_account = accounts::UpdateOracleMapping {
-            admin: self.program.payer(),
+    async fn ix_update_mapping(
+        &self,
+        oracle_account: &Pubkey,
+        token: u64,
+        price_type: u8,
+    ) -> Result<()> {
+        let update_accounts = accounts::UpdateOracleMapping {
+            admin: self.client.payer(),
             configuration: self.configuration_acc,
             oracle_mappings: self.oracle_mappings_acc,
             price_info: *oracle_account,
         };
 
-        let request = self.program.request();
+        let request = self.client.tx_builder();
 
-        let res = request
-            .accounts(update_account)
-            .args(instruction::UpdateMapping {
-                token,
-                price_type,
-                feed_name: self.feed_name.clone(),
-            })
-            .send();
+        let tx = request
+            .add_anchor_ix(
+                &self.program_id,
+                update_accounts,
+                instruction::UpdateMapping {
+                    token,
+                    price_type,
+                    feed_name: self.feed_name.clone(),
+                },
+            )
+            .build_with_budget_and_fee(&[])
+            .await?;
+
+        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
 
         match res {
-            Ok(sig) => info!(signature = %sig, "Accounts updated successfully"),
-            Err(err) => {
-                error!(err = ?err, "Mapping update failed");
+            Some(Ok(())) => info!(%signature, "Accounts updated successfully"),
+            Some(Err(err)) => {
+                error!(%signature, err = ?err, "Mapping update failed");
                 bail!(err);
+            }
+            None => {
+                error!(%signature, "Could not confirm mapping update transaction");
+                bail!("Could not confirm mapping update transaction");
             }
         }
 
@@ -491,50 +509,60 @@ impl ScopeClient {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn ix_refresh_one_price(&self, token: u16) -> Result<()> {
+    pub async fn ix_refresh_one_price(&self, token: u16) -> Result<()> {
         let entry = self
             .tokens
             .get(&token)
             .ok_or_else(|| anyhow!("Unexpected token id {token}"))?;
-        let refresh_account = accounts::RefreshOne {
+        let mut refresh_accounts = accounts::RefreshOne {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
             price_info: *entry.get_mapping_account(),
             clock: Clock::id(),
-        };
-
-        let mut request = self.program.request();
-
-        request = request
-            .accounts(refresh_account)
-            .args(instruction::RefreshOnePrice {
-                token: token.into(),
-            });
-
-        for extra in entry.get_extra_accounts(None)? {
-            request = request.accounts(AccountMeta::new_readonly(extra, false));
         }
+        .to_account_metas(None);
 
-        let tx = request.send()?;
+        // Add eventual extra accounts (depends on price type)
+        refresh_accounts.extend(
+            entry
+                .get_extra_accounts(None)
+                .await?
+                .iter()
+                .map(|acc| AccountMeta::new_readonly(*acc, false)),
+        );
 
-        info!(%tx, "Price refreshed successfully");
+        let request = self.client.tx_builder();
 
-        Ok(())
+        let tx = request
+            .add_anchor_ix(
+                &self.program_id,
+                refresh_accounts,
+                instruction::RefreshOnePrice {
+                    token: token.into(),
+                },
+            )
+            .build_with_budget_and_fee(&[])
+            .await?;
+
+        let (signature, res) = self.client.send_and_confirm_transaction(tx).await?;
+
+        info!(%signature, "Price refresh tx sent");
+
+        match res {
+            Some(r) => r.context(format!("Price refresh transaction: {signature}")),
+            None => bail!("Init transaction failed to confirm: {signature}"),
+        }
     }
 
-    #[tracing::instrument(skip(self))]
-    fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<()> {
-        let refresh_account = accounts::RefreshList {
+    async fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<()> {
+        let mut refresh_accounts = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
             clock: Clock::id(),
-        };
+        }
+        .to_account_metas(None);
 
-        let rpc = self.program.rpc();
-
-        let request = self.program.request();
-
-        let mut request = request.accounts(refresh_account);
+        let rpc = self.get_rpc();
 
         for token_idx in tokens {
             let entry = self
@@ -542,42 +570,41 @@ impl ScopeClient {
                 .get(token_idx)
                 .ok_or_else(|| anyhow!("Unexpected token {token_idx}"))?;
             // Note: no control at this point, all token accounts will be sent in on tx
-            request = request.accounts(AccountMeta::new_readonly(
+            refresh_accounts.push(AccountMeta::new_readonly(
                 *entry.get_mapping_account(),
                 false,
             ));
-            for extra in entry.get_extra_accounts(Some(&rpc))? {
-                request = request.accounts(AccountMeta::new_readonly(extra, false));
+            for extra in entry.get_extra_accounts(Some(rpc)).await? {
+                refresh_accounts.push(AccountMeta::new_readonly(extra, false));
             }
         }
 
         let tokens = tokens.to_vec();
 
-        let tx_res = request
-            .instruction(ComputeBudgetInstruction::set_compute_unit_limit(
-                MAX_COMPUTE_UNITS,
-            ))
-            // 10 extra lamports per tx
-            .instruction(ComputeBudgetInstruction::set_compute_unit_price(
-                EXTRA_MICRO_LAMPORT_PER_CU,
-            ))
-            .args(instruction::RefreshPriceList { tokens })
-            .send();
+        let tx = self
+            .client
+            .tx_builder()
+            .add_anchor_ix_with_budget(
+                &self.program_id,
+                refresh_accounts,
+                instruction::RefreshPriceList { tokens },
+                // TODO: compute dynamically
+                1_400_000,
+            )
+            .build_with_budget_and_fee(&[])
+            .await?;
 
-        match tx_res {
-            Ok(sig) => info!(signature = %sig, "Prices list refreshed successfully"),
-            Err(err) => match err {
-                anchor_client::ClientError::SolanaClientError(e) => {
-                    info!("Prices list refresh failed: RPC Client error: {e:#?}");
-                    // We could `bail!` here but we want to avoid double logs,
-                }
-                _ => {
-                    warn!("Price list refresh failed: {:#?}", err);
-                    // We could `bail!` here but we want to avoid double logs,
-                }
-            },
+        let (signature, tx_res) = self.client.send_and_confirm_transaction(tx).await?;
+
+        tx_res
+            .ok_or_else(|| anyhow!("Transaction failed to confirm: {signature}"))?
+            .context(format!("Failed transaction: {signature}"))
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn refresh_price_list_print_err(&self, tokens: &[u16]) {
+        if let Err(err) = self.ix_refresh_price_list(tokens).await {
+            error!(err = ?err, "Failed to refresh price list");
         }
-
-        Ok(())
     }
 }

@@ -8,8 +8,9 @@
 //! - [`std::fmt::Display`] for basic logging of a reference to a token.
 //! - [`std::fmt::Debug`] for detailled debug and error logs.
 
-use anchor_client::{solana_client::rpc_client::RpcClient, solana_sdk::clock};
+use anchor_client::solana_sdk::clock;
 use anyhow::Result;
+use orbit_link::async_client::AsyncClient;
 use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
 pub mod ktokens;
@@ -24,7 +25,8 @@ use crate::config::TokenConfig;
 pub trait TokenEntry: OracleHelper + std::fmt::Debug + std::fmt::Display {}
 
 /// Trait that must be implemented by objects representing a token in scope
-pub trait OracleHelper {
+#[async_trait::async_trait]
+pub trait OracleHelper: Sync {
     /// Get the oracle type of the token
     fn get_type(&self) -> OracleType;
 
@@ -39,7 +41,7 @@ pub trait OracleHelper {
     fn get_mapping_account(&self) -> &Pubkey;
 
     /// Get the extra accounts needed for the refresh price ix
-    fn get_extra_accounts(&self, rpc: Option<&RpcClient>) -> Result<Vec<Pubkey>>;
+    async fn get_extra_accounts(&self, rpc: Option<&dyn AsyncClient>) -> Result<Vec<Pubkey>>;
 
     /// Get max age after which a refresh must be forced.
     ///
@@ -54,13 +56,13 @@ pub trait OracleHelper {
     ///
     /// **Note:** For prices that constantly changes implementation
     /// should always return false so refresh only happen on max_age.
-    fn need_refresh(&self, scope_price: &DatedPrice, rpc: &RpcClient) -> Result<bool>;
+    async fn need_refresh(&self, scope_price: &DatedPrice, rpc: &dyn AsyncClient) -> Result<bool>;
 }
 
-pub fn entry_from_config(
+pub async fn entry_from_config(
     token_conf: &TokenConfig,
     default_max_age: clock::Slot,
-    rpc: &RpcClient,
+    rpc: &dyn AsyncClient,
 ) -> Result<Box<dyn TokenEntry>> {
     Ok(match token_conf.oracle_type {
         OracleType::Pyth
@@ -69,6 +71,6 @@ pub fn entry_from_config(
         | OracleType::CToken
         | OracleType::SplStake
         | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
-        OracleType::KToken => Box::new(KTokenOracle::new(token_conf, default_max_age, rpc)?),
+        OracleType::KToken => Box::new(KTokenOracle::new(token_conf, default_max_age, rpc).await?),
     })
 }

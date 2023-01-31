@@ -5,6 +5,7 @@ use solana_transaction_status::TransactionConfirmationStatus;
 use tokio::sync::Mutex;
 
 use super::*;
+use crate::Result;
 
 fn bank_status_to_transaction_status(bank_status: BankTransactionStatus) -> TransactionStatus {
     let BankTransactionStatus {
@@ -33,21 +34,20 @@ fn bank_status_to_transaction_status(bank_status: BankTransactionStatus) -> Tran
 
 #[async_trait]
 impl AsyncClient for Mutex<BanksClient> {
-    type Error = solana_banks_client::BanksClientError;
-
-    async fn send_transaction(
-        &self,
-        _transaction: &VersionedTransaction,
-    ) -> Result<Signature, Self::Error> {
+    async fn send_transaction(&self, _transaction: &VersionedTransaction) -> Result<Signature> {
         unimplemented!(
             "Versioned transactions are not supported by BanksClient yet (wait for solana 1.15.0)"
         )
     }
 
+    async fn get_minimum_balance_for_rent_exemption(&self, data_len: usize) -> Result<u64> {
+        Ok((7850880 * data_len / 1000) as u64)
+    }
+
     async fn get_signature_statuses(
         &self,
         signatures: &[Signature],
-    ) -> Result<Vec<Option<TransactionStatus>>, Self::Error> {
+    ) -> Result<Vec<Option<TransactionStatus>>> {
         let mut bank = self.lock().await;
         // Note: There is no point tot join all with bank client as it requires to be mutable
         // so takes the lock force sequencial execution
@@ -59,27 +59,25 @@ impl AsyncClient for Mutex<BanksClient> {
         Ok(statuses)
     }
 
-    async fn get_latest_blockhash(&self) -> Result<Hash, Self::Error> {
+    async fn get_latest_blockhash(&self) -> Result<Hash> {
         let mut bank = self.lock().await;
-        bank.get_latest_blockhash().await
+        bank.get_latest_blockhash().await.map_err(Into::into)
     }
 
-    async fn get_balance(&self, pubkey: &Pubkey) -> Result<u64, Self::Error> {
+    async fn get_balance(&self, pubkey: &Pubkey) -> Result<u64> {
         let mut bank = self.lock().await;
-        bank.get_balance(*pubkey).await
+        bank.get_balance(*pubkey).await.map_err(Into::into)
     }
 
-    async fn get_account(&self, pubkey: &Pubkey) -> Result<Account, Self::Error> {
+    async fn get_account(&self, pubkey: &Pubkey) -> Result<Account> {
         let mut bank = self.lock().await;
         bank.get_account(*pubkey)
             .await?
             .ok_or_else(|| solana_banks_client::BanksClientError::ClientError("Account not found"))
+            .map_err(Into::into)
     }
 
-    async fn get_multiple_accounts(
-        &self,
-        pubkeys: &[Pubkey],
-    ) -> Result<Vec<Option<Account>>, Self::Error> {
+    async fn get_multiple_accounts(&self, pubkeys: &[Pubkey]) -> Result<Vec<Option<Account>>> {
         let mut bank = self.lock().await;
         // Note: There is no point tot join all with bank client as it requires to be mutable
         // so takes the lock force sequencial execution
@@ -90,7 +88,7 @@ impl AsyncClient for Mutex<BanksClient> {
         Ok(accounts)
     }
 
-    async fn get_recommended_micro_lamport_fee(&self) -> Result<u64, Self::Error> {
+    async fn get_recommended_micro_lamport_fee(&self) -> Result<u64> {
         Ok(0)
     }
 }

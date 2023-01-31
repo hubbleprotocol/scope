@@ -2,10 +2,9 @@
 
 use std::fmt::{Debug, Display};
 
-use anchor_client::{
-    anchor_lang::__private::bytemuck, solana_client::rpc_client::RpcClient, solana_sdk::clock,
-};
+use anchor_client::{anchor_lang::__private::bytemuck, solana_sdk::clock};
 use anyhow::{Context, Result};
+use orbit_link::async_client::AsyncClient;
 use scope::{
     anchor_lang::prelude::Pubkey,
     oracles::{ktokens::WhirlpoolStrategy, OracleType},
@@ -35,10 +34,15 @@ pub struct KTokenOracle {
 }
 
 impl KTokenOracle {
-    pub fn new(conf: &TokenConfig, default_max_age: clock::Slot, rpc: &RpcClient) -> Result<Self> {
+    pub async fn new(
+        conf: &TokenConfig,
+        default_max_age: clock::Slot,
+        rpc: &dyn AsyncClient,
+    ) -> Result<Self> {
         let mapping = conf.oracle_mapping;
         let strategy_account_raw = rpc
             .get_account(&mapping)
+            .await
             .context("Retrieving Kamino strategy account")?;
 
         let strategy_account: &WhirlpoolStrategy =
@@ -64,6 +68,7 @@ impl KTokenOracle {
     }
 }
 
+#[async_trait::async_trait]
 impl OracleHelper for KTokenOracle {
     fn get_type(&self) -> OracleType {
         OracleType::KToken
@@ -77,11 +82,12 @@ impl OracleHelper for KTokenOracle {
         &self.mapping
     }
 
-    fn get_extra_accounts(&self, rpc: Option<&RpcClient>) -> Result<Vec<Pubkey>> {
+    async fn get_extra_accounts(&self, rpc: Option<&dyn AsyncClient>) -> Result<Vec<Pubkey>> {
         let mut res = self.extra_accounts.to_vec();
         if let Some(rpc) = rpc {
             let strategy_account_raw = rpc
                 .get_account(&self.mapping)
+                .await
                 .context("Retrieving Kamino strategy account")?;
 
             let strategy_account: &WhirlpoolStrategy =
@@ -95,7 +101,11 @@ impl OracleHelper for KTokenOracle {
         self.max_age
     }
 
-    fn need_refresh(&self, _scope_price: &DatedPrice, _rpc: &RpcClient) -> Result<bool> {
+    async fn need_refresh(
+        &self,
+        _scope_price: &DatedPrice,
+        _rpc: &dyn AsyncClient,
+    ) -> Result<bool> {
         Ok(false)
     }
 }

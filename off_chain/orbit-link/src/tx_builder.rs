@@ -28,7 +28,6 @@ impl<'link, T, S> TxBuilder<'link, T, S>
 where
     T: crate::async_client::AsyncClient,
     S: Signer,
-    errors::ErrorKind: From<<T as crate::async_client::AsyncClient>::Error>,
 {
     pub fn new(link: &'link OrbitLink<T, S>) -> Self {
         TxBuilder {

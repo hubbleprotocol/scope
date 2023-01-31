@@ -1,6 +1,5 @@
-use std::thread;
-
 use anyhow::Result;
+use tokio::task::JoinHandle;
 
 /// Run the server in on an existing async runtime
 pub async fn serve(server_port: u16) -> Result<()> {
@@ -12,15 +11,6 @@ pub async fn serve(server_port: u16) -> Result<()> {
 }
 
 /// For usage in sync context, spaws a dedicated tokio runtime
-pub fn thread_start(server_port: u16) -> Result<()> {
-    thread::spawn(move || server_main(server_port));
-    Ok(())
-}
-
-/// Internal async main for sync apps
-#[tokio::main]
-async fn server_main(server_port: u16) -> Result<()> {
-    serve(server_port).await?;
-
-    Ok(())
+pub async fn thread_start(server_port: u16) -> JoinHandle<Result<()>> {
+    tokio::spawn(async move { serve(server_port).await })
 }

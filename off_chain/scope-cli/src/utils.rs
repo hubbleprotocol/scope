@@ -1,10 +1,8 @@
 use std::str::FromStr;
 
-use anchor_client::{
-    solana_client::rpc_client::RpcClient,
-    solana_sdk::{clock::Clock, pubkey::Pubkey, sysvar::SysvarId},
-};
+use anchor_client::solana_sdk::{clock::Clock, pubkey::Pubkey, sysvar::SysvarId};
 use anyhow::Result;
+use orbit_link::async_client::AsyncClient;
 use scope::Price;
 
 /// Get the program data address of the given program id
@@ -27,8 +25,8 @@ pub fn price_to_f64(price: &Price) -> f64 {
 }
 
 /// Get current clock
-pub fn get_clock(rpc: &RpcClient) -> Result<Clock> {
-    let clock = rpc.get_account(&Clock::id())?.deserialize_data()?;
+pub async fn get_clock(rpc: &impl AsyncClient) -> Result<Clock> {
+    let clock = rpc.get_account(&Clock::id()).await?.deserialize_data()?;
 
     Ok(clock)
 }
