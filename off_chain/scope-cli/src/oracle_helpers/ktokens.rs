@@ -1,4 +1,4 @@
-//! Implementation of helper for the Yi token
+//! Implementation of helper for Kamino's kTokens
 
 use std::fmt::{Debug, Display};
 
