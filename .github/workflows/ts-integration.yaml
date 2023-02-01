@@ -8,8 +8,8 @@ on:
     branches:
       - master
 env:
-  solana_version: v1.10.29
-  anchor_version: v0.25.0
+  solana_version: v1.13.6
+  anchor_version: v0.26.0
   rustc_version: stable
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
             'yarn run ts-mocha -t 1000000 tests/test_switchboard.ts',
           ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: test
         run: |
           echo "${{ matrix.test_name }}"

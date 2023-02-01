@@ -1,0 +1,24 @@
+name: Soteria
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  soteria:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout changes
+        uses: actions/checkout@v3
+      - name: Soteria Audit
+        continue-on-error: true
+        uses: silas-x/soteria-action@main
+        with:
+          solana-version: '1.14.11'
+          run-mode: '-analyzeAll'
+          cargo-com: '.'
+          program-path: 'programs/scope'

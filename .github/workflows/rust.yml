@@ -13,7 +13,7 @@ jobs:
     name: Rust project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: install essential
         run: |
           sudo apt-get update
@@ -37,17 +37,3 @@ jobs:
         name: Cargo test
         with:
           command: test
-
-  soteria:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout changes
-        uses: actions/checkout@v2
-      - name: Soteria Audit
-        continue-on-error: false
-        uses: silas-x/soteria-action@main
-        with:
-          solana-version: '1.10.29'
-          run-mode: '-analyzeAll'
-          cargo-com: '.'
-          program-path: 'programs/scope'
