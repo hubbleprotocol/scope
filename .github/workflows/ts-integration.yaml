@@ -15,19 +15,8 @@ env:
 jobs:
   ts-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        test_name:
-          [
-            'yarn run ts-mocha -t 1000000 tests/test_oracle_operation.ts',
-            'yarn run ts-mocha -t 1000000 tests/test_crank.ts',
-            'yarn run ts-mocha -t 1000000 tests/test_switchboard.ts',
-          ]
     steps:
       - uses: actions/checkout@v3
-      - name: test
-        run: |
-          echo "${{ matrix.test_name }}"
       - name: Install dependency
         run: |
           sudo apt-get update
@@ -40,10 +29,10 @@ jobs:
           toolchain: ${{ env.rustc_version }}
           default: true
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v1.4.0
+        uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         name: Cache Solana Tool Suite
         id: cache-solana
         with:
@@ -51,7 +40,7 @@ jobs:
             ~/.cache/solana/
             ~/.local/share/solana/
           key: solana-${{ runner.os }}-v0001-${{ env.solana_version }}
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         name: Cache Node Modules
         id: cache-node-modules
         with:
@@ -62,7 +51,7 @@ jobs:
           key: npm-${{ runner.os }}-v0001-${{ hashFiles('**/package-lock.json') }}
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 19
       - name: install global mocha
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
@@ -96,4 +85,4 @@ jobs:
           sleep 15
           make airdrop
           make deploy
-          ${{ matrix.test_name }}
+          make test-ts
