@@ -7,6 +7,8 @@ use tokio::sync::Mutex;
 use super::*;
 use crate::Result;
 
+const BANKS_CLIENT_MINIMUM_RENT_PER_KB: usize = 7850880;
+
 fn bank_status_to_transaction_status(bank_status: BankTransactionStatus) -> TransactionStatus {
     let BankTransactionStatus {
         slot,
@@ -41,7 +43,7 @@ impl AsyncClient for Mutex<BanksClient> {
     }
 
     async fn get_minimum_balance_for_rent_exemption(&self, data_len: usize) -> Result<u64> {
-        Ok((7850880 * data_len / 1000) as u64)
+        Ok((BANKS_CLIENT_MINIMUM_RENT_PER_KB * data_len / 1000) as u64)
     }
 
     async fn get_signature_statuses(
@@ -49,8 +51,8 @@ impl AsyncClient for Mutex<BanksClient> {
         signatures: &[Signature],
     ) -> Result<Vec<Option<TransactionStatus>>> {
         let mut bank = self.lock().await;
-        // Note: There is no point tot join all with bank client as it requires to be mutable
-        // so takes the lock force sequencial execution
+        // Note: There is no point to join all with bank client as it requires to be mutable
+        // so takes the lock force sequential execution
         let mut statuses = Vec::with_capacity(signatures.len());
         for signature in signatures {
             let status = bank.get_transaction_status(*signature).await?;

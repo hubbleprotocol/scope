@@ -29,7 +29,7 @@ pub enum OracleType {
     Pyth = 0,
     SwitchboardV1 = 1,
     SwitchboardV2 = 2,
-    // Depracated YiToken = 3,
+    // Deprecated YiToken = 3,
     /// Solend tokens
     CToken = 4,
     /// SPL Stake Pool token (like scnSol)

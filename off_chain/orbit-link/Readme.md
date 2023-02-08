@@ -13,4 +13,4 @@ This client helps to abstract away:
 
 ## Future
 
-Complete support for banks client, allowing direct connection to bfp-tests.
+Complete support for banks client, allowing direct connection to bpf-tests.
