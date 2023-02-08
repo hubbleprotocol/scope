@@ -49,7 +49,7 @@ describe('Scope crank bot tests', () => {
   const url = 'http://127.0.0.1:8899';
   const options = AnchorProvider.defaultOptions();
   options.skipPreflight = true;
-  options.commitment = 'confirmed';
+  options.commitment = 'processed';
   const connection = new Connection(url, options.commitment);
 
   const wallet = new NodeWallet(admin);
