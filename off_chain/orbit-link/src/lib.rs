@@ -81,7 +81,7 @@ where
         tx_builder::TxBuilder::new(self)
     }
 
-    pub async fn ix_create_account(
+    pub async fn create_account_ix(
         &self,
         account_to_create: &Pubkey,
         space: usize,

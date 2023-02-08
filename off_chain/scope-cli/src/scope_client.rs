@@ -431,7 +431,7 @@ where
             // Create the price account
             .add_ix_with_budget(
                 client
-                    .ix_create_account(
+                    .create_account_ix(
                         &oracle_prices_acc.pubkey(),
                         size_of::<OraclePrices>() + 8,
                         program_id,
@@ -442,7 +442,7 @@ where
             // Create the oracle mapping account
             .add_ix_with_budget(
                 client
-                    .ix_create_account(
+                    .create_account_ix(
                         &oracle_mappings_acc.pubkey(),
                         size_of::<OracleMappings>() + 8,
                         program_id,
