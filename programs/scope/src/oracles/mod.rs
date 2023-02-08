@@ -44,13 +44,13 @@ impl OracleType {
     /// Get the number of compute unit needed to refresh the price of a token
     pub fn get_update_cu_budget(&self) -> u32 {
         match self {
-            OracleType::Pyth => 10000,
-            OracleType::SwitchboardV1 => 10000,
-            OracleType::SwitchboardV2 => 20000,
-            OracleType::CToken => 120000,
-            OracleType::SplStake => 10000,
-            OracleType::KToken => 40000,
-            OracleType::PythEMA => 10000,
+            OracleType::Pyth => 15000,
+            OracleType::SwitchboardV1 => 15000,
+            OracleType::SwitchboardV2 => 30000,
+            OracleType::CToken => 130000,
+            OracleType::SplStake => 20000,
+            OracleType::KToken => 50000,
+            OracleType::PythEMA => 15000,
         }
     }
 }
