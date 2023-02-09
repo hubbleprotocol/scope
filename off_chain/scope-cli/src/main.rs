@@ -1,4 +1,5 @@
 use std::{
+    ops::Neg,
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -42,6 +43,10 @@ struct Args {
     /// Set flag to activate json log output
     #[clap(long, env = "JSON_LOGS")]
     json: bool,
+
+    /// Print timestamps in logs (not needed on grafana)
+    #[clap(long, env)]
+    log_timestamps: bool,
 
     /// Subcommand to execute
     #[clap(subcommand)]
@@ -102,9 +107,15 @@ enum Actions {
         /// Only valid if --server is also used
         #[clap(long, env, default_value = "8080")]
         server_port: u16,
-        /// Number of tx retries before logging an error for prices being too old
-        #[clap(long, env, default_value = "10")]
-        num_retries_before_error: usize,
+        /// Period in seconds to print all prices
+        #[clap(long, env, default_value = "60")]
+        print_period_s: u64,
+        /// Time in seconds to wait before repeating alert if the price is still too old
+        #[clap(long, env, default_value = "30")]
+        old_price_alert_snooze_time_s: u64,
+        /// Number of slots above max age before alerting for a price being too old
+        #[clap(long, env, default_value = "50")]
+        alert_old_price_after_slots: clock::Slot,
         /// Log old prices as errors when prices are still too old after all retries
         #[clap(long, env)]
         old_price_is_error: bool,
@@ -125,13 +136,16 @@ enum Actions {
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
 
+    if args.json {
+        tracing_subscriber::fmt().json().without_time().init();
+    } else if args.log_timestamps {
+        tracing_subscriber::fmt().compact().init();
+    } else {
+        tracing_subscriber::fmt().compact().without_time().init();
+    }
+
     info!("Starting with args {:#?}", args);
 
-    if args.json {
-        tracing_subscriber::fmt().json().init();
-    } else {
-        tracing_subscriber::fmt::init();
-    }
     // Read keypair to sign transactions
     let payer = read_keypair_file(args.keypair).expect("Keypair file not found or invalid");
 
@@ -161,7 +175,9 @@ async fn main() -> Result<()> {
                 mapping,
                 server,
                 server_port,
-                num_retries_before_error,
+                print_period_s,
+                old_price_alert_snooze_time_s,
+                alert_old_price_after_slots,
                 old_price_is_error,
             } => {
                 let _server_handle = if server {
@@ -173,7 +189,9 @@ async fn main() -> Result<()> {
                     &mut scope,
                     (mapping).as_ref(),
                     refresh_interval_slot,
-                    num_retries_before_error,
+                    print_period_s,
+                    old_price_alert_snooze_time_s,
+                    alert_old_price_after_slots,
                     old_price_is_error,
                 )
                 .await
@@ -254,7 +272,9 @@ async fn crank<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping_op: Option<impl AsRef<Path>>,
     refresh_interval_slot: clock::Slot,
-    init_num_retries_before_err: usize,
+    print_period_s: u64,
+    old_price_alert_snooze_time_s: u64,
+    alert_old_price_after_slots: clock::Slot,
     old_price_is_error: bool,
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
@@ -272,46 +292,67 @@ async fn crank<T: AsyncClient, S: Signer>(
         );
         scope.download_oracle_mapping(refresh_interval_slot).await?;
     }
-    let mut num_retries_before_err: usize = init_num_retries_before_err;
-    let error_log = format!(
-        "Some prices are still too old after {init_num_retries_before_err} refresh attempts"
-    );
-    loop {
-        let start = Instant::now();
 
-        if let Err(e) = scope.refresh_old_prices().await {
-            warn!("Error while refreshing prices {:?}", e);
+    let async_print_price_loop = async {
+        let print_period = Duration::from_secs(print_period_s);
+        loop {
+            let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
+
+            info!(current_slot);
+            let _ = scope.log_prices(current_slot).await;
+            sleep(print_period).await;
         }
+    };
 
-        let elapsed = start.elapsed();
-        trace!("last refresh duration was {:?}", elapsed);
+    let async_refresh_price_loop = async {
+        let alert_threshold: i64 = (alert_old_price_after_slots as i64).neg();
+        let alert_snooze_time = Duration::from_secs(old_price_alert_snooze_time_s);
+        let error_log = format!(
+            "Some prices are older than max age by more than {alert_old_price_after_slots} slots."
+        );
+        let mut last_alert = Instant::now();
 
-        let current_slot = get_clock(scope.get_rpc()).await?.slot;
+        loop {
+            let start = Instant::now();
 
-        info!(current_slot);
+            if let Err(e) = scope.refresh_old_prices().await {
+                warn!("Error while refreshing prices {:?}", e);
+            }
 
-        let _ = scope.log_prices(current_slot).await;
+            let elapsed = start.elapsed();
+            trace!("last refresh duration was {:?}", elapsed);
 
-        let shortest_ttl = scope.get_prices_shortest_ttl().await?;
-        trace!(shortest_ttl);
+            let shortest_ttl = scope.get_prices_shortest_ttl().await.unwrap_or_default();
+            trace!(shortest_ttl);
 
-        if shortest_ttl > 0 {
-            num_retries_before_err = init_num_retries_before_err;
-            // Time to sleep if we consider slot age
-            let sleep_ms_from_slots = shortest_ttl * clock::DEFAULT_MS_PER_SLOT;
+            if alert_threshold > shortest_ttl && last_alert.elapsed() > alert_snooze_time {
+                last_alert = Instant::now();
+                if old_price_is_error {
+                    error!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
+                } else {
+                    warn!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
+                }
+            }
+
+            let sleep_ms_from_slots = if shortest_ttl > 0 {
+                // Time to sleep if we consider slot age
+                (shortest_ttl as u64) * clock::DEFAULT_MS_PER_SLOT
+            } else {
+                // Avoid spamming the network with requests, sleep at least 1 slot
+                clock::DEFAULT_MS_PER_SLOT
+            };
             trace!(sleep_ms_from_slots);
             sleep(Duration::from_millis(sleep_ms_from_slots)).await;
-        } else {
-            num_retries_before_err -= 1;
         }
+    };
 
-        if num_retries_before_err == 0 {
-            if old_price_is_error {
-                error!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
-            } else {
-                warn!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
-            }
-            num_retries_before_err = init_num_retries_before_err;
+    tokio::pin!(async_print_price_loop);
+    tokio::pin!(async_refresh_price_loop);
+
+    loop {
+        tokio::select! {
+            _ = &mut async_print_price_loop => {},
+            _ = &mut async_refresh_price_loop => {},
         }
     }
 }

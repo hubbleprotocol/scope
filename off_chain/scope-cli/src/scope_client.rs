@@ -28,7 +28,7 @@ use crate::{
 /// Max number of refresh per tx
 const MAX_REFRESH_CHUNK_SIZE: usize = 24;
 /// Token gap to max age that still trigger refresh (in slots)
-const REMAINING_AGE_TO_REFRESH: u64 = 10;
+const REMAINING_AGE_TO_REFRESH: i64 = 10;
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 
@@ -252,8 +252,8 @@ where
     /// if some room is left.
     #[tracing::instrument(skip(self))]
     pub async fn refresh_old_prices(&self) -> Result<()> {
-        let mut prices_ttl: Vec<(u16, clock::Slot)> = self.get_prices_ttl().await?.collect();
-
+        let mut prices_ttl: Vec<(u16, i64)> = self.get_prices_ttl().await?.collect();
+        // TODO: filter prices that cannot be refreshed
         // Sort the prices ttl from the smallest to biggest.
         prices_ttl.sort_by(|(_, a), (_, b)| a.cmp(b));
 
@@ -293,11 +293,11 @@ where
         Ok(())
     }
 
-    /// Get an iterator over (id, prices_ttl)
+    /// Get an iterator over `(id, price_ttl)`
     ///
     /// i.e. the number of slot until at the price currently known by scope has reached its `max_age`
-    /// Note: If a price `need_refresh` then ttl is forced to 0.
-    pub async fn get_prices_ttl(&self) -> Result<impl Iterator<Item = (u16, clock::Slot)> + '_> {
+    /// Note: negative `price_ttl` gives how much expired is the price
+    pub async fn get_prices_ttl(&self) -> Result<impl Iterator<Item = (u16, i64)> + '_> {
         let oracle_prices = self.get_prices().await?;
 
         let rpc = self.get_rpc();
@@ -307,19 +307,28 @@ where
         let it = self.tokens.iter().map(move |(id, entry)| {
             let price = &oracle_prices.prices[usize::from(*id)];
             let price_slot = price.last_updated_slot;
-            // default to no remaning slot (ttl=0)
+            // default to age == 0 if "updated in the future"
             let age = current_slot.saturating_sub(price_slot);
-            let remaining_slots = entry.get_max_age().saturating_sub(age);
+
+            let remaining_slots: i64 = if age > clock::DEFAULT_SLOTS_PER_EPOCH {
+                // Age is more than one epoch, assume it is infinitely old.
+                i64::MIN
+            } else if entry.get_max_age() > i64::MAX as u64 {
+                // Max age is too high default to "infinite" ttl
+                i64::MAX
+            } else {
+                // No overflow possible thanks to the previous checks
+                entry.get_max_age() as i64 - age as i64
+            };
             (*id, remaining_slots)
         });
         Ok(it)
-        //TODO: filter prices that cannot be refreshed
     }
 
     /// Get the minimum remaining time to live of all prices.
     ///
     /// i.e. the number of slot until at least one price has reached its `max_age`
-    pub async fn get_prices_shortest_ttl(&self) -> Result<clock::Slot> {
+    pub async fn get_prices_shortest_ttl(&self) -> Result<i64> {
         let shortest_ttl = self
             .get_prices_ttl()
             .await?
@@ -339,7 +348,6 @@ where
             let dated_price = prices[usize::from(id)];
             let price = price_to_f64(&dated_price.price);
             let exponent = (dated_price.price.exp + 1) as usize;
-            let price = format!("{price:.exponent$}");
             let price_type = entry.get_type();
             let age_in_slots: i64 = current_slot as i64 - dated_price.last_updated_slot as i64;
             let max_age = entry.get_max_age() as i64;
@@ -348,8 +356,8 @@ where
             } else {
                 format!("\x1b[32m{age_in_slots}\x1b[0m")
             };
-            trace!(id, %entry, price = ?dated_price.price);
-            info!(id, %entry, %price, ?price_type, "age" = %age_string, max_age);
+            // For easier parsing of these logs don't use tracing here.
+            println!("id={id}, entry='{entry}', price='{price:.exponent$}', price_type='{price_type:?}', age={age_string}, max_age={max_age}");
         }
         Ok(())
     }
@@ -360,7 +368,7 @@ where
             .get_prices_ttl()
             .await?
             .filter_map(|(index, ttl)| {
-                if ttl == 0 {
+                if ttl <= 0 {
                     self.tokens.get(&index).map(|t| t.to_string())
                 } else {
                     None

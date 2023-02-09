@@ -181,9 +181,9 @@ update-mapping: $(SCOPE_CLI)
 
 crank: $(SCOPE_CLI)
 > if [ -f ./configs/$(CLUSTER)/$(FEED_NAME).json ]; then\
-       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) --log-timestamps crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
    else\
-       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) crank;\
+       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) --log-timestamps crank;\
    fi
 
 get-prices: $(SCOPE_CLI)
