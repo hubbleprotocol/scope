@@ -7,80 +7,24 @@ on:
   pull_request:
     branches:
       - master
-env:
-  solana_version: v1.13.6
-  anchor_version: v0.26.0
-  rustc_version: stable
 
 jobs:
   ts-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install dependency
-        run: |
-          sudo apt-get update
-          sudo apt-get upgrade
-          sudo apt-get install -y pkg-config build-essential libudev-dev
-      - uses: actions-rs/toolchain@v1
+      - uses: hubbleprotocol/solana-setup-action@v0.1
         with:
-          profile: minimal
-          components: rustfmt, clippy
-          toolchain: ${{ env.rustc_version }}
-          default: true
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - uses: actions/cache@v3
-        name: Cache Solana Tool Suite
-        id: cache-solana
-        with:
-          path: |
-            ~/.cache/solana/
-            ~/.local/share/solana/
-          key: solana-${{ runner.os }}-v0001-${{ env.solana_version }}
-      - uses: actions/cache@v3
-        name: Cache Node Modules
-        id: cache-node-modules
-        with:
-          path: |
-            ~/.npm/
-            ~/.yarn/
-            ./node_modules
-          key: npm-${{ runner.os }}-v0001-${{ hashFiles('**/package-lock.json') }}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 19
-      - name: install global mocha
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          npm install -g yarn
-          npm install -g mocha
-          npm install -g ts-mocha
-          npm install -g typescript
-      - name: install Solana
-        if: steps.cache-solana.outputs.cache-hit != 'true'
-        run: |
-          sh -c "$(curl -sSfL https://release.solana.com/${{ env.solana_version }}/install)"
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          solana --version
-      - name: install Anchor
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          cargo install --git https://github.com/project-serum/anchor --tag ${{ env.anchor_version }} anchor-cli --locked
-      - name: yarn install
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          yarn install
+          solana-version: v1.13.6
+          rust-version: stable
+          anchor-version: v0.26.0
+          setup-node: 19
+
       - name: build programs
         run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
           make build
       - name: test
         run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          export CLUSTER=localnet
           make test-validator > validator.logs 2>&1 &
           sleep 15
           make airdrop
