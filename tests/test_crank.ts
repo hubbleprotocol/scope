@@ -165,6 +165,8 @@ describe('Scope crank bot tests', () => {
         })
       );
 
+      await sleep(2000);
+
       scopeBot.flushLogs();
 
       await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
