@@ -604,17 +604,26 @@ where
 
         let (signature, tx_res) = self.client.send_and_confirm_transaction(tx).await?;
 
-        tx_res
-            .ok_or_else(|| anyhow!("Transaction failed to confirm: {signature}"))?
-            .context(format!("Failed transaction: {signature}"))
-            .map(|_| signature)
+        match tx_res {
+            Some(Ok(())) => {
+                info!(%signature, "Prices list refreshed successfully");
+            }
+            Some(Err(err)) => {
+                error!(%signature, ?err, "Failed to refresh price list");
+            }
+            None => {
+                info!(%signature, "Could not confirm refresh price list transaction");
+            }
+        }
+
+        Ok(signature)
     }
 
     #[tracing::instrument(skip(self))]
     async fn refresh_price_list_print_res(&self, tokens: Vec<u16>) {
-        match self.ix_refresh_price_list(&tokens).await {
-            Err(err) => warn!(err = ?err, "Failed to refresh price list"),
-            Ok(sig) => info!(signature = %sig, "Prices list refreshed successfully"),
+        if let Err(err) = self.ix_refresh_price_list(&tokens).await {
+            warn!(?err, "Error while sending refresh price list transaction");
+            // Ok case already printed
         }
     }
 }
