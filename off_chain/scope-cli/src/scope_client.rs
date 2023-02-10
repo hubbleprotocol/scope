@@ -357,7 +357,7 @@ where
                 format!("\x1b[32m{age_in_slots}\x1b[0m")
             };
             // For easier parsing of these logs don't use tracing here.
-            println!("id={id}, entry='{entry}', price='{price:.exponent$}', price_type='{price_type:?}', age={age_string}, max_age={max_age}");
+            println!("id={id}, entry='{entry}', price='{price:.exponent$}', price_type='{price_type:?}', age={age_in_slots}, age_c={age_string}, max_age={max_age}");
         }
         Ok(())
     }
