@@ -39,7 +39,10 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
     };
 
     let price = validate_valid_price(&pyth_price, ORACLE_CONFIDENCE_FACTOR).map_err(|e| {
-        msg!("Invalid price on pyth account {}", price_info.key);
+        msg!(
+            "Confidence interval check failed on pyth account {}",
+            price_info.key
+        );
         e
     })?;
 

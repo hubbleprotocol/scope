@@ -23,9 +23,13 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     let aggregator: AggregatorState = get_aggregator(switchboard_feed_info)?;
     let round_result: RoundResult = get_aggregator_result(&aggregator)?;
 
-    let price_float = round_result.result.ok_or(ScopeError::PriceNotValid)?;
+    let price_float = round_result.result.ok_or_else(|| {
+        msg!("Price not valid: aggregator.result not set");
+        ScopeError::PriceNotValid
+    })?;
 
     if price_float >= MAX_PRICE_FLOAT {
+        msg!("Price is above 'MAX_PRICE_FLOAT'");
         return err!(ScopeError::MathOverflow);
     }
     let price: u64 = (price_float * PRICE_MULTIPLIER) as u64;
@@ -60,13 +64,23 @@ pub fn validate_valid_price(
 
     let aggregator_min_confirmations = aggregator
         .configs
-        .ok_or(ScopeError::PriceNotValid)?
+        .ok_or_else(|| {
+            msg!("Price not valid: aggregator.configs not set");
+            ScopeError::PriceNotValid
+        })?
         .min_confirmations
-        .ok_or(ScopeError::PriceNotValid)?;
+        .ok_or_else(|| {
+            msg!("Price not valid: aggregator.configs.min_confirmations not set");
+            ScopeError::PriceNotValid
+        })?;
 
     let min_num_success_for_oracle = min(aggregator_min_confirmations, MIN_NUM_SUCCESS);
-    let num_success = round_result.num_success.ok_or(ScopeError::PriceNotValid)?;
+    let num_success = round_result.num_success.ok_or_else(|| {
+        msg!("Price not valid: num_success not set");
+        ScopeError::PriceNotValid
+    })?;
     if num_success < min_num_success_for_oracle {
+        msg!("Price not valid: num_success < min_num_success_for_oracle, {num_success} < {min_num_success_for_oracle}",);
         return err!(ScopeError::PriceNotValid);
     };
 

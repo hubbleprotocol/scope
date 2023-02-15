@@ -11,7 +11,10 @@ pub fn get_price(
     current_clock: &Clock,
 ) -> Result<DatedPrice> {
     let stake_pool = try_from_slice_unchecked::<StakePool>(&stake_pool_account_info.data.borrow())
-        .map_err(|_| ScopeError::UnexpectedAccount)?;
+        .map_err(|_| {
+            msg!("Provided pubkey is not a SPL Stake account");
+            ScopeError::UnexpectedAccount
+        })?;
 
     #[cfg(not(feature = "skip_price_validation"))]
     if stake_pool.last_update_epoch != current_clock.epoch {

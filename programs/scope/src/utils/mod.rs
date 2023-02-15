@@ -26,8 +26,10 @@ pub fn account_deserialize<T: AccountDeserialize + Discriminator>(
     }
 
     let mut data: &[u8] = &data;
-    let user: T =
-        T::try_deserialize(&mut data).map_err(|_| ScopeError::UnableToDeserializeAccount)?;
+    let user: T = T::try_deserialize(&mut data).map_err(|_| {
+        msg!("Account {:?} deserialization failed", account.key());
+        ScopeError::UnableToDeserializeAccount
+    })?;
 
     Ok(user)
 }
