@@ -21,8 +21,10 @@ const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
 pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
     let data = price_info.try_borrow_data()?;
-    let price_account = pyth_client::load_price_account(data.as_ref())
-        .map_err(|_| error!(ScopeError::PriceNotValid))?;
+    let price_account = pyth_client::load_price_account(data.as_ref()).map_err(|e| {
+        msg!("Invalid pyth price account: {}", e);
+        error!(ScopeError::PriceNotValid)
+    })?;
 
     let pyth_raw = price_account.to_price_feed(price_info.key);
 

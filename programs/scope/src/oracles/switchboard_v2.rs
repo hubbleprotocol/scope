@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use anchor_lang::{prelude::*, solana_program::log::sol_log};
+use anchor_lang::prelude::*;
 
 use self::switchboard::*;
 use crate::{DatedPrice, Price, Result, ScopeError};
@@ -14,11 +14,10 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
     let feed = AggregatorAccountData::new(switchboard_feed_info)
         .map_err(|_| ScopeError::SwitchboardV2Error)?;
 
-    let price_switchboard_desc = feed.get_result().map_err(|e| {
+    let price_switchboard_desc = feed.get_result().map_err(|_| {
         msg!(
-            "Switchboard v2 get result from feed {} failed with {:#?}",
-            switchboard_feed_info.key().to_string(),
-            e
+            "Switchboard v2 get result from feed {} failed",
+            switchboard_feed_info.key()
         );
         ScopeError::SwitchboardV2Error
     })?;
@@ -37,11 +36,13 @@ pub fn get_price(switchboard_feed_info: &AccountInfo) -> Result<DatedPrice> {
         .is_err()
         {
             // Using sol log because with exactly 5 parameters, msg! expect u64s.
-            sol_log(&format!("Validation of confidence interval for switchboard v2 feed {} failed. Price: {:?}, stdev_mantissa: {:?}, stdev_scale: {:?}",
-             switchboard_feed_info.key(),
-              price,
-              stdev_mantissa,
-              stdev_scale));
+            msg!(
+                    "Validation of confidence interval for switchboard v2 feed {} failed. Price: {:?}, stdev_mantissa: {:?}, stdev_scale: {:?}",
+                    switchboard_feed_info.key(),
+                    price,
+                    stdev_mantissa,
+                    stdev_scale
+                );
             return err!(ScopeError::SwitchboardV2Error);
         }
     };
@@ -204,7 +205,10 @@ mod switchboard {
             let mut disc_bytes = [0u8; 8];
             disc_bytes.copy_from_slice(&data[..8]);
             if disc_bytes != AggregatorAccountData::discriminator() {
-                msg!("{:?}", disc_bytes);
+                msg!(
+                    "Switchboard aggregator account has an invalid discriminator: {:?}",
+                    disc_bytes
+                );
                 return err!(ScopeError::SwitchboardV2Error);
             }
 
@@ -212,7 +216,11 @@ mod switchboard {
         }
 
         pub fn get_result(&self) -> std::result::Result<SwitchboardDecimal, ScopeError> {
-            if self.min_oracle_results > self.latest_confirmed_round.num_success {
+            // Copy to avoid references to a packed struct
+            let latest_confirmed_round_success = self.latest_confirmed_round.num_success;
+            let min_oracle_results = self.min_oracle_results;
+            if min_oracle_results > latest_confirmed_round_success {
+                msg!("Switchboard price is invalid: min_oracle_results: {min_oracle_results} > latest_confirmed_round.num_success: {latest_confirmed_round_success}",);
                 Err(ScopeError::SwitchboardV2Error)
             } else {
                 Ok(self.latest_confirmed_round.result)

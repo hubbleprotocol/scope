@@ -127,12 +127,12 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                 *to_update = price;
                 to_update.index = token_nb;
             }
-            Err(e) => {
+            Err(_) => {
+                // Skip the error, details is already logged in get_price and formatting here cost a lot of CU
                 msg!(
-                    "Price skipped as validation failed (token {}, type {:?}, err {:?})",
+                    "Price skipped as validation failed (token {}, type {:?})",
                     token_idx,
-                    price_type,
-                    e
+                    price_type
                 );
             }
         };
