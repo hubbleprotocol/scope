@@ -1,0 +1,64 @@
+{
+  "jobs": [
+    {
+      "name": "Orca RLB-USDC USDC-USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "6bskSanDywHt17rRXRbnx1zoErCeCpst5P4544s6cZka"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Openbook RLB-USDC USDC-USD",
+      "tasks": [
+        {
+          "serumSwapTask": {
+            "serumPoolAddress": "72h8rWaWwfPUL36PAFqyQZU8RT1V3FKG7Nc45aK89xTs"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca RLB-SOL SOL-USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "HwCngan6JmSxeYdizHxDLXUUi21ggoQgVPVSp9rP2Hk1"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raydium RLB-USDC USDC-USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "3T9DFG93AdkccwEvVmKvVFbPLiyPkniLxT5VN7A8oNYs"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    }
+  ]
+}

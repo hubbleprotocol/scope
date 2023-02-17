@@ -10,6 +10,11 @@
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
     "oracle_type": "Pyth"
   },
+  "2": {
+    "label": "BTC/USD",
+    "oracle_mapping": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU",
+    "oracle_type": "Pyth"
+  },
   "3": {
     "label": "SRM/USD",
     "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym",
@@ -109,7 +114,7 @@
     "label": "MNDE/USD",
     "oracle_mapping": "4pDjBPCEHamdZwUab5hcqn4VYUmKx84CCCVT6NYXJGTv",
     "oracle_type": "SwitchboardV2",
-    "max_age": 600
+    "max_age": 400
   },
   "25": {
     "label": "HBB/USD",
@@ -256,6 +261,11 @@
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
     "oracle_type": "PythEMA"
   },
+  "54": {
+    "label": "EMA BTC/USD",
+    "oracle_mapping": "GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU",
+    "oracle_type": "PythEMA"
+  },
   "55": {
     "label": "EMA SRM/USD",
     "oracle_mapping": "3NBReDRTLKMQEKiLD5tGcx4kXbTf88b7f2xLS9UuGjym",
@@ -358,6 +368,30 @@
   "75": {
     "label": "TWAP HADES/USD",
     "oracle_mapping": "Dk56aJYsAuYxZsrQ3UXjirP43ZWyRw5v1hHJoC81Jr4c",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "76": {
+    "label": "STSOL/SOL",
+    "oracle_mapping": "EbQ3DPoKqWFast8S55G5cHD8DNgdSd6CqpX58XZgMTh8",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "77": {
+    "label": "TWAP STSOL/SOL",
+    "oracle_mapping": "HVCGgDzPbMm97DR5uUPQwKhvMsj8o199j6Db6C7qjTgm",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "78": {
+    "label": "RLB/USD",
+    "oracle_mapping": "HkyjsCbDZsVu9uzqqFRnP7rmaHB7ubRiKCgNBUZDz5jb",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "79": {
+    "label": "TWAP RLB/USD",
+    "oracle_mapping": "6YTnVyDY6d65Cn3LWTpHSnMKkycCR14cKGK1BceVA3HW",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
   }

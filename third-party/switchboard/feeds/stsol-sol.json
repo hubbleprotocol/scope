@@ -1,0 +1,51 @@
+{
+  "jobs": [
+    {
+      "name": "Mercurial STSOL-2Pool",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "inTokenAddress": "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj",
+            "outTokenAddress": "So11111111111111111111111111111111111111112",
+            "mercurialPoolAddress": "LiDoU8ymvYptqxenJ4YpcURBchn4ef63tcbdznBCKJh"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raydium STSOL-SOL",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "9f4FtV6ikxUZr8fAjKSGNPPnUHJEwi4jNk8d79twbyFf"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca STSOL-SOL",
+      "tasks": [
+        {
+          "valueTask": {
+            "value": 1
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "2AEWSvUds1wsufnsDPCXjFsJCMJH5SNNm7fSF4kxys9a"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
+
