@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Prettify code
-        uses: creyD/prettier_action@v4.1.1
+        uses: creyD/prettier_action@v4.3
         with:
           # This part is also where you can pass other options, for example:
           prettier_options: --check ./**/*.ts
