@@ -25,7 +25,7 @@ pub fn get_price(solend_reserve_account: &AccountInfo, clock: &Clock) -> Result<
                 clock
                     .slot
                     .saturating_sub(reserve.last_update.slot)
-                    .saturating_mul(clock::SLOT_MS),
+                    .saturating_mul(clock::DEFAULT_MS_PER_SLOT),
             ),
         )
     };
