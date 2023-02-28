@@ -3,8 +3,9 @@ pub mod banks_client;
 #[cfg(feature = "rpc-client")]
 pub mod rpc_client;
 
+use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
 use anchor_client::solana_sdk::{
-    account::Account, hash::Hash, pubkey::Pubkey, signature::Signature,
+    account::Account, clock::Slot, hash::Hash, pubkey::Pubkey, signature::Signature,
     transaction::VersionedTransaction,
 };
 use async_trait::async_trait;
@@ -30,6 +31,8 @@ pub trait AsyncClient: Sync {
     async fn get_account(&self, pubkey: &Pubkey) -> Result<Account>;
 
     async fn get_multiple_accounts(&self, pubkeys: &[Pubkey]) -> Result<Vec<Option<Account>>>;
+
+    async fn get_slot_with_commitment(&self, commitment: CommitmentConfig) -> Result<Slot>;
 
     async fn get_recommended_micro_lamport_fee(&self) -> Result<u64>;
 }

@@ -52,6 +52,12 @@ impl AsyncClient for RpcClient {
             .map_err(Into::into)
     }
 
+    async fn get_slot_with_commitment(&self, commitment: CommitmentConfig) -> Result<Slot> {
+        <RpcClient>::get_slot_with_commitment(self, commitment)
+            .await
+            .map_err(Into::into)
+    }
+
     async fn get_recommended_micro_lamport_fee(&self) -> Result<u64> {
         // Fixed to 10 lamports per 200_000 CU (default 1 ix transaction) for now
         // 10 * 1M / 200_000 = 50

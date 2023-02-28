@@ -90,6 +90,11 @@ impl AsyncClient for Mutex<BanksClient> {
         Ok(accounts)
     }
 
+    async fn get_slot_with_commitment(&self, _commitment: CommitmentConfig) -> Result<Slot> {
+        let mut bank = self.lock().await;
+        bank.get_root_slot().await.map_err(Into::into)
+    }
+
     async fn get_recommended_micro_lamport_fee(&self) -> Result<u64> {
         Ok(0)
     }
