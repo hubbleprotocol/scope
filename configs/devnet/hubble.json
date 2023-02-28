@@ -343,5 +343,32 @@
     "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "76": {
+    "label": "STSOL/SOL",
+    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
+    "oracle_type": "SplStake"
+  },
+  "77": {
+    "label": "TWAP STSOL/SOL",
+    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
+    "oracle_type": "SplStake"
+  },
+  "78": {
+    "label": "RLB/USD",
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "79": {
+    "label": "TWAP RLB/USD",
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "80": {
+    "label": "CGNTSOL/SOL",
+    "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
+    "oracle_type": "SplStake"
   }
 }

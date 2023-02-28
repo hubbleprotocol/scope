@@ -174,23 +174,23 @@ airdrop: $(OWNER_KEYPAIR)
    fi
 
 init: $(SCOPE_CLI)
-> RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) init --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 update-mapping: $(SCOPE_CLI)
-> RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
+> RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 crank: $(SCOPE_CLI)
 > if [ -f ./configs/$(CLUSTER)/$(FEED_NAME).json ]; then\
-       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) --log-timestamps crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+       cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) --log-timestamps crank --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
    else\
-       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) --log-timestamps crank;\
+       cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) --log-timestamps crank;\
    fi
 
 get-prices: $(SCOPE_CLI)
 >@ if [ -f ./configs/$(CLUSTER)/$(FEED_NAME).json ]; then\
-       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+       cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
    else\
-       ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show;\
+       cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) show;\
    fi
 
 format:

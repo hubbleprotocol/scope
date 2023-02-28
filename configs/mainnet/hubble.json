@@ -394,5 +394,11 @@
     "oracle_mapping": "6YTnVyDY6d65Cn3LWTpHSnMKkycCR14cKGK1BceVA3HW",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "80": {
+    "label": "CGNTSOL/SOL",
+    "oracle_mapping": "CgntPoLka5pD5fesJYhGmUCF8KU1QS1ZmZiuAuMZr2az",
+    "oracle_type": "SplStake",
+    "max_age": 150
   }
 }
