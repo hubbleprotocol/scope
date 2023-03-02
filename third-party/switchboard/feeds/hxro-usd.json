@@ -1,0 +1,42 @@
+{
+  "jobs": [
+    {
+      "name": "Raydium HXRO/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "2KpMpqMH5bUcTkq5b8cYrSjQ173iARnD8SBGfkwXjk8W"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca HXRO/USDC/USD",
+      "tasks": [
+        {
+          "valueTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "GrXkAvh5dohLd8Va432MxW2ckthWhfw9FEGSxJHEsKg"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
