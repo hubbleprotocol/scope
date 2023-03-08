@@ -7,3 +7,4 @@ Every epoch the SPL stake pool need to be refreshed with the rewards from all va
 - The provided script requires to have a valid solana config (`solana config get`) targeting mainnet.
 - [`jq`](https://stedolan.github.io/jq/) to parse the configuration and find automatically the accounts to refresh from mainnet conf
 - Solana's [spl stake pool cli](https://spl.solana.com/stake-pool/cli): can be installed with `cargo install spl-stake-pool-cli`
+- Note: on Mac `xargs` doesn't work so you need to run `brew install findutils` and then in the `spl-stake-auto-update.sh` replace `xargs` by `gxargs`
