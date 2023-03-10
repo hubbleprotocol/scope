@@ -6,6 +6,15 @@ use crate::Result;
 
 #[async_trait]
 impl AsyncClient for RpcClient {
+    async fn simulate_transaction(
+        &self,
+        transaction: &VersionedTransaction,
+    ) -> Result<Response<RpcSimulateTransactionResult>> {
+        <RpcClient>::simulate_transaction(self, transaction)
+            .await
+            .map_err(Into::into)
+    }
+
     async fn send_transaction(&self, transaction: &VersionedTransaction) -> Result<Signature> {
         <RpcClient>::send_transaction(self, transaction)
             .await

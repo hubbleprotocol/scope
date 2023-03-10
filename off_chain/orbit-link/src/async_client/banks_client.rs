@@ -7,8 +7,6 @@ use tokio::sync::Mutex;
 use super::*;
 use crate::Result;
 
-const BANKS_CLIENT_MINIMUM_RENT_PER_KB: usize = 7850880;
-
 fn bank_status_to_transaction_status(bank_status: BankTransactionStatus) -> TransactionStatus {
     let BankTransactionStatus {
         slot,
@@ -36,6 +34,13 @@ fn bank_status_to_transaction_status(bank_status: BankTransactionStatus) -> Tran
 
 #[async_trait]
 impl AsyncClient for Mutex<BanksClient> {
+    async fn simulate_transaction(
+        &self,
+        _transaction: &VersionedTransaction,
+    ) -> Result<Response<RpcSimulateTransactionResult>> {
+        unimplemented!("Versioned transaction simulations are not supported by BanksClient yet (wait for solana 1.15.0)")
+    }
+
     async fn send_transaction(&self, _transaction: &VersionedTransaction) -> Result<Signature> {
         unimplemented!(
             "Versioned transactions are not supported by BanksClient yet (wait for solana 1.15.0)"
@@ -43,7 +48,9 @@ impl AsyncClient for Mutex<BanksClient> {
     }
 
     async fn get_minimum_balance_for_rent_exemption(&self, data_len: usize) -> Result<u64> {
-        Ok((BANKS_CLIENT_MINIMUM_RENT_PER_KB * data_len / 1000) as u64)
+        let mut bank = self.lock().await;
+        let rent = bank.get_rent().await.unwrap();
+        Ok(rent.minimum_balance(data_len))
     }
 
     async fn get_signature_statuses(

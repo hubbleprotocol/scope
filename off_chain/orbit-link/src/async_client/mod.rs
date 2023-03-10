@@ -3,10 +3,12 @@ pub mod banks_client;
 #[cfg(feature = "rpc-client")]
 pub mod rpc_client;
 
-use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
-use anchor_client::solana_sdk::{
-    account::Account, clock::Slot, hash::Hash, pubkey::Pubkey, signature::Signature,
-    transaction::VersionedTransaction,
+use anchor_client::{
+    solana_client::rpc_response::{Response, RpcSimulateTransactionResult},
+    solana_sdk::{
+        account::Account, clock::Slot, commitment_config::CommitmentConfig, hash::Hash,
+        pubkey::Pubkey, signature::Signature, transaction::VersionedTransaction,
+    },
 };
 use async_trait::async_trait;
 use solana_transaction_status::TransactionStatus;
@@ -15,6 +17,11 @@ use crate::Result;
 
 #[async_trait]
 pub trait AsyncClient: Sync {
+    async fn simulate_transaction(
+        &self,
+        transaction: &VersionedTransaction,
+    ) -> Result<Response<RpcSimulateTransactionResult>>;
+
     async fn send_transaction(&self, transaction: &VersionedTransaction) -> Result<Signature>;
 
     async fn get_signature_statuses(
