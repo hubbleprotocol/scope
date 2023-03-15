@@ -11,7 +11,6 @@
         },
         {
           "boundTask": {
-            "lowerBoundValue": 0.98,
             "upperBoundValue": 1.02
           }
         }
@@ -32,7 +31,6 @@
         },
         {
           "boundTask": {
-            "lowerBoundValue": 0.98,
             "upperBoundValue": 1.02
           }
         }
@@ -69,7 +67,6 @@
         },
         {
           "boundTask": {
-            "lowerBoundValue": 0.98,
             "upperBoundValue": 1.02
           }
         }
@@ -90,7 +87,6 @@
         },
         {
           "boundTask": {
-            "lowerBoundValue": 0.98,
             "upperBoundValue": 1.02
           }
         }
@@ -127,7 +123,6 @@
         },
         {
           "boundTask": {
-            "lowerBoundValue": 0.98,
             "upperBoundValue": 1.02
           }
         }
@@ -164,7 +159,6 @@
         },
         {
           "boundTask": {
-            "lowerBoundValue": 0.98,
             "upperBoundValue": 1.02
           }
         }
