@@ -412,5 +412,11 @@
     "oracle_mapping": "CcDNn4WZ2qQpLU2PmJXxq5U95i2MGmDBWwb45j9MT19Q",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "83": {
+    "label": "TWAP MNDE/USD",
+    "oracle_mapping": "2t1goX8trxz5R7iQZMW62zvRnB8kXEkYjAiSgLsjYY46",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
