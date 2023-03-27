@@ -6,6 +6,7 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_CLOCK_PUBKEY,
+  SYSVAR_INSTRUCTIONS_PUBKEY,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import { AnchorProvider, BN, Program, Provider, setProvider } from '@project-serum/anchor';
@@ -17,7 +18,7 @@ import { OracleType, createFakeAccounts, ITokenEntry, oracles } from './oracle_u
 
 const date = Date.now();
 const PRICE_FEED = 'oracle_test_feed' + date;
-const MAX_NB_TOKENS_IN_ONE_UPDATE = 27;
+const MAX_NB_TOKENS_IN_ONE_UPDATE = 26;
 
 describe('Scope tests', () => {
   const keypair_acc = Uint8Array.from(
@@ -118,6 +119,7 @@ describe('Scope tests', () => {
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.SRM].account,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
     });
@@ -143,6 +145,7 @@ describe('Scope tests', () => {
           oraclePrices: oracleAccount,
           oracleMappings: oracleMappingAccount,
           clock: SYSVAR_CLOCK_PUBKEY,
+          instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
         },
         remainingAccounts: [
           { pubkey: testTokens[HubbleTokens.ETH].account, isWritable: false, isSigner: false },
@@ -199,6 +202,7 @@ describe('Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       remainingAccounts: accounts,
       signers: [],

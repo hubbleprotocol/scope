@@ -6,6 +6,7 @@ use anchor_lang::{
 };
 use common::*;
 use scope::{oracles::OracleType, OraclePrices, Price, ScopeError};
+use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
 use solana_program::{instruction::Instruction, sysvar::SysvarId};
 use solana_program_test::tokio;
 use solana_sdk::pubkey;
@@ -28,9 +29,9 @@ const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
     price_type: OracleType::Pyth,
 };
 
-// - [ ] Wrong oracle mapping
-// - [ ] Wrong oracle account (copy)
-// - [ ] Wrong oracle account (mixing indexes)
+// - [x] Wrong oracle mapping
+// - [x] Wrong oracle account (copy)
+// - [x] Wrong oracle account (mixing indexes)
 
 #[tokio::test]
 async fn test_working_refresh_one() {
@@ -45,6 +46,7 @@ async fn test_working_refresh_one() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
 
@@ -83,6 +85,7 @@ async fn test_wrong_oracle_mapping() {
         oracle_prices: feed.prices,
         oracle_mappings: fake_mapping_pk,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
 
@@ -120,6 +123,7 @@ async fn test_wrong_oracle_account_with_copy() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: fake_price_account,
     };
 
@@ -153,6 +157,7 @@ async fn test_wrong_index_oracle_account() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
 

@@ -9,6 +9,7 @@ use anchor_client::{
         signature::{Keypair, Signature},
         signer::Signer,
         system_program,
+        sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
         sysvar::SysvarId,
     },
 };
@@ -534,6 +535,7 @@ where
             oracle_mappings: self.oracle_mappings_acc,
             price_info: *entry.get_mapping_account(),
             clock: Clock::id(),
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
 
@@ -574,11 +576,12 @@ where
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
             clock: Clock::id(),
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
 
         let rpc = self.get_rpc();
-        let mut cu_budget = 10_000;
+        let mut cu_budget = 15_000;
 
         for token_idx in tokens {
             let entry = self

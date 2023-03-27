@@ -5,6 +5,7 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_CLOCK_PUBKEY,
+  SYSVAR_INSTRUCTIONS_PUBKEY,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import { AnchorProvider, BN, Program, Provider, setProvider } from '@project-serum/anchor';
@@ -111,6 +112,7 @@ describe('Switchboard Scope tests', () => {
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.STSOLUSD].account,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
     });
@@ -126,6 +128,7 @@ describe('Switchboard Scope tests', () => {
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
     });
@@ -141,6 +144,7 @@ describe('Switchboard Scope tests', () => {
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.USDHUSD].account,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
     });
@@ -158,6 +162,7 @@ describe('Switchboard Scope tests', () => {
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.STSOLUSD].account,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
     });
@@ -174,6 +179,7 @@ describe('Switchboard Scope tests', () => {
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
     });
@@ -190,6 +196,7 @@ describe('Switchboard Scope tests', () => {
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.USDHUSD].account,
         clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
     });

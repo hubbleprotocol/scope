@@ -168,6 +168,12 @@ pub enum ScopeError {
 
     #[msg("Error while computing price with ScopeChain")]
     BadScopeChainOrPrices,
+
+    #[msg("Refresh price instruction called in a CPI")]
+    RefreshInCPI,
+
+    #[msg("Refresh price instruction preceded by unexpected ixs")]
+    RefreshWithUnexpectedIxs,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

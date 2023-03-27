@@ -1,11 +1,18 @@
 use std::convert::TryInto;
 
 use anchor_lang::prelude::*;
+use solana_program::instruction::{get_stack_height, TRANSACTION_LEVEL_STACK_HEIGHT};
+use solana_program::pubkey;
+use solana_program::sysvar::instructions::{
+    load_current_index_checked, load_instruction_at_checked, ID as SYSVAR_INSTRUCTIONS_ID,
+};
 
 use crate::{
     oracles::{get_price, OracleType},
     ScopeError,
 };
+
+const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111111111");
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
@@ -16,6 +23,9 @@ pub struct RefreshOne<'info> {
     /// CHECK: In ix, check the account is in `oracle_mappings`
     pub price_info: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
+    /// CHECK: Sysvar fixed address
+    #[account(address = SYSVAR_INSTRUCTIONS_ID)]
+    pub instruction_sysvar_account_info: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -26,10 +36,15 @@ pub struct RefreshList<'info> {
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 
     pub clock: Sysvar<'info, Clock>,
+    /// CHECK: Sysvar fixed address
+    #[account(address = SYSVAR_INSTRUCTIONS_ID)]
+    pub instruction_sysvar_account_info: AccountInfo<'info>,
     // Note: use remaining accounts as price accounts
 }
 
 pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
+    check_execution_ctx(&ctx.accounts.instruction_sysvar_account_info)?;
+
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let price_info = &ctx.accounts.price_info;
 
@@ -67,6 +82,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 }
 
 pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<()> {
+    check_execution_ctx(&ctx.accounts.instruction_sysvar_account_info)?;
+
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
 
     // Check that the received token list is not too long
@@ -136,6 +153,37 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                 );
             }
         };
+    }
+
+    Ok(())
+}
+
+/// Ensure that the refresh instruction is executed directly to avoid any manipulation:
+///
+/// - Check that the current instruction is executed by our program id (not in CPI).
+/// - Check that instructions preceding the refresh are compute budget instructions.
+fn check_execution_ctx(instruction_sysvar_account_info: &AccountInfo) -> Result<()> {
+    let current_index: usize = load_current_index_checked(instruction_sysvar_account_info)?.into();
+
+    // 1- Check that the current instruction is executed by our program id (not in CPI).
+    let current_ix = load_instruction_at_checked(current_index, instruction_sysvar_account_info)?;
+
+    // the current ix must be executed by our program id. otherwise, it's a CPI.
+    if crate::ID != current_ix.program_id {
+        return err!(ScopeError::RefreshInCPI);
+    }
+
+    // The current stack height must be the initial one. Otherwise, it's a CPI.
+    if get_stack_height() > TRANSACTION_LEVEL_STACK_HEIGHT {
+        return err!(ScopeError::RefreshInCPI);
+    }
+
+    // 2- Check that instructions preceding the refresh are compute budget instructions.
+    for ixn in 0..current_index {
+        let ix = load_instruction_at_checked(ixn, instruction_sysvar_account_info)?;
+        if ix.program_id != COMPUTE_BUDGET_ID {
+            return err!(ScopeError::RefreshWithUnexpectedIxs);
+        }
     }
 
     Ok(())

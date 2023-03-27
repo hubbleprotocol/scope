@@ -6,6 +6,7 @@ use anchor_lang::{
 };
 use common::*;
 use scope::{oracles::OracleType, OraclePrices, Price, ScopeError};
+use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
 use solana_program::{instruction::Instruction, sysvar::SysvarId};
 use solana_program_test::tokio;
 use solana_sdk::pubkey;
@@ -30,9 +31,9 @@ const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
 
 const TEST_ORACLE_CONF: [OracleConf; 2] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE];
 
-// - [ ] Wrong oracle mapping
-// - [ ] Wrong oracle account (copy)
-// - [ ] Wrong oracle account (mixing indexes)
+// - [x] Wrong oracle mapping
+// - [x] Wrong oracle account (copy)
+// - [x] Wrong oracle account (mixing indexes)
 
 #[tokio::test]
 async fn test_working_refresh_list() {
@@ -56,6 +57,7 @@ async fn test_working_refresh_list() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
     accounts.extend(TEST_ORACLE_CONF.map(|conf| AccountMeta {
@@ -111,6 +113,7 @@ async fn test_wrong_oracle_mapping() {
         oracle_prices: feed.prices,
         oracle_mappings: fake_mapping_pk,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
     accounts.extend(TEST_ORACLE_CONF.map(|conf| AccountMeta {
@@ -163,6 +166,7 @@ async fn test_wrong_oracle_account_with_copy() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
     accounts.extend(TEST_ORACLE_CONF.map(|conf| AccountMeta {
@@ -216,6 +220,7 @@ async fn test_wrong_index_oracle_account() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
     accounts.extend(TEST_ORACLE_CONF.map(|conf| AccountMeta {
