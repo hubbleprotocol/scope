@@ -3733,6 +3733,7 @@ dependencies = [
  "spl-stake-pool",
  "strum 0.24.0",
  "switchboard-program",
+ "test_cpi_caller",
  "thiserror",
  "whirlpool",
 ]
@@ -5259,6 +5260,13 @@ checksum = "cb20089a8ba2b69debd491f8d2d023761cbf196e999218c591fa1e7e15a21907"
 dependencies = [
  "rustix",
  "windows-sys 0.42.0",
+]
+
+[[package]]
+name = "test_cpi_caller"
+version = "0.1.0"
+dependencies = [
+ "solana-program",
 ]
 
 [[package]]

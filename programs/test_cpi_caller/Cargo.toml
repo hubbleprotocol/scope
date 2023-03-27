@@ -1,0 +1,17 @@
+[package]
+name = "test_cpi_caller"
+version = "0.1.0"
+description = "CPI caller to Yvaults, test purpose only"
+edition = "2021"
+
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "test_cpi_caller"
+
+[features]
+no-entrypoint = []
+cpi = ["no-entrypoint"]
+
+[dependencies]
+solana-program = "1.14.8"

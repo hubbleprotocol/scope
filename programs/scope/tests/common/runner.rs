@@ -1,7 +1,9 @@
+use anchor_lang::prelude::AccountMeta;
 use anchor_lang::{
     prelude::{Clock, Pubkey},
     Owner,
 };
+use solana_program::pubkey;
 use solana_program_test::{processor, BanksClientError, ProgramTest};
 use solana_sdk::{
     account::{Account, AccountSharedData},
@@ -15,8 +17,16 @@ use types::*;
 
 use super::*;
 
+pub const TEST_CPI_CALLER_PK: Pubkey = pubkey!("cpiCaLL111111111111111111111111111111111111");
+
 pub fn program() -> ProgramTest {
-    ProgramTest::new("scope", scope::ID, processor!(scope::entry))
+    let mut prog = ProgramTest::new("scope", scope::ID, processor!(scope::entry));
+    prog.add_program(
+        "test_cpi_caller",
+        TEST_CPI_CALLER_PK,
+        processor!(test_cpi_caller::process_instruction),
+    );
+    prog
 }
 
 pub async fn start(test: ProgramTest, admin: Keypair, bot: Keypair) -> TestContext {
@@ -162,6 +172,28 @@ impl TestContext {
     pub async fn send_transaction(&mut self, ixs: &[Instruction]) -> Result<(), BanksClientError> {
         let tx = Transaction::new_signed_with_payer(
             ixs,
+            Some(&self.admin.pubkey()),
+            &[&self.admin],
+            self.context.banks_client.get_latest_blockhash().await?,
+        );
+        self.context.banks_client.process_transaction(tx).await
+    }
+
+    pub async fn send_transaction_through_cpi(
+        &mut self,
+        ixs: &[Instruction],
+    ) -> Result<(), BanksClientError> {
+        let instruction_cpi: Vec<Instruction> = ixs
+            .iter()
+            .map(|ix| {
+                let mut cpi_accounts = Vec::with_capacity(ix.accounts.len() + 1);
+                cpi_accounts.push(AccountMeta::new_readonly(ix.program_id, false));
+                cpi_accounts.extend_from_slice(&ix.accounts);
+                Instruction::new_with_bytes(TEST_CPI_CALLER_PK, &ix.data, cpi_accounts)
+            })
+            .collect();
+        let tx = Transaction::new_signed_with_payer(
+            &instruction_cpi,
             Some(&self.admin.pubkey()),
             &[&self.admin],
             self.context.banks_client.get_latest_blockhash().await?,
