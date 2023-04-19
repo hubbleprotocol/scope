@@ -418,5 +418,15 @@
     "oracle_mapping": "2t1goX8trxz5R7iQZMW62zvRnB8kXEkYjAiSgLsjYY46",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "84": {
+    "label": "HNT/USD",
+    "oracle_mapping": "7moA1i5vQUpfDwSpK6Pw9s56ahB7WFGidtbL2ujWrVvm",
+    "oracle_type": "Pyth"
+  },
+  "85": {
+    "label": "EMA HNT/USD",
+    "oracle_mapping": "7moA1i5vQUpfDwSpK6Pw9s56ahB7WFGidtbL2ujWrVvm",
+    "oracle_type": "PythEMA"
   }
 }
