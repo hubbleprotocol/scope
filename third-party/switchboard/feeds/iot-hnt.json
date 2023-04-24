@@ -1,0 +1,37 @@
+{
+  "jobs": [
+    {
+      "name": "Raydium IOT/HNT",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "raydiumPoolAddress": "FVvXkX2Jt7Hxfpq7nZQRQvwy2KU6nHHeXXCeehMNisFU"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca IOT/HNT",
+      "tasks": [
+        {
+          "valueTask": {
+            "big": "1.0"
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "6x6FPHbG1igaDCJ57UScYxg1sFjevhMNaW9md9PfudFx"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
