@@ -428,5 +428,29 @@
     "label": "EMA HNT/USD",
     "oracle_mapping": "7moA1i5vQUpfDwSpK6Pw9s56ahB7WFGidtbL2ujWrVvm",
     "oracle_type": "PythEMA"
+  },
+  "86": {
+    "label": "MOBILE/HNT",
+    "oracle_mapping": "7bEjAXVd6ug8T8kbYKxCuoDHZzYK4CTAW9WVPVGLz2or",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "87": {
+    "label": "TWAP MOBILE/HNT",
+    "oracle_mapping": "76ztFCjsjCuQMSjn2WnFFt2BC46HPoX4ZT1xYoDdiZuH",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "88": {
+    "label": "IOT/HNT",
+    "oracle_mapping": "FtE5bpitjutKZqEToKAnQsrHsz433xQp6tsV3uEaFrp4",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "89": {
+    "label": "TWAP IOT/HNT",
+    "oracle_mapping": "4Rcx2TpPD2AcE3HJFMLekGUDfgyyFRWgrC6qsbaVNuZW",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
