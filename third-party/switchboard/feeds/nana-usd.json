@@ -1,0 +1,50 @@
+{
+  "jobs": [
+    {
+      "name": "Orca NANA/USDC/USD",
+      "tasks": [
+        {
+          "valueTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "7dHbARY1XjZfDPCbjb42yDbAKJTNgvDgNUNQR8Ak5Yen"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orca NANA/SOL/USD",
+      "tasks": [
+        {
+          "valueTask": {
+            "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "8axbhGwV8UzBoqRdpYAhhrESVAXLkJQVaYTUp2j1jtc2"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
