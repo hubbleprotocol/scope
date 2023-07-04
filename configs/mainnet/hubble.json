@@ -464,5 +464,17 @@
     "oracle_mapping": "DRR56tdTCrzaMDXu9WUKp4kwr7Y9zT9pTGcUF3xr6mRc",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "92": {
+    "label": "STEP/USD",
+    "oracle_mapping": "G6dMsEkMdgjX6Lsd1hMtgq79JivHpSsraDr9MD4XNiAt",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "93": {
+    "label": "TWAP STEP/USD",
+    "oracle_mapping": "7TjVLJMB1i1bouCPkLJjVCbpSfuf2UMcWdL7p6teQr73",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }

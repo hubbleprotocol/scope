@@ -1,0 +1,78 @@
+{
+    "jobs": [
+        {
+            "name": "Orca STEP/SOL/USD",
+            "tasks": [
+                {
+                    "valueTask": {
+                        "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+                    }
+                },
+                {
+                    "divideTask": {
+                        "job": {
+                            "tasks": [
+                                {
+                                    "lpExchangeRateTask": {
+                                        "orcaPoolAddress": "5AX84BrKDWpUZ87fbQpkm7XsSx8bWwANePRmAx17tQjM"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Raydium STEP/USDC/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "raydiumPoolAddress": "4Sx1NLrQiK4b9FdLKe2DhQ9FHvRzJhzKN3LoD6BrEPnf"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Gate.io STEP/USDT/USD",
+            "tasks": [
+                {
+                    "httpTask": {
+                        "url": "https://api.gateio.ws/api/v4/spot/tickers?currency_pair=STEP_USDT"
+                    }
+                },
+                {
+                    "medianTask": {
+                        "tasks": [
+                            {
+                                "jsonParseTask": {
+                                    "path": "$[0].lowest_ask"
+                                }
+                            },
+                            {
+                                "jsonParseTask": {
+                                    "path": "$[0].highest_bid"
+                                }
+                            },
+                            {
+                                "jsonParseTask": {
+                                    "path": "$[0].last"
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
+                    }
+                }
+            ]
+        }
+    ]
+}
