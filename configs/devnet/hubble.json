@@ -70,6 +70,11 @@
     "oracle_mapping": "Ei2dC7hFxBhVq5pn4qNJLMxKBSojx7p7wnNoBz4HELKG",
     "oracle_type": "CToken"
   },
+  "18": {
+    "label": "wstETH/USD",
+    "oracle_mapping": "DMyZyzfNR1uhqYcFGrNftirkveCbyNVLnCB8HgShYz4V",
+    "oracle_type": "Pyth"
+  },
   "19": {
     "label": "LDO/USD",
     "oracle_mapping": "GQmDtUWV4TnntedyfGo5bbJ2WGQG3J2WzonQbDeDEevf",
@@ -290,6 +295,11 @@
   "65": {
     "label": "EMA DAI/USD",
     "oracle_mapping": "A8XFp1YSUqyDDvTwRXM1vmhPHCLxzncG45t1ZH9CMYq7",
+    "oracle_type": "PythEMA"
+  },
+  "66": {
+    "label": "TWAP wstETH/USD",
+    "oracle_mapping": "DMyZyzfNR1uhqYcFGrNftirkveCbyNVLnCB8HgShYz4V",
     "oracle_type": "PythEMA"
   },
   "67": {

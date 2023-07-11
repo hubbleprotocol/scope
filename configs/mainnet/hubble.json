@@ -82,6 +82,11 @@
     "oracle_type": "CToken",
     "max_age": 600
   },
+  "18": {
+    "label": "wstETH/USD",
+    "oracle_mapping": "9uuLtZ5T4spZacA6gnECzGZwjdTfek9rBpTU3ZqZn4dS",
+    "oracle_type": "Pyth"
+  },
   "19": {
     "label": "LDO/USD",
     "oracle_mapping": "9dCoWrkPYwyUAmb62UwTyewsiRS6c9GTcEpJy8id6WCE",
@@ -318,6 +323,11 @@
     "oracle_mapping": "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
     "oracle_type": "PythEMA",
     "max_age": 300
+  },
+  "66": {
+    "label": "TWAP wstETH/USD",
+    "oracle_mapping": "9uuLtZ5T4spZacA6gnECzGZwjdTfek9rBpTU3ZqZn4dS",
+    "oracle_type": "PythEMA"
   },
   "67": {
     "label": "TWAP DUST/USD",
