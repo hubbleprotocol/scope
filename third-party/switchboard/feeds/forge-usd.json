@@ -1,0 +1,26 @@
+{
+    "jobs": [
+        {
+            "name": "Jupiter FORGE/USDC/USD",
+            "tasks": [
+                {
+                    "jupiterSwapTask": {
+                        "inTokenAddress": "FoRGERiW7odcCBGU1bztZi16osPBHjxharvDathL5eds",
+                        "outTokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                        "baseAmountString": "1000"
+                    }
+                },
+                {
+                    "divideTask": {
+                        "big": "1000"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+                    }
+                }
+            ]
+        }
+    ]
+}

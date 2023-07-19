@@ -486,5 +486,17 @@
     "oracle_mapping": "7TjVLJMB1i1bouCPkLJjVCbpSfuf2UMcWdL7p6teQr73",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "94": {
+    "label": "FORGE/USD",
+    "oracle_mapping": "GuJkELfsUXU1uzpc1FwfdGm8Jbu5R6YZ75GPRhoW941w",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "95": {
+    "label": "TWAP FORGE/USD",
+    "oracle_mapping": "BSnT5fPrmqC5uP3MVnKombxMMhGd3fVGEUsXPPqSX4bt",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
