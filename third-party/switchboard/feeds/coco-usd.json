@@ -1,0 +1,28 @@
+{
+    "jobs": [
+      {
+        "name": "Orca COCO/SOL/USD",
+        "tasks": [
+          {
+            "valueTask": {
+              "aggregatorPubkey": "4aUbjcFqQNxMVjsgnuxAAmtPZHyyZBsLeJjBM8LYrkFX"
+            }
+          },
+          {
+            "divideTask": {
+              "job": {
+                "tasks": [
+                  {
+                    "lpExchangeRateTask": {
+                      "orcaPoolAddress": "Gk5jgVnUxk7QyYhRMrpLDfZq5ztfA5SLpgowPQjKFrth"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+  
