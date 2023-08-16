@@ -510,5 +510,13 @@
     "oracle_mapping": "EHUsb4k6haGcxWHaQKM2xF4r1gbKQsRppDB8gGqiH1qw",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "98": {
+    "label": "STYLE/USD",
+    "oracle_mapping": "7BFwx7vaog4Cz58fFGYuDmajbDJbnCE1ZXtFxWMBp9ez",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
+
+
