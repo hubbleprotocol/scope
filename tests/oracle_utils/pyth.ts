@@ -2,7 +2,6 @@ import { BN, Program, web3 } from '@project-serum/anchor';
 import { parsePriceData } from '@pythnetwork/client';
 import { PublicKey, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
 import Decimal from 'decimal.js';
-import * as anchor from '@project-serum/anchor';
 import { IMockOracle, ITokenEntry, OracleType } from './mock_oracles';
 
 const PYTH_PRICE_ACCOUNT_SIZE: number = 3312;
