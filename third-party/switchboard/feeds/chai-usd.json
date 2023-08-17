@@ -1,0 +1,120 @@
+{
+  "jobs": [
+    {
+      "name": "Jupiter CHAI/USDC/USD",
+      "tasks": [
+        {
+          "conditionalTask": {
+            "attempt": [
+              {
+                "valueTask": {
+                  "big": "2000"
+                }
+              },
+              {
+                "divideTask": {
+                  "job": {
+                    "tasks": [
+                      {
+                        "jupiterSwapTask": {
+                          "inTokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                          "outTokenAddress": "3jsFX1tx2Z8ewmamiwSU851GzyzM2DJMq7KWW5DM8Py3",
+                          "baseAmountString": "2000"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "onFailure": [
+              {
+                "lpExchangeRateTask": {
+                  "raydiumPoolAddress": "CDCyQjbfkSjgQXwzxZ7Eaqcgd5LoY4fNnbwqKCRjuxnP"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "job": {
+              "tasks": [
+                {
+                  "oracleTask": {
+                    "pythAddress": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
+                    "pythAllowedConfidenceInterval": 0.1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jupiter USDC/CHAI/USD",
+      "tasks": [
+        {
+          "conditionalTask": {
+            "attempt": [
+              {
+                "cacheTask": {
+                  "cacheItems": [
+                    {
+                      "variableName": "QTY",
+                      "job": {
+                        "tasks": [
+                          {
+                            "jupiterSwapTask": {
+                              "inTokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                              "outTokenAddress": "3jsFX1tx2Z8ewmamiwSU851GzyzM2DJMq7KWW5DM8Py3",
+                              "baseAmountString": "500"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "jupiterSwapTask": {
+                  "inTokenAddress": "3jsFX1tx2Z8ewmamiwSU851GzyzM2DJMq7KWW5DM8Py3",
+                  "outTokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                  "baseAmountString": "${QTY}"
+                }
+              },
+              {
+                "divideTask": {
+                  "big": "${QTY}"
+                }
+              }
+            ],
+            "onFailure": [
+              {
+                "lpExchangeRateTask": {
+                  "raydiumPoolAddress": "CDCyQjbfkSjgQXwzxZ7Eaqcgd5LoY4fNnbwqKCRjuxnP"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "multiplyTask": {
+            "job": {
+              "tasks": [
+                {
+                  "oracleTask": {
+                    "pythAddress": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
+                    "pythAllowedConfidenceInterval": 0.1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

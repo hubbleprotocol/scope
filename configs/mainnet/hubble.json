@@ -516,6 +516,24 @@
     "oracle_mapping": "7BFwx7vaog4Cz58fFGYuDmajbDJbnCE1ZXtFxWMBp9ez",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "99": {
+    "label": "TWAP STYLE/USD",
+    "oracle_mapping": "BM7f3kiPE4o96CeRqJ3Gvpjb8sWMTAWHvNJWtntJM3rs",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "100": {
+    "label": "CHAI/USD",
+    "oracle_mapping": "7BFwx7vaog4Cz58fFGYuDmajbDJbnCE1ZXtFxWMBp9ez", 
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "101": {
+    "label": "TWAP CHAI/USD",
+    "oracle_mapping": "BM7f3kiPE4o96CeRqJ3Gvpjb8sWMTAWHvNJWtntJM3rs",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
 
