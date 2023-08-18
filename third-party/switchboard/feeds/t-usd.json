@@ -1,0 +1,40 @@
+{
+  "jobs": [
+    {
+      "name": "Orca T/SOL/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "2yFUWMhopfu5bCWE7WdRsHjtSmsPbu74HvmL9aDXeWdr"
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "BqnpCdDLPV2pFdAaLnVidmn3G93RP2p5oRdGEY2sJGez"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "divideTask": {
+            "job": {
+              "tasks": [
+                {
+                  "lpExchangeRateTask": {
+                    "orcaPoolAddress": "GrXkAvh5dohLd8Va432MxW2ckthWhfw9FEGSxJHEsKg"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

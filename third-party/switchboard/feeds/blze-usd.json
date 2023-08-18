@@ -1,0 +1,19 @@
+{
+  "jobs": [
+    {
+      "name": "Orca BLZE/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "9XzJpnEti2v4kSf1nGCC4gyysj5wumAve1Fza3sx5eei"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        }
+      ]
+    }
+  ]
+}
