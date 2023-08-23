@@ -39,8 +39,7 @@
         },
         {
           "boundTask": {
-            "upperBoundValue": "1.5",
-            "onExceedsUpperBoundValue": "1.5"
+            "upperBoundValue": "1.5"
           }
         }
       ]
