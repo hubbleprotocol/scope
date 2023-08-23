@@ -1,0 +1,49 @@
+{
+  "jobs": [
+    {
+      "name": "Orca EUROE/USDC/USD",
+      "tasks": [
+        {
+          "lpExchangeRateTask": {
+            "orcaPoolAddress": "5JYVSXAkbZNmikmFbdkvgY8z3bLoAGBZTjx5nqs29eQS"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        },
+        {
+          "boundTask": {
+            "upperBoundValue": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "Uniswap EUROE/USDC/USD",
+      "tasks": [
+        {
+          "uniswapExchangeRateTask": {
+            "inTokenAddress": "0x820802Fa8a99901F52e39acD21177b0BE6EE2974",
+            "outTokenAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "inTokenAmount": 1,
+            "slippage": 0.1,
+            "provider": "https://mainnet.infura.io/v3/76c9e48c62a14c03b432dff0ad7746c0"
+          }
+        },
+        {
+          "multiplyTask": {
+            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
+          }
+        },
+        {
+          "boundTask": {
+            "upperBoundValue": "1.5",
+            "onExceedsUpperBoundValue": "1.5"
+          }
+        }
+      ]
+    }
+  ]
+}

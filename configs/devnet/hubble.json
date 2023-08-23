@@ -528,5 +528,17 @@
     "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "106": {
+    "label": "EUROE/USD",
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
+  },
+  "107": {
+    "label": "TWAP EUROE/USD",
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
