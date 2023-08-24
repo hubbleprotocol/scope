@@ -26,7 +26,7 @@ The repository contains two software:
 - [x] Open creation of price feed to any user who will became admin of the feed.
 - Allow extensible price feed (when resizable account feature is available in Solana mainnet)
 
-## Example of crank refresh operation:
+## Example of crank refresh operation
 
 - For simplification let's say we only refresh at most 3 prices per IX.
 - In this example, we have 10 prices in scope named A, B, C, D, E, F, G, H, I, J.
@@ -60,12 +60,12 @@ The repository contains two software:
 - Get the new oldest price: J: 25, so sleep for 5 slot (400ms\*5).
 - Loop
 
+### Running the bot
 
-### Running the bot 
-- For your price feed 
+- For your price feed
 ```
-$ make build
-$ export CLUSTER=mainnet
-$ export URL=<url>
-$ RUST_BACKTRACE=1 cargo run -p scope-cli -- --keypair <keypair.json> --program-id HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ --price-feed hubble crank --mapping ./configs/mainnet/hubble.json
+make build
+export CLUSTER=mainnet
+export URL=<url>
+RUST_BACKTRACE=1 cargo run -p scope-cli -- --keypair <keypair.json> --program-id HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ --price-feed hubble crank --mapping ./configs/mainnet/hubble.json
 ```
