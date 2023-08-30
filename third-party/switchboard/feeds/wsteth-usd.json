@@ -1,0 +1,34 @@
+{
+    "jobs": [
+        {
+            "name": "Orca WSTETH/STSOL/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "orcaPoolAddress": "6wKCFZ4VnYtNVmQYAZzs5CHsodG32vPcBQifQkGFYDkK"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "CXvUqgvtdbHaTRZgJVQhxkeWuEQutYiUz488NdL97SdG"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Raydium WSTETH/ETH/USD",
+            "tasks": [
+                {
+                    "lpExchangeRateTask": {
+                        "raydiumPoolAddress": "9RCPYmG5C8SnNuK4ojTQmbmdxxVR5mGWo79qMTzVLSMu"
+                    }
+                },
+                {
+                    "multiplyTask": {
+                        "aggregatorPubkey": "HNStfhaLnqwF2ZtJUizaA9uHDAVB976r2AgTUx9LrdEo"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -84,8 +84,9 @@
   },
   "18": {
     "label": "wstETH/USD",
-    "oracle_mapping": "9uuLtZ5T4spZacA6gnECzGZwjdTfek9rBpTU3ZqZn4dS",
-    "oracle_type": "Pyth"
+    "oracle_mapping": "5A4EuWpscKbGGfYrTPPXAf9tvww5WuBBVm6tgzLcWSZj",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   },
   "19": {
     "label": "LDO/USD",
@@ -326,8 +327,9 @@
   },
   "66": {
     "label": "TWAP wstETH/USD",
-    "oracle_mapping": "9uuLtZ5T4spZacA6gnECzGZwjdTfek9rBpTU3ZqZn4dS",
-    "oracle_type": "PythEMA"
+    "oracle_mapping": "HdjRiFXQKvhRkMbrEnFuppjpkN8pkfDs6XTraT4noQib",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   },
   "67": {
     "label": "TWAP DUST/USD",
