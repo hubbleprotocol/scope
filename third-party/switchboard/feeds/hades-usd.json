@@ -1,21 +1,6 @@
 {
   "jobs": [
     {
-      "name": "Raydium HADES/USDC/USD",
-      "tasks": [
-        {
-          "lpExchangeRateTask": {
-            "raydiumPoolAddress": "9fhw3moJmx1jxSsVW6gWBUndNmdukpejKwhTJtCJB4gc"
-          }
-        },
-        {
-          "multiplyTask": {
-            "aggregatorPubkey": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe"
-          }
-        }
-      ]
-    },
-    {
       "name": "Orca HADES/USDC/USD",
       "tasks": [
         {
@@ -49,42 +34,6 @@
                 }
               ]
             }
-          }
-        }
-      ]
-    },
-    {
-      "name": "MEXC Global HADES/USDT/USD",
-      "tasks": [
-        {
-          "httpTask": {
-            "url": "https://www.mexc.com/open/api/v2/market/ticker?symbol=HADES_USDT"
-          }
-        },
-        {
-          "medianTask": {
-            "tasks": [
-              {
-                "jsonParseTask": {
-                  "path": "$.data[0].ask"
-                }
-              },
-              {
-                "jsonParseTask": {
-                  "path": "$.data[0].bid"
-                }
-              },
-              {
-                "jsonParseTask": {
-                  "path": "$.data[0].last"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "multiplyTask": {
-            "aggregatorPubkey": "8KCm1o99ZvhZBiFfsDpSK4EC6iDeqS5NkxQtaCigQTqB"
           }
         }
       ]
