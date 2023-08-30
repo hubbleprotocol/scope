@@ -1,4 +1,4 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-slim-bullseye AS chef
 
 RUN apt-get update \
     && apt-get install -y git unzip build-essential autoconf libtool libssl-dev
