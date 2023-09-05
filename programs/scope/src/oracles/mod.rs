@@ -29,7 +29,9 @@ pub enum OracleType {
     Pyth = 0,
     SwitchboardV1 = 1,
     SwitchboardV2 = 2,
-    // Deprecated YiToken = 3,
+    /// Deprecated (formerly YiToken)
+    // Do not remove - breaks the typescript idl codegen
+    DeprecatedPlaceholder = 3,
     /// Solend tokens
     CToken = 4,
     /// SPL Stake Pool token (like scnSol)
@@ -51,6 +53,9 @@ impl OracleType {
             OracleType::SplStake => 20000,
             OracleType::KToken => 50000,
             OracleType::PythEMA => 15000,
+            OracleType::DeprecatedPlaceholder => {
+                panic!("DeprecatedPlaceholder is not a valid oracle type")
+            }
         }
     }
 }
@@ -77,6 +82,9 @@ where
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
         OracleType::KToken => ktokens::get_price(base_account, extra_accounts),
         OracleType::PythEMA => pyth_ema::get_price(base_account),
+        OracleType::DeprecatedPlaceholder => {
+            panic!("DeprecatedPlaceholder is not a valid oracle type")
+        }
     }
 }
 
@@ -96,5 +104,8 @@ pub fn validate_oracle_account(
         OracleType::SplStake => Ok(()),
         OracleType::KToken => Ok(()),
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
+        OracleType::DeprecatedPlaceholder => {
+            panic!("DeprecatedPlaceholder is not a valid oracle type")
+        }
     }
 }

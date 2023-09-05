@@ -77,5 +77,8 @@ pub async fn entry_from_config(
         | OracleType::SplStake
         | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
         OracleType::KToken => Box::new(KTokenOracle::new(token_conf, default_max_age, rpc).await?),
+        OracleType::DeprecatedPlaceholder => {
+            panic!("DeprecatedPlaceholder is not a valid oracle type")
+        }
     })
 }
