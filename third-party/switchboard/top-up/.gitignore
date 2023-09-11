@@ -1,0 +1,5 @@
+.env
+all-feeds
+all-feeds-balances
+all-feeds-names
+**/*.json
