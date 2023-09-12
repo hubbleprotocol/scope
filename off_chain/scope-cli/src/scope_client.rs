@@ -9,8 +9,7 @@ use anchor_client::{
         signature::{Keypair, Signature},
         signer::Signer,
         system_program,
-        sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
-        sysvar::SysvarId,
+        sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
     },
 };
 use anyhow::{anyhow, bail, Context, Result};

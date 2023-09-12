@@ -5,12 +5,19 @@ use anchor_lang::{
     InstructionData, ToAccountMetas,
 };
 use common::*;
-use scope::{oracles::OracleType, OraclePrices, Price, ScopeError};
-use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
-use solana_program::{instruction::Instruction, sysvar::SysvarId};
+use scope::{
+    oracles::{
+        ktokens::{GlobalConfig, WhirlpoolStrategy},
+        OracleType,
+    },
+    OraclePrices, Price, ScopeError,
+};
+use solana_program::{
+    instruction::Instruction,
+    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+};
 use solana_program_test::tokio;
-use solana_sdk::pubkey;
-use solana_sdk::signer::Signer;
+use solana_sdk::{pubkey, signer::Signer};
 use types::*;
 
 use crate::{
@@ -30,6 +37,12 @@ const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
     price_type: OracleType::Pyth,
 };
 
+const TEST_KTOKEN_ORACLE: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeKaminoStrategyAccount111111111111111111"),
+    token: 2,
+    price_type: OracleType::KToken,
+};
+
 // - [x] Wrong oracle mapping
 // - [x] Wrong oracle account (copy)
 // - [x] Wrong oracle account (mixing indexes)
@@ -37,13 +50,26 @@ const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
 // - [x] Instruction executed in CPI
 // - [x] Instruction preceded by non ComputeBudget instruction
 
+// KTokens:
+// - [x] Wrong kToken additional global config account
+// - [x] Wrong kToken additional collateral infos account
+// - [x] Wrong kToken additional orca whirlpool account
+// - [x] Wrong kToken additional orca position account
+// - [x] Wrong kToken additional scope prices account
+
 #[tokio::test]
 async fn test_working_refresh_one() {
     let (mut ctx, feed) =
         fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE]).await;
 
     // Change price
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price { value: 1, exp: 6 }).await;
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_PYTH_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
 
     // Refresh
     let accounts = scope::accounts::RefreshOne {
@@ -68,8 +94,51 @@ async fn test_working_refresh_one() {
 
     // Check price
     let data: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
-    assert_eq!(data.prices[0].price.value, 1);
-    assert_eq!(data.prices[0].price.exp, 6);
+    assert_eq!(data.prices[TEST_PYTH_ORACLE.token].price.value, 1);
+    assert_eq!(data.prices[TEST_PYTH_ORACLE.token].price.exp, 6);
+}
+
+#[tokio::test]
+async fn test_working_refresh_one_ktoken() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_KTOKEN_ORACLE]).await;
+
+    // Change price
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_KTOKEN_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshOne {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        price_info: TEST_KTOKEN_ORACLE.pubkey,
+    }
+    .to_account_metas(None);
+    let mut refresh_accounts = utils::get_remaining_accounts(&mut ctx, &TEST_KTOKEN_ORACLE).await;
+    accounts.append(&mut refresh_accounts);
+
+    let args = scope::instruction::RefreshOnePrice {
+        token: TEST_KTOKEN_ORACLE.token.try_into().unwrap(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    ctx.send_transaction(&[ix]).await.unwrap();
+
+    // Check price
+    let data: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+    assert_eq!(data.prices[TEST_KTOKEN_ORACLE.token].price.value, 1);
+    assert_eq!(data.prices[TEST_KTOKEN_ORACLE.token].price.exp, 6);
 }
 
 // - [ ] Wrong oracle mapping
@@ -78,7 +147,13 @@ async fn test_wrong_oracle_mapping() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE]).await;
 
     // Change price
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price { value: 1, exp: 6 }).await;
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_PYTH_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
 
     // Create a fake mapping account
     let fake_mapping_pk = Pubkey::new_unique();
@@ -115,7 +190,13 @@ async fn test_wrong_oracle_account_with_copy() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE]).await;
 
     // Change price
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price { value: 1, exp: 6 }).await;
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_PYTH_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
 
     // Create a fake mapping account
     let fake_price_account = Pubkey::new_unique();
@@ -154,7 +235,13 @@ async fn test_wrong_index_oracle_account() {
         fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE]).await;
 
     // Change price
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price { value: 1, exp: 6 }).await;
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_PYTH_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
 
     // Refresh
     let accounts = scope::accounts::RefreshOne {
@@ -186,7 +273,13 @@ async fn test_wrong_sysvar_instructions() {
         fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE]).await;
 
     // Change price
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price { value: 1, exp: 6 }).await;
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_PYTH_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
 
     // Create the fake sysvar
     let wrong_sysvar_account = Pubkey::new_unique();
@@ -216,6 +309,290 @@ async fn test_wrong_sysvar_instructions() {
     assert_eq!(map_anchor_error(res), AnchorErrorCode::ConstraintAddress);
 }
 
+// - [ ] Wrong kToken additional global config account
+#[tokio::test]
+async fn test_wrong_ktoken_global_config() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_KTOKEN_ORACLE]).await;
+
+    // Change price
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_KTOKEN_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
+
+    let strategy: WhirlpoolStrategy = ctx
+        .get_zero_copy_account(&TEST_KTOKEN_ORACLE.pubkey)
+        .await
+        .unwrap();
+
+    // Create the fake global config
+    let wrong_global_config = Pubkey::new_unique();
+    ctx.clone_account(&strategy.global_config, &wrong_global_config)
+        .await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshOne {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        price_info: TEST_KTOKEN_ORACLE.pubkey,
+    }
+    .to_account_metas(None);
+    let mut refresh_accounts = utils::get_remaining_accounts(&mut ctx, &TEST_KTOKEN_ORACLE).await;
+    accounts.append(&mut refresh_accounts);
+    // Set the wrong global config
+    accounts.iter_mut().for_each(|account| {
+        if account.pubkey == strategy.global_config {
+            account.pubkey = wrong_global_config;
+        }
+    });
+
+    let args = scope::instruction::RefreshOnePrice {
+        token: TEST_KTOKEN_ORACLE.token.try_into().unwrap(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    let res = ctx.send_transaction(&[ix]).await;
+    assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+}
+
+// - [ ] Wrong kToken additional collateral infos account
+#[tokio::test]
+async fn test_wrong_ktoken_collateral_infos() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_KTOKEN_ORACLE]).await;
+
+    // Change price
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_KTOKEN_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
+
+    let strategy: WhirlpoolStrategy = ctx
+        .get_zero_copy_account(&TEST_KTOKEN_ORACLE.pubkey)
+        .await
+        .unwrap();
+    let global_config: GlobalConfig = ctx
+        .get_zero_copy_account(&strategy.global_config)
+        .await
+        .unwrap();
+
+    // Create the fake collateral infos
+    let wrong_token_infos = Pubkey::new_unique();
+    ctx.clone_account(&global_config.token_infos, &wrong_token_infos)
+        .await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshOne {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        price_info: TEST_KTOKEN_ORACLE.pubkey,
+    }
+    .to_account_metas(None);
+    let mut refresh_accounts = utils::get_remaining_accounts(&mut ctx, &TEST_KTOKEN_ORACLE).await;
+    accounts.append(&mut refresh_accounts);
+    // Set the wrong collateral infos
+    accounts.iter_mut().for_each(|account| {
+        if account.pubkey == global_config.token_infos {
+            account.pubkey = wrong_token_infos;
+        }
+    });
+
+    let args = scope::instruction::RefreshOnePrice {
+        token: TEST_KTOKEN_ORACLE.token.try_into().unwrap(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    let res = ctx.send_transaction(&[ix]).await;
+    assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+}
+
+// - [ ] Wrong kToken additional orca whirlpool account
+#[tokio::test]
+async fn test_wrong_ktoken_orca_whirlpool() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_KTOKEN_ORACLE]).await;
+
+    // Change price
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_KTOKEN_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
+
+    let strategy: WhirlpoolStrategy = ctx
+        .get_zero_copy_account(&TEST_KTOKEN_ORACLE.pubkey)
+        .await
+        .unwrap();
+
+    // Create the fake orca whirlpool
+    let wrong_orca_whirlpool = Pubkey::new_unique();
+    ctx.clone_account(&strategy.pool, &wrong_orca_whirlpool)
+        .await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshOne {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        price_info: TEST_KTOKEN_ORACLE.pubkey,
+    }
+    .to_account_metas(None);
+    let mut refresh_accounts = utils::get_remaining_accounts(&mut ctx, &TEST_KTOKEN_ORACLE).await;
+    accounts.append(&mut refresh_accounts);
+    // Set the wrong orca whirlpool
+    accounts.iter_mut().for_each(|account| {
+        if account.pubkey == strategy.pool {
+            account.pubkey = wrong_orca_whirlpool;
+        }
+    });
+
+    let args = scope::instruction::RefreshOnePrice {
+        token: TEST_KTOKEN_ORACLE.token.try_into().unwrap(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    let res = ctx.send_transaction(&[ix]).await;
+    assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+}
+
+// - [ ] Wrong kToken additional orca position account
+#[tokio::test]
+async fn test_wrong_ktoken_orca_position() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_KTOKEN_ORACLE]).await;
+
+    // Change price
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_KTOKEN_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
+
+    let strategy: WhirlpoolStrategy = ctx
+        .get_zero_copy_account(&TEST_KTOKEN_ORACLE.pubkey)
+        .await
+        .unwrap();
+
+    // Create the fake orca position
+    let wrong_orca_position = Pubkey::new_unique();
+    ctx.clone_account(&strategy.position, &wrong_orca_position)
+        .await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshOne {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        price_info: TEST_KTOKEN_ORACLE.pubkey,
+    }
+    .to_account_metas(None);
+    let mut refresh_accounts = utils::get_remaining_accounts(&mut ctx, &TEST_KTOKEN_ORACLE).await;
+    accounts.append(&mut refresh_accounts);
+    // Set the wrong orca position
+    accounts.iter_mut().for_each(|account| {
+        if account.pubkey == strategy.position {
+            account.pubkey = wrong_orca_position;
+        }
+    });
+
+    let args = scope::instruction::RefreshOnePrice {
+        token: TEST_KTOKEN_ORACLE.token.try_into().unwrap(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    let res = ctx.send_transaction(&[ix]).await;
+    assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+}
+
+// - [ ] Wrong kToken additional scope prices account
+#[tokio::test]
+async fn test_wrong_ktoken_scope_prices() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_KTOKEN_ORACLE]).await;
+
+    // Change price
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_KTOKEN_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
+
+    let strategy: WhirlpoolStrategy = ctx
+        .get_zero_copy_account(&TEST_KTOKEN_ORACLE.pubkey)
+        .await
+        .unwrap();
+
+    // Create the fake scope prices
+    let wrong_scope_prices = Pubkey::new_unique();
+    ctx.clone_account(&strategy.scope_prices, &wrong_scope_prices)
+        .await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshOne {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        price_info: TEST_KTOKEN_ORACLE.pubkey,
+    }
+    .to_account_metas(None);
+    let mut refresh_accounts = utils::get_remaining_accounts(&mut ctx, &TEST_KTOKEN_ORACLE).await;
+    accounts.append(&mut refresh_accounts);
+    // Set the wrong scope prices
+    accounts.iter_mut().for_each(|account| {
+        if account.pubkey == strategy.scope_prices {
+            account.pubkey = wrong_scope_prices;
+        }
+    });
+
+    let args = scope::instruction::RefreshOnePrice {
+        token: TEST_KTOKEN_ORACLE.token.try_into().unwrap(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    let res = ctx.send_transaction(&[ix]).await;
+    assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+}
+
 // - [ ] Instruction executed in CPI
 #[tokio::test]
 async fn test_refresh_through_cpi() {
@@ -223,7 +600,13 @@ async fn test_refresh_through_cpi() {
         fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE]).await;
 
     // Change price
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price { value: 1, exp: 6 }).await;
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_PYTH_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
 
     // Refresh
     let accounts = scope::accounts::RefreshOne {
@@ -255,7 +638,13 @@ async fn test_refresh_with_unexpected_ix() {
         fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE]).await;
 
     // Change price
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price { value: 1, exp: 6 }).await;
+    mock_oracles::set_price(
+        &mut ctx,
+        &feed,
+        &TEST_PYTH_ORACLE,
+        &Price { value: 1, exp: 6 },
+    )
+    .await;
 
     // Random update mapping as extra ix
     let accounts = scope::accounts::UpdateOracleMapping {

@@ -47,27 +47,9 @@ pub async fn setup_scope(
     // Set up the mapping and oracles
     for conf in mapping {
         // Initialize oracle account
-        mock_oracles::set_price(&mut ctx, &conf, &Price::default()).await;
+        mock_oracles::set_price(&mut ctx, &feed, &conf, &Price::default()).await;
         // Set the mapping
-        let accounts = scope::accounts::UpdateOracleMapping {
-            admin: ctx.admin.pubkey(),
-            configuration: feed.conf,
-            oracle_mappings: feed.mapping,
-            price_info: conf.pubkey,
-        };
-        let args = scope::instruction::UpdateMapping {
-            feed_name: feed.feed_name.clone(),
-            token: conf.token.try_into().unwrap(),
-            price_type: conf.price_type.into(),
-        };
-
-        let ix = Instruction {
-            program_id: scope::id(),
-            accounts: accounts.to_account_metas(None),
-            data: args.data(),
-        };
-
-        ctx.send_transaction(&[ix]).await.unwrap();
+        operations::update_oracle_mapping(&mut ctx, &feed, &conf).await;
     }
 
     (ctx, feed)

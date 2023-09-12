@@ -17,11 +17,10 @@ The repository contains two software:
 
 - The association between an price at a given index in the price feed and the token pair associated to this price need is not stored on chain.
 - A price feed is currently limited to 512 prices.
-- At the moment, only pyth prices are supported.
+- At the moment, only pyth and switchboard prices are supported.
 
 ## Future updates/ideas
 
-- [x] Support of switchboard as a price source.
 - [x] Support different refresh rates in the bot (stacked stable coin price change less often than other token).
 - [x] Open creation of price feed to any user who will became admin of the feed.
 - Allow extensible price feed (when resizable account feature is available in Solana mainnet)

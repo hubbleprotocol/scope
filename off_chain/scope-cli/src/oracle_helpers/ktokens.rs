@@ -7,14 +7,14 @@ use anyhow::{Context, Result};
 use orbit_link::async_client::AsyncClient;
 use scope::{
     anchor_lang::prelude::Pubkey,
-    oracles::{ktokens::WhirlpoolStrategy, OracleType},
+    oracles::{ktokens, OracleType},
     DatedPrice,
 };
 
 use super::{OracleHelper, TokenEntry};
 use crate::config::TokenConfig;
 
-const NB_EXTRA_ACCOUNT: usize = 4;
+const NB_EXTRA_ACCOUNT: usize = 5;
 
 #[derive(Debug)]
 pub struct KTokenOracle {
@@ -23,10 +23,11 @@ pub struct KTokenOracle {
     mapping: Pubkey,
 
     /// Extra accounts are:
-    /// 0. The [`whirlpool::state::Whirlpool`] used by the strategy.
-    /// 1. The [`whirlpool::state::Position`] position taken by Kamino.
-    /// 2. The [`scope::OraclePrices`] storing the prices of the underlying tokens.
-    /// 3. The [`scope::utils::scope_chain::ScopeChainAccount`] allowing to find the right prices.
+    /// 0. The [`ktokens::GlobalConfig`] allowing to validate the `CollateralInfos` account.
+    /// 1. The [`ktokens::CollateralInfos`] mapping underlying token prices.
+    /// 2. The [`whirlpool::state::Whirlpool`] used by the strategy.
+    /// 3. The [`whirlpool::state::Position`] position taken by Kamino.
+    /// 4. The [`scope::OraclePrices`] storing the prices of the underlying tokens.
     extra_accounts: [Pubkey; NB_EXTRA_ACCOUNT],
 
     /// Configured max age
@@ -45,25 +46,26 @@ impl KTokenOracle {
             .await
             .context("Retrieving Kamino strategy account")?;
 
-        let strategy_account: &WhirlpoolStrategy =
+        let strategy_account: &ktokens::WhirlpoolStrategy =
             bytemuck::from_bytes(&strategy_account_raw.data[8..]);
 
-        let whirlpool = strategy_account.whirlpool;
+        let pool = strategy_account.pool;
         let position = strategy_account.position;
         let prices = strategy_account.scope_prices;
-        let (scope_chain_pk, _) = Pubkey::find_program_address(
-            &[
-                r"ScopeChain".as_bytes(),
-                &strategy_account.scope_prices.to_bytes(),
-            ],
-            &strategy_account_raw.owner,
-        );
+        let global_config = strategy_account.global_config;
+        let global_config_account_raw = rpc
+            .get_account(&global_config)
+            .await
+            .context("Retrieving Kamino strategy account")?;
+        let global_config_account: &ktokens::GlobalConfig =
+            bytemuck::from_bytes(&global_config_account_raw.data[8..]);
+        let collateral_infos = global_config_account.token_infos;
 
         Ok(Self {
             label: conf.label.clone(),
             mapping,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
-            extra_accounts: [whirlpool, position, prices, scope_chain_pk],
+            extra_accounts: [global_config, collateral_infos, pool, position, prices],
         })
     }
 }
@@ -89,10 +91,10 @@ impl OracleHelper for KTokenOracle {
                 .get_account(&self.mapping)
                 .await
                 .context("Retrieving Kamino strategy account")?;
-
-            let strategy_account: &WhirlpoolStrategy =
+            let strategy_account: &ktokens::WhirlpoolStrategy =
                 bytemuck::from_bytes(&strategy_account_raw.data[8..]);
-            res[1] = strategy_account.position;
+            // Re-fetch the latest position
+            res[3] = strategy_account.position;
         }
         Ok(res)
     }

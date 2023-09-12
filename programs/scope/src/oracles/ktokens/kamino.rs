@@ -1,6 +1,9 @@
 use std::{cell::Ref, convert::TryInto};
 
-use anchor_lang::prelude::*;
+use anchor_lang::prelude::{
+    borsh::{BorshDeserialize, BorshSerialize},
+    *,
+};
 use decimal_wad::{
     common::{TryDiv, TryMul},
     decimal::{Decimal, U192},
@@ -11,12 +14,15 @@ use whirlpool::math::sqrt_price_from_tick_index;
 pub use whirlpool::state::{Position, PositionRewardInfo, Whirlpool, WhirlpoolRewardInfo};
 
 use crate::{
-    oracles::ktokens::kamino::price_utils::calc_price_from_sqrt_price,
-    scope_chain::ScopeChainAccount, utils::zero_copy_deserialize, DatedPrice, OraclePrices,
+    oracles::ktokens::kamino::price_utils::calc_price_from_sqrt_price, scope_chain,
+    scope_chain::ScopeChainError, utils::zero_copy_deserialize, DatedPrice, OraclePrices,
     ScopeError, ScopeResult,
 };
 
 const TARGET_EXPONENT: u64 = 12;
+const SIZE_REBALANCE_PARAMS: usize = 128;
+const SIZE_REBALANCE_STATE: usize = 256;
+
 use super::USD_DECIMALS_PRECISION;
 
 pub fn get_price_per_full_share(
@@ -246,20 +252,21 @@ fn ten_pow(exponent: u8) -> U128 {
 
 // Zero copy
 #[account(zero_copy)]
+#[derive(Debug, Default)]
 pub struct WhirlpoolStrategy {
     // Admin
     pub admin_authority: Pubkey,
 
     pub global_config: Pubkey,
 
-    // this is an u8 but we need to keep it as u64 for memory allignment
+    // this is an u8 but we need to keep it as u64 for memory alignment
     pub base_vault_authority: Pubkey,
     pub base_vault_authority_bump: u64,
 
-    // Whirlpool info
-    pub whirlpool: Pubkey,
-    pub whirlpool_token_vault_a: Pubkey,
-    pub whirlpool_token_vault_b: Pubkey,
+    // pool info
+    pub pool: Pubkey,
+    pub pool_token_vault_a: Pubkey,
+    pub pool_token_vault_b: Pubkey,
 
     // Current position info
     pub tick_array_lower: Pubkey,
@@ -330,8 +337,12 @@ pub struct WhirlpoolStrategy {
     pub withdrawal_cap_b: WithdrawalCaps,
 
     pub max_price_deviation_bps: u64,
-    pub swap_uneven_max_slippage: u64,
+    // Maximum slippage vs current oracle price
+    pub swap_vault_max_slippage_bps: u32,
+    // Maximum slippage vs price reference see `reference_swap_price_x`
+    pub swap_vault_max_slippage_from_reference_bps: u32,
 
+    // Strategy type can be NON_PEGGED=0, PEGGED=1, STABLE=2
     pub strategy_type: u64,
 
     // Fees taken by strategy
@@ -344,10 +355,40 @@ pub struct WhirlpoolStrategy {
 
     // Timestamp when current position was opened.
     pub position_timestamp: u64,
+    pub kamino_rewards: [KaminoRewardInfo; 3],
 
-    pub padding_1: [u128; 20],
-    pub padding_2: [u128; 32],
-    pub padding_3: [u128; 32],
+    pub strategy_dex: u64, // enum for strat ORCA=0, RAYDIUM=1, CREMA=2
+    pub raydium_protocol_position_or_base_vault_authority: Pubkey,
+    pub allow_deposit_without_invest: u64,
+    pub raydium_pool_config_or_base_vault_authority: Pubkey,
+
+    pub deposit_blocked: u8,
+    // a strategy creation can be IGNORED=0, SHADOW=1, LIVE=2, DEPRECATED=3, STAGING=4
+    // check enum CreationStatus
+    pub creation_status: u8,
+    pub invest_blocked: u8,
+    /// share_calculation_method can be either DOLAR_BASED=0 or PROPORTION_BASED=1
+    pub share_calculation_method: u8,
+    pub withdraw_blocked: u8,
+    pub reserved_flag_2: u8,
+    pub local_admin_blocked: u8,
+    pub flash_vault_swap_allowed: u8,
+
+    // Reference price saved when initializing a rebalance or emergency swap
+    // Used to ensure that prices does not shift during a rebalance/emergency swap
+    pub reference_swap_price_a: KaminoPrice,
+    pub reference_swap_price_b: KaminoPrice,
+
+    pub is_community: u8,
+    pub rebalance_type: u8,
+    pub padding_0: [u8; 6],
+    pub rebalance_raw: RebalanceRaw,
+    pub padding_1: [u8; 7],
+    // token_a / token_b _fees_from_rewards_cumulative represents the rewards that are token_a/token_b and are collected directly in the token vault
+    pub token_a_fees_from_rewards_cumulative: u64,
+    pub token_b_fees_from_rewards_cumulative: u64,
+    pub strategy_lookup_table: Pubkey,
+    pub padding_3: [u128; 26],
     pub padding_4: [u128; 32],
     pub padding_5: [u128; 32],
     pub padding_6: [u128; 32],
@@ -361,6 +402,199 @@ impl WhirlpoolStrategy {
     }
 }
 
+#[zero_copy]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq)]
+pub struct RebalanceRaw {
+    pub params: [u8; SIZE_REBALANCE_PARAMS],
+    pub state: [u8; SIZE_REBALANCE_STATE],
+    pub reference_price_type: u8,
+}
+
+impl Default for RebalanceRaw {
+    fn default() -> Self {
+        Self {
+            params: [0; SIZE_REBALANCE_PARAMS],
+            state: [0; SIZE_REBALANCE_STATE],
+            reference_price_type: 0,
+        }
+    }
+}
+
+#[zero_copy]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Default, PartialEq, Eq)]
+pub struct KaminoRewardInfo {
+    pub decimals: u64,
+    pub reward_vault: Pubkey,
+    pub reward_mint: Pubkey,
+    pub reward_collateral_id: u64,
+
+    pub last_issuance_ts: u64,
+    pub reward_per_second: u64,
+    pub amount_uncollected: u64,
+    pub amount_issued_cumulative: u64,
+    pub amount_available: u64,
+}
+
+#[account(zero_copy)]
+#[derive(Debug)]
+pub struct GlobalConfig {
+    pub emergency_mode: u64,
+    pub block_deposit: u64,
+    pub block_invest: u64,
+    pub block_withdraw: u64,
+    pub block_collect_fees: u64,
+    pub block_collect_rewards: u64,
+    pub block_swap_rewards: u64,
+    pub block_swap_uneven_vaults: u32,
+    pub block_emergency_swap: u32,
+    pub fees_bps: u64,
+    pub scope_program_id: Pubkey,
+    pub scope_price_id: Pubkey,
+
+    // 128 types of tokens, indexed by token
+    pub swap_rewards_discount_bps: [u64; 256],
+    // actions_authority is an allowed entity (the bot) that has permissions to perform some permissioned actions
+    pub actions_authority: Pubkey,
+    pub admin_authority: Pubkey,
+    pub treasury_fee_vaults: [Pubkey; 256],
+
+    pub token_infos: Pubkey,
+    pub block_local_admin: u64,
+    pub min_performance_fee_bps: u64,
+
+    pub _padding: [u64; 2042],
+}
+
+impl GlobalConfig {
+    pub fn from_account<'info>(
+        account: &'info AccountInfo,
+    ) -> ScopeResult<Ref<'info, GlobalConfig>> {
+        zero_copy_deserialize(account)
+    }
+}
+
+impl Default for GlobalConfig {
+    #[inline(never)]
+    fn default() -> GlobalConfig {
+        let vaults: [Pubkey; 256] = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
+
+        GlobalConfig {
+            emergency_mode: 0,
+            block_deposit: 0,
+            block_invest: 0,
+            block_withdraw: 0,
+            block_collect_fees: 0,
+            block_collect_rewards: 0,
+            block_swap_rewards: 0,
+            block_swap_uneven_vaults: 0,
+            block_emergency_swap: 0,
+            fees_bps: 0,
+            scope_program_id: Pubkey::default(),
+            scope_price_id: Pubkey::default(),
+            swap_rewards_discount_bps: [0; 256],
+            actions_authority: Pubkey::default(),
+            admin_authority: Pubkey::default(),
+            token_infos: Pubkey::default(),
+            treasury_fee_vaults: vaults,
+            block_local_admin: 0,
+            min_performance_fee_bps: 0,
+            _padding: [0; 2042],
+        }
+    }
+}
+
+#[account(zero_copy)]
+#[derive(Debug, AnchorSerialize)]
+pub struct CollateralInfos {
+    pub infos: [CollateralInfo; 256],
+}
+
+impl CollateralInfos {
+    pub fn default() -> Self {
+        Self {
+            infos: [CollateralInfo::default(); 256],
+        }
+    }
+}
+
+impl CollateralInfos {
+    pub fn get_price(
+        &self,
+        prices: &OraclePrices,
+        token_id: usize,
+    ) -> std::result::Result<DatedPrice, ScopeChainError> {
+        let chain = self
+            .infos
+            .get(token_id)
+            .ok_or(ScopeChainError::NoChainForToken)?
+            .scope_price_chain;
+
+        scope_chain::get_price_from_chain(prices, &chain)
+    }
+}
+
+#[zero_copy]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq)]
+pub struct CollateralInfo {
+    // The index is the collateral_id
+    pub mint: Pubkey,
+    pub lower_heuristic: u64,
+    pub upper_heuristic: u64,
+    pub exp_heuristic: u64,
+    pub max_twap_divergence_bps: u64,
+    // This is the scope_id twap, unlike scope_price_chain, it's a single value
+    // and it's always a dollar denominated (twap)
+    pub scope_price_id_twap: u64,
+    // This is the scope_id price chain that results in a price for the token
+    pub scope_price_chain: [u16; 4],
+    pub name: [u8; 32],
+    pub max_age_price_seconds: u64,
+    pub max_age_twap_seconds: u64,
+    pub max_ignorable_amount_as_reward: u64, // 0 means the rewards in this token can be always ignored
+    pub disabled: u8,
+    pub _padding0: [u8; 7],
+    pub _padding: [u64; 9],
+}
+
+impl Default for CollateralInfo {
+    #[inline]
+    fn default() -> CollateralInfo {
+        CollateralInfo {
+            mint: Pubkey::default(),
+            lower_heuristic: u64::default(),
+            upper_heuristic: u64::default(),
+            exp_heuristic: u64::default(),
+            max_twap_divergence_bps: u64::default(),
+            scope_price_id_twap: u64::MAX,
+            scope_price_chain: [u16::MAX; 4],
+            name: [0; 32],
+            max_age_price_seconds: 0,
+            max_age_twap_seconds: 0,
+            max_ignorable_amount_as_reward: 0,
+            disabled: 0,
+            _padding0: [0; 7],
+            _padding: [0; 9],
+        }
+    }
+}
+
+#[zero_copy]
+#[derive(Debug, Eq, PartialEq, BorshDeserialize, BorshSerialize, Default)]
+pub struct KaminoPrice {
+    // Pyth price, integer + exponent representation
+    // decimal price would be
+    // as integer: 6462236900000, exponent: 8
+    // as float:   64622.36900000
+
+    // value is the scaled integer
+    // for example, 6462236900000 for btc
+    pub value: u64,
+
+    // exponent represents the number of decimals
+    // for example, 8 for btc
+    pub exp: u64,
+}
+
 pub struct TokenPrices {
     pub price_a: DatedPrice,
     pub price_b: DatedPrice,
@@ -369,11 +603,13 @@ pub struct TokenPrices {
 impl TokenPrices {
     pub fn compute(
         prices: &OraclePrices,
-        scope_chain: &ScopeChainAccount,
+        collateral_infos: &CollateralInfos,
         strategy: &WhirlpoolStrategy,
     ) -> ScopeResult<TokenPrices> {
-        let price_a = scope_chain.get_price(prices, strategy.token_a_collateral_id.try_into()?)?;
-        let price_b = scope_chain.get_price(prices, strategy.token_b_collateral_id.try_into()?)?;
+        let price_a =
+            collateral_infos.get_price(prices, strategy.token_a_collateral_id.try_into()?)?;
+        let price_b =
+            collateral_infos.get_price(prices, strategy.token_b_collateral_id.try_into()?)?;
         Ok(TokenPrices { price_a, price_b })
     }
 }

@@ -42,6 +42,7 @@ num-traits = "0.2.15"
 num-derive = "0.3.3"
 
 [dev-dependencies]
+async-recursion = "1.0.5"
 proptest = "1.0"
 solana-logger = "1.14.15"
 solana-program-test = "1.14.15"

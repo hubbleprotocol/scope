@@ -2,13 +2,13 @@ mod kamino;
 mod orca_state;
 
 use anchor_lang::prelude::*;
-pub use kamino::WhirlpoolStrategy;
+pub use kamino::{CollateralInfo, CollateralInfos, GlobalConfig, RebalanceRaw, WhirlpoolStrategy};
 use orca_state::{Position as PositionParser, Whirlpool as WhirlpoolParser};
 
 use self::kamino::{get_price_per_full_share, TokenPrices};
 use crate::{utils::zero_copy_deserialize, DatedPrice, Price, Result, ScopeError};
 
-const USD_DECIMALS_PRECISION: u8 = 8;
+const USD_DECIMALS_PRECISION: u8 = 6;
 
 // Gives the price of 1 kToken in USD
 pub fn get_price<'a, 'b>(
@@ -22,7 +22,17 @@ where
     let strategy_account_ref = WhirlpoolStrategy::from_account(k_account)?;
 
     // extract the accounts from extra iterator
-    let whirlpool_account_info = extra_accounts
+    let global_config_account_info = extra_accounts
+        .next()
+        .ok_or(ScopeError::AccountsAndTokenMismatch)?;
+    // Get the global config account (checked below)
+    let global_config_account_ref = GlobalConfig::from_account(global_config_account_info)?;
+
+    let collateral_infos_account_info = extra_accounts
+        .next()
+        .ok_or(ScopeError::AccountsAndTokenMismatch)?;
+
+    let pool_account_info = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
@@ -30,11 +40,7 @@ where
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
-    let scope_account = extra_accounts
-        .next()
-        .ok_or(ScopeError::AccountsAndTokenMismatch)?;
-
-    let scope_chain_account_info = extra_accounts
+    let scope_prices_account_info = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
@@ -55,36 +61,39 @@ where
 
     // Check the pubkeys
     account_check(
-        whirlpool_account_info,
-        strategy_account_ref.whirlpool,
-        "whirlpool",
+        global_config_account_info,
+        strategy_account_ref.global_config,
+        "global_config",
     )?;
+    account_check(
+        collateral_infos_account_info,
+        global_config_account_ref.token_infos,
+        "collateral_infos",
+    )?;
+    account_check(pool_account_info, strategy_account_ref.pool, "whirlpool")?;
     account_check(
         position_account_info,
         strategy_account_ref.position,
         "position",
     )?;
     account_check(
-        scope_account,
+        scope_prices_account_info,
         strategy_account_ref.scope_prices,
         "scope_prices",
     )?;
-    let (scope_chain_pk, _) = Pubkey::find_program_address(
-        &[b"ScopeChain", &strategy_account_ref.scope_prices.to_bytes()],
-        k_account.owner,
-    );
-    account_check(scope_chain_account_info, scope_chain_pk, "scope_chain")?;
 
     // Deserialize accounts
-    let whirlpool = WhirlpoolParser::from_account_to_orca_whirlpool(whirlpool_account_info)?;
+    let collateral_infos_ref =
+        zero_copy_deserialize::<CollateralInfos>(collateral_infos_account_info)?;
+    let whirlpool = WhirlpoolParser::from_account_to_orca_whirlpool(pool_account_info)?;
     let position = PositionParser::from_account_to_orca_position(position_account_info)?;
-    let scope_prices_ref = zero_copy_deserialize::<crate::OraclePrices>(scope_account)?;
-    let scope_chain_ref = zero_copy_deserialize::<crate::utils::scope_chain::ScopeChainAccount>(
-        scope_chain_account_info,
-    )?;
+    let scope_prices_ref = zero_copy_deserialize::<crate::OraclePrices>(scope_prices_account_info)?;
 
-    let collateral_token_prices =
-        TokenPrices::compute(&scope_prices_ref, &scope_chain_ref, &strategy_account_ref)?;
+    let collateral_token_prices = TokenPrices::compute(
+        &scope_prices_ref,
+        &collateral_infos_ref,
+        &strategy_account_ref,
+    )?;
     let token_price = get_price_per_full_share(
         &strategy_account_ref,
         &whirlpool,

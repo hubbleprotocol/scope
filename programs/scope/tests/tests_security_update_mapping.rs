@@ -27,7 +27,7 @@ async fn test_working_update_mapping() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
     // Initialize oracle account
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price::default()).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &Price::default()).await;
     // Set the mapping
     let accounts = scope::accounts::UpdateOracleMapping {
         admin: ctx.admin.pubkey(),
@@ -56,7 +56,7 @@ async fn test_wrong_feed_name() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
     // Initialize oracle account
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price::default()).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &Price::default()).await;
     // Set the mapping
     let accounts = scope::accounts::UpdateOracleMapping {
         admin: ctx.admin.pubkey(),
@@ -88,7 +88,7 @@ async fn test_wrong_config_account() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
     // Initialize oracle account
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price::default()).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &Price::default()).await;
 
     // Create a fake config account
     let fake_config_pk = Pubkey::new_unique();
@@ -125,7 +125,7 @@ async fn test_wrong_mapping_account() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
     // Initialize oracle account
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price::default()).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &Price::default()).await;
 
     // Create a fake mapping account
     let fake_mapping_pk = Pubkey::new_unique();
@@ -162,7 +162,7 @@ async fn test_wrong_admin() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
     // Initialize oracle account
-    mock_oracles::set_price(&mut ctx, &TEST_PYTH_ORACLE, &Price::default()).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &Price::default()).await;
 
     // New (bad) admin
     let fake_admin = Keypair::new();

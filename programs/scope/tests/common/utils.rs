@@ -2,9 +2,56 @@ use std::fmt::Debug;
 
 use num_enum::TryFromPrimitive;
 use num_traits::cast::FromPrimitive;
-use solana_program::instruction::InstructionError;
+use scope::oracles::{
+    ktokens::{GlobalConfig, WhirlpoolStrategy},
+    OracleType,
+};
+use solana_program::instruction::{AccountMeta, InstructionError};
 use solana_program_test::BanksClientError;
 use solana_sdk::transaction::TransactionError;
+
+use crate::common::types::{OracleConf, TestContext};
+
+pub async fn get_refresh_list_accounts(
+    ctx: &mut TestContext,
+    conf: &OracleConf,
+) -> Vec<AccountMeta> {
+    let mut accounts: Vec<AccountMeta> = vec![];
+    let mut remaining_accounts = get_remaining_accounts(ctx, conf).await;
+    accounts.push(AccountMeta::new_readonly(conf.pubkey, false));
+    accounts.append(&mut remaining_accounts);
+    accounts
+}
+
+pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) -> Vec<AccountMeta> {
+    let mut accounts: Vec<AccountMeta> = vec![];
+    match conf.price_type {
+        OracleType::KToken => {
+            accounts.append(&mut get_ktoken_remaining_accounts(ctx, conf).await);
+        }
+        _ => {} // No remaining accounts to add
+    }
+    accounts
+}
+
+async fn get_ktoken_remaining_accounts(
+    ctx: &mut TestContext,
+    conf: &OracleConf,
+) -> Vec<AccountMeta> {
+    let strategy: WhirlpoolStrategy = ctx.get_zero_copy_account(&conf.pubkey).await.unwrap();
+    let global_config: GlobalConfig = ctx
+        .get_zero_copy_account(&strategy.global_config)
+        .await
+        .unwrap();
+
+    let mut accounts = vec![];
+    accounts.push(AccountMeta::new_readonly(strategy.global_config, false));
+    accounts.push(AccountMeta::new_readonly(global_config.token_infos, false));
+    accounts.push(AccountMeta::new_readonly(strategy.pool, false));
+    accounts.push(AccountMeta::new_readonly(strategy.position, false));
+    accounts.push(AccountMeta::new_readonly(strategy.scope_prices, false));
+    accounts
+}
 
 pub fn map_scope_error<T: Debug>(res: Result<T, BanksClientError>) -> scope::ScopeError {
     if let Err(BanksClientError::TransactionError(TransactionError::InstructionError(

@@ -2,6 +2,7 @@
 
 pub mod fixtures;
 pub mod mock_oracles;
+pub mod operations;
 pub mod runner;
 pub mod setup;
 pub mod types;

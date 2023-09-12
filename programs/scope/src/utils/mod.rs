@@ -22,6 +22,12 @@ pub fn account_deserialize<T: AccountDeserialize + Discriminator>(
         ScopeError::UnableToDeserializeAccount
     })?;
     if discriminator != T::discriminator() {
+        msg!(
+            "Expected discriminator for account {:?} ({:?}) is different from received {:?}",
+            account.key(),
+            T::discriminator(),
+            discriminator
+        );
         return Err(ScopeError::InvalidAccountDiscriminator);
     }
 

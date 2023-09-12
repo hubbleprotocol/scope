@@ -1,10 +1,12 @@
 use std::convert::TryInto;
 
 use anchor_lang::prelude::*;
-use solana_program::instruction::{get_stack_height, TRANSACTION_LEVEL_STACK_HEIGHT};
-use solana_program::pubkey;
-use solana_program::sysvar::instructions::{
-    load_current_index_checked, load_instruction_at_checked, ID as SYSVAR_INSTRUCTIONS_ID,
+use solana_program::{
+    instruction::{get_stack_height, TRANSACTION_LEVEL_STACK_HEIGHT},
+    pubkey,
+    sysvar::instructions::{
+        load_current_index_checked, load_instruction_at_checked, ID as SYSVAR_INSTRUCTIONS_ID,
+    },
 };
 
 use crate::{

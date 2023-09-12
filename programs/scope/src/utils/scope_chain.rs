@@ -281,65 +281,71 @@ impl ScopeChainAccount {
         prices: &OraclePrices,
         token_id: usize,
     ) -> Result<DatedPrice, ScopeChainError> {
-        let price_chain = self
+        let chain = self
             .chain_array
             .get(token_id)
-            .ok_or(ScopeChainError::NoChainForToken)?
-            .map(usize::from)
-            .map(|id| prices.prices.get(id));
-
-        let last_updated_slot = price_chain
-            .iter()
-            .filter_map(|&opt| opt.map(|price| price.last_updated_slot))
-            .reduce(|acc, val| acc.min(val))
             .ok_or(ScopeChainError::NoChainForToken)?;
-
-        let unix_timestamp = price_chain
-            .iter()
-            .filter_map(|&opt| opt.map(|price| price.unix_timestamp))
-            .reduce(|acc, val| acc.min(val))
-            .ok_or(ScopeChainError::NoChainForToken)?;
-
-        let total_decimals: u64 = price_chain
-            .iter()
-            .filter_map(|&opt| opt.map(|price| price.price.exp))
-            .try_fold(0u64, |acc, exp| acc.checked_add(exp))
-            .ok_or(ScopeChainError::MathOverflow)?;
-
-        // Final number of decimals is the last element one's which should be the quotation price.
-        let exp = price_chain
-            .iter()
-            .filter_map(|&opt| opt.map(|price| price.price.exp))
-            .last()
-            .unwrap(); // chain is never empty here by construction
-
-        // Compute token value by multiplying all value of the chain
-        let product = price_chain
-            .iter()
-            .filter_map(|&opt| opt.map(|price| price.price.value))
-            .try_fold(U128::from(1u128), |acc, value| {
-                acc.checked_mul(value.into())
-            })
-            .ok_or(ScopeChainError::MathOverflow)?;
-
-        // Compute final value by removing extra decimals
-        let scale_down_decimals: u32 = total_decimals.checked_sub(exp).unwrap().try_into().unwrap(); // Cannot fail by construction of `total_decimals`
-        let scale_down_factor = U128::from(10u128)
-            .checked_pow(U128::from(scale_down_decimals))
-            .unwrap();
-        let value: u64 = product
-            .checked_div(scale_down_factor)
-            .unwrap() // Cannot fail thanks to the early return
-            .try_into()
-            .map_err(|_| ScopeChainError::IntegerConversionOverflow)?;
-
-        Ok(DatedPrice {
-            last_updated_slot,
-            unix_timestamp,
-            price: Price { value, exp },
-            ..Default::default()
-        })
+        get_price_from_chain(prices, chain)
     }
+}
+
+pub fn get_price_from_chain(
+    prices: &OraclePrices,
+    chain: &[u16; MAX_CHAIN_LENGTH],
+) -> Result<DatedPrice, ScopeChainError> {
+    let price_chain = chain.map(usize::from).map(|id| prices.prices.get(id));
+
+    let last_updated_slot = price_chain
+        .iter()
+        .filter_map(|&opt| opt.map(|price| price.last_updated_slot))
+        .reduce(|acc, val| acc.min(val))
+        .ok_or(ScopeChainError::NoChainForToken)?;
+
+    let unix_timestamp = price_chain
+        .iter()
+        .filter_map(|&opt| opt.map(|price| price.unix_timestamp))
+        .reduce(|acc, val| acc.min(val))
+        .ok_or(ScopeChainError::NoChainForToken)?;
+
+    let total_decimals: u64 = price_chain
+        .iter()
+        .filter_map(|&opt| opt.map(|price| price.price.exp))
+        .try_fold(0u64, |acc, exp| acc.checked_add(exp))
+        .ok_or(ScopeChainError::MathOverflow)?;
+
+    // Final number of decimals is the last element one's which should be the quotation price.
+    let exp = price_chain
+        .iter()
+        .filter_map(|&opt| opt.map(|price| price.price.exp))
+        .last()
+        .unwrap(); // chain is never empty here by construction
+
+    // Compute token value by multiplying all value of the chain
+    let product = price_chain
+        .iter()
+        .filter_map(|&opt| opt.map(|price| price.price.value))
+        .try_fold(U128::from(1u128), |acc, value| {
+            acc.checked_mul(value.into())
+        })
+        .ok_or(ScopeChainError::MathOverflow)?;
+
+    // Compute final value by removing extra decimals
+    let scale_down_decimals: u32 = total_decimals.checked_sub(exp).unwrap().try_into().unwrap(); // Cannot fail by construction of `total_decimals`
+    let scale_down_factor = U128::from(10u128)
+        .checked_pow(U128::from(scale_down_decimals))
+        .unwrap();
+    let value: u64 = product
+        .checked_div(scale_down_factor)
+        .unwrap() // Cannot fail thanks to the early return
+        .try_into()
+        .map_err(|_| ScopeChainError::IntegerConversionOverflow)?;
+
+    Ok(DatedPrice {
+        last_updated_slot,
+        unix_timestamp,
+        price: Price { value, exp },
+        ..Default::default()
+    })
 }
 
 /// Errors that can be raised while creating or manipulating a scope chain
@@ -376,7 +382,10 @@ mod test {
     use strum::{EnumIter, IntoEnumIterator};
 
     use super::{PriceChain, ScopeChainAccount, ScopeChainError};
-    use crate::{DatedPrice, OraclePrices};
+    use crate::{
+        scope_chain::{get_price_from_chain, MAX_CHAIN_LENGTH},
+        DatedPrice, OraclePrices,
+    };
 
     #[test]
     fn create_chain_from_idx_array() {
@@ -477,6 +486,49 @@ mod test {
         }
 
         account
+    }
+
+    #[test]
+    fn price_from_one_token_chain() {
+        let scope_prices = get_test_scope_prices();
+        let chain: [u16; MAX_CHAIN_LENGTH] = [ScopeId::USDH.into(), u16::MAX, u16::MAX, u16::MAX];
+        let dated_price = get_price_from_chain(&scope_prices, &chain).unwrap();
+
+        assert_eq!(dated_price.price.value, 10_000_000_000);
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT);
+    }
+
+    #[test]
+    fn price_from_two_token_chain() {
+        let scope_prices = get_test_scope_prices();
+        let chain: [u16; MAX_CHAIN_LENGTH] = [
+            ScopeId::SOL_USDH.into(),
+            ScopeId::USDH.into(),
+            u16::MAX,
+            u16::MAX,
+        ];
+        let dated_price = get_price_from_chain(&scope_prices, &chain).unwrap();
+
+        assert_eq!(dated_price.price.value, 100 * 100 * 10_u64.pow(8));
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT);
+    }
+
+    #[test]
+    fn price_from_three_token_chain() {
+        let scope_prices = get_test_scope_prices();
+        let chain: [u16; MAX_CHAIN_LENGTH] = [
+            ScopeId::MSOL_SOL.into(),
+            ScopeId::SOL_USDH.into(),
+            ScopeId::USDH.into(),
+            u16::MAX,
+        ];
+        let dated_price = get_price_from_chain(&scope_prices, &chain).unwrap();
+
+        assert_eq!(dated_price.price.value, 100 * 100 * 100 * 10_u64.pow(8));
+        assert_eq!(dated_price.price.exp, 8);
+        assert_eq!(dated_price.last_updated_slot, T0_SLOT);
     }
 
     #[test]
