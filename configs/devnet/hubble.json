@@ -495,7 +495,7 @@
   },
   "100": {
     "label": "CHAI/USD",
-    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi", 
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
   },
@@ -540,5 +540,77 @@
     "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "108": {
+    "label": "Fake kSOL-bSOL (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "109": {
+    "label": "Fake kMNDE-MSOL (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "110": {
+    "label": "Fake kSTSOL (Orca)-USDC",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "111": {
+    "label": "Fake kUSDH-USDT (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "112": {
+    "label": "Fake kUXD-USDC (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "113": {
+    "label": "Fake kUSDH-USDC (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "114": {
+    "label": "Fake kSOL-JITOSOL (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "115": {
+    "label": "Fake kbSOL-MSOL (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "116": {
+    "label": "Fake kMSOL-JITOSOL (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "117": {
+    "label": "Fake kSOL-STSOL (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "118": {
+    "label": "Fake kUSDC-USDT (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "119": {
+    "label": "Fake kSOL-USDC (Orca)",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
   }
 }

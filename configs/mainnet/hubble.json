@@ -572,5 +572,77 @@
     "oracle_mapping": "AVGoVvdUCMiZ5oZtuE2wtxNNCqUH5dxixsYrnX7yXb6H",
     "oracle_type": "SwitchboardV2",
     "max_age": 200
+  },
+  "108": {
+    "label": "kSOL-bSOL (Orca)",
+    "oracle_mapping": "7ypH9hpQ6fLRXCVdK9Zb6zSgUvzFp44EN7PWfWdUBDb5",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "109": {
+    "label": "kMNDE-MSOL (Orca)",
+    "oracle_mapping": "FAVSpnZsNWKTnPmn4qPttZjT6MiWyCQjUVzDuf6pLcTB",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "110": {
+    "label": "kSTSOL-USDC (Orca)",
+    "oracle_mapping": "8NP2J7q6swBkVoLDZAqkejKPQrWkRizZHaVVM897CKpA",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "111": {
+    "label": "kUSDH-USDT (Orca)",
+    "oracle_mapping": "2VQaDuSqqxeX2h9dS9WgpvN6ShaBxd8JjaaWEvbmTDY1",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "112": {
+    "label": "kUXD-USDC (Orca)",
+    "oracle_mapping": "BfyQYYr2T9eJfMfq5gPXcq3SUkJSh2ahtk7ZNUCzkx9e",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "113": {
+    "label": "kUSDH-USDC (Orca)",
+    "oracle_mapping": "Cfuy5T6osdazUeLego5LFycBQebm9PP3H7VNdCndXXEN",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "114": {
+    "label": "kSOL-JITOSOL (Orca)",
+    "oracle_mapping": "HCntzqDU5wXSWjwgLQP5hqh3kLHRYizKtPErvSCyggXd",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "115": {
+    "label": "kbSOL-MSOL (Orca)",
+    "oracle_mapping": "HxuncSjLVEV2qjhHjQodekQMsUMiSwHe2ApMqsBsBJap",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "116": {
+    "label": "kMSOL-JITOSOL (Orca)",
+    "oracle_mapping": "9LtLV3PreTYAXz7MPcg4ZgSu923zFdJXkD7TA5TqhFKy",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "117": {
+    "label": "kSOL-STSOL (Orca)",
+    "oracle_mapping": "ByXB4xCxVhmUEmQj3Ut7byZ1Hbva1zhKjaVcv3jBMN7E",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "118": {
+    "label": "kUSDC-USDT (Orca)",
+    "oracle_mapping": "98kNMp1aqWoYAaUU8m5REBAYVwhFb4aX9yoSpgq8kUFu",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "119": {
+    "label": "kSOL-USDC (Orca)",
+    "oracle_mapping": "5EfeGn1h7m6Rx9mGEmamDoxMtdhRmUh2N9fYRiDQqteS",
+    "oracle_type": "KToken",
+    "max_age": 250
   }
 }
