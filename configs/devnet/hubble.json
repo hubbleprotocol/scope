@@ -535,80 +535,50 @@
     "oracle_type": "SwitchboardV2",
     "max_age": 200
   },
-  "107": {
-    "label": "TWAP EUROE/USD",
-    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
-  },
   "108": {
-    "label": "Fake kSOL-bSOL (Orca)",
+    "label": "Fake kSOL-bSOL_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
   },
   "109": {
-    "label": "Fake kMNDE-MSOL (Orca)",
+    "label": "Fake kMNDE-MSOL_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
   },
   "110": {
-    "label": "Fake kSTSOL (Orca)-USDC",
+    "label": "Fake kSTSOL-USDC_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
   },
   "111": {
-    "label": "Fake kUSDH-USDT (Orca)",
+    "label": "Fake kUSDH-USDT_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
   },
   "112": {
-    "label": "Fake kUXD-USDC (Orca)",
+    "label": "Fake kSOL-JITOSOL_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
   },
   "113": {
-    "label": "Fake kUSDH-USDC (Orca)",
+    "label": "Fake kbSOL-MSOL_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
   },
   "114": {
-    "label": "Fake kSOL-JITOSOL (Orca)",
+    "label": "Fake kMSOL-JITOSOL_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
   },
   "115": {
-    "label": "Fake kbSOL-MSOL (Orca)",
-    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
-    "oracle_type": "KToken",
-    "max_age": 250
-  },
-  "116": {
-    "label": "Fake kMSOL-JITOSOL (Orca)",
-    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
-    "oracle_type": "KToken",
-    "max_age": 250
-  },
-  "117": {
-    "label": "Fake kSOL-STSOL (Orca)",
-    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
-    "oracle_type": "KToken",
-    "max_age": 250
-  },
-  "118": {
-    "label": "Fake kUSDC-USDT (Orca)",
-    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
-    "oracle_type": "KToken",
-    "max_age": 250
-  },
-  "119": {
-    "label": "Fake kSOL-USDC (Orca)",
+    "label": "Fake kSOL-USDC_Orca/USD",
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
