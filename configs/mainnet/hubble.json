@@ -120,7 +120,7 @@
     "label": "MNDE/USD",
     "oracle_mapping": "4pDjBPCEHamdZwUab5hcqn4VYUmKx84CCCVT6NYXJGTv",
     "oracle_type": "SwitchboardV2",
-    "max_age": 400
+    "max_age": 200
   },
   "25": {
     "label": "HBB/USD",
