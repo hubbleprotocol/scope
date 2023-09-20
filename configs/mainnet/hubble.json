@@ -64,24 +64,6 @@
     "oracle_type": "SwitchboardV2",
     "max_age": 150
   },
-  "14": {
-    "label": "cSOL/SOL",
-    "oracle_mapping": "8PbodeaosQP19SjYFx855UMqWxH2HynZLdBXmsrbac36",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
-  "15": {
-    "label": "cETH/ETH",
-    "oracle_mapping": "CPDiKagfozERtJ33p7HHhEfJERjvfk1VAjMXAFLrvrKP",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
-  "17": {
-    "label": "cMSOL/MSOL",
-    "oracle_mapping": "CCpirWrgNuBVLdkP2haxLTbD6XqEgaYuVXixbbpxUB6",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
   "18": {
     "label": "wstETH/USD",
     "oracle_mapping": "5A4EuWpscKbGGfYrTPPXAf9tvww5WuBBVm6tgzLcWSZj",
@@ -98,12 +80,6 @@
     "label": "USDC/USD",
     "oracle_mapping": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
     "oracle_type": "Pyth"
-  },
-  "21": {
-    "label": "cUSDC/USDC",
-    "oracle_mapping": "BgxfHJDzm44T7XG68MYKx7YisTjZu73tVovyZSjJMpmw",
-    "oracle_type": "CToken",
-    "max_age": 600
   },
   "22": {
     "label": "USDT/USD",
@@ -126,24 +102,6 @@
     "label": "HBB/USD",
     "oracle_mapping": "Fz4tyRWTuwD3xdN5WVGxsZziFHJn4MucYf8MsfeZNqUp",
     "oracle_type": "SwitchboardV2",
-    "max_age": 600
-  },
-  "26": {
-    "label": "cORCA/ORCA",
-    "oracle_mapping": "FKZTsydxPShJ8baThobis6qFxTjALMkVC49EA88wqvm7",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
-  "29": {
-    "label": "cRAY/RAY",
-    "oracle_mapping": "9n2exoMQwMTzfw6NFoFFujxYPndWVLtKREJePssrKb36",
-    "oracle_type": "CToken",
-    "max_age": 600
-  },
-  "31": {
-    "label": "cSTSOL/STSOL",
-    "oracle_mapping": "5sjkv6HD8wycocJ4tC4U36HHbvgcXYqcyiPRUkncnwWs",
-    "oracle_type": "CToken",
     "max_age": 600
   },
   "33": {
