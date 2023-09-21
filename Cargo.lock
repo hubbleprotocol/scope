@@ -3622,6 +3622,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "scope-types"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "bytemuck",
+ "cfg-if",
+ "num-derive",
+ "num-traits",
+ "num_enum",
+ "solana-program",
+]
+
+[[package]]
 name = "scoped-tls"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

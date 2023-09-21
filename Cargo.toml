@@ -1,5 +1,10 @@
 [workspace]
-members = ["programs/*", "off_chain/scope-cli", "off_chain/orbit-link"]
+members = [
+    "programs/*",
+    "programs/scope/types",
+    "off_chain/scope-cli",
+    "off_chain/orbit-link"
+]
 resolver = "2"
 
 [profile.dev]
