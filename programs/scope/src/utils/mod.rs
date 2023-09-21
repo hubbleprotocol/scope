@@ -1,3 +1,4 @@
+pub mod macros;
 pub mod scope_chain;
 
 use std::cell::Ref;

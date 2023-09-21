@@ -1,18 +1,31 @@
+mod clmm;
 mod kamino;
 mod orca_state;
+mod raydium_state;
 
 use anchor_lang::prelude::*;
 pub use kamino::{CollateralInfo, CollateralInfos, GlobalConfig, RebalanceRaw, WhirlpoolStrategy};
-use orca_state::{Position as PositionParser, Whirlpool as WhirlpoolParser};
+use orca_state::{Position as OrcaPositionParser, Whirlpool as WhirlpoolParser};
+use raydium_state::{
+    PersonalPositionState as RaydiumPositionParser, PoolState as RaydiumPoolParser,
+};
 
 use self::kamino::{get_price_per_full_share, TokenPrices};
-use crate::{utils::zero_copy_deserialize, DatedPrice, Price, Result, ScopeError};
+use crate::{
+    oracles::ktokens::{
+        clmm::{orca_clmm::OrcaClmm, raydium_clmm::RaydiumClmm, Clmm},
+        kamino::{scope::get_prices_from_data, DEX},
+    },
+    utils::zero_copy_deserialize,
+    DatedPrice, Price, Result, ScopeError,
+};
 
 const USD_DECIMALS_PRECISION: u8 = 6;
 
 // Gives the price of 1 kToken in USD
 pub fn get_price<'a, 'b>(
     k_account: &AccountInfo,
+    clock: &Clock,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
 ) -> Result<DatedPrice>
 where
@@ -85,23 +98,57 @@ where
     // Deserialize accounts
     let collateral_infos_ref =
         zero_copy_deserialize::<CollateralInfos>(collateral_infos_account_info)?;
-    let whirlpool = WhirlpoolParser::from_account_to_orca_whirlpool(pool_account_info)?;
-    let position = PositionParser::from_account_to_orca_position(position_account_info)?;
+
+    let dex = DEX::try_from(strategy_account_ref.strategy_dex).unwrap();
+    let clmm: Box<dyn Clmm> = match dex {
+        DEX::Orca => {
+            let pool = WhirlpoolParser::from_account_to_orca_whirlpool(pool_account_info)?;
+            let position = if strategy_account_ref.position != Pubkey::default() {
+                let position =
+                    OrcaPositionParser::from_account_to_orca_position(position_account_info)?;
+                Some(position)
+            } else {
+                None
+            };
+            Box::new(OrcaClmm {
+                pool,
+                position,
+                lower_tick_array: None,
+                upper_tick_array: None,
+            })
+        }
+        DEX::Raydium => {
+            let pool = RaydiumPoolParser::from_account_to_raydium_pool(pool_account_info)?;
+            let position = if strategy_account_ref.position != Pubkey::default() {
+                let position =
+                    RaydiumPositionParser::from_account_to_raydium_position(position_account_info)?;
+                Some(position)
+            } else {
+                None
+            };
+            Box::new(RaydiumClmm {
+                pool,
+                position,
+                protocol_position: None,
+                lower_tick_array: None,
+                upper_tick_array: None,
+            })
+        }
+    };
     let scope_prices_ref = zero_copy_deserialize::<crate::OraclePrices>(scope_prices_account_info)?;
 
-    let collateral_token_prices = TokenPrices::compute(
+    let token_prices = get_prices_from_data(
         &scope_prices_ref,
-        &collateral_infos_ref,
+        &collateral_infos_ref.infos,
         &strategy_account_ref,
-    )?;
-    let token_price = get_price_per_full_share(
-        &strategy_account_ref,
-        &whirlpool,
-        &position,
-        &collateral_token_prices,
+        Some(clmm.as_ref()),
+        clock.slot,
     )?;
 
-    let last_updated_slot = collateral_token_prices
+    let token_price =
+        get_price_per_full_share(&strategy_account_ref, clmm.as_ref(), &token_prices)?;
+
+    let last_updated_slot = token_prices
         .price_a
         .last_updated_slot
         .min(collateral_token_prices.price_b.last_updated_slot);

@@ -80,7 +80,7 @@ where
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::CToken => ctokens::get_price(base_account, clock),
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
-        OracleType::KToken => ktokens::get_price(base_account, extra_accounts),
+        OracleType::KToken => ktokens::get_price(base_account, clock, extra_accounts),
         OracleType::PythEMA => pyth_ema::get_price(base_account),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")

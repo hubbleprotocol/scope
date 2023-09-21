@@ -6,86 +6,284 @@ use anchor_lang::prelude::{
 };
 use decimal_wad::{
     common::{TryDiv, TryMul},
-    decimal::{Decimal, U192},
+    decimal::Decimal,
     rate::U128,
 };
 use num::traits::Pow;
-use whirlpool::math::sqrt_price_from_tick_index;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 pub use whirlpool::state::{Position, PositionRewardInfo, Whirlpool, WhirlpoolRewardInfo};
 
 use crate::{
-    oracles::ktokens::kamino::price_utils::calc_price_from_sqrt_price, scope_chain,
-    scope_chain::ScopeChainError, utils::zero_copy_deserialize, DatedPrice, OraclePrices,
-    ScopeError, ScopeResult,
+    dbg_msg,
+    oracles::ktokens::{clmm::Clmm, kamino::price_utils::calc_market_value_token_usd},
+    scope_chain,
+    scope_chain::ScopeChainError,
+    utils::zero_copy_deserialize,
+    DatedPrice, OraclePrices, ScopeError, ScopeResult,
 };
 
 const TARGET_EXPONENT: u64 = 12;
 const SIZE_REBALANCE_PARAMS: usize = 128;
 const SIZE_REBALANCE_STATE: usize = 256;
 
+pub const ORCA_REWARDS_COUNT: usize = 3;
+
+pub const KAMINO_REWARDS_UPPER_INDEX: usize = 5;
+
 use super::USD_DECIMALS_PRECISION;
 
 pub fn get_price_per_full_share(
     strategy: &WhirlpoolStrategy,
-    whirlpool: &Whirlpool,
-    position: &Position,
+    clmm: &dyn Clmm,
     prices: &TokenPrices,
 ) -> ScopeResult<U128> {
-    let holdings = holdings(strategy, whirlpool, position, prices)?;
+    let holdings = holdings(strategy, clmm, prices)?;
 
-    let shares_issued = strategy.shares_issued;
-    let shares_decimals = strategy.shares_mint_decimals;
+    get_price_per_full_share_impl(
+        &holdings,
+        strategy.shares_issued,
+        strategy.shares_mint_decimals,
+    )
+}
 
+pub fn get_price_per_full_share_impl(
+    holdings: &Holdings,
+    shares_issued: u64,
+    shares_decimals: u64,
+) -> ScopeResult<U128> {
     if shares_issued == 0 {
-        Ok(U128::from(0_u128))
+        Ok(underlying_unit(shares_decimals))
     } else {
-        Ok(Decimal::from(underlying_unit(shares_decimals))
-            .try_mul(holdings)?
+        let res = Decimal::from(underlying_unit(shares_decimals))
+            .try_mul(holdings.total_sum)?
             .try_div(shares_issued)?
-            .try_ceil()?)
+            .try_ceil()?;
+
+        Ok(res)
     }
 }
 
-fn holdings(
+pub fn holdings_usd(
     strategy: &WhirlpoolStrategy,
-    whirlpool: &Whirlpool,
-    position: &Position,
+    available: TokenAmounts,
+    invested: TokenAmounts,
+    fees: TokenAmounts,
+    rewards: RewardsAmounts,
     prices: &TokenPrices,
-) -> ScopeResult<U128> {
-    let available = amounts_available(strategy);
-
-    let decimals_a = strategy.token_a_mint_decimals;
-    let decimals_b = strategy.token_b_mint_decimals;
-
-    // https://github.com/0xparashar/UniV3NFTOracle/blob/master/contracts/UniV3NFTOracle.sol#L27
-    // We are using the sqrt price derived from price_a and price_b
-    // instead of the whirlpool price which could be manipulated/stale
-    let sqrt_price_from_oracle = price_utils::sqrt_price_from_scope_prices(
-        prices.price_a.price,
-        prices.price_b.price,
-        decimals_a,
-        decimals_b,
-    )?;
-
-    if cfg!(feature = "debug") {
-        let w = calc_price_from_sqrt_price(whirlpool.sqrt_price, decimals_a, decimals_b);
-        let o = calc_price_from_sqrt_price(sqrt_price_from_oracle, decimals_a, decimals_b);
-        let diff = (w - o).abs() / w;
-        msg!("o: {} w: {} d: {}%", w, o, diff * 100.0);
-    }
-
-    let invested = amounts_invested(position, sqrt_price_from_oracle);
-    // We want the minimum price we would get in the event of a liquidation so ignore pending fees and pending rewards
-
+) -> ScopeResult<Holdings> {
     let available_usd = amounts_usd(strategy, &available, prices)?;
 
     let invested_usd = amounts_usd(strategy, &invested, prices)?;
 
+    let fees_usd = amounts_usd(strategy, &fees, prices)?;
+
+    let rewards_usd = rewards_total_usd_value(strategy, &rewards, prices)?;
+
     let total_sum = available_usd
         .checked_add(invested_usd)
-        .ok_or(ScopeError::IntegerOverflow)?;
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+        .checked_add(fees_usd)
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+        .checked_add(rewards_usd)
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?;
 
-    Ok(total_sum)
+    Ok(Holdings {
+        available,
+        available_usd,
+        invested,
+        invested_usd,
+        fees,
+        fees_usd,
+        rewards,
+        rewards_usd,
+        total_sum,
+    })
+}
+
+pub fn holdings(
+    strategy: &WhirlpoolStrategy,
+    clmm: &dyn Clmm,
+    prices: &TokenPrices,
+) -> ScopeResult<Holdings> {
+    // TODO: add uncollected rewards
+    // Not adding rewards exposes the program to rent seekers
+    // there would be a time window when
+    // you can earn more than you rightfully should,
+    // at the expense of those who actually should
+    // but doesn't open the program to attacks
+
+    let available = amounts_available(strategy);
+    let invested = amounts_invested(clmm)?;
+    let fees = clmm.get_position_pending_fees()?;
+    let rewards = clmm.get_position_pending_rewards()?;
+
+    holdings_usd(strategy, available, invested, fees, rewards, prices)
+}
+
+pub fn amounts_invested(clmm: &dyn Clmm) -> ScopeResult<TokenAmounts> {
+    amounts_invested_from_liquidity(clmm, clmm.get_position_liquidity()?)
+}
+
+pub fn amounts_invested_from_liquidity(
+    clmm: &dyn Clmm,
+    liquidity: u128,
+) -> ScopeResult<TokenAmounts> {
+    let (a, b) = if liquidity > 0 {
+        let sqrt_price_lower = clmm.sqrt_price_from_tick(clmm.get_position_tick_lower_index()?);
+        let sqrt_price_upper = clmm.sqrt_price_from_tick(clmm.get_position_tick_upper_index()?);
+
+        let (delta_a, delta_b) = clmm.get_amounts_from_liquidity(
+            clmm.get_current_sqrt_price(),
+            sqrt_price_lower,
+            sqrt_price_upper,
+            liquidity.try_into().unwrap(),
+        );
+
+        (delta_a, delta_b)
+    } else {
+        (0, 0)
+    };
+
+    Ok(TokenAmounts { a, b })
+}
+
+// We calculate the value of any tokens to USD
+// Since all tokens are quoted to USD
+// We calculate up to USD_DECIMALS_PRECISION (as exponent)
+pub fn amounts_usd_token(
+    strategy: &WhirlpoolStrategy,
+    token_amount: u64,
+    is_a: bool,
+    prices: &TokenPrices,
+) -> ScopeResult<U128> {
+    let (token_collateral_id, token_mint_decimals) = match is_a {
+        true => (
+            CollateralToken::try_from(strategy.token_a_collateral_id)
+                .map_err(|_| ScopeError::ConversionFailure)?,
+            strategy.token_a_mint_decimals,
+        ),
+        false => (
+            CollateralToken::try_from(strategy.token_b_collateral_id)
+                .map_err(|_| ScopeError::ConversionFailure)?,
+            strategy.token_b_mint_decimals,
+        ),
+    };
+
+    if token_amount > 0 {
+        calc_market_value_token_usd(
+            token_amount,
+            &prices.get(token_collateral_id)?,
+            u8::try_from(token_mint_decimals)?,
+        )
+    } else {
+        Ok(U128::from(0))
+    }
+}
+
+pub fn pending_fees(position: &Position) -> TokenAmounts {
+    TokenAmounts {
+        a: position.fee_owed_a,
+        b: position.fee_owed_b,
+    }
+}
+
+pub fn pending_rewards(
+    position: &Position,
+    whirlpool: &Whirlpool,
+    strategy: &WhirlpoolStrategy,
+) -> RewardsAmounts {
+    let reward_0 = if whirlpool.reward_infos[0].initialized() {
+        position.reward_infos[0].amount_owed
+    } else {
+        0
+    };
+    let reward_1 = if whirlpool.reward_infos[1].initialized() {
+        position.reward_infos[1].amount_owed
+    } else {
+        0
+    };
+    let reward_2 = if whirlpool.reward_infos[2].initialized() {
+        position.reward_infos[2].amount_owed
+    } else {
+        0
+    };
+    let reward_3 = if strategy.kamino_rewards[0].initialized() {
+        strategy.kamino_rewards[0].amount_uncollected
+    } else {
+        0
+    };
+    let reward_4 = if strategy.kamino_rewards[1].initialized() {
+        strategy.kamino_rewards[1].amount_uncollected
+    } else {
+        0
+    };
+    let reward_5 = if strategy.kamino_rewards[2].initialized() {
+        strategy.kamino_rewards[2].amount_uncollected
+    } else {
+        0
+    };
+    RewardsAmounts {
+        reward_0,
+        reward_1,
+        reward_2,
+        reward_3,
+        reward_4,
+        reward_5,
+    }
+}
+
+pub fn orca_pending_rewards(position: &Position, whirlpool: &Whirlpool) -> RewardsAmounts {
+    let reward_0 = if whirlpool.reward_infos[0].initialized() {
+        position.reward_infos[0].amount_owed
+    } else {
+        0
+    };
+    let reward_1 = if whirlpool.reward_infos[1].initialized() {
+        position.reward_infos[1].amount_owed
+    } else {
+        0
+    };
+    let reward_2 = if whirlpool.reward_infos[2].initialized() {
+        position.reward_infos[2].amount_owed
+    } else {
+        0
+    };
+    RewardsAmounts {
+        reward_0,
+        reward_1,
+        reward_2,
+        reward_3: 0,
+        reward_4: 0,
+        reward_5: 0,
+    }
+}
+
+use raydium_amm_v3::states::{PersonalPositionState as RaydiumPosition, PoolState};
+
+pub fn raydium_pending_rewards(position: &RaydiumPosition, pool: &PoolState) -> RewardsAmounts {
+    let reward_0 = if pool.reward_infos[0].initialized() {
+        position.reward_infos[0].reward_amount_owed
+    } else {
+        0
+    };
+    let reward_1 = if pool.reward_infos[1].initialized() {
+        position.reward_infos[1].reward_amount_owed
+    } else {
+        0
+    };
+    let reward_2 = if pool.reward_infos[2].initialized() {
+        position.reward_infos[2].reward_amount_owed
+    } else {
+        0
+    };
+    RewardsAmounts {
+        reward_0,
+        reward_1,
+        reward_2,
+        reward_3: 0,
+        reward_4: 0,
+        reward_5: 0,
+    }
 }
 
 fn amounts_usd(
@@ -101,36 +299,127 @@ fn amounts_usd(
         .ok_or(ScopeError::IntegerOverflow)
 }
 
-// We calculate the value of any tokens to USD
-// Since all tokens are quoted to USD
-// We calculate up to USD_DECIMALS_PRECISION (as exponent)
-fn amounts_usd_token(
+pub fn reward_amount_usd(
     strategy: &WhirlpoolStrategy,
-    token_amount: u64,
-    is_a: bool,
+    amount: u64,
     prices: &TokenPrices,
+    reward_index: u8,
+    reward_collateral_id: u8,
 ) -> ScopeResult<U128> {
-    let (price, token_mint_decimals) = match is_a {
-        true => (prices.price_a.price, strategy.token_a_mint_decimals),
-        false => (prices.price_b.price, strategy.token_b_mint_decimals),
-    };
-    let token_mint_decimal = u8::try_from(token_mint_decimals)?;
+    let reward_decimals = op_utils::strategy_reward_decimals(strategy, reward_index)?;
 
-    if token_amount == 0 {
-        return Ok(U128::from(0_u128));
+    if amount == 0 {
+        return Ok(U128::from(0));
     }
 
-    U128::from(token_amount)
-        .checked_mul(U128::from(price.value))
-        .ok_or(ScopeError::MathOverflow)?
-        .checked_div(ten_pow(
-            token_mint_decimal
-                .checked_add(price.exp.try_into()?)
-                .ok_or(ScopeError::MathOverflow)?
-                .checked_sub(USD_DECIMALS_PRECISION)
-                .ok_or(ScopeError::MathOverflow)?,
-        ))
-        .ok_or(ScopeError::MathOverflow)
+    let price = prices.get(
+        CollateralToken::try_from(reward_collateral_id)
+            .map_err(|_| ScopeError::ConversionFailure)?,
+    )?;
+
+    Ok(calc_market_value_token_usd(amount, &price, reward_decimals).unwrap())
+}
+
+pub fn rewards_total_usd_value(
+    strategy: &WhirlpoolStrategy,
+    rewards: &RewardsAmounts,
+    prices: &TokenPrices,
+) -> ScopeResult<U128> {
+    let rewards_0_usd =
+        if strategy.reward_0_vault == strategy.base_vault_authority || rewards.reward_0 == 0 {
+            U128::from(0)
+        } else {
+            reward_amount_usd(
+                strategy,
+                rewards.reward_0,
+                prices,
+                0,
+                strategy.reward_0_collateral_id.try_into().unwrap(),
+            )?
+        };
+
+    let rewards_1_usd =
+        if strategy.reward_1_vault == strategy.base_vault_authority || rewards.reward_1 == 0 {
+            U128::from(0)
+        } else {
+            reward_amount_usd(
+                strategy,
+                rewards.reward_1,
+                prices,
+                1,
+                strategy.reward_1_collateral_id.try_into().unwrap(),
+            )?
+        };
+
+    let rewards_2_usd =
+        if strategy.reward_2_vault == strategy.base_vault_authority || rewards.reward_2 == 0 {
+            U128::from(0)
+        } else {
+            reward_amount_usd(
+                strategy,
+                rewards.reward_2,
+                prices,
+                2,
+                strategy.reward_2_collateral_id.try_into().unwrap(),
+            )?
+        };
+
+    let rewards_3_usd = if !strategy.kamino_rewards[0].initialized() || rewards.reward_3 == 0 {
+        U128::from(0)
+    } else {
+        reward_amount_usd(
+            strategy,
+            rewards.reward_3,
+            prices,
+            3,
+            strategy.kamino_rewards[0]
+                .reward_collateral_id
+                .try_into()
+                .unwrap(),
+        )?
+    };
+
+    let rewards_4_usd = if !strategy.kamino_rewards[1].initialized() || rewards.reward_4 == 0 {
+        U128::from(0)
+    } else {
+        reward_amount_usd(
+            strategy,
+            rewards.reward_4,
+            prices,
+            4,
+            strategy.kamino_rewards[1]
+                .reward_collateral_id
+                .try_into()
+                .unwrap(),
+        )?
+    };
+
+    let rewards_5_usd = if !strategy.kamino_rewards[2].initialized() || rewards.reward_5 == 0 {
+        U128::from(0)
+    } else {
+        reward_amount_usd(
+            strategy,
+            rewards.reward_5,
+            prices,
+            5,
+            strategy.kamino_rewards[2]
+                .reward_collateral_id
+                .try_into()
+                .unwrap(),
+        )?
+    };
+
+    rewards_0_usd
+        .checked_add(rewards_1_usd)
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+        .checked_add(rewards_2_usd)
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+        .checked_add(rewards_3_usd)
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+        .checked_add(rewards_4_usd)
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+        .checked_add(rewards_5_usd)
+        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))
 }
 
 /// The decimal scalar for vault underlying and operations involving exchangeRate().
@@ -145,86 +434,91 @@ fn amounts_available(strategy: &WhirlpoolStrategy) -> TokenAmounts {
     }
 }
 
-fn amounts_invested(position: &Position, pool_sqrt_price: u128) -> TokenAmounts {
-    let (a, b) = if position.liquidity > 0 {
-        let sqrt_price_lower = sqrt_price_from_tick_index(position.tick_lower_index);
-        let sqrt_price_upper = sqrt_price_from_tick_index(position.tick_upper_index);
+pub mod liquidity_calcs {
+    use decimal_wad::decimal::U192;
 
-        let (delta_a, delta_b) = get_amounts_for_liquidity(
-            pool_sqrt_price,
-            sqrt_price_lower,
-            sqrt_price_upper,
-            position.liquidity,
-        );
+    use super::*;
 
-        (delta_a, delta_b)
-    } else {
-        (0, 0)
-    };
+    pub fn get_amount_b_for_liquidity(
+        mut sqrt_price_a: u128,
+        mut sqrt_price_b: u128,
+        liquidity: u128,
+        round_up: bool,
+    ) -> u128 {
+        // println!(
+        //     "get_amount_b_for_liquidity sqrt_price_a={:?} sqrt_price_b={:?} liquidity={:?} round_up={:?}",
+        //     sqrt_price_a, sqrt_price_b, liquidity, round_up
+        // );
+        if sqrt_price_a > sqrt_price_b {
+            std::mem::swap(&mut sqrt_price_a, &mut sqrt_price_b)
+        }
 
-    TokenAmounts { a, b }
+        let q64 = U192::from(2_u128.pow(64));
+
+        let sqrt_price_a = U192::from(sqrt_price_a);
+        let sqrt_price_b = U192::from(sqrt_price_b);
+        let diff = sqrt_price_b.checked_sub(sqrt_price_a).unwrap();
+
+        let numerator = U192::from(liquidity).checked_mul(diff).unwrap();
+        let result = numerator.checked_div(q64).unwrap();
+        let result = if round_up {
+            if numerator.div_mod(q64).1.as_u128() != 0 {
+                result.checked_add(U192::from(1)).unwrap()
+            } else {
+                result
+            }
+        } else {
+            result
+        };
+        result.as_u128()
+    }
+
+    pub fn get_amount_a_for_liquidity(
+        mut sqrt_price_a: u128,
+        mut sqrt_price_b: u128,
+        liquidity: u128,
+        round_up: bool,
+    ) -> u128 {
+        if sqrt_price_a > sqrt_price_b {
+            std::mem::swap(&mut sqrt_price_a, &mut sqrt_price_b)
+        }
+
+        let sqrt_price_a = U192::from(sqrt_price_a);
+        let sqrt_price_b = U192::from(sqrt_price_b);
+        let liquidity = U192::from(liquidity);
+
+        let diff = sqrt_price_b.checked_sub(sqrt_price_a).unwrap();
+        let numerator = liquidity.checked_mul(diff).unwrap() << 64;
+        let denominator = sqrt_price_b.checked_mul(sqrt_price_a).unwrap();
+        let res = if round_up {
+            math::div_round_up(numerator, denominator).unwrap()
+        } else {
+            numerator.checked_div(denominator).unwrap()
+        };
+
+        res.as_u128()
+    }
 }
 
-fn get_amounts_for_liquidity(
-    current_sqrt_price: u128,
-    mut sqrt_price_a: u128,
-    mut sqrt_price_b: u128,
-    liquidity: u128,
-) -> (u64, u64) {
-    if sqrt_price_a > sqrt_price_b {
-        std::mem::swap(&mut sqrt_price_a, &mut sqrt_price_b)
+pub mod math {
+    use decimal_wad::decimal::U192;
+
+    use crate::{ScopeError, ScopeResult};
+
+    pub fn div_round_up(n: U192, d: U192) -> ScopeResult<U192> {
+        div_round_up_if(n, d, true)
     }
 
-    let (mut amount0, mut amount1) = (0, 0);
-    if current_sqrt_price < sqrt_price_a {
-        amount0 = get_amount_a_for_liquidity(sqrt_price_a, sqrt_price_b, liquidity);
-    } else if current_sqrt_price < sqrt_price_b {
-        amount0 = get_amount_a_for_liquidity(current_sqrt_price, sqrt_price_b, liquidity);
-        amount1 = get_amount_b_for_liquidity(sqrt_price_a, current_sqrt_price, liquidity);
-    } else {
-        amount1 = get_amount_b_for_liquidity(sqrt_price_a, sqrt_price_b, liquidity);
+    pub fn div_round_up_if(n: U192, d: U192, round_up: bool) -> ScopeResult<U192> {
+        let zero = U192::zero();
+        if d == zero {
+            return Err(ScopeError::ConversionFailure); // todo - elliot
+        }
+
+        let q = n / d;
+
+        Ok(if round_up && n % d > zero { q + 1 } else { q })
     }
-
-    (amount0 as u64, amount1 as u64)
-}
-
-fn get_amount_a_for_liquidity(
-    mut sqrt_price_a: u128,
-    mut sqrt_price_b: u128,
-    liquidity: u128,
-) -> u128 {
-    if sqrt_price_a > sqrt_price_b {
-        std::mem::swap(&mut sqrt_price_a, &mut sqrt_price_b)
-    }
-
-    let sqrt_price_a = U192::from(sqrt_price_a);
-    let sqrt_price_b = U192::from(sqrt_price_b);
-    let liquidity = U192::from(liquidity);
-
-    let diff = sqrt_price_b.checked_sub(sqrt_price_a).unwrap();
-    let numerator = liquidity.checked_mul(diff).unwrap() << 64;
-    let denominator = sqrt_price_b.checked_mul(sqrt_price_a).unwrap();
-    numerator.checked_div(denominator).unwrap().as_u128()
-}
-
-fn get_amount_b_for_liquidity(
-    mut sqrt_price_a: u128,
-    mut sqrt_price_b: u128,
-    liquidity: u128,
-) -> u128 {
-    if sqrt_price_a > sqrt_price_b {
-        std::mem::swap(&mut sqrt_price_a, &mut sqrt_price_b)
-    }
-
-    let q64 = U192::from(2_u128.pow(64));
-
-    let sqrt_price_a = U192::from(sqrt_price_a);
-    let sqrt_price_b = U192::from(sqrt_price_b);
-    let diff = sqrt_price_b.checked_sub(sqrt_price_a).unwrap();
-
-    let numerator = U192::from(liquidity).checked_mul(diff).unwrap();
-    let result = numerator.checked_div(q64).unwrap();
-    result.as_u128()
 }
 
 fn ten_pow(exponent: u8) -> U128 {
@@ -435,6 +729,12 @@ pub struct KaminoRewardInfo {
     pub amount_available: u64,
 }
 
+impl KaminoRewardInfo {
+    pub fn initialized(&self) -> bool {
+        self.reward_mint.ne(&Pubkey::default()) && self.decimals > 0
+    }
+}
+
 #[account(zero_copy)]
 #[derive(Debug)]
 pub struct GlobalConfig {
@@ -595,22 +895,434 @@ pub struct KaminoPrice {
     pub exp: u64,
 }
 
+impl KaminoPrice {
+    pub fn is_zero(&self) -> bool {
+        self.value == 0
+    }
+}
+
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+pub struct CollateralToken(u64);
+
+impl CollateralToken {
+    pub fn to_usize(self) -> usize {
+        let amount: u64 = self.0;
+        usize::try_from(amount).unwrap()
+    }
+}
+
+impl From<u8> for CollateralToken {
+    fn from(collateral_id: u8) -> Self {
+        CollateralToken(u64::from(collateral_id))
+    }
+}
+
+impl From<CollateralToken> for u64 {
+    fn from(val: CollateralToken) -> Self {
+        val.0
+    }
+}
+
+impl From<u64> for CollateralToken {
+    fn from(collateral_id: u64) -> Self {
+        CollateralToken(collateral_id)
+    }
+}
+
+#[derive(Debug)]
 pub struct TokenPrices {
-    pub price_a: DatedPrice,
-    pub price_b: DatedPrice,
+    pub prices: [Option<KaminoPrice>; 128],
+}
+
+impl Default for TokenPrices {
+    fn default() -> TokenPrices {
+        TokenPrices {
+            prices: [None; 128],
+        }
+    }
 }
 
 impl TokenPrices {
-    pub fn compute(
-        prices: &OraclePrices,
-        collateral_infos: &CollateralInfos,
+    pub fn get(&self, token: impl TryInto<CollateralToken>) -> ScopeResult<KaminoPrice> {
+        let token: CollateralToken = token
+            .try_into()
+            .map_err(|_| ScopeError::ConversionFailure)?;
+        let res = self.prices[token.to_usize()];
+        match res {
+            Some(price) => Ok(price),
+            None => {
+                #[cfg(target_arch = "bpf")]
+                msg!(
+                    "Trying to get price for {:?} [{}] failed, w prices {:?}",
+                    token,
+                    token.to_usize(),
+                    self
+                );
+                Err(ScopeError::PriceNotValid)
+            }
+        }
+    }
+
+    pub fn set(
+        &mut self,
+        token: impl Into<CollateralToken>,
+        price: impl Into<Option<KaminoPrice>>,
+    ) {
+        self.prices[token.into().to_usize()] = price.into();
+    }
+
+    /// We calculate up to USD_DECIMALS_PRECISION (as exponent)
+    pub fn get_market_value_of_token(
+        &self,
+        token: impl Into<CollateralToken>,
+        amount: u64,
+        token_decimals: u8,
+    ) -> ScopeResult<U128> {
+        let token: CollateralToken = token.into();
+        let price = self.get(token)?;
+        calc_market_value_token_usd(amount, &price, token_decimals)
+    }
+}
+
+pub mod scope {
+    use std::ops::Sub;
+
+    use solana_program::clock;
+
+    use super::*;
+
+    /// Extract the price of a token from the provided Scope price account
+    ///
+    /// Warning: This API requires prevalidation of the account
+    pub fn get_price_usd_twap_unchecked(
+        scope_prices: &OraclePrices,
+        token: impl TryInto<ScopeConversionChain>,
+        current_slot: clock::Slot,
+        max_age: u64,
+    ) -> Result<KaminoPrice> {
+        let tokens_chain: ScopeConversionChain = token
+            .try_into()
+            .map_err(|_| dbg_msg!(ScopeError::BadScopeChainOrPrices))?;
+
+        // Collect here to avoid revalidating the prices for all operation
+        let price_chain = tokens_chain
+            .iter()
+            .map(|&token_id| get_price(scope_prices, token_id, current_slot, max_age))
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+
+        // Early return if there is only one price
+        if price_chain.len() == 1 {
+            return Ok(price_chain[0]);
+        }
+
+        let total_decimals: u64 = price_chain
+            .iter()
+            .try_fold(0u64, |acc, price| acc.checked_add(price.exp))
+            .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?;
+
+        // Final number of decimals is the last element one's which should be the quotation price.
+        let exp = price_chain.last().unwrap().exp; // chain is never empty by construction
+
+        // Compute token value by multiplying all value of the chain
+        let product = price_chain
+            .iter()
+            .try_fold(U128::from(1u128), |acc, price| {
+                acc.checked_mul(price.value.into())
+            })
+            .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?;
+
+        // Compute final value by removing extra decimals
+        let scale_down_decimals: u32 = total_decimals.checked_sub(exp).unwrap().try_into().unwrap(); // Cannot fail by construction of `total_decimals`
+        let scale_down_factor = U128::from(10u128)
+            .checked_pow(U128::from(scale_down_decimals))
+            .unwrap();
+        let value = product.checked_div(scale_down_factor).unwrap(); // Cannot fail thanks to the early return
+
+        auto_scale_u128_price(value, exp)
+    }
+
+    /// Automatically scale down a value on U128 to be stored in a `Price`
+    /// by reducing the `exp` factor.
+    ///
+    /// Heuristic: returned `exp` should be at least 8 and received `exp`
+    /// should be at most 15. We cover reducing factors of at most 10^7
+    /// We expect the price to always fit
+    fn auto_scale_u128_price(value: U128, exp: u64) -> Result<KaminoPrice> {
+        let (scale_down_decimals, scale_down_factor) = match value.0[1] {
+            // No need to scale
+            0 => {
+                return Ok(KaminoPrice {
+                    value: value.0[0],
+                    exp,
+                })
+            }
+            1..=10 => (1, 10),
+            11..=100 => (2, 100),
+            101..=1_000 => (3, 1_000),
+            1_001..=10_000 => (4, 10_000),
+            10_001..=100_000 => (5, 100_000),
+            100_001..=1_000_000 => (6, 1_000_000),
+            1_000_001..=10_000_000 => (7, 10_000_000),
+            _ => return err!(ScopeError::IntegerOverflow),
+        };
+        let value: u64 = (value / U128::from(scale_down_factor)) // Cannot fail thanks choice of factors
+            .try_into()
+            .unwrap(); // This should not happen or we should have returned the error earlier
+        let exp = exp
+            .checked_sub(scale_down_decimals)
+            .ok_or_else(|| error!(ScopeError::MathOverflow))?;
+        Ok(KaminoPrice { value, exp })
+    }
+
+    pub fn seconds_to_slots(seconds: u64) -> clock::Slot {
+        seconds
+            .checked_mul(1000)
+            .unwrap()
+            .checked_div(clock::DEFAULT_MS_PER_SLOT)
+            .unwrap()
+    }
+
+    pub fn get_twap_prices_from_data(
+        scope_prices: &OraclePrices,
+        token_infos: &[CollateralInfo],
         strategy: &WhirlpoolStrategy,
-    ) -> ScopeResult<TokenPrices> {
-        let price_a =
-            collateral_infos.get_price(prices, strategy.token_a_collateral_id.try_into()?)?;
-        let price_b =
-            collateral_infos.get_price(prices, strategy.token_b_collateral_id.try_into()?)?;
-        Ok(TokenPrices { price_a, price_b })
+    ) -> Result<Prices> {
+        let token_a = CollateralToken::try_from(strategy.token_a_collateral_id)
+            .map_err(|_| ScopeError::ConversionFailure)?;
+        let token_b = CollateralToken::try_from(strategy.token_b_collateral_id)
+            .map_err(|_| ScopeError::ConversionFailure)?;
+        Ok(Prices {
+            a: <crate::Price as Into<KaminoPrice>>::into(
+                get_twap(scope_prices, token_a, token_infos)?.0.price,
+            ),
+            b: <crate::Price as Into<KaminoPrice>>::into(
+                get_twap(scope_prices, token_b, token_infos)?.0.price,
+            ),
+        })
+    }
+
+    pub fn get_prices_from_data(
+        scope_prices: &OraclePrices,
+        token_infos: &[CollateralInfo],
+        strategy: &WhirlpoolStrategy,
+        clmm: Option<&dyn Clmm>,
+        slot: u64,
+    ) -> ScopeResult<Box<TokenPrices>> {
+        let token_a = CollateralToken::try_from(strategy.token_a_collateral_id)
+            .map_err(|_| ScopeError::ConversionFailure)?;
+        let token_b = CollateralToken::try_from(strategy.token_b_collateral_id)
+            .map_err(|_| ScopeError::ConversionFailure)?;
+
+        let pending_rewards = match clmm {
+            Some(clmm) => clmm.get_position_pending_rewards()?,
+            None => RewardsAmounts::default(),
+        };
+
+        let price_a = get_price_usd(scope_prices, token_infos, token_a, slot)?;
+        let price_b = get_price_usd(scope_prices, token_infos, token_b, slot)?;
+
+        let mut prices = Box::<TokenPrices>::default();
+        prices.set(token_a, price_a);
+        prices.set(token_b, price_b);
+
+        // Poor man's verification but it does the job
+        // checking if reward vault is initialized
+        if strategy.reward_0_decimals > 0
+            && (strategy.reward_0_amount > 0 || pending_rewards.reward_0 > 0)
+        {
+            let coll = CollateralToken::try_from(strategy.reward_0_collateral_id)
+                .map_err(|_| ScopeError::ConversionFailure)?;
+            let price = get_price_usd(scope_prices, token_infos, coll, slot).ok();
+            prices.set(coll, price);
+        }
+        if strategy.reward_1_decimals > 0
+            && (strategy.reward_1_amount > 0 || pending_rewards.reward_1 > 0)
+        {
+            let coll = CollateralToken::try_from(strategy.reward_1_collateral_id)
+                .map_err(|_| ScopeError::ConversionFailure)?;
+            let price = get_price_usd(scope_prices, token_infos, coll, slot).ok();
+            prices.set(coll, price);
+        }
+        if strategy.reward_2_decimals > 0
+            && (strategy.reward_2_amount > 0 || pending_rewards.reward_2 > 0)
+        {
+            let coll = CollateralToken::try_from(strategy.reward_2_collateral_id)
+                .map_err(|_| ScopeError::ConversionFailure)?;
+            let price = get_price_usd(scope_prices, token_infos, coll, slot).ok();
+            prices.set(coll, price);
+        }
+        for kamino_reward in strategy.kamino_rewards.iter() {
+            // it is possible that the rewards were collected so we have amount_uncollected==0 but after setting the price we will collect again in the deposit_and_invest effects, and if there is an amount available we will have rewards so we will need the price
+            if kamino_reward.initialized()
+                && (kamino_reward.amount_uncollected > 0 || kamino_reward.amount_available > 0)
+            {
+                let coll = CollateralToken::try_from(kamino_reward.reward_collateral_id)
+                    .map_err(|_| ScopeError::ConversionFailure)?;
+                let price = get_price_usd(scope_prices, token_infos, coll, slot).ok();
+                prices.set(coll, price);
+            }
+        }
+
+        Ok(prices)
+    }
+
+    pub fn get_price_usd(
+        scope_prices: &OraclePrices,
+        token_infos: &[CollateralInfo], // TODO: just take the one, no need for token id
+        token: impl Into<CollateralToken>,
+        current_slot: clock::Slot,
+    ) -> Result<KaminoPrice> {
+        let token: CollateralToken = token.into();
+        let price_max_age = seconds_to_slots(token_infos[token.to_usize()].max_age_price_seconds);
+        let twap_max_age = seconds_to_slots(token_infos[token.to_usize()].max_age_twap_seconds);
+        let price_label =
+            std::str::from_utf8(&token_infos[token.to_usize()].name).unwrap_or("CannotDecodeToken");
+
+        let usd_price = get_price_usd_twap_unchecked(
+            scope_prices,
+            token_infos[token.to_usize()],
+            current_slot,
+            price_max_age,
+        )?;
+
+        // Check that TWAP is within range
+
+        let acceptable_twap_tolerance_bps = token_infos[token.to_usize()].max_twap_divergence_bps;
+        let is_twap_enabled = acceptable_twap_tolerance_bps > 0;
+
+        if is_twap_enabled {
+            let (twap, twap_token) = get_twap(scope_prices, token, token_infos)?;
+            if is_price_too_old(current_slot, twap.last_updated_slot, twap_max_age) {
+                //     xmsg!(
+                //     "Twap of {:?} Price is too old token=ScopePrice[{:?}] price.last_updated_slot={:?} current_slot={:?} max_age={:?}",
+                //     price_label,
+                //     twap_token,
+                //     twap.last_updated_slot,
+                //     current_slot,
+                //     twap_max_age
+                // );
+                return Err(ScopeError::ConversionFailure.into());
+            }
+
+            let (is_acceptable, diff_bps) =
+                is_within_tolerance(usd_price, twap.price.into(), acceptable_twap_tolerance_bps);
+            if !is_acceptable {
+                // xmsg!("Price is too far from TWAP token={:?} price={:?} twap={:?} tolerance_bps={:?} diff={:?}", token, usd_price, twap, acceptable_twap_tolerance_bps, diff_bps);
+                return Err(ScopeError::ConversionFailure.into());
+            }
+        }
+        Ok(usd_price)
+    }
+
+    /// Extract the price of a token from the provided Scope price account
+    ///
+    /// Warning: This API requires prevalidation of the account
+    pub fn get_price(
+        scope_prices: &OraclePrices,
+        token: impl TryInto<ScopePriceId>,
+        current_slot: clock::Slot,
+        max_age: u64,
+    ) -> Result<KaminoPrice> {
+        let token: ScopePriceId = token
+            .try_into()
+            .map_err(|_| dbg_msg!(VaultError::IntegerOverflow))?;
+
+        let price = scope_prices.prices[usize::from(token)];
+
+        // Check that the price is not too old
+        if is_price_too_old(current_slot, price.last_updated_slot, max_age) {
+            // xmsg!(
+            // "Price is too old token=ScopePrice[{:?}] price.last_updated_slot={:?} current_slot={:?} max_age={:?}",
+            // token,
+            // price.last_updated_slot,
+            // current_slot,
+            // max_age
+            // );
+            return Err(ScopeError::ConversionFailure.into());
+        }
+        Ok(price.price.into())
+    }
+
+    fn is_price_too_old(
+        current_slot: clock::Slot,
+        last_updated_slot: clock::Slot,
+        max_age: u64,
+    ) -> bool {
+        let oldest_acceptable_slot = current_slot.saturating_sub(max_age);
+        let slot_diff = current_slot.sub(last_updated_slot);
+        if oldest_acceptable_slot > last_updated_slot {
+            //     xmsg!(
+            //     "Price is too old oldest_acceptable_slot={:?}, price.last_updated_slot={:?} diff={:?} max_age={:?}",
+            //     oldest_acceptable_slot,
+            //     last_updated_slot,
+            //     slot_diff,
+            //     max_age
+            // );
+            true
+        } else {
+            false
+        }
+    }
+
+    fn get_twap(
+        scope_prices: &OraclePrices,
+        token: CollateralToken,
+        token_infos: &[CollateralInfo],
+    ) -> Result<(DatedPrice, ScopePriceId)> {
+        let token: usize = token.to_usize();
+        let infos = token_infos[token];
+        if infos.scope_price_id_twap == u64::MAX {
+            return Err(ScopeError::ConversionFailure.into());
+        }
+        if infos.scope_price_id_twap == 0 {
+            return Err(ScopeError::ConversionFailure.into());
+        }
+        let scope_twap_id = u16::try_from(infos.scope_price_id_twap).unwrap();
+        let scope_twap_id = ScopePriceId(scope_twap_id);
+        let twap: usize = scope_twap_id.into();
+        Ok((scope_prices.prices[twap], scope_twap_id))
+    }
+
+    fn to_scaled_normalized(price: KaminoPrice, target_exp: u64) -> u64 {
+        // Cast
+        let extra_exp = i64::try_from(target_exp).unwrap() - i64::try_from(price.exp).unwrap();
+
+        let px = i128::from(price.value);
+        let exp = u32::try_from(extra_exp).unwrap();
+
+        let result = px.checked_mul(10_i128.pow(exp)).unwrap();
+        u64::try_from(result).unwrap()
+    }
+
+    fn diff_in_bps(price: KaminoPrice, twap: KaminoPrice) -> u64 {
+        const MIN_EXP: u64 = 11;
+        let target_exp = u64::max(MIN_EXP, u64::max(price.exp, twap.exp));
+        let price_scaled = to_scaled_normalized(price, target_exp);
+        let twap_scaled = to_scaled_normalized(twap, target_exp);
+
+        let abs_diff = u128::try_from(i128::abs(
+            i128::from(price_scaled)
+                .checked_sub(i128::from(twap_scaled))
+                .unwrap(),
+        ))
+        .unwrap();
+
+        let diff_bps = abs_diff
+            .checked_mul(10_000)
+            .unwrap()
+            .checked_div(u128::from(price_scaled))
+            .unwrap();
+
+        u64::try_from(diff_bps).unwrap()
+    }
+
+    fn is_within_tolerance(
+        px: KaminoPrice,
+        twap: KaminoPrice,
+        acceptable_tolerance_bps: u64,
+    ) -> (bool, u64) {
+        let diff_bps = diff_in_bps(twap, px);
+        (diff_bps < acceptable_tolerance_bps, diff_bps)
     }
 }
 
@@ -620,11 +1332,14 @@ pub struct TokenAmounts {
     pub b: u64,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default, Copy)]
 pub struct RewardsAmounts {
     pub reward_0: u64,
     pub reward_1: u64,
     pub reward_2: u64,
+    pub reward_3: u64,
+    pub reward_4: u64,
+    pub reward_5: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -635,7 +1350,29 @@ pub struct WithdrawalCaps {
     pub config_interval_length_seconds: u64,
 }
 
+#[derive(Debug)]
+pub struct Holdings {
+    pub available: TokenAmounts,
+    pub available_usd: U128,
+    pub invested: TokenAmounts,
+    pub invested_usd: U128,
+    pub fees: TokenAmounts,
+    pub fees_usd: U128,
+    pub rewards: RewardsAmounts,
+    pub rewards_usd: U128,
+    pub total_sum: U128,
+}
+
+#[derive(TryFromPrimitive, Debug, PartialEq, Eq, Clone, Copy, IntoPrimitive)]
+#[repr(u64)]
+pub enum DEX {
+    Orca = 0,
+    Raydium = 1,
+}
+
 mod price_utils {
+    use std::cmp::Ordering;
+
     use super::*;
     use crate::Price;
 
@@ -739,6 +1476,83 @@ mod price_utils {
         let sqrt_price_x_64 = price as f64;
         (sqrt_price_x_64 / 2.0_f64.powf(64.0)).powf(2.0)
             * 10.0_f64.pow(decimals_a as i32 - decimals_b as i32)
+    }
+
+    // We calculate the value of any tokens to USD
+    // Since all tokens are quoted to USD
+    // We calculate up to USD_DECIMALS_PRECISION (as exponent)
+    pub fn calc_market_value_token_usd<'a>(
+        amount: u64,
+        price: impl Into<Option<&'a KaminoPrice>>,
+        token_decimals: u8,
+    ) -> ScopeResult<U128> {
+        let price: Option<&KaminoPrice> = price.into();
+        // Don't check if the price is valid unless we really need it (amount > 0)
+        if amount == 0 {
+            return Ok(U128::from(0_u128));
+        }
+
+        let price = price.ok_or(ScopeError::PriceNotValid)?;
+
+        if price.is_zero() {
+            return Ok(U128::from(0_u128));
+        }
+
+        let numerator = U128::from(amount)
+            .checked_mul(U128::from(price.value))
+            .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?;
+
+        let total_decimals = token_decimals
+            .checked_add(u8::try_from(price.exp).unwrap())
+            .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?;
+
+        Ok(match total_decimals.cmp(&USD_DECIMALS_PRECISION) {
+            Ordering::Less => {
+                let factor = ten_pow(
+                    USD_DECIMALS_PRECISION
+                        .checked_sub(total_decimals)
+                        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?,
+                );
+
+                numerator
+                    .checked_mul(U128::from(factor))
+                    .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+            }
+
+            Ordering::Equal => numerator,
+            Ordering::Greater => {
+                let factor = ten_pow(
+                    total_decimals
+                        .checked_sub(USD_DECIMALS_PRECISION)
+                        .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?,
+                );
+                numerator
+                    .checked_div(U128::from(factor))
+                    .ok_or_else(|| dbg_msg!(ScopeError::IntegerOverflow))?
+            }
+        })
+    }
+}
+
+pub mod op_utils {
+    use super::*;
+
+    pub fn strategy_reward_decimals(
+        strategy: &WhirlpoolStrategy,
+        reward_index: u8,
+    ) -> ScopeResult<u8> {
+        let reward_index = usize::from(reward_index);
+        match reward_index {
+            0 => Ok(strategy.reward_0_decimals as u8),
+            1 => Ok(strategy.reward_1_decimals as u8),
+            2 => Ok(strategy.reward_2_decimals as u8),
+            ORCA_REWARDS_COUNT..=KAMINO_REWARDS_UPPER_INDEX => Ok(strategy.kamino_rewards
+                [reward_index.saturating_sub(ORCA_REWARDS_COUNT)]
+            .decimals
+            .try_into()
+            .unwrap()),
+            _ => Err(ScopeError::ConversionFailure),
+        }
     }
 }
 
