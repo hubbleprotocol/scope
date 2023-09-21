@@ -547,5 +547,11 @@
     "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
     "oracle_type": "KToken",
     "max_age": 250
+  },
+  "116": {
+    "label": "Fake kJITOSOL-USDC_Orca/USD",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
   }
 }

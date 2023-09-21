@@ -578,5 +578,11 @@
     "oracle_mapping": "5EfeGn1h7m6Rx9mGEmamDoxMtdhRmUh2N9fYRiDQqteS",
     "oracle_type": "KToken",
     "max_age": 250
+  },
+  "116": {
+    "label": "kJITOSOL-USDC_Orca/USD",
+    "oracle_mapping": "HHExLH3h7rKL5V1A7uKXNTRauWzef2Ty6m9FavK9eVrn",
+    "oracle_type": "KToken",
+    "max_age": 250
   }
 }
