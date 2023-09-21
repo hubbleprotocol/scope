@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::mem::size_of;
 
 use anchor_client::{
@@ -379,14 +380,18 @@ where
 
     /// Print a list of all pubkeys that are needed for price refreshed.
     pub async fn print_pubkeys(&self) -> Result<()> {
+        // Print only unique pubkeys
+        let mut pubkeys: HashSet<Pubkey> = HashSet::new();
+
         for entry in self.tokens.values() {
             let main_mapping = entry.get_mapping_account();
-            print!("{main_mapping} ");
+            pubkeys.insert(*main_mapping);
             let extra_accounts = entry.get_extra_accounts(None).await?;
             for account in extra_accounts {
-                print!("{account} ");
+                pubkeys.insert(account);
             }
         }
+        pubkeys.iter().for_each(|pk| print!("{pk} "));
         println!();
         Ok(())
     }

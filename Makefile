@@ -146,11 +146,11 @@ print-pubkeys: $(SCOPE_CLI)
 >@ ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) get-pubkeys --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
 
 clone-mainnet-to-local-validator: $(SCOPE_CLI)
->@ export ORACLE_PUBKEYS="${shell CLUSTER=mainnet make -s print-pubkeys}"
+>@ export ORACLE_PUBKEYS="${shell CLUSTER=mainnet make -s print-pubkeys 2> /dev/null}"
 > solana-test-validator -r --url "https://solana-mainnet.rpc.extrnode.com" --clone $$ORACLE_PUBKEYS
 
 clone-devnet-to-local-validator:
->@ export ORACLE_PUBKEYS="${shell CLUSTER=devnet make -s print-pubkeys}"
+>@ export ORACLE_PUBKEYS="${shell CLUSTER=devnet make -s print-pubkeys 2> /dev/null}"
 > solana-test-validator -r --url "https://rpc.ankr.com/solana_devnet" --clone $$ORACLE_PUBKEYS
 
 test: test-rust test-ts

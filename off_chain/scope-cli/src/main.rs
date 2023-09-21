@@ -136,15 +136,18 @@ enum Actions {
 async fn main() -> Result<()> {
     let args: Args = Args::parse();
 
-    if args.json {
-        tracing_subscriber::fmt().json().without_time().init();
-    } else if args.log_timestamps {
-        tracing_subscriber::fmt().compact().init();
-    } else {
-        tracing_subscriber::fmt().compact().without_time().init();
-    }
+    // Skip logging if only printing pubkeys
+    if !matches!(args.action, Actions::GetPubkeys { .. }) {
+        if args.json {
+            tracing_subscriber::fmt().json().without_time().init();
+        } else if args.log_timestamps {
+            tracing_subscriber::fmt().compact().init();
+        } else {
+            tracing_subscriber::fmt().compact().without_time().init();
+        }
 
-    info!("Starting with args {:#?}", args);
+        info!("Starting with args {:#?}", args);
+    }
 
     // Read keypair to sign transactions
     let payer = read_keypair_file(args.keypair).expect("Keypair file not found or invalid");
