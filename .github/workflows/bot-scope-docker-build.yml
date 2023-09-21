@@ -8,6 +8,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   build_docker:
     runs-on: ubuntu-latest
@@ -15,6 +19,14 @@ jobs:
       build_version: ${{ steps.set_versions.outputs.build_version }}
       release_version: ${{ steps.set_versions.outputs.release_version }}
     steps:
+      - name: Set up SSH keys
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          # Use hubbleprotocolbot's key:
+          # - docker+cargo fails when mounting multiple keys (https://github.com/docker/buildx/issues/341)
+          # - GitHub does not support reusing deploy keys
+          ssh-private-key: |
+            ${{ secrets.HUBBLEPROTOCOLBOT_GITHUB_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Docker buildx
@@ -40,6 +52,8 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
+          ssh: |
+            default=${{ env.SSH_AUTH_SOCK }}
           file: off_chain/docker-bot/Dockerfile
           tags: hubbleprotocol/scope-bot:${{ steps.set_versions.outputs.build_version }}
           push: true
@@ -68,6 +82,20 @@ jobs:
             "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY_HELM_REPO }}"
           build-args: |
             "BUILD_VERSION=${{ needs.build_docker.outputs.build_version }}"
+  publish_release_events:
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs:
+      - build_docker
+      - build_helm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish release event
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.HUBBLEPROTOCOLBOT_WRITE_REPO_PAT }}
+          repository: hubbleprotocol/hubble-infrastructure
+          event-type: helm-release
+          client-payload: '{"name": "scope-bot", "namespace": "bot", "sub_dir": "scope-bot", "build_version": "${{ needs.build_docker.outputs.build_version }}", "release_version": "${{ needs.build_docker.outputs.release_version }}", "changelog_url": "${{ github.server_url }}/${{ github.repository }}/releases/tag/scope-bot%2F${{ needs.build_docker.outputs.release_version }}", "envs": ["dev", "prod"]}'
   pre_release:
     if: ${{ github.ref == 'refs/heads/master' }}
     needs:
@@ -75,6 +103,14 @@ jobs:
       - build_helm
     runs-on: ubuntu-latest
     steps:
+      - name: Set up SSH keys
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          # Use hubbleprotocolbot's key:
+          # - docker+cargo fails when mounting multiple keys (https://github.com/docker/buildx/issues/341)
+          # - GitHub does not support reusing deploy keys
+          ssh-private-key: |
+            ${{ secrets.HUBBLEPROTOCOLBOT_GITHUB_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Docker buildx
@@ -88,6 +124,8 @@ jobs:
         id: fetch_release_bin
         uses: docker/build-push-action@v2
         with:
+          ssh: |
+            default=${{ env.SSH_AUTH_SOCK }}
           file: off_chain/docker-bot/Dockerfile
           tags: hubbleprotocol/scope-bot-release-bin:${{ needs.build_docker.outputs.build_version }}
           push: false
@@ -105,10 +143,3 @@ jobs:
           title: scope-bot/${{ needs.build_docker.outputs.release_version }}
           files: |
             scope-bot-*.tar
-      - name: Publish release event
-        uses: peter-evans/repository-dispatch@v1
-        with:
-          token: ${{ secrets.HUBBLEPROTOCOLBOT_WRITE_REPO_PAT }}
-          repository: hubbleprotocol/hubble-infrastructure
-          event-type: helm-release
-          client-payload: '{"name": "scope-bot", "namespace": "bot", "sub_dir": "scope-bot", "build_version": "${{ needs.build_docker.outputs.build_version }}", "release_version": "${{ needs.build_docker.outputs.release_version }}", "changelog_url": "${{ github.server_url }}/${{ github.repository }}/releases/tag/scope-bot%2F${{ needs.build_docker.outputs.release_version }}", "envs": ["dev", "prod"]}'

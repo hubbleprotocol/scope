@@ -7,7 +7,8 @@ use anyhow::{Context, Result};
 use orbit_link::async_client::AsyncClient;
 use scope::{
     anchor_lang::prelude::Pubkey,
-    oracles::{ktokens, OracleType},
+    oracles::OracleType,
+    yvaults::state::{GlobalConfig, WhirlpoolStrategy},
     DatedPrice,
 };
 
@@ -46,7 +47,7 @@ impl KTokenOracle {
             .await
             .context("Retrieving Kamino strategy account")?;
 
-        let strategy_account: &ktokens::WhirlpoolStrategy =
+        let strategy_account: &WhirlpoolStrategy =
             bytemuck::from_bytes(&strategy_account_raw.data[8..]);
 
         let pool = strategy_account.pool;
@@ -57,7 +58,7 @@ impl KTokenOracle {
             .get_account(&global_config)
             .await
             .context("Retrieving Kamino strategy account")?;
-        let global_config_account: &ktokens::GlobalConfig =
+        let global_config_account: &GlobalConfig =
             bytemuck::from_bytes(&global_config_account_raw.data[8..]);
         let collateral_infos = global_config_account.token_infos;
 
@@ -91,7 +92,7 @@ impl OracleHelper for KTokenOracle {
                 .get_account(&self.mapping)
                 .await
                 .context("Retrieving Kamino strategy account")?;
-            let strategy_account: &ktokens::WhirlpoolStrategy =
+            let strategy_account: &WhirlpoolStrategy =
                 bytemuck::from_bytes(&strategy_account_raw.data[8..]);
             // Re-fetch the latest position
             res[3] = strategy_account.position;

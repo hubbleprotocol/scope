@@ -1,11 +1,9 @@
 import {
   Connection,
-  ConnectionConfig,
   Keypair,
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
-  Transaction,
 } from '@solana/web3.js';
 import { AnchorProvider, BN, Program, setProvider } from '@project-serum/anchor';
 import { sleep } from '@project-serum/common';
@@ -14,8 +12,8 @@ import { Decimal } from 'decimal.js';
 import { expect } from 'chai';
 import * as global from './global';
 import * as bot from './bot_utils';
-import { HubbleTokens, initialTokens, getScopePriceDecimal } from './utils';
-import { OracleType, createFakeAccounts, ITokenEntry, oracles } from './oracle_utils/mock_oracles';
+import { initialTokens, getScopePriceDecimal } from './utils';
+import { createFakeAccounts, ITokenEntry } from './oracle_utils/mock_oracles';
 
 require('dotenv').config();
 

@@ -13,10 +13,10 @@ use anyhow::Result;
 use orbit_link::async_client::AsyncClient;
 use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
+#[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod single_account_oracle;
 
-pub use ktokens::KTokenOracle;
 pub use single_account_oracle::SingleAccountOracle;
 
 use crate::config::TokenConfig;
@@ -76,7 +76,14 @@ pub async fn entry_from_config(
         | OracleType::CToken
         | OracleType::SplStake
         | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
-        OracleType::KToken => Box::new(KTokenOracle::new(token_conf, default_max_age, rpc).await?),
+        #[cfg(feature = "yvaults")]
+        OracleType::KToken => {
+            Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, rpc).await?)
+        }
+        #[cfg(not(feature = "yvaults"))]
+        OracleType::KToken => {
+            panic!("yvaults feature is not enabled, KTokenOracle is not available")
+        }
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

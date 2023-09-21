@@ -5,7 +5,6 @@ pub mod utils;
 
 mod handlers;
 
-// Reexports to deal with eventual conflicts
 // Local use
 use std::{convert::TryInto, num::TryFromIntError};
 
@@ -17,6 +16,8 @@ use num_derive::FromPrimitive;
 pub use num_enum;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
+#[cfg(feature = "yvaults")]
+pub use yvaults;
 
 pub use crate::utils::scope_chain;
 

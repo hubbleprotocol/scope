@@ -17,7 +17,7 @@ The repository contains two software:
 
 - The association between an price at a given index in the price feed and the token pair associated to this price need is not stored on chain.
 - A price feed is currently limited to 512 prices.
-- At the moment, only pyth and switchboard prices are supported.
+- If you do not have access to the Kamino source code, scope can still be built. See [Building without Kamino ktokens](#building-without-kamino-ktokens) for more details.
 
 ## Future updates/ideas
 
@@ -67,4 +67,28 @@ make build
 export CLUSTER=mainnet
 export URL=<url>
 RUST_BACKTRACE=1 cargo run -p scope-cli -- --keypair <keypair.json> --program-id HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ --price-feed hubble crank --mapping ./configs/mainnet/hubble.json
+```
+
+### Building without Kamino ktokens
+
+If you do not have access to the Kamino source code, you can still build scope without the default `yvaults` feature:
+
+- Replace the `yvaults` dependency in `./programs/scope/Cargo.toml` with the `yvaults_stub` package:
+```toml
+[dependencies]
+# Comment out the git repo
+#yvaults = { git = "ssh://git@github.com/hubbleprotocol/yvault.git", features = ["no-entrypoint", "cpi", "mainnet"], optional = true }
+
+# Add this line
+yvaults = { path = "../yvaults_stub", package = "yvaults_stub", optional = true }
+```
+
+- Build scope with the following command:
+```sh
+anchor build -p scope -- --no-default-features --features mainnet
+```
+
+- Build the CLI:
+```sh
+cargo build -p scope-cli --no-default-features --features rpc-client
 ```
