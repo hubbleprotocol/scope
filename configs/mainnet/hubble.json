@@ -584,5 +584,11 @@
     "oracle_mapping": "HHExLH3h7rKL5V1A7uKXNTRauWzef2Ty6m9FavK9eVrn",
     "oracle_type": "KToken",
     "max_age": 250
+  },
+  "117": {
+    "label": "LST/SOL",
+    "oracle_mapping": "DqhH94PjkZsjAqEze2BEkWhFQJ6EyU6MdtMphMgnXqeK",
+    "oracle_type": "SplStake",
+    "max_age": 150
   }
 }
