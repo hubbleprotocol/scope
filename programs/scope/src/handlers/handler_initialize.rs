@@ -1,4 +1,7 @@
 use anchor_lang::prelude::*;
+use solana_program::config;
+
+use crate::TokenMetadata;
 
 #[derive(Accounts)]
 #[instruction(feed_name: String)]
@@ -13,6 +16,9 @@ pub struct Initialize<'info> {
     // The ability to create multiple feeds is mostly useful for tests
     #[account(init, seeds = [b"conf", feed_name.as_bytes()], bump, payer = admin, space = 8 + std::mem::size_of::<crate::Configuration>())]
     pub configuration: AccountLoader<'info, crate::Configuration>,
+
+    #[account(init, payer = admin, space = 8 + std::mem::size_of::<crate::TokensMetadata>())]
+    pub token_metadatas: AccountLoader<'info, crate::TokensMetadata>,
 
     // Account is pre-reserved/payed outside the program
     #[account(zero)]
@@ -39,6 +45,10 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     configuration.admin = admin;
     configuration.oracle_mappings = oracle_pbk;
     configuration.oracle_prices = prices_pbk;
+
+    let mut tokens_metadata = ctx.accounts.token_metadatas.load_init()?;
+    tokens_metadata.price_info_accounts = [TokenMetadata::default(); crate::MAX_ENTRIES];
+    configuration.tokens_metadata = ctx.accounts.token_metadatas.key();
 
     Ok(())
 }

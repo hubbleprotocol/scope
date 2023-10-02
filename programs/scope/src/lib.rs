@@ -26,14 +26,24 @@ declare_id!(PROGRAM_ID);
 pub const MAX_ENTRIES_U16: u16 = 512;
 // Note: Need to be directly integer value to not confuse the IDL generator
 pub const MAX_ENTRIES: usize = 512;
+pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
 
 #[program]
 pub mod scope {
+
+    use handlers::handler_update_token_metadata::UpdateTokensMetadata;
 
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> Result<()> {
         handler_initialize::process(ctx, feed_name)
+    }
+
+    pub fn initialize_tokens_metadata(
+        ctx: Context<InitializeTokensMetadata>,
+        feed_name: String,
+    ) -> Result<()> {
+        handler_initialize_tokens_metadata::process(ctx, feed_name)
     }
 
     //This handler only works for Pyth type tokens
@@ -58,6 +68,16 @@ pub mod scope {
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_update_mapping::process(ctx, token, price_type, feed_name)
+    }
+
+    pub fn update_token_metadata(
+        ctx: Context<UpdateTokensMetadata>,
+        index: u64,
+        mode: u64,
+        value: [u8; VALUE_BYTE_ARRAY_LEN],
+        feed_name: String,
+    ) -> Result<()> {
+        handler_update_token_metadata::process(ctx, index, mode, &value, feed_name)
     }
 }
 
@@ -118,13 +138,27 @@ pub struct OracleMappings {
     pub _reserved2: [u64; MAX_ENTRIES],
 }
 
+#[account(zero_copy)]
+pub struct TokensMetadata {
+    pub price_info_accounts: [TokenMetadata; MAX_ENTRIES],
+}
+
+#[zero_copy]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq, Default)]
+pub struct TokenMetadata {
+    pub name: [u8; 32],
+    pub max_age_price_seconds: u64,
+    pub _reserved: [u64; 16],
+}
+
 // Configuration account of the program
 #[account(zero_copy)]
 pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
-    _padding: [u64; 1267],
+    pub tokens_metadata: Pubkey,
+    _padding: [u64; 1263],
 }
 
 #[error_code]
@@ -174,6 +208,9 @@ pub enum ScopeError {
 
     #[msg("Refresh price instruction preceded by unexpected ixs")]
     RefreshWithUnexpectedIxs,
+
+    #[msg("Invalid token metadata update mode")]
+    InvalidTokenUpdateMode,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
