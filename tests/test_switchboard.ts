@@ -75,7 +75,7 @@ describe('Switchboard Scope tests', () => {
         admin: admin.publicKey,
         systemProgram: SystemProgram.programId,
         configuration: confAccount,
-        tokenMetadataa: tokenMetadatasAccount,
+        tokenMetadatas: tokenMetadatasAccount,
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
 
