@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::TokenMetadata;
-
 #[derive(Accounts)]
 #[instruction(feed_name: String)]
 pub struct Initialize<'info> {
@@ -16,7 +14,7 @@ pub struct Initialize<'info> {
     #[account(init, seeds = [b"conf", feed_name.as_bytes()], bump, payer = admin, space = 8 + std::mem::size_of::<crate::Configuration>())]
     pub configuration: AccountLoader<'info, crate::Configuration>,
 
-    #[account(init, payer = admin, space = 8 + std::mem::size_of::<crate::TokensMetadata>())]
+    #[account(zero)]
     pub token_metadatas: AccountLoader<'info, crate::TokensMetadata>,
 
     // Account is pre-reserved/payed outside the program

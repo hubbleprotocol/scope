@@ -1,4 +1,4 @@
-use crate::{OracleMappings, ScopeError, VALUE_BYTE_ARRAY_LEN};
+use crate::{OracleMappings, ScopeError};
 use anchor_lang::prelude::*;
 use num_enum::TryFromPrimitive;
 
