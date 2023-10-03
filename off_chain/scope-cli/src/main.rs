@@ -130,6 +130,7 @@ enum Actions {
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
     },
+    
 }
 
 #[tokio::main]
@@ -200,6 +201,7 @@ async fn main() -> Result<()> {
                 .await
             }
             Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping).await,
+
         }
     }
 }

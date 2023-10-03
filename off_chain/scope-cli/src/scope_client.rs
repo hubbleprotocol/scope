@@ -17,7 +17,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
-use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
+use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices, TokensMetadata};
 use tracing::{debug, error, info, trace, warn};
 
 use crate::{
@@ -63,9 +63,7 @@ where
             .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
-        debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %price_feed);
-
-        Ok(Self {
+        let mut client = Self {
             client,
             program_id,
             feed_name: price_feed.to_string(),
@@ -74,7 +72,14 @@ where
             oracle_mappings_acc: oracle_mappings,
             tokens_metadata_acc: tokens_metadata,
             tokens: IntMap::default(),
-        })
+        };
+
+        // if the token_metadatas is not initialized, initialize it here
+        Self::init_token_metadatas_if_needed(&mut client, price_feed).await?;
+
+        debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %tokens_metadata, %price_feed);
+
+        Ok(client)
     }
 
     /// Create a new client instance after initializing the program accounts
@@ -104,7 +109,7 @@ where
         )
         .await?;
 
-        debug!(?oracle_prices_acc, "oracle_prices_pbk" = %oracle_prices_acc.pubkey(), ?oracle_mappings_acc, "oracle_mappings_pbk" = %oracle_prices_acc.pubkey(), %configuration_acc);
+        debug!(?oracle_prices_acc, "oracle_prices_pbk" = %oracle_prices_acc.pubkey(), ?oracle_mappings_acc, "oracle_mappings_pbk" = %oracle_prices_acc.pubkey(),%configuration_acc);
 
         Ok(Self {
             client,
@@ -116,6 +121,30 @@ where
             tokens_metadata_acc: token_metadatas_acc.pubkey(),
             tokens: IntMap::default(),
         })
+    }
+
+    pub async fn init_token_metadatas_if_needed(&mut self, price_feed: &str) -> Result<()> {
+        let Configuration { tokens_metadata, .. } = self.client
+        .get_anchor_account::<Configuration>(&self.configuration_acc).await
+        .context("Error while retrieving program configuration account, the program might be uninitialized")?;
+
+        if tokens_metadata.eq(&Pubkey::default()) {
+            // Generate accounts keypairs.
+            let token_metadatas_acc = Keypair::new();
+
+            Self::ix_initialize_token_metadatas(
+                &self.client,
+                &self.program_id,
+                &self.configuration_acc,
+                &token_metadatas_acc,
+                price_feed,
+            )
+            .await?;
+
+            self.tokens_metadata_acc = token_metadatas_acc.pubkey();
+        }
+
+        Ok(())
     }
 
     /// Set the locally known oracle mapping according to the provided configuration list.
@@ -486,6 +515,56 @@ where
         match init_res {
             Some(r) => r.context(format!("Init transaction: {signature}")),
             None => bail!("Init transaction failed to confirm: {signature}"),
+        }
+    }
+
+    #[tracing::instrument(skip(client))]
+    async fn ix_initialize_token_metadatas(
+        client: &OrbitLink<T, S>,
+        program_id: &Pubkey,
+        configuration_acc: &Pubkey,
+        token_metadatas_acc: &Keypair,
+        price_feed: &str,
+    ) -> Result<()> {
+        debug!("Entering token_metadatas initialize ix");
+
+        // Prepare init instruction accounts
+        let init_account = accounts::InitializeTokensMetadata {
+            admin: client.payer(),
+            system_program: system_program::ID,
+            configuration: *configuration_acc,
+            token_metadatas: token_metadatas_acc.pubkey(),
+        };
+
+        let init_tx = client
+            .tx_builder()
+            // Create the price account
+            .add_ix_with_budget(
+                client
+                    .create_account_ix(
+                        &token_metadatas_acc.pubkey(),
+                        size_of::<TokensMetadata>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
+            .add_anchor_ix(
+                program_id,
+                init_account,
+                instruction::InitializeTokensMetadata {
+                    feed_name: price_feed.to_string(),
+                },
+            )
+            .build_with_budget_and_fee(&[token_metadatas_acc])
+            .await?;
+
+        let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
+
+        info!(%signature, "Init tx");
+        match init_res {
+            Some(r) => r.context(format!("Init tokens_metadata transaction: {signature}")),
+            None => bail!("Init tokens_metadata transaction failed to confirm: {signature}"),
         }
     }
 
