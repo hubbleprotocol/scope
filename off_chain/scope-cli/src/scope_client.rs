@@ -229,9 +229,10 @@ where
                             .unwrap()
                             .to_owned(),
                         oracle_type: oracle_type.try_into()?,
-                        max_age: Some(
-                            NonZeroU64::try_from(token_metadata.max_age_price_seconds).unwrap(),
-                        ),
+                        max_age: match NonZeroU64::try_from(token_metadata.max_age_price_seconds) {
+                            Err(_) => None,
+                            Ok(nz) => Some(nz.into()),
+                        },
                         oracle_mapping,
                     };
                     let entry = entry_from_config(
