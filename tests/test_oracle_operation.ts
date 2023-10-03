@@ -59,11 +59,11 @@ describe('Scope tests', () => {
 
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
-    let tokenMetadatassAccount_kp = Keypair.generate();
+    let tokenMetadatasAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
-    tokenMetadatasAccount = tokenMetadatassAccount_kp.publicKey;
+    tokenMetadatasAccount = tokenMetadatasAccount_kp.publicKey;
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
     console.log(`Price feed name is ${PRICE_FEED}`);
@@ -78,11 +78,11 @@ describe('Scope tests', () => {
         tokenMetadatas: tokenMetadatasAccount,
         rent: SYSVAR_RENT_PUBKEY,
       },
-      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatassAccount_kp],
+      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp],
       instructions: [
         await program.account.oraclePrices.createInstruction(oracleAccount_kp),
         await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
-        await program.account.configuration.createInstruction(tokenMetadatassAccount_kp),
+        await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
       ],
     });
 
