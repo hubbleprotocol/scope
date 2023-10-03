@@ -40,6 +40,7 @@ pub struct ScopeClient<T: AsyncClient, S: Signer> {
     configuration_acc: Pubkey,
     oracle_prices_acc: Pubkey,
     oracle_mappings_acc: Pubkey,
+    tokens_metadata_acc: Pubkey,
     tokens: TokenEntryList,
 }
 
@@ -58,7 +59,7 @@ where
         let (configuration_acc, _) =
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], &program_id);
 
-        let Configuration { oracle_mappings, oracle_prices, .. } = client
+        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, .. } = client
             .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
@@ -71,6 +72,7 @@ where
             configuration_acc,
             oracle_prices_acc: oracle_prices,
             oracle_mappings_acc: oracle_mappings,
+            tokens_metadata_acc: tokens_metadata,
             tokens: IntMap::default(),
         })
     }
@@ -111,6 +113,7 @@ where
             configuration_acc,
             oracle_prices_acc: oracle_prices_acc.pubkey(),
             oracle_mappings_acc: oracle_mappings_acc.pubkey(),
+            tokens_metadata_acc: token_metadatas_acc.pubkey(),
             tokens: IntMap::default(),
         })
     }

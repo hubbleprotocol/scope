@@ -65,6 +65,7 @@ describe('Scope crank bot tests', () => {
   let confAccount: PublicKey;
   let oracleAccount: PublicKey;
   let oracleMappingAccount: PublicKey;
+  let tokenMappingsAccount: PublicKey;
 
   // NOTE: this only works when the test cases within this describe are
   // executed sequentially
@@ -92,6 +93,7 @@ describe('Scope crank bot tests', () => {
 
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
+    let token_mappings_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
@@ -105,6 +107,7 @@ describe('Scope crank bot tests', () => {
         configuration: confAccount,
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
+        tokenMappings: tokenMappingsAccount,
         rent: SYSVAR_RENT_PUBKEY,
       },
       signers: [admin, oracleAccount_kp, oracleMappingAccount_kp],
