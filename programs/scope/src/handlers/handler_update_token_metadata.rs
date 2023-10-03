@@ -1,6 +1,5 @@
 use crate::{ScopeError, UpdateTokenMetadataMode};
 use anchor_lang::prelude::*;
-use num_enum::TryFromPrimitive;
 
 #[derive(Accounts)]
 #[instruction(token:usize, price_type: u8, feed_name: String)]
