@@ -9,8 +9,8 @@ pub struct InitializeTokensMetadata<'info> {
     #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin)]
     pub configuration: AccountLoader<'info, crate::Configuration>,
 
-    #[account(init, payer = admin, space = 8 + std::mem::size_of::<crate::TokensMetadata>())]
-    pub token_metadatas: AccountLoader<'info, crate::TokensMetadata>,
+    #[account(init, payer = admin, space = 8 + std::mem::size_of::<crate::TokenMetadatas>())]
+    pub token_metadatas: AccountLoader<'info, crate::TokenMetadatas>,
 
     pub system_program: Program<'info, System>,
 }
