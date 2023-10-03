@@ -37,7 +37,7 @@ decimal-wad = "0.1.7"
 rust_decimal = "1.18.0"
 strum = { git = "https://github.com/hubbleprotocol/strum", features = ["derive"], branch = "checked_arithmetics" }
 # Comment out the line below if you do not have access to the yvaults repo
-yvaults = { git = "ssh://git@github.com/hubbleprotocol/yvaults.git", features = ["no-entrypoint", "cpi", "mainnet"], optional = true }
+yvaults = { git = "ssh://git@github.com/hubbleprotocol/yvaults.git", features = ["no-entrypoint", "cpi", "mainnet"], optional = true, branch = "elliot/refactor-px-functions" }
 mpl-token-metadata = { version = "1.12.0", features = ["no-entrypoint"]}
 # Uncomment the line below if you do not have access to the yvaults repo
 #yvaults = { path = "../yvaults_stub", package = "yvaults_stub", optional = true }

@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, Result};
 use kamino::{
     clmm::{orca_clmm::OrcaClmm, Clmm},
     raydium_amm_v3::states::{PersonalPositionState as RaydiumPosition, PoolState as RaydiumPool},
@@ -12,12 +12,18 @@ use kamino::{
 use yvaults as kamino;
 use yvaults::{
     operations::vault_operations::{common, common::get_price_per_full_share_impl},
-    utils::{enums::LiquidityCalculationMode, scope::ScopePrices},
+    state::CollateralToken,
+    utils::{
+        enums::LiquidityCalculationMode,
+        price::TokenPrices,
+        scope::ScopePrices,
+        types::{Holdings, RewardsAmounts},
+    },
 };
 
 use crate::{
     utils::{account_deserialize, zero_copy_deserialize},
-    DatedPrice, Price, Result, ScopeError, ScopeResult,
+    DatedPrice, Price, ScopeError,
 };
 
 const USD_DECIMALS_PRECISION: u8 = 6;
@@ -116,21 +122,10 @@ where
         clock.slot,
     )?;
 
-    let holdings = common::holdings(
-        &strategy_account_ref,
-        clmm.as_ref(),
-        &token_prices,
-        LiquidityCalculationMode::Deposit,
-    )?;
-
-    // exclude the value of uncompounded rewards
-    let holdings_value = holdings
-        .total_sum
-        .checked_sub(holdings.rewards_usd)
-        .ok_or(ScopeError::IntegerOverflow)?;
+    let holdings = holdings(&strategy_account_ref, clmm.as_ref(), &token_prices)?;
 
     let token_price = get_price_per_full_share_impl(
-        &holdings_value,
+        &holdings.total_sum,
         strategy_account_ref.shares_issued,
         strategy_account_ref.shares_mint_decimals,
     )?;
@@ -155,7 +150,7 @@ fn get_clmm<'a, 'info>(
     pool: &'a AccountInfo<'info>,
     position: &'a AccountInfo<'info>,
     strategy: &WhirlpoolStrategy,
-) -> ScopeResult<Box<dyn Clmm + 'a>> {
+) -> Result<Box<dyn Clmm + 'a>> {
     let dex = DEX::try_from(strategy.strategy_dex).unwrap();
     let clmm: Box<dyn Clmm> = match dex {
         DEX::Orca => {
@@ -232,6 +227,365 @@ fn get_component_px_last_update(
             });
 
     Ok((last_updated_slot, unix_timestamp))
+}
+
+pub fn holdings(
+    strategy: &WhirlpoolStrategy,
+    clmm: &dyn Clmm,
+    prices: &TokenPrices,
+) -> Result<Holdings> {
+    // https://github.com/0xparashar/UniV3NFTOracle/blob/master/contracts/UniV3NFTOracle.sol#L27
+    // We are using the sqrt price derived from price_a and price_b
+    // instead of the whirlpool price which could be manipulated/stale
+    let pool_sqrt_price = price_utils::sqrt_price_from_scope_prices(
+        &prices.get(
+            CollateralToken::try_from(strategy.token_a_collateral_id)
+                .map_err(|_| ScopeError::ConversionFailure)?,
+        )?,
+        &prices.get(
+            CollateralToken::try_from(strategy.token_b_collateral_id)
+                .map_err(|_| ScopeError::ConversionFailure)?,
+        )?,
+        strategy.token_a_mint_decimals,
+        strategy.token_b_mint_decimals,
+    )?;
+
+    if cfg!(feature = "debug") {
+        let w = price_utils::calc_price_from_sqrt_price(
+            clmm.get_current_sqrt_price(),
+            strategy.token_a_mint_decimals,
+            strategy.token_b_mint_decimals,
+        );
+        let o = price_utils::calc_price_from_sqrt_price(
+            pool_sqrt_price,
+            strategy.token_a_mint_decimals,
+            strategy.token_b_mint_decimals,
+        );
+        let diff = (w - o).abs() / w;
+        msg!("o: {} w: {} d: {}%", w, o, diff * 100.0);
+    }
+
+    holdings_no_rewards(strategy, clmm, prices, pool_sqrt_price)
+}
+
+pub fn holdings_no_rewards(
+    strategy: &WhirlpoolStrategy,
+    clmm: &dyn Clmm,
+    prices: &TokenPrices,
+    pool_sqrt_price: u128,
+) -> Result<Holdings> {
+    let (available, invested, fees) = common::underlying_inventory(
+        strategy,
+        clmm,
+        LiquidityCalculationMode::Deposit,
+        clmm.get_position_liquidity()?,
+        pool_sqrt_price,
+    )?;
+    // exclude rewards
+    let rewards = RewardsAmounts::default();
+
+    let holdings = common::holdings_usd(strategy, available, invested, fees, rewards, prices)?;
+
+    Ok(holdings)
+}
+
+mod price_utils {
+    use decimal_wad::rate::U128;
+    use num_traits::Pow;
+
+    use super::*;
+
+    const TARGET_EXPONENT: u64 = 12;
+
+    // Helper
+    fn sub(a: u64, b: u64) -> Result<u32> {
+        let res = a.checked_sub(b).ok_or(ScopeError::IntegerOverflow)?;
+        u32::try_from(res).map_err(|_e| error!(ScopeError::IntegerOverflow))
+    }
+
+    fn pow(base: u64, exp: u64) -> U128 {
+        U128::from(base).pow(U128::from(exp))
+    }
+
+    fn abs_diff(a: i32, b: i32) -> u32 {
+        if a > b {
+            a.checked_sub(b).unwrap().try_into().unwrap()
+        } else {
+            b.checked_sub(a).unwrap().try_into().unwrap()
+        }
+    }
+
+    fn decimals_factor(decimals_a: u64, decimals_b: u64) -> Result<(U128, u64)> {
+        let decimals_a = i32::try_from(decimals_a).map_err(|_e| ScopeError::IntegerOverflow)?;
+        let decimals_b = i32::try_from(decimals_b).map_err(|_e| ScopeError::IntegerOverflow)?;
+
+        let diff = abs_diff(decimals_a, decimals_b);
+        let factor = U128::from(10_u64.pow(diff));
+        Ok((factor, u64::from(diff)))
+    }
+
+    pub fn a_to_b(
+        a: &yvaults::utils::price::Price,
+        b: &yvaults::utils::price::Price,
+    ) -> Result<yvaults::utils::price::Price> {
+        let exp = TARGET_EXPONENT;
+        let exp = u64::max(exp, a.exp);
+        let exp = u64::max(exp, b.exp);
+
+        let extra_factor_a = 10_u64.pow(sub(exp, a.exp)?);
+        let extra_factor_b = 10_u64.pow(sub(exp, b.exp)?);
+
+        let px_a = U128::from(a.value.checked_mul(extra_factor_a).unwrap());
+        let px_b = U128::from(b.value.checked_mul(extra_factor_b).unwrap());
+
+        let final_factor = pow(10, exp);
+
+        let price_a_to_b = px_a
+            .checked_mul(final_factor)
+            .unwrap()
+            .checked_div(px_b)
+            .unwrap();
+
+        Ok(yvaults::utils::price::Price {
+            value: price_a_to_b.as_u64(),
+            exp,
+        })
+    }
+
+    pub fn calc_sqrt_price_from_scope_price(
+        price: &yvaults::utils::price::Price,
+        decimals_a: u64,
+        decimals_b: u64,
+    ) -> Result<u128> {
+        // Normally we calculate sqrt price from a float price as following:
+        // px = sqrt(price * 10 ^ (decimals_b - decimals_a)) * 2 ** 64
+
+        // But scope price is scaled by 10 ** exp so, to obtain it, we need to divide by sqrt(10 ** exp)
+        // x = sqrt(scaled_price * 10 ^ (decimals_b - decimals_a)) * 2 ** 64
+        // px = x / sqrt(10 ** exp)
+
+        let (decimals_factor, decimals_diff) = decimals_factor(decimals_a, decimals_b)?;
+        let px = U128::from(price.value);
+        let (scaled_price, final_exp) = if decimals_b > decimals_a {
+            (px.checked_mul(decimals_factor).unwrap(), price.exp)
+        } else {
+            // If we divide by 10 ^ (decimals_a - decimals_b) here we lose precision
+            // So instead we lift the price even more (by the diff) and assume a bigger exp
+            (px, price.exp.checked_add(decimals_diff).unwrap())
+        };
+
+        let two_factor = pow(2, 64);
+        let x = scaled_price
+            .integer_sqrt()
+            .checked_mul(two_factor)
+            .ok_or(ScopeError::IntegerOverflow)?;
+
+        let sqrt_factor = pow(10, final_exp).integer_sqrt();
+
+        Ok(x.checked_div(sqrt_factor)
+            .ok_or(ScopeError::IntegerOverflow)?
+            .as_u128())
+    }
+
+    pub fn sqrt_price_from_scope_prices(
+        price_a: &yvaults::utils::price::Price,
+        price_b: &yvaults::utils::price::Price,
+        decimals_a: u64,
+        decimals_b: u64,
+    ) -> Result<u128> {
+        calc_sqrt_price_from_scope_price(&a_to_b(price_a, price_b)?, decimals_a, decimals_b)
+    }
+
+    pub fn calc_price_from_sqrt_price(price: u128, decimals_a: u64, decimals_b: u64) -> f64 {
+        let sqrt_price_x_64 = price as f64;
+        (sqrt_price_x_64 / 2.0_f64.powf(64.0)).powf(2.0)
+            * 10.0_f64.pow(decimals_a as i32 - decimals_b as i32)
+    }
+}
+
+#[cfg(test)]
+mod tests_price_utils {
+    use num_traits::Pow;
+    use price_utils::*;
+    use yvaults::utils::price::Price;
+
+    use super::*;
+
+    pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
+        let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
+        let res = (px * 2.0_f64.powf(64.0)) as u128;
+        res
+    }
+
+    pub fn f(price: Price) -> f64 {
+        let factor = 10_f64.pow(price.exp as f64);
+        price.value as f64 / factor
+    }
+
+    fn p(price: f64, exp: u64) -> Price {
+        let factor = 10_f64.pow(exp as f64);
+        Price {
+            value: (price * factor) as u64,
+            exp,
+        }
+    }
+
+    #[test]
+    fn test_sqrt_price_from_scope_price() {
+        // To USD
+        let token_a_price = Price {
+            value: 1_000_000_000,
+            exp: 9,
+        };
+
+        // To USD
+        let token_b_price = Price {
+            value: 1_000_000_000,
+            exp: 9,
+        };
+
+        let a_to_b_price = a_to_b(&token_a_price, &token_b_price);
+        println!("a_to_b_price: {:?}", a_to_b_price);
+
+        // assert_eq!(sqrt_price_from_scope_price(scope_price), sqrt_price);
+    }
+
+    #[test]
+    fn test_sqrt_price_from_float() {
+        let price = 1.0;
+        let px1 = calc_sqrt_price_from_float_price(price, 6, 6);
+        let px2 = calc_sqrt_price_from_float_price(price, 9, 9);
+        let px3 = calc_sqrt_price_from_float_price(price, 6, 9);
+        let px4 = calc_sqrt_price_from_float_price(price, 9, 6);
+
+        println!("px1: {}", px1);
+        println!("px2: {}", px2);
+        println!("px3: {}", px3);
+        println!("px4: {}", px4);
+    }
+
+    #[test]
+    fn test_sqrt_price_from_price() {
+        let px = Price {
+            value: 1_000_000_000,
+            exp: 9,
+        };
+
+        // sqrt_price_from_price = (price * 10 ^ (decimals_b - decimals_a)).sqrt() * 2 ^ 64;
+
+        let x = calc_sqrt_price_from_scope_price(&px, 6, 6).unwrap();
+        let y = calc_sqrt_price_from_float_price(f(px), 6, 6);
+
+        println!("x: {}", x);
+        println!("y: {}", y);
+
+        for (decimals_a, decimals_b) in
+            [(1, 10), (6, 6), (9, 6), (6, 9), (9, 9), (10, 1)].into_iter()
+        {
+            let x = calc_sqrt_price_from_float_price(f(px), decimals_a, decimals_b);
+            let y = calc_sqrt_price_from_scope_price(&px, decimals_a, decimals_b).unwrap();
+
+            let px_x = calc_price_from_sqrt_price(x, decimals_a, decimals_b);
+            let px_y = calc_price_from_sqrt_price(y, decimals_a, decimals_b);
+
+            let diff = (px_x - px_y).abs();
+            println!("x: {}, y: {} diff: {}", x, y, diff);
+        }
+    }
+
+    #[test]
+    fn scope_prices_to_sqrt_prices() {
+        let decimals_a: u64 = 6;
+        let decimals_b: u64 = 6;
+
+        let a = 1.0;
+        let b = 2.0;
+
+        let price = a / b;
+        let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
+
+        // Now go the other way around
+        let a = p(a, decimals_a.into());
+        let b = p(b, decimals_b.into());
+        let actual = sqrt_price_from_scope_prices(&a, &b, decimals_a, decimals_b).unwrap();
+
+        println!("expected: {}", expected);
+        println!("actual: {}", actual);
+    }
+
+    #[test]
+    fn test_numerical_examples() {
+        let sol = Price {
+            exp: 8,
+            value: 3232064150,
+        };
+        let eth = Price {
+            exp: 8,
+            value: 128549278944,
+        };
+        let btc = Price {
+            exp: 8,
+            value: 1871800000000,
+        };
+        let usdh = Price {
+            exp: 10,
+            value: 9984094565,
+        };
+        let stsol = Price {
+            exp: 8,
+            value: 3420000000,
+        };
+        let usdc = Price {
+            exp: 8,
+            value: 99998498,
+        };
+        let usdt = Price {
+            exp: 8,
+            value: 99985005,
+        };
+        let ush = Price {
+            exp: 10,
+            value: 9942477073,
+        };
+        let uxd = Price {
+            exp: 10,
+            value: 10007754362,
+        };
+        let dust = Price {
+            exp: 10,
+            value: 11962756205,
+        };
+        let usdr = Price {
+            exp: 10,
+            value: 9935635809,
+        };
+
+        for (price_a, price_b, expected_sqrt, decimals_a, decimals_b, tolerance) in [
+            (usdh, usdc, 18432369086522948808, 6, 6, 0.07),
+            (sol, stsol, 17927878403230908080, 9, 9, 0.07),
+            (usdc, usdt, 18446488013153244324, 6, 6, 0.07),
+            (ush, usdc, 581657083814290012, 9, 6, 0.07),
+            (usdr, usdc, 18387972314427037052, 6, 6, 0.07),
+            (sol, dust, 95888115807158641354, 9, 9, 0.07),
+            (sol, usdh, 3317976242955018545, 9, 6, 0.07),
+            (uxd, usdc, 18454272046764295796, 6, 6, 0.07),
+            (usdh, eth, 5149554401170243770, 6, 8, 0.4),
+            (usdh, btc, 134876121531740447, 6, 6, 0.4),
+        ] {
+            let actual =
+                sqrt_price_from_scope_prices(&price_a, &price_b, decimals_a, decimals_b).unwrap();
+
+            let expected = calc_price_from_sqrt_price(expected_sqrt, decimals_a, decimals_b);
+            let actual = calc_price_from_sqrt_price(actual, decimals_a, decimals_b);
+            let diff_pct = (actual - expected) / expected * 100.0;
+            println!("expected_sqrt: {}", expected_sqrt);
+            println!("actual: {}", actual);
+            println!("expected: {}", expected);
+            println!("diff: {}%", diff_pct);
+            println!("---");
+            assert!(diff_pct.abs() < tolerance) // 0.07% diff
+        }
+    }
 }
 
 #[cfg(test)]
