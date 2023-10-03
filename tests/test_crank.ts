@@ -93,10 +93,11 @@ describe('Scope crank bot tests', () => {
 
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
-    let token_mappings_kp = Keypair.generate();
+    let tokenMetadatas_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
+    tokenMappingsAccount = tokenMetadatas_kp.publicKey;
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
 
@@ -110,10 +111,11 @@ describe('Scope crank bot tests', () => {
         tokenMappings: tokenMappingsAccount,
         rent: SYSVAR_RENT_PUBKEY,
       },
-      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp],
+      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatas_kp],
       instructions: [
         await program.account.oraclePrices.createInstruction(oracleAccount_kp),
         await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
+        await program.account.tokenMappings.createInstruction(tokenMetadatas_kp),
       ],
     });
 
