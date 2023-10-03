@@ -22,7 +22,7 @@ pub fn process(
     let mut tokens_metadata = ctx.accounts.tokens_metadata.load_mut()?;
 
     let token_metadata = tokens_metadata
-        .price_info_accounts
+        .metadatas_array
         .get_mut(index as usize)
         .ok_or(ScopeError::BadTokenNb)?;
 

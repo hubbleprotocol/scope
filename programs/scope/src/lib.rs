@@ -140,7 +140,7 @@ pub struct OracleMappings {
 
 #[account(zero_copy)]
 pub struct TokenMetadatas {
-    pub price_info_accounts: [TokenMetadata; MAX_ENTRIES],
+    pub metadatas_array: [TokenMetadata; MAX_ENTRIES],
 }
 
 #[zero_copy]

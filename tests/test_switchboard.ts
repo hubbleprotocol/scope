@@ -85,7 +85,7 @@ describe('Switchboard Scope tests', () => {
       instructions: [
         await program.account.oraclePrices.createInstruction(oracleAccount_kp),
         await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
-        await program.account.tokenMetadataa.createInstruction(tokenMetadatasAccount_kp),
+        await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
       ],
     });
 

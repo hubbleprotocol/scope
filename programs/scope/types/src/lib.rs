@@ -88,7 +88,7 @@ pub struct Configuration {
 
 #[account(zero_copy)]
 pub struct TokensMetadata {
-    pub price_info_accounts: [TokenMetadata; MAX_ENTRIES],
+    pub metadatas_array: [TokenMetadata; MAX_ENTRIES],
 }
 
 #[zero_copy]

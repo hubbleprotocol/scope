@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use std::mem::size_of;
+use std::{collections::HashSet, num::NonZeroU64};
 
 use anchor_client::{
     anchor_lang::ToAccountMetas,
@@ -112,7 +112,7 @@ where
         )
         .await?;
 
-        debug!(?oracle_prices_acc, "oracle_prices_pbk" = %oracle_prices_acc.pubkey(), ?oracle_mappings_acc, "oracle_mappings_pbk" = %oracle_prices_acc.pubkey(),%configuration_acc);
+        debug!(?oracle_prices_acc, "oracle_prices_pbk" = %oracle_prices_acc.pubkey(), ?oracle_mappings_acc, "oracle_mappings_pbk" = %oracle_prices_acc.pubkey(), %configuration_acc);
 
         Ok(Self {
             client,
@@ -188,7 +188,7 @@ where
                 self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)
                     .await?;
             }
-            let token_metadata = token_metadatas.price_info_accounts[idx];
+            let token_metadata = token_metadatas.metadatas_array[idx];
             if token_metadata.max_age_price_seconds != local_entry.get_max_age() {
                 self.ix_update_tokens_metadata(
                     token_idx.into(),
@@ -223,26 +223,30 @@ where
             .iter()
             .enumerate()
             .zip(onchain_types)
-            .filter(|((_, &oracle_mapping), _)| oracle_mapping != zero_pk)
-            .map(|((idx, &oracle_mapping), oracle_type)| async move {
-                let id: u16 = idx.try_into()?;
-                let oracle_conf = TokenConfig {
-                    label: std::str::from_utf8(&token_metadatas.price_info_accounts[idx].name)
-                        .clone()
-                        .unwrap()
-                        .to_owned(),
-                    oracle_type: oracle_type.try_into()?,
-                    max_age: None,
-                    oracle_mapping,
-                };
-                let entry = entry_from_config(
-                    &oracle_conf,
-                    token_metadatas.price_info_accounts[idx].max_age_price_seconds,
-                    rpc,
-                )
-                .await?;
-                Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
-            });
+            .zip(token_metadatas.metadatas_array.iter())
+            .filter(|(((_, &oracle_mapping), _), _)| oracle_mapping != zero_pk)
+            .map(
+                |(((idx, &oracle_mapping), oracle_type), token_metadata)| async move {
+                    let id: u16 = idx.try_into()?;
+                    let oracle_conf = TokenConfig {
+                        label: std::str::from_utf8(&token_metadata.name)
+                            .unwrap()
+                            .to_owned(),
+                        oracle_type: oracle_type.try_into()?,
+                        max_age: Some(
+                            NonZeroU64::try_from(token_metadata.max_age_price_seconds).unwrap(),
+                        ),
+                        oracle_mapping,
+                    };
+                    let entry = entry_from_config(
+                        &oracle_conf,
+                        token_metadatas.metadatas_array[idx].max_age_price_seconds,
+                        rpc,
+                    )
+                    .await?;
+                    Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
+                },
+            );
 
         self.tokens = join_all(entry_builders)
             .await
@@ -537,6 +541,17 @@ where
                     .await?,
                 50_000,
             )
+            // Create the token metadatas account
+            .add_ix_with_budget(
+                client
+                    .create_account_ix(
+                        &token_metadatas_acc.pubkey(),
+                        size_of::<TokenMetadatas>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
             .add_anchor_ix(
                 program_id,
                 init_account,
@@ -599,7 +614,7 @@ where
 
         let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
 
-        info!(%signature, "Init tx");
+        info!(%signature, "Init metadatas tx");
         match init_res {
             Some(r) => r.context(format!("Init tokens_metadata transaction: {signature}")),
             None => bail!("Init tokens_metadata transaction failed to confirm: {signature}"),
