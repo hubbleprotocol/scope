@@ -45,8 +45,7 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     configuration.oracle_mappings = oracle_pbk;
     configuration.oracle_prices = prices_pbk;
 
-    let mut tokens_metadata = ctx.accounts.token_metadatas.load_init()?;
-    tokens_metadata.price_info_accounts = [TokenMetadata::default(); crate::MAX_ENTRIES];
+    let _ = ctx.accounts.token_metadatas.load_init()?;
     configuration.tokens_metadata = ctx.accounts.token_metadatas.key();
 
     Ok(())

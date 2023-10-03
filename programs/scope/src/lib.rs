@@ -74,10 +74,10 @@ pub mod scope {
         ctx: Context<UpdateTokensMetadata>,
         index: u64,
         mode: u64,
-        value: [u8; VALUE_BYTE_ARRAY_LEN],
+        value: Vec<u8>,
         feed_name: String,
     ) -> Result<()> {
-        handler_update_token_metadata::process(ctx, index, mode, &value, feed_name)
+        handler_update_token_metadata::process(ctx, index, mode, value, feed_name)
     }
 }
 

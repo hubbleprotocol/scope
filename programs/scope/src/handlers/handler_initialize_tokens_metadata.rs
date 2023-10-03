@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::TokenMetadata;
-
 #[derive(Accounts)]
 #[instruction(feed_name: String)]
 pub struct InitializeTokensMetadata<'info> {
@@ -18,8 +16,7 @@ pub struct InitializeTokensMetadata<'info> {
 }
 
 pub fn process(ctx: Context<InitializeTokensMetadata>, _: String) -> Result<()> {
-    let mut token_metadatas = ctx.accounts.token_metadatas.load_init()?;
-    token_metadatas.price_info_accounts = [TokenMetadata::default(); crate::MAX_ENTRIES];
+    let _ = ctx.accounts.token_metadatas.load_init()?;
 
     let mut configuration = ctx.accounts.configuration.load_mut()?;
     configuration.tokens_metadata = ctx.accounts.token_metadatas.key();

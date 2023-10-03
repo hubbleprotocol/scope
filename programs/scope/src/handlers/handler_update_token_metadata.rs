@@ -21,7 +21,7 @@ pub fn process(
     ctx: Context<UpdateTokensMetadata>,
     index: u64,
     mode: u64,
-    value: &[u8; VALUE_BYTE_ARRAY_LEN],
+    value: Vec<u8>,
     _: String,
 ) -> Result<()> {
     let mut tokens_metadata = ctx.accounts.tokens_metadata.load_mut()?;
@@ -41,10 +41,9 @@ pub fn process(
             token_metadata.max_age_price_seconds = value;
         }
         UpdateTokenMetadataMode::MaxPriceAgeSeconds => {
-            let name = value.to_vec();
-            let str_name = std::str::from_utf8(&name).unwrap();
+            token_metadata.name.copy_from_slice(&value);
+            let str_name = std::str::from_utf8(&token_metadata.name).unwrap();
             msg!("Setting token name for index {} to {}", index, str_name);
-            token_metadata.name = name.try_into().unwrap();
         }
     }
 
