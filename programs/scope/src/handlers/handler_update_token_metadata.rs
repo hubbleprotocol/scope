@@ -1,4 +1,4 @@
-use crate::{OracleMappings, ScopeError};
+use crate::ScopeError;
 use anchor_lang::prelude::*;
 use num_enum::TryFromPrimitive;
 
@@ -6,12 +6,8 @@ use num_enum::TryFromPrimitive;
 #[instruction(token:usize, price_type: u8, feed_name: String)]
 pub struct UpdateTokensMetadata<'info> {
     pub admin: Signer<'info>,
-    #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin, has_one = oracle_mappings, has_one = tokens_metadata)]
+    #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin, has_one = tokens_metadata)]
     pub configuration: AccountLoader<'info, crate::Configuration>,
-    #[account(mut)]
-    pub oracle_mappings: AccountLoader<'info, OracleMappings>,
-    /// CHECK: We trust the admin to provide a trustable account here. Some basic sanity checks are done based on type
-    pub price_info: AccountInfo<'info>,
 
     #[account(mut)]
     pub tokens_metadata: AccountLoader<'info, crate::TokensMetadata>,

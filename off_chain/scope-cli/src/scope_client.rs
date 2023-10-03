@@ -191,6 +191,7 @@ where
     /// Update the local oracle mapping from the on-chain version
     pub async fn download_oracle_mapping(&mut self, default_max_age: clock::Slot) -> Result<()> {
         let onchain_oracle_mapping = self.get_program_mapping().await?;
+        let token_metadatas = self.get_token_metadatas().await?;
         let onchain_mapping = onchain_oracle_mapping.price_info_accounts;
         let onchain_types = onchain_oracle_mapping.price_types;
 
@@ -453,6 +454,14 @@ where
         Ok(mapping)
     }
 
+    async fn get_token_metadatas(&self) -> Result<TokensMetadata> {
+        let token_metadatas: TokensMetadata = self
+            .client
+            .get_anchor_account(&self.tokens_metadata_acc)
+            .await?;
+        Ok(token_metadatas)
+    }
+
     #[tracing::instrument(skip(client))]
     async fn ix_initialize(
         client: &OrbitLink<T, S>,
@@ -607,6 +616,51 @@ where
             }
             None => {
                 error!(%signature, "Could not confirm mapping update transaction");
+                bail!("Could not confirm mapping update transaction");
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn ix_update_tokens_metadata(
+        &self,
+        oracle_account: &Pubkey,
+        token: u64,
+        price_type: u8,
+    ) -> Result<()> {
+        let update_accounts = accounts::UpdateTokensMetadata {
+            admin: self.client.payer(),
+            configuration: self.configuration_acc,
+            tokens_metadata: self.tokens_metadata_acc,
+        };
+
+        let request = self.client.tx_builder();
+
+        let tx = request
+            .add_anchor_ix(
+                &self.program_id,
+                update_accounts,
+                instruction::UpdateMapping {
+                    token,
+                    price_type,
+                    feed_name: self.feed_name.clone(),
+                },
+            )
+            .build_with_budget_and_fee(&[])
+            .await?;
+
+        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
+
+        match res {
+            Some(Ok(())) => info!(%signature, "Token metadata updated successfully"),
+            Some(Err(err)) => {
+                error!(%signature, err = ?err, "Token metadata update failed");
+                bail!(err);
+            }
+            None => {
+                error!(%signature, "Could not confirm token metadata update transaction");
                 bail!("Could not confirm mapping update transaction");
             }
         }
