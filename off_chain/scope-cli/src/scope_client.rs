@@ -127,11 +127,7 @@ where
     }
 
     pub async fn init_token_metadatas_if_needed(&mut self, price_feed: &str) -> Result<()> {
-        let Configuration { tokens_metadata, .. } = self.client
-        .get_anchor_account::<Configuration>(&self.configuration_acc).await
-        .context("Error while retrieving program configuration account, the program might be uninitialized")?;
-
-        if tokens_metadata.eq(&Pubkey::default()) {
+        if self.tokens_metadata_acc.eq(&Pubkey::default()) {
             // Generate accounts keypairs.
             let token_metadatas_acc = Keypair::new();
 
