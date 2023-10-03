@@ -18,7 +18,7 @@ use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope::{
-    accounts, instruction, Configuration, OracleMappings, OraclePrices, TokensMetadata,
+    accounts, instruction, Configuration, OracleMappings, OraclePrices, TokenMetadatas,
     UpdateTokenMetadataMode,
 };
 use tracing::{debug, error, info, trace, warn};
@@ -483,8 +483,8 @@ where
         Ok(mapping)
     }
 
-    async fn get_token_metadatas(&self) -> Result<TokensMetadata> {
-        let token_metadatas: TokensMetadata = self
+    async fn get_token_metadatas(&self) -> Result<TokenMetadatas> {
+        let token_metadatas: TokenMetadatas = self
             .client
             .get_anchor_account(&self.tokens_metadata_acc)
             .await?;
@@ -581,7 +581,7 @@ where
                 client
                     .create_account_ix(
                         &token_metadatas_acc.pubkey(),
-                        size_of::<TokensMetadata>() + 8,
+                        size_of::<TokenMetadatas>() + 8,
                         program_id,
                     )
                     .await?,

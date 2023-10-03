@@ -9,7 +9,7 @@ pub struct UpdateTokensMetadata<'info> {
     pub configuration: AccountLoader<'info, crate::Configuration>,
 
     #[account(mut)]
-    pub tokens_metadata: AccountLoader<'info, crate::TokensMetadata>,
+    pub tokens_metadata: AccountLoader<'info, crate::TokenMetadatas>,
 }
 
 pub fn process(

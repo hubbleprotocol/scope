@@ -15,7 +15,7 @@ pub struct Initialize<'info> {
     pub configuration: AccountLoader<'info, crate::Configuration>,
 
     #[account(zero)]
-    pub token_metadatas: AccountLoader<'info, crate::TokensMetadata>,
+    pub token_metadatas: AccountLoader<'info, crate::TokenMetadatas>,
 
     // Account is pre-reserved/payed outside the program
     #[account(zero)]
