@@ -17,7 +17,10 @@ use anyhow::{anyhow, bail, Context, Result};
 use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
-use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices, TokensMetadata};
+use scope::{
+    accounts, instruction, Configuration, OracleMappings, OraclePrices, TokensMetadata,
+    UpdateTokenMetadataMode,
+};
 use tracing::{debug, error, info, trace, warn};
 
 use crate::{
@@ -171,6 +174,7 @@ where
         let program_mapping = self.get_program_mapping().await?;
         let onchain_accounts_mapping = program_mapping.price_info_accounts;
         let onchain_price_type_mapping = program_mapping.price_types;
+        let token_metadatas = self.get_token_metadatas().await?;
 
         // For all "token" local and remote
         for (&token_idx, local_entry) in &self.tokens {
@@ -184,12 +188,29 @@ where
                 self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)
                     .await?;
             }
+            let token_metadata = token_metadatas.price_info_accounts[idx];
+            if token_metadata.max_age_price_seconds != local_entry.get_max_age() {
+                self.ix_update_tokens_metadata(
+                    token_idx.into(),
+                    UpdateTokenMetadataMode::MaxPriceAgeSeconds,
+                    local_entry.get_max_age().to_le_bytes().to_vec(),
+                )
+                .await?;
+            }
+            if token_metadata.name != local_entry.get_label().as_bytes() {
+                self.ix_update_tokens_metadata(
+                    token_idx.into(),
+                    UpdateTokenMetadataMode::Name,
+                    local_entry.get_label().as_bytes().to_vec(),
+                )
+                .await?;
+            }
         }
         Ok(())
     }
 
     /// Update the local oracle mapping from the on-chain version
-    pub async fn download_oracle_mapping(&mut self, default_max_age: clock::Slot) -> Result<()> {
+    pub async fn download_oracle_mapping(&mut self) -> Result<()> {
         let onchain_oracle_mapping = self.get_program_mapping().await?;
         let token_metadatas = self.get_token_metadatas().await?;
         let onchain_mapping = onchain_oracle_mapping.price_info_accounts;
@@ -206,12 +227,20 @@ where
             .map(|((idx, &oracle_mapping), oracle_type)| async move {
                 let id: u16 = idx.try_into()?;
                 let oracle_conf = TokenConfig {
-                    label: "".to_string(),
+                    label: std::str::from_utf8(&token_metadatas.price_info_accounts[idx].name)
+                        .clone()
+                        .unwrap()
+                        .to_owned(),
                     oracle_type: oracle_type.try_into()?,
                     max_age: None,
                     oracle_mapping,
                 };
-                let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
+                let entry = entry_from_config(
+                    &oracle_conf,
+                    token_metadatas.price_info_accounts[idx].max_age_price_seconds,
+                    rpc,
+                )
+                .await?;
                 Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
             });
 
@@ -626,9 +655,9 @@ where
     #[tracing::instrument(skip(self))]
     pub async fn ix_update_tokens_metadata(
         &self,
-        oracle_account: &Pubkey,
         token: u64,
-        price_type: u8,
+        mode: UpdateTokenMetadataMode,
+        value: Vec<u8>,
     ) -> Result<()> {
         let update_accounts = accounts::UpdateTokensMetadata {
             admin: self.client.payer(),
@@ -642,9 +671,10 @@ where
             .add_anchor_ix(
                 &self.program_id,
                 update_accounts,
-                instruction::UpdateMapping {
-                    token,
-                    price_type,
+                instruction::UpdateTokenMetadata {
+                    index: token,
+                    mode: mode.to_u64(),
+                    value,
                     feed_name: self.feed_name.clone(),
                 },
             )

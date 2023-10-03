@@ -161,6 +161,22 @@ pub struct Configuration {
     _padding: [u64; 1263],
 }
 
+#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
+#[repr(u64)]
+pub enum UpdateTokenMetadataMode {
+    Name = 0,
+    MaxPriceAgeSeconds = 1,
+}
+
+impl UpdateTokenMetadataMode {
+    pub fn to_u64(self) -> u64 {
+        match self {
+            UpdateTokenMetadataMode::Name => 0,
+            UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
+        }
+    }
+}
+
 #[error_code]
 #[derive(PartialEq, Eq, FromPrimitive)]
 pub enum ScopeError {

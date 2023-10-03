@@ -1,4 +1,4 @@
-use crate::ScopeError;
+use crate::{ScopeError, UpdateTokenMetadataMode};
 use anchor_lang::prelude::*;
 use num_enum::TryFromPrimitive;
 
@@ -31,12 +31,12 @@ pub fn process(
         .try_into()
         .map_err(|_| ScopeError::InvalidTokenUpdateMode)?;
     match mode {
-        UpdateTokenMetadataMode::Name => {
+        UpdateTokenMetadataMode::MaxPriceAgeSeconds => {
             let value = u64::from_le_bytes(value[..8].try_into().unwrap());
             msg!("Setting token max age for index {:?} to {}", index, value);
             token_metadata.max_age_price_seconds = value;
         }
-        UpdateTokenMetadataMode::MaxPriceAgeSeconds => {
+        UpdateTokenMetadataMode::Name => {
             token_metadata.name.copy_from_slice(&value);
             let str_name = std::str::from_utf8(&token_metadata.name).unwrap();
             msg!("Setting token name for index {} to {}", index, str_name);
@@ -44,11 +44,4 @@ pub fn process(
     }
 
     Ok(())
-}
-
-#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
-#[repr(u64)]
-pub enum UpdateTokenMetadataMode {
-    Name = 0,
-    MaxPriceAgeSeconds = 1,
 }

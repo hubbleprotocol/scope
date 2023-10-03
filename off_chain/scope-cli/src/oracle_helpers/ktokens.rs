@@ -103,6 +103,10 @@ impl OracleHelper for KTokenOracle {
         self.max_age
     }
 
+    fn get_label(&self) -> &str {
+        &self.label
+    }
+
     async fn need_refresh(
         &self,
         _scope_price: &DatedPrice,

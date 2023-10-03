@@ -52,6 +52,8 @@ pub trait OracleHelper: Sync {
     /// being considered stalled by the user of the scope feed.
     fn get_max_age(&self) -> clock::Slot;
 
+    fn get_label(&self) -> &str;
+
     /// Tell if a price has changed and need to be refreshed.
     ///
     /// **Note:** For prices that constantly changes implementation

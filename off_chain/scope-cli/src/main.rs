@@ -130,7 +130,6 @@ enum Actions {
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
     },
-    
 }
 
 #[tokio::main]
@@ -201,7 +200,6 @@ async fn main() -> Result<()> {
                 .await
             }
             Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping).await,
-
         }
     }
 }
@@ -236,7 +234,7 @@ async fn download<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping: &impl AsRef<Path>,
 ) -> Result<()> {
-    scope.download_oracle_mapping(0).await?;
+    scope.download_oracle_mapping().await?;
     let token_list = scope.get_local_mapping()?;
     token_list.save_to_file(mapping)
 }
@@ -249,7 +247,7 @@ async fn show<T: AsyncClient, S: Signer>(
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list).await?;
     } else {
-        scope.download_oracle_mapping(0).await?;
+        scope.download_oracle_mapping().await?;
     }
 
     let current_slot = get_clock(scope.get_rpc()).await?.slot;
@@ -267,7 +265,7 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list).await?;
     } else {
-        scope.download_oracle_mapping(0).await?;
+        scope.download_oracle_mapping().await?;
     }
 
     scope.print_pubkeys().await
@@ -295,7 +293,7 @@ async fn crank<T: AsyncClient, S: Signer>(
             "Default refresh interval set to {:?} slots",
             refresh_interval_slot
         );
-        scope.download_oracle_mapping(refresh_interval_slot).await?;
+        scope.download_oracle_mapping().await?;
     }
 
     let async_print_price_loop = async {

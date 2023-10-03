@@ -99,6 +99,13 @@ pub struct TokenMetadata {
     pub _reserved: [u64; 16],
 }
 
+#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
+#[repr(u64)]
+pub enum UpdateTokenMetadataMode {
+    Name = 0,
+    MaxPriceAgeSeconds = 1,
+}
+
 #[error_code]
 #[derive(PartialEq, Eq, FromPrimitive)]
 pub enum ScopeError {
