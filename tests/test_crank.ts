@@ -179,5 +179,10 @@ describe('Scope crank bot tests', () => {
     await scopeBot.crank();
 
     await scopeBot.update('./test_mapping.json');
+
+    let tokenMetadatas = await program.account.tokenMetadatas.fetch(tokenMetadatasAccount);
+    expect(tokenMetadatas.tokenMetadatas.length).eq(2);
+    expect(tokenMetadatas.tokenMetadatas[0].max_age_price_seconds).eq(100);
+    expect(tokenMetadatas.tokenMetadatas[1].max_age_price_seconds).eq(200);
   });
 });
