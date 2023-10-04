@@ -125,14 +125,11 @@ export class ScopeBot {
     }
   }
 
-  async crank(refreshInterval: number = 10) {
-    let args = [
-      ...this.base_args(),
-      'crank',
-      '--refresh-interval-slot',
-      refreshInterval.toString(),
-      // TODO: allow to test with local mapping
-    ];
+  async crank(mapping?: string) {
+    let args = [...this.base_args(), 'crank'];
+    if (mapping) {
+      args = [...args, '--mapping', mapping];
+    }
 
     let env = this.env();
 

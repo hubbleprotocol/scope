@@ -94,9 +94,6 @@ enum Actions {
     /// Automatically refresh the prices
     #[clap()]
     Crank {
-        /// Age of price in slot before triggering a refresh
-        #[clap(long, env, default_value = "30")]
-        refresh_interval_slot: clock::Slot,
         /// Where to store the mapping
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
@@ -174,7 +171,6 @@ async fn main() -> Result<()> {
             Actions::Init { .. } => unreachable!(),
             Actions::Show { mapping } => show(&mut scope, &mapping).await,
             Actions::Crank {
-                refresh_interval_slot,
                 mapping,
                 server,
                 server_port,
@@ -191,7 +187,7 @@ async fn main() -> Result<()> {
                 crank(
                     &mut scope,
                     (mapping).as_ref(),
-                    refresh_interval_slot,
+                    // refresh_interval_slot,
                     print_period_s,
                     old_price_alert_snooze_time_s,
                     alert_old_price_after_slots,
@@ -234,7 +230,7 @@ async fn download<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping: &impl AsRef<Path>,
 ) -> Result<()> {
-    scope.download_oracle_mapping().await?;
+    scope.download_oracle_mapping(0).await?;
     let token_list = scope.get_local_mapping()?;
     token_list.save_to_file(mapping)
 }
@@ -247,7 +243,7 @@ async fn show<T: AsyncClient, S: Signer>(
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list).await?;
     } else {
-        scope.download_oracle_mapping().await?;
+        scope.download_oracle_mapping(0).await?;
     }
 
     let current_slot = get_clock(scope.get_rpc()).await?.slot;
@@ -265,7 +261,7 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list).await?;
     } else {
-        scope.download_oracle_mapping().await?;
+        scope.download_oracle_mapping(0).await?;
     }
 
     scope.print_pubkeys().await
@@ -274,7 +270,7 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
 async fn crank<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping_op: Option<impl AsRef<Path>>,
-    refresh_interval_slot: clock::Slot,
+    // refresh_interval_slot: clock::Slot,
     print_period_s: u64,
     old_price_alert_snooze_time_s: u64,
     alert_old_price_after_slots: clock::Slot,
@@ -291,9 +287,9 @@ async fn crank<T: AsyncClient, S: Signer>(
     } else {
         info!(
             "Default refresh interval set to {:?} slots",
-            refresh_interval_slot
+            0 // refresh_interval_slot
         );
-        scope.download_oracle_mapping().await?;
+        scope.download_oracle_mapping(0).await?;
     }
 
     let async_print_price_loop = async {

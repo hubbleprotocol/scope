@@ -1,10 +1,4 @@
-import {
-  Connection,
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  SYSVAR_RENT_PUBKEY,
-} from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
 import { AnchorProvider, BN, Program, setProvider } from '@project-serum/anchor';
 import { sleep } from '@project-serum/common';
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
@@ -178,5 +172,12 @@ describe('Scope crank bot tests', () => {
       let oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkAllOraclePrices(oracle, fakeAccounts);
     }
+  });
+
+  it('test_config_upload_download', async () => {
+    scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
+    await scopeBot.crank();
+
+    await scopeBot.update('./test_mapping.json');
   });
 });

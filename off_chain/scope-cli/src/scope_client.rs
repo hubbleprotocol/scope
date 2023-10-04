@@ -206,7 +206,7 @@ where
     }
 
     /// Update the local oracle mapping from the on-chain version
-    pub async fn download_oracle_mapping(&mut self) -> Result<()> {
+    pub async fn download_oracle_mapping(&mut self, default_max_age: clock::Slot) -> Result<()> {
         let onchain_oracle_mapping = self.get_program_mapping().await?;
         let token_metadatas = self.get_token_metadatas().await?;
         let onchain_mapping = onchain_oracle_mapping.price_info_accounts;
@@ -235,12 +235,7 @@ where
                         },
                         oracle_mapping,
                     };
-                    let entry = entry_from_config(
-                        &oracle_conf,
-                        token_metadatas.metadatas_array[idx].max_age_price_seconds,
-                        rpc,
-                    )
-                    .await?;
+                    let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
                     Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
                 },
             );
