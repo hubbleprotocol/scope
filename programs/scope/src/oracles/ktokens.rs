@@ -28,7 +28,17 @@ use crate::{
 
 const USD_DECIMALS_PRECISION: u8 = 6;
 
-// Gives the price of 1 kToken in USD
+/// Gives the price of 1 kToken in USD
+///
+/// This is the price of the underlying assets in USD divided by the number of shares issued
+///
+/// Underlying assets is the sum of invested, uninvested and fees of token_a and token_b
+///
+/// Reward tokens are excluded from the calculation as they are generally lower value/mcap and can be manipulated
+///
+/// When calculating invested amounts, a sqrt price derived from scope price_a and price_b is used to determine the 'correct' ratio of underlying assets, the sqrt price of the pool cannot be considered reliable
+///
+/// The kToken price timestamp is taken from the least-recently updated price in the scope price chains of token_a and token_b
 pub fn get_price<'a, 'b>(
     k_account: &AccountInfo,
     clock: &Clock,
@@ -130,6 +140,7 @@ where
         strategy_account_ref.shares_mint_decimals,
     )?;
 
+    // Get the least-recently updated component price from both scope chains
     let (last_updated_slot, unix_timestamp) = get_component_px_last_update(
         &scope_prices_ref,
         &collateral_infos_ref,
@@ -188,6 +199,8 @@ fn get_clmm<'a, 'info>(
     Ok(clmm)
 }
 
+/// Returns the last updated slot and unix timestamp of the least-recently updated component price
+/// Excludes rewards prices as they do not form part of the calculation
 fn get_component_px_last_update(
     scope_prices: &ScopePrices,
     collateral_infos: &CollateralInfos,
@@ -229,6 +242,9 @@ fn get_component_px_last_update(
     Ok((last_updated_slot, unix_timestamp))
 }
 
+/// Returns the holdings of the strategy
+/// Use a sqrt price derived from price_a and price_b, not from the pool as it cannot be considered reliable
+/// Exclude rewards from the holdings calculation, as they are generally low value/mcap and can be manipulated
 pub fn holdings(
     strategy: &WhirlpoolStrategy,
     clmm: &dyn Clmm,
