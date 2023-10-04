@@ -13,3 +13,6 @@ overflow-checks = true
 [profile.release]
 lto = "thin"
 overflow-checks = true
+
+[patch.crates-io]
+mpl-token-metadata = {git = 'https://github.com/hubbleprotocol/metaplex-program-library', branch="restore-v2-interface"}

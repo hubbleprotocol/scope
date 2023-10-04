@@ -1,4 +1,5 @@
 pub mod ctokens;
+#[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod pyth;
 pub mod pyth_ema;
@@ -51,7 +52,7 @@ impl OracleType {
             OracleType::SwitchboardV2 => 30000,
             OracleType::CToken => 130000,
             OracleType::SplStake => 20000,
-            OracleType::KToken => 50000,
+            OracleType::KToken => 90000,
             OracleType::PythEMA => 15000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
@@ -68,7 +69,7 @@ impl OracleType {
 pub fn get_price<'a, 'b>(
     price_type: OracleType,
     base_account: &AccountInfo,
-    extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
+    _extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
     clock: &Clock,
 ) -> crate::Result<DatedPrice>
 where
@@ -80,7 +81,12 @@ where
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::CToken => ctokens::get_price(base_account, clock),
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
-        OracleType::KToken => ktokens::get_price(base_account, extra_accounts),
+        #[cfg(not(feature = "yvaults"))]
+        OracleType::KToken => {
+            panic!("yvaults feature is not enabled, KToken oracle type is not available")
+        }
+        #[cfg(feature = "yvaults")]
+        OracleType::KToken => ktokens::get_price(base_account, clock, _extra_accounts),
         OracleType::PythEMA => pyth_ema::get_price(base_account),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")

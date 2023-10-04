@@ -15,13 +15,14 @@ name = "scope_client"
 path = "src/lib.rs"
 
 [features]
-default = ["rpc-client"]
+default = ["rpc-client", "yvaults"]
 rpc-client = ["orbit-link/rpc-client"]
 banks-client = ["orbit-link/banks-client"]
+yvaults = ["scope/yvaults"]
 
 [dependencies]
 anchor-client = "0.26.0"
-scope = { path = "../../programs/scope", features = ["no-entrypoint"] }
+scope = { path = "../../programs/scope", default-features = false, features = ["no-entrypoint"] }
 anyhow = "1.0.0"
 clap = { version = "3.2.11", features = ["derive", "env", "wrap_help"] }
 serde = "1.0.136"

@@ -119,6 +119,11 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
         }
         // Check that the provided oracle accounts are the one referenced in oracleMapping
         if oracle_mappings.price_info_accounts[token_idx] != received_account.key() {
+            msg!(
+                "Invalid price account: {}, expected: {}",
+                received_account.key(),
+                oracle_mappings.price_info_accounts[token_idx]
+            );
             return err!(ScopeError::UnexpectedAccount);
         }
         let clock = Clock::get()?;

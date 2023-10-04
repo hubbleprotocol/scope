@@ -8,14 +8,26 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   ts-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Set up SSH keys
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          # Use hubbleprotocolbot's key:
+          # - docker+cargo fails when mounting multiple keys (https://github.com/docker/buildx/issues/341)
+          # - GitHub does not support reusing deploy keys
+          ssh-private-key: |
+            ${{ secrets.HUBBLEPROTOCOLBOT_GITHUB_KEY }}
       - uses: actions/checkout@v3
       - uses: hubbleprotocol/solana-setup-action@v0.1
         with:
-          solana-version: v1.13.6
+          solana-version: v1.14.15
           rust-version: stable
           anchor-version: v0.26.0
           setup-node: 19

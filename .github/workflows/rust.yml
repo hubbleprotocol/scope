@@ -11,6 +11,10 @@ on:
     # Trigger every day at 4:32 (note: avoid round hours)
     - cron: '32 4 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   clippy_and_test:
     name: Rust project
@@ -25,6 +29,14 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+      - name: Set up SSH keys
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          # Use hubbleprotocolbot's key:
+          # - docker+cargo fails when mounting multiple keys (https://github.com/docker/buildx/issues/341)
+          # - GitHub does not support reusing deploy keys
+          ssh-private-key: |
+            ${{ secrets.HUBBLEPROTOCOLBOT_GITHUB_KEY }}
       - uses: actions-rs/cargo@v1
         name: Rust format
         with:

@@ -68,8 +68,8 @@ PROGRAM_DEPLOY_TARGET ?= $(SCOPE_PROGRAM_DEPLOY_TARGET)
 .PHONY: deploy run listen deploy deploy-int airdrop test test-rust test-ts init check-env format print-switchboard-links
 
 check-env:
->@ echo "CLUSTER=$(CLUSTER)" 
->@ echo "URL=$(URL)" 
+>@ echo "CLUSTER=$(CLUSTER)"
+>@ echo "URL=$(URL)"
 >@ echo "FEED_NAME=$(FEED_NAME)"
 
 build: $(SCOPE_PROGRAM_SO) $(FAKE_ORACLES_PROGRAM_SO) $(SCOPE_CLI)
@@ -77,7 +77,7 @@ build: $(SCOPE_PROGRAM_SO) $(FAKE_ORACLES_PROGRAM_SO) $(SCOPE_CLI)
 $(SCOPE_CLI): $(shell find programs -name "*.rs") $(shell find off_chain -name "*.rs") $(shell find off_chain -name "Cargo.toml") Cargo.lock
 > cargo build -p scope-cli
 
-# Don't autodelete the keys, we want to keep them as much as possible 
+# Don't autodelete the keys, we want to keep them as much as possible
 .PRECIOUS: keys/$(CLUSTER)/%.json
 keys/$(CLUSTER)/%.json:
 >@ mkdir -p $(@D)
@@ -87,7 +87,7 @@ keys/$(CLUSTER)/%.json:
 target/deploy/%.so: keys/$(CLUSTER)/%.json $(shell find programs -name "*.rs") $(shell find programs -name "Cargo.toml") Cargo.lock CLUSTER
 >@ echo "*******Build $* *******"
 >@ CLUSTER=$(CLUSTER) anchor build -p $*
->@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly 
+>@ cp -f keys/$(CLUSTER)/$*.json target/deploy/$*-keypair.json #< Optional but just to ensure deploys without the makefile behave correctly
 
 deploy-scope:
 >@ if [ $(CLUSTER) = "mainnet" ]; then\

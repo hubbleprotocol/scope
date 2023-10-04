@@ -2,7 +2,7 @@ mod common;
 
 use anchor_lang::{prelude::Pubkey, InstructionData, ToAccountMetas};
 use common::*;
-use scope::{oracles::OracleType, Price};
+use scope::Price;
 use solana_program::instruction::Instruction;
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signature::Keypair, signer::Signer};
@@ -13,7 +13,7 @@ use crate::{common::utils::AnchorErrorCode, utils::map_anchor_error};
 const TEST_PYTH_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePythPriceAccount11111111111111111111111"),
     token: 0,
-    price_type: OracleType::Pyth,
+    price_type: TestOracleType::Pyth,
 };
 
 // - [x] Wrong feed name
@@ -38,7 +38,7 @@ async fn test_working_update_mapping() {
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
-        price_type: TEST_PYTH_ORACLE.price_type.into(),
+        price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
     };
 
     let ix = Instruction {
@@ -67,7 +67,7 @@ async fn test_wrong_feed_name() {
     let args = scope::instruction::UpdateMapping {
         feed_name: "randomFeed".to_string(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
-        price_type: TEST_PYTH_ORACLE.price_type.into(),
+        price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
     };
 
     let ix = Instruction {
@@ -104,7 +104,7 @@ async fn test_wrong_config_account() {
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
-        price_type: TEST_PYTH_ORACLE.price_type.into(),
+        price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
     };
 
     let ix = Instruction {
@@ -141,7 +141,7 @@ async fn test_wrong_mapping_account() {
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
-        price_type: TEST_PYTH_ORACLE.price_type.into(),
+        price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
     };
 
     let ix = Instruction {
@@ -179,7 +179,7 @@ async fn test_wrong_admin() {
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
-        price_type: TEST_PYTH_ORACLE.price_type.into(),
+        price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
     };
 
     let ix = Instruction {
