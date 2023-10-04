@@ -6416,7 +6416,7 @@ dependencies = [
 [[package]]
 name = "yvaults"
 version = "0.1.0"
-source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git?branch=elliot/refactor-px-functions#7f8465f314138a692e49cfb13984f1aeecc41fc1"
+source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git#5cf35366a3687afb4eedd2aeec010327024b9a6b"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
