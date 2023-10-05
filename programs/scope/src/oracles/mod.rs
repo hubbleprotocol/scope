@@ -52,7 +52,7 @@ impl OracleType {
             OracleType::SwitchboardV2 => 30000,
             OracleType::CToken => 130000,
             OracleType::SplStake => 20000,
-            OracleType::KToken => 95000,
+            OracleType::KToken => 100000,
             OracleType::PythEMA => 15000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
