@@ -14,24 +14,6 @@ require('dotenv').config();
 const date = Date.now();
 const PRICE_FEED = 'testMapping' + date;
 
-function getRevisedIndex(token: number): number {
-  // Create a bit of spread in the mapping to make bot's life harder
-  if (token < initialTokens.length / 2) {
-    return token;
-  } else {
-    // Put last tokens at the end
-    return global.MAX_NB_TOKENS - token - 1;
-  }
-}
-
-function checkAllOraclePrices(oraclePrices: any, tokenEntries: ITokenEntry[]) {
-  console.log(`Check all prices`);
-  tokenEntries.map((tokenEntry, idx) => {
-    let in_decimal = getScopePriceDecimal(getRevisedIndex(idx), oraclePrices);
-    expect(in_decimal).decimal.eq(tokenEntry.price);
-  });
-}
-
 describe('Scope crank bot tests', () => {
   // TODO: have a different keypair for the crank to check that other people can actually crank
   const keypair_path = `./keys/${global.getCluster()}/owner.json`;

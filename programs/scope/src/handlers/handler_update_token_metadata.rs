@@ -16,8 +16,8 @@ pub fn process(
     ctx: Context<UpdateTokensMetadata>,
     index: usize,
     mode: u64,
-    _: String,
     value: Vec<u8>,
+    _: String,
 ) -> Result<()> {
     let mut tokens_metadata = ctx.accounts.tokens_metadata.load_mut()?;
 

@@ -1,16 +1,19 @@
-import { execFile, ChildProcess } from 'child_process';
+import { execFile, ChildProcess, exec } from 'child_process';
 
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Keypair } from '@solana/web3.js';
 import { sleep } from '@project-serum/common';
 
 import { Decimal } from 'decimal.js';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import path from 'path';
 
 import * as chai from 'chai';
+import assert from 'assert';
 import chaiDecimalJs from 'chai-decimaljs';
 
 chai.use(chaiDecimalJs(Decimal));
 
-const exe_file = './target/debug/scope';
+const exe_file = './target/x86_64-apple-darwin/debug/scope';
 
 export interface ScopeBot {
   programId: PublicKey;

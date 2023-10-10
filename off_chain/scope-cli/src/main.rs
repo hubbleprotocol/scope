@@ -284,6 +284,7 @@ async fn crank<T: AsyncClient, S: Signer>(
         scope.set_local_mapping(&token_list).await?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
+        info!("Default refresh interval set to {:?} slots", 0);
         scope.download_oracle_mapping(0).await?;
     }
 
