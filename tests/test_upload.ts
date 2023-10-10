@@ -14,6 +14,24 @@ require('dotenv').config();
 const date = Date.now();
 const PRICE_FEED = 'testMapping' + date;
 
+function getRevisedIndex(token: number): number {
+  // Create a bit of spread in the mapping to make bot's life harder
+  if (token < initialTokens.length / 2) {
+    return token;
+  } else {
+    // Put last tokens at the end
+    return global.MAX_NB_TOKENS - token - 1;
+  }
+}
+
+function checkAllOraclePrices(oraclePrices: any, tokenEntries: ITokenEntry[]) {
+  console.log(`Check all prices`);
+  tokenEntries.map((tokenEntry, idx) => {
+    let in_decimal = getScopePriceDecimal(getRevisedIndex(idx), oraclePrices);
+    expect(in_decimal).decimal.eq(tokenEntry.price);
+  });
+}
+
 describe('Scope crank bot tests', () => {
   // TODO: have a different keypair for the crank to check that other people can actually crank
   const keypair_path = `./keys/${global.getCluster()}/owner.json`;
@@ -65,6 +83,8 @@ describe('Scope crank bot tests', () => {
       )
     )[0];
 
+    console.log('confAccount', confAccount.toString());
+
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();
@@ -72,6 +92,8 @@ describe('Scope crank bot tests', () => {
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
     tokenMetadatasAccount = tokenMetadatasAccount_kp.publicKey;
+
+    console.log(`program data address is ${programDataAddress.toBase58()}`);
 
     await program.rpc.initialize(PRICE_FEED, {
       accounts: {
