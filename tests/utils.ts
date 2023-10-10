@@ -161,3 +161,8 @@ export function checkOraclePrice(token: number, oraclePrices: any, testTokens: I
   let in_decimal = new Decimal(value).mul(new Decimal(10).pow(new Decimal(-expo)));
   expect(in_decimal).decimal.eq(testTokens[token].price);
 }
+
+export function getStringEndingAtNullByte(buffer: Buffer): string {
+  const nullByteIndex = buffer.indexOf(0); // find index of first null byte
+  return buffer.toString('utf8', 0, nullByteIndex); // convert buffer to string up to null byte index
+}

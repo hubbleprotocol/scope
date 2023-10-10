@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(token:usize, price_type: u8, feed_name: String)]
+#[instruction(token:u64, price_type: u8, feed_name: String)]
 pub struct UpdateOracleMapping<'info> {
     pub admin: Signer<'info>,
     #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin, has_one = oracle_mappings)]

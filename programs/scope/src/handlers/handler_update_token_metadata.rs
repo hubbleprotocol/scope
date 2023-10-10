@@ -2,7 +2,7 @@ use crate::{ScopeError, UpdateTokenMetadataMode};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-#[instruction(token:usize, price_type: u8, feed_name: String)]
+#[instruction(index: u64, mode: u64,  feed_name: String, value: Vec<u8>)]
 pub struct UpdateTokensMetadata<'info> {
     pub admin: Signer<'info>,
     #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin, has_one = tokens_metadata)]
@@ -14,7 +14,7 @@ pub struct UpdateTokensMetadata<'info> {
 
 pub fn process(
     ctx: Context<UpdateTokensMetadata>,
-    index: u64,
+    index: usize,
     mode: u64,
     value: Vec<u8>,
     _: String,
@@ -23,7 +23,7 @@ pub fn process(
 
     let token_metadata = tokens_metadata
         .metadatas_array
-        .get_mut(index as usize)
+        .get_mut(index)
         .ok_or(ScopeError::BadTokenNb)?;
 
     let mode: UpdateTokenMetadataMode = mode
@@ -36,7 +36,12 @@ pub fn process(
             token_metadata.max_age_price_seconds = value;
         }
         UpdateTokenMetadataMode::Name => {
-            token_metadata.name.copy_from_slice(&value);
+            token_metadata.name.fill(0);
+            token_metadata
+                .name
+                .iter_mut()
+                .zip(value.iter())
+                .for_each(|(a, b)| *a = *b);
             let str_name = std::str::from_utf8(&token_metadata.name).unwrap();
             msg!("Setting token name for index {} to {}", index, str_name);
         }

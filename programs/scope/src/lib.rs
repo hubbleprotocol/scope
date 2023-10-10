@@ -75,9 +75,18 @@ pub mod scope {
         ctx: Context<UpdateTokensMetadata>,
         index: u64,
         mode: u64,
-        value: Vec<u8>,
         feed_name: String,
+        value: Vec<u8>,
     ) -> Result<()> {
+        msg!(
+            "update_token_metadata index {} mode {} feed_name {}",
+            index,
+            mode,
+            feed_name
+        );
+        let index: usize = index
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_update_token_metadata::process(ctx, index, mode, value, feed_name)
     }
 }

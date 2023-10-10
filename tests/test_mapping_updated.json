@@ -1,17 +1,15 @@
 {
   "default_max_age": 500,
   "0": {
-    "label": "SOL/USD",
+    "label": "STSOL/USD",
     "oracle_mapping": "AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB",
     "oracle_type": "Pyth",
-    "max_age": 100,
-    "name": "SOL/USD"
+    "max_age": 300
   },
   "1": {
-    "label": "ETH/USD",
+    "label": "STETH/USD",
     "oracle_mapping": "8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF",
     "oracle_type": "Pyth",
-    "max_age": 200,
-    "name": "ETH/USD"
+    "max_age": 400
   }
 }

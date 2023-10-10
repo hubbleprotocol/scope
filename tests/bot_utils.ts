@@ -1,4 +1,4 @@
-import { execFile, ChildProcess } from 'child_process';
+import { execFile, ChildProcess, exec } from 'child_process';
 
 import { PublicKey, Keypair } from '@solana/web3.js';
 import { sleep } from '@project-serum/common';
@@ -13,7 +13,7 @@ import chaiDecimalJs from 'chai-decimaljs';
 
 chai.use(chaiDecimalJs(Decimal));
 
-const exe_file = './target/debug/scope';
+const exe_file = './target/x86_64-apple-darwin/debug/scope';
 
 export interface ScopeBot {
   programId: PublicKey;
@@ -92,7 +92,7 @@ export class ScopeBot {
   }
 
   async update(mappingPath: string) {
-    let args = [...this.base_args(), 'update', '--mapping', mappingPath];
+    let args = [...this.base_args(), 'upload', '--mapping', mappingPath];
 
     let env = this.env();
 

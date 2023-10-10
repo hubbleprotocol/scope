@@ -6,13 +6,13 @@ import { Decimal } from 'decimal.js';
 import { expect } from 'chai';
 import * as global from './global';
 import * as bot from './bot_utils';
-import { initialTokens, getScopePriceDecimal } from './utils';
+import { initialTokens, getScopePriceDecimal, getStringEndingAtNullByte } from './utils';
 import { createFakeAccounts, ITokenEntry } from './oracle_utils/mock_oracles';
 
 require('dotenv').config();
 
 const date = Date.now();
-const PRICE_FEED = 'crank_test_feed' + date;
+const PRICE_FEED = 'testMapping' + date;
 
 function getRevisedIndex(token: number): number {
   // Create a bit of spread in the mapping to make bot's life harder
@@ -83,6 +83,8 @@ describe('Scope crank bot tests', () => {
       )
     )[0];
 
+    console.log('confAccount', confAccount.toString());
+
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();
@@ -114,78 +116,32 @@ describe('Scope crank bot tests', () => {
     console.log('Initialize Tokens mock_oracles prices and oracle mappings');
 
     fakeAccounts = await createFakeAccounts(fakeOraclesProgram, initialTokens);
-
-    await Promise.all(
-      fakeAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
-        await program.rpc.updateMapping(new BN(getRevisedIndex(idx)), fakeOracleAccount.getType(), PRICE_FEED, {
-          accounts: {
-            admin: admin.publicKey,
-            configuration: confAccount,
-            oracleMappings: oracleMappingAccount,
-            priceInfo: fakeOracleAccount.account,
-          },
-          signers: [admin],
-        });
-        // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
-      })
-    );
-  });
-
-  // TODO: error cases + check outputs:
-  // - start with the wrong program id
-  // - start without enough funds to pay
-  // - bad accounts (after PDAs removal)
-
-  it('test_one_price_change', async () => {
-    scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    await scopeBot.crank();
-
-    await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
-
-    await sleep(1500); // One block await
-
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkAllOraclePrices(oracle, fakeAccounts);
-    }
-  });
-
-  it('test_5_loop_price_changes', async () => {
-    scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    await scopeBot.crank();
-    for (let i = 0; i < 5; i++) {
-      // increase all prices at each loop
-      await Promise.all(
-        fakeAccounts.map(async (asset) => {
-          let new_price = asset.price.add(new Decimal('0.500'));
-          await asset.updatePrice(new_price);
-        })
-      );
-
-      await sleep(2000);
-
-      scopeBot.flushLogs();
-
-      await scopeBot.nextLogMatches((c) => c.includes('Prices list refreshed successfully'), 10000);
-      await sleep(2000);
-
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkAllOraclePrices(oracle, fakeAccounts);
-    }
   });
 
   it('test_config_upload_download', async () => {
     scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    await scopeBot.crank();
 
     await scopeBot.update('./tests/test_mapping.json');
 
-    console.log('tokenMetadatasAccount ', tokenMetadatasAccount.toString());
+    await sleep(10000);
+
     let tokenMetadatas = await program.account.tokenMetadatas.fetch(tokenMetadatasAccount);
-    console.log('tokenMetadatas ', tokenMetadatas.metadatasArray.length);
     expect(tokenMetadatas.metadatasArray.length).eq(512);
-    console.log('tokenMetadatas.tokenMetadatas.metadatasArray', tokenMetadatas.metadatasArray[0]);
-    expect(tokenMetadatas.metadatasArray[0].maxAgePriceSeconds).eq(100);
-    expect(tokenMetadatas.metadatasArray[1].maxAgePriceSeconds).eq(200);
+    expect(tokenMetadatas.metadatasArray[0].maxAgePriceSeconds.toNumber()).eq(100);
+    expect(tokenMetadatas.metadatasArray[1].maxAgePriceSeconds.toNumber()).eq(200);
+    expect(getStringEndingAtNullByte(Buffer.from(tokenMetadatas.metadatasArray[0].name, 'utf8'))).eq('SOL/USD');
+    expect(getStringEndingAtNullByte(Buffer.from(tokenMetadatas.metadatasArray[1].name, 'utf8'))).eq('ETH/USD');
+
+    // update the config with new data
+    await scopeBot.update('./tests/test_mapping_updated.json');
+
+    await sleep(10000);
+
+    tokenMetadatas = await program.account.tokenMetadatas.fetch(tokenMetadatasAccount);
+    expect(tokenMetadatas.metadatasArray.length).eq(512);
+    expect(tokenMetadatas.metadatasArray[0].maxAgePriceSeconds.toNumber()).eq(300);
+    expect(tokenMetadatas.metadatasArray[1].maxAgePriceSeconds.toNumber()).eq(400);
+    expect(getStringEndingAtNullByte(Buffer.from(tokenMetadatas.metadatasArray[0].name, 'utf8'))).eq('STSOL/USD');
+    expect(getStringEndingAtNullByte(Buffer.from(tokenMetadatas.metadatasArray[1].name, 'utf8'))).eq('STETH/USD');
   });
 });

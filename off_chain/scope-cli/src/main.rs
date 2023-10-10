@@ -221,6 +221,7 @@ async fn upload<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping: &impl AsRef<Path>,
 ) -> Result<()> {
+    info!("in upload call");
     let token_list = ScopeConfig::read_from_file(&mapping)?;
     scope.set_local_mapping(&token_list).await?;
     scope.upload_oracle_mapping().await

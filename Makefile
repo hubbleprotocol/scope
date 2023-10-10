@@ -140,7 +140,7 @@ listen:
 > solana logs -u $(URL) ${SCOPE_PROGRAM_ID}
 
 test-validator:
-> solana-test-validator -r
+> solana-test-validator -r --account AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB test_deps/pyth_account_1.json --account 8JPJJkmDScpcNmBRKGZuPuG2GYAveQgP3t5gFuMymwvF test_deps/pyth_account_2.json
 
 print-pubkeys: $(SCOPE_CLI)
 >@ ./target/debug/scope --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) get-pubkeys --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json
