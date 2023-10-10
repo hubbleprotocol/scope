@@ -65,8 +65,6 @@ describe('Scope crank bot tests', () => {
       )
     )[0];
 
-    console.log('confAccount', confAccount.toString());
-
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();

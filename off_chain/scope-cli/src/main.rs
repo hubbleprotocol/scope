@@ -187,7 +187,6 @@ async fn main() -> Result<()> {
                 crank(
                     &mut scope,
                     (mapping).as_ref(),
-                    // refresh_interval_slot,
                     print_period_s,
                     old_price_alert_snooze_time_s,
                     alert_old_price_after_slots,
