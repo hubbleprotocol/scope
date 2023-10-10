@@ -167,7 +167,6 @@ where
 
     /// Update the remote oracle mapping from the local
     pub async fn upload_oracle_mapping(&self) -> Result<()> {
-        info!("upload_oracle_mapping");
         let program_mapping = self.get_program_mapping().await?;
         let onchain_accounts_mapping = program_mapping.price_info_accounts;
         let onchain_price_type_mapping = program_mapping.price_types;
@@ -175,7 +174,6 @@ where
 
         // For all "token" local and remote
         for (&token_idx, local_entry) in &self.tokens {
-            info!("in loop");
             let idx: usize = token_idx.try_into().unwrap();
             let rem_mapping = &onchain_accounts_mapping[idx];
             let rem_price_type = onchain_price_type_mapping[idx];
@@ -187,10 +185,7 @@ where
                     .await?;
             }
             let token_metadata = token_metadatas.metadatas_array[idx];
-            info!("token_metadata: {:?}", token_metadata.max_age_price_seconds);
-            info!("local_entry: {:?}", local_entry.get_max_age());
             if token_metadata.max_age_price_seconds != local_entry.get_max_age() {
-                info!("update max age");
                 self.ix_update_tokens_metadata(
                     token_idx.into(),
                     UpdateTokenMetadataMode::MaxPriceAgeSeconds,
@@ -200,7 +195,6 @@ where
             }
             let local_entry_label_bytes = local_entry.get_label().as_bytes();
             if token_metadata.name[..local_entry_label_bytes.len()] != local_entry_label_bytes[..] {
-                info!("update name");
                 self.ix_update_tokens_metadata(
                     token_idx.into(),
                     UpdateTokenMetadataMode::Name,

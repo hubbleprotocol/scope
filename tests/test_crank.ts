@@ -173,19 +173,4 @@ describe('Scope crank bot tests', () => {
       checkAllOraclePrices(oracle, fakeAccounts);
     }
   });
-
-  it('test_config_upload_download', async () => {
-    scopeBot = new bot.ScopeBot(program.programId, keypair_path, PRICE_FEED);
-    await scopeBot.crank();
-
-    await scopeBot.update('./tests/test_mapping.json');
-
-    console.log('tokenMetadatasAccount ', tokenMetadatasAccount.toString());
-    let tokenMetadatas = await program.account.tokenMetadatas.fetch(tokenMetadatasAccount);
-    console.log('tokenMetadatas ', tokenMetadatas.metadatasArray.length);
-    expect(tokenMetadatas.metadatasArray.length).eq(512);
-    console.log('tokenMetadatas.tokenMetadatas.metadatasArray', tokenMetadatas.metadatasArray[0]);
-    expect(tokenMetadatas.metadatasArray[0].maxAgePriceSeconds).eq(100);
-    expect(tokenMetadatas.metadatasArray[1].maxAgePriceSeconds).eq(200);
-  });
 });

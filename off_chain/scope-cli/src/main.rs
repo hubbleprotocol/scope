@@ -221,7 +221,6 @@ async fn upload<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping: &impl AsRef<Path>,
 ) -> Result<()> {
-    info!("in upload call");
     let token_list = ScopeConfig::read_from_file(&mapping)?;
     scope.set_local_mapping(&token_list).await?;
     scope.upload_oracle_mapping().await
@@ -271,7 +270,6 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
 async fn crank<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping_op: Option<impl AsRef<Path>>,
-    // refresh_interval_slot: clock::Slot,
     print_period_s: u64,
     old_price_alert_snooze_time_s: u64,
     alert_old_price_after_slots: clock::Slot,
@@ -286,10 +284,6 @@ async fn crank<T: AsyncClient, S: Signer>(
         scope.set_local_mapping(&token_list).await?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
-        info!(
-            "Default refresh interval set to {:?} slots",
-            0 // refresh_interval_slot
-        );
         scope.download_oracle_mapping(0).await?;
     }
 

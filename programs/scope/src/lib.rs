@@ -87,7 +87,7 @@ pub mod scope {
         let index: usize = index
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
-        handler_update_token_metadata::process(ctx, index, mode, value, feed_name)
+        handler_update_token_metadata::process(ctx, index, mode, feed_name, value)
     }
 }
 
