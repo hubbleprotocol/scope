@@ -13,7 +13,7 @@ import chaiDecimalJs from 'chai-decimaljs';
 
 chai.use(chaiDecimalJs(Decimal));
 
-const exe_file = './target/x86_64-apple-darwin/debug/scope';
+const exe_file = './target/debug/scope';
 
 export interface ScopeBot {
   programId: PublicKey;
