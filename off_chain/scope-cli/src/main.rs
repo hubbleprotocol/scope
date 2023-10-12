@@ -94,6 +94,9 @@ enum Actions {
     /// Automatically refresh the prices
     #[clap()]
     Crank {
+        /// Age of price in slot before triggering a refresh
+        #[clap(long, env, default_value = "30")]
+        refresh_interval_slot: clock::Slot,
         /// Where to store the mapping
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
@@ -171,6 +174,7 @@ async fn main() -> Result<()> {
             Actions::Init { .. } => unreachable!(),
             Actions::Show { mapping } => show(&mut scope, &mapping).await,
             Actions::Crank {
+                refresh_interval_slot,
                 mapping,
                 server,
                 server_port,
@@ -186,6 +190,7 @@ async fn main() -> Result<()> {
                 };
                 crank(
                     &mut scope,
+                    refresh_interval_slot,
                     (mapping).as_ref(),
                     print_period_s,
                     old_price_alert_snooze_time_s,
@@ -209,7 +214,7 @@ async fn init<T: AsyncClient, S: Signer>(
 
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
-        scope.set_local_mapping(&token_list).await?;
+        scope.upload(&token_list).await?;
         scope.upload_oracle_mapping().await?;
     }
 
@@ -221,7 +226,7 @@ async fn upload<T: AsyncClient, S: Signer>(
     mapping: &impl AsRef<Path>,
 ) -> Result<()> {
     let token_list = ScopeConfig::read_from_file(&mapping)?;
-    scope.set_local_mapping(&token_list).await?;
+    scope.upload(&token_list).await?;
     scope.upload_oracle_mapping().await
 }
 
@@ -240,7 +245,7 @@ async fn show<T: AsyncClient, S: Signer>(
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
-        scope.set_local_mapping(&token_list).await?;
+        scope.upload(&token_list).await?;
     } else {
         scope.download_oracle_mapping(0).await?;
     }
@@ -258,7 +263,7 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
-        scope.set_local_mapping(&token_list).await?;
+        scope.upload(&token_list).await?;
     } else {
         scope.download_oracle_mapping(0).await?;
     }
@@ -268,6 +273,7 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
 
 async fn crank<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
+    refresh_interval_slot: clock::Slot,
     mapping_op: Option<impl AsRef<Path>>,
     print_period_s: u64,
     old_price_alert_snooze_time_s: u64,
@@ -280,11 +286,11 @@ async fn crank<T: AsyncClient, S: Signer>(
             "Default refresh interval set to {:?} slots",
             token_list.default_max_age
         );
-        scope.set_local_mapping(&token_list).await?;
+        scope.upload(&token_list).await?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
         info!("Default refresh interval set to {:?} slots", 0);
-        scope.download_oracle_mapping(0).await?;
+        scope.download_oracle_mapping(refresh_interval_slot).await?;
     }
 
     let async_print_price_loop = async {

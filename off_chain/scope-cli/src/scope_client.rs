@@ -147,7 +147,7 @@ where
     }
 
     /// Set the locally known oracle mapping according to the provided configuration list.
-    pub async fn set_local_mapping(&mut self, token_list: &ScopeConfig) -> Result<()> {
+    pub async fn upload(&mut self, token_list: &ScopeConfig) -> Result<()> {
         let default_max_age = token_list.default_max_age;
         let rpc = self.get_rpc();
         // Transform the configuration entries in appropriate local token entries
@@ -201,6 +201,20 @@ where
                     local_entry.get_label().as_bytes().to_vec(),
                 )
                 .await?;
+            }
+        }
+
+        // if the token mapping contains entries that are not in the local mapping make their mapping account default
+        for (idx, rem_mapping) in onchain_accounts_mapping.iter().enumerate() {
+            if rem_mapping != &Pubkey::default()
+                && self
+                    .tokens
+                    .iter()
+                    .find(|(local_id, _)| idx == usize::from(**local_id))
+                    .is_none()
+            {
+                self.ix_update_mapping(&Pubkey::default(), idx.try_into().unwrap(), 0)
+                    .await?;
             }
         }
         Ok(())

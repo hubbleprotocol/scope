@@ -1,14 +1,11 @@
-import { execFile, ChildProcess, exec } from 'child_process';
+import { execFile, ChildProcess } from 'child_process';
 
-import { PublicKey, Keypair } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { sleep } from '@project-serum/common';
 
 import { Decimal } from 'decimal.js';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import path from 'path';
 
 import * as chai from 'chai';
-import assert from 'assert';
 import chaiDecimalJs from 'chai-decimaljs';
 
 chai.use(chaiDecimalJs(Decimal));
@@ -125,11 +122,14 @@ export class ScopeBot {
     }
   }
 
-  async crank(mapping?: string) {
-    let args = [...this.base_args(), 'crank'];
-    if (mapping) {
-      args = [...args, '--mapping', mapping];
-    }
+  async crank(refreshInterval: number = 10) {
+    let args = [
+      ...this.base_args(),
+      'crank',
+      '--refresh-interval-slot',
+      refreshInterval.toString(),
+      // TODO: allow to test with local mapping
+    ];
 
     let env = this.env();
 
