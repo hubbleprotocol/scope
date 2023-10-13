@@ -190,8 +190,8 @@ async fn main() -> Result<()> {
                 };
                 crank(
                     &mut scope,
-                    refresh_interval_slot,
                     (mapping).as_ref(),
+                    refresh_interval_slot,
                     print_period_s,
                     old_price_alert_snooze_time_s,
                     alert_old_price_after_slots,
@@ -273,8 +273,8 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
 
 async fn crank<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
-    refresh_interval_slot: clock::Slot,
     mapping_op: Option<impl AsRef<Path>>,
+    refresh_interval_slot: clock::Slot,
     print_period_s: u64,
     old_price_alert_snooze_time_s: u64,
     alert_old_price_after_slots: clock::Slot,
@@ -289,7 +289,10 @@ async fn crank<T: AsyncClient, S: Signer>(
         scope.set_local_mapping(&token_list).await?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
-        info!("Default refresh interval set to {:?} slots", 0);
+        info!(
+            "Default refresh interval set to {:?} slots",
+            refresh_interval_slot
+        );
         scope.download_oracle_mapping(refresh_interval_slot).await?;
     }
 

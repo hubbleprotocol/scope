@@ -181,7 +181,7 @@ where
             let local_mapping_pk = local_entry.get_mapping_account();
             let loc_price_type_u8: u8 = local_entry.get_type().into();
             if rem_mapping != local_mapping_pk || rem_price_type != loc_price_type_u8 {
-                self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)
+                self.ix_update_mapping(Some(local_mapping_pk), token_idx.into(), loc_price_type_u8)
                     .await?;
             }
             let token_metadata = token_metadatas.metadatas_array[idx];
@@ -210,10 +210,9 @@ where
                 && self
                     .tokens
                     .iter()
-                    .find(|(local_id, _)| idx == usize::from(**local_id))
-                    .is_none()
+                    .any(|(local_id, _)| idx == usize::from(*local_id))
             {
-                self.ix_update_mapping(&Pubkey::default(), idx.try_into().unwrap(), 0)
+                self.ix_update_mapping(None, idx.try_into().unwrap(), 0)
                     .await?;
             }
         }
@@ -631,7 +630,7 @@ where
     #[tracing::instrument(skip(self))]
     async fn ix_update_mapping(
         &self,
-        oracle_account: &Pubkey,
+        oracle_account: Option<&Pubkey>,
         token: u64,
         price_type: u8,
     ) -> Result<()> {
@@ -639,7 +638,7 @@ where
             admin: self.client.payer(),
             configuration: self.configuration_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            price_info: *oracle_account,
+            price_info: oracle_account.copied(),
         };
 
         let request = self.client.tx_builder();
