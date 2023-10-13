@@ -214,7 +214,7 @@ async fn init<T: AsyncClient, S: Signer>(
 
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
-        scope.upload(&token_list).await?;
+        scope.set_local_mapping(&token_list).await?;
         scope.upload_oracle_mapping().await?;
     }
 
@@ -226,7 +226,7 @@ async fn upload<T: AsyncClient, S: Signer>(
     mapping: &impl AsRef<Path>,
 ) -> Result<()> {
     let token_list = ScopeConfig::read_from_file(&mapping)?;
-    scope.upload(&token_list).await?;
+    scope.set_local_mapping(&token_list).await?;
     scope.upload_oracle_mapping().await
 }
 
@@ -245,7 +245,7 @@ async fn show<T: AsyncClient, S: Signer>(
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
-        scope.upload(&token_list).await?;
+        scope.set_local_mapping(&token_list).await?;
     } else {
         scope.download_oracle_mapping(0).await?;
     }
@@ -263,7 +263,7 @@ async fn get_pubkeys<T: AsyncClient, S: Signer>(
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
-        scope.upload(&token_list).await?;
+        scope.set_local_mapping(&token_list).await?;
     } else {
         scope.download_oracle_mapping(0).await?;
     }
@@ -286,7 +286,7 @@ async fn crank<T: AsyncClient, S: Signer>(
             "Default refresh interval set to {:?} slots",
             token_list.default_max_age
         );
-        scope.upload(&token_list).await?;
+        scope.set_local_mapping(&token_list).await?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
         info!("Default refresh interval set to {:?} slots", 0);

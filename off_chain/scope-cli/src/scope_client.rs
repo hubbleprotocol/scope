@@ -147,7 +147,7 @@ where
     }
 
     /// Set the locally known oracle mapping according to the provided configuration list.
-    pub async fn upload(&mut self, token_list: &ScopeConfig) -> Result<()> {
+    pub async fn set_local_mapping(&mut self, token_list: &ScopeConfig) -> Result<()> {
         let default_max_age = token_list.default_max_age;
         let rpc = self.get_rpc();
         // Transform the configuration entries in appropriate local token entries
