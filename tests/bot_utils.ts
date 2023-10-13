@@ -1,14 +1,11 @@
 import { execFile, ChildProcess } from 'child_process';
 
-import { PublicKey, Keypair } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { sleep } from '@project-serum/common';
 
 import { Decimal } from 'decimal.js';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import path from 'path';
 
 import * as chai from 'chai';
-import assert from 'assert';
 import chaiDecimalJs from 'chai-decimaljs';
 
 chai.use(chaiDecimalJs(Decimal));
@@ -92,7 +89,7 @@ export class ScopeBot {
   }
 
   async update(mappingPath: string) {
-    let args = [...this.base_args(), 'update', '--mapping', mappingPath];
+    let args = [...this.base_args(), 'upload', '--mapping', mappingPath];
 
     let env = this.env();
 

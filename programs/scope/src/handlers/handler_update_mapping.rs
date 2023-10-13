@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(token:usize, price_type: u8, feed_name: String)]
+#[instruction(token:u64, price_type: u8, feed_name: String)]
 pub struct UpdateOracleMapping<'info> {
     pub admin: Signer<'info>,
     #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin, has_one = oracle_mappings)]
@@ -14,7 +14,7 @@ pub struct UpdateOracleMapping<'info> {
     #[account(mut)]
     pub oracle_mappings: AccountLoader<'info, OracleMappings>,
     /// CHECK: We trust the admin to provide a trustable account here. Some basic sanity checks are done based on type
-    pub price_info: AccountInfo<'info>,
+    pub price_info: Option<AccountInfo<'info>>,
 }
 
 pub fn process(
@@ -25,7 +25,6 @@ pub fn process(
 ) -> Result<()> {
     check_context(&ctx)?;
 
-    let new_price_pubkey = ctx.accounts.price_info.key();
     let mut oracle_mappings = ctx.accounts.oracle_mappings.load_mut()?;
     let ref_price_pubkey = oracle_mappings
         .price_info_accounts
@@ -35,12 +34,19 @@ pub fn process(
         .try_into()
         .map_err(|_| ScopeError::BadTokenType)?;
 
-    let price_info = ctx.accounts.price_info.as_ref();
+    match &ctx.accounts.price_info {
+        Some(price_info_acc) => {
+            validate_oracle_account(price_type, &price_info_acc)?;
+            // Every check succeeded, replace current with new
+            let new_price_pubkey = price_info_acc.key();
+            *ref_price_pubkey = new_price_pubkey;
+        }
+        None => {
+            // if no price_info account is passed, it means that the mapping has to be removed so it is set to Pubkey::default
+            *ref_price_pubkey = Pubkey::default();
+        }
+    }
 
-    validate_oracle_account(price_type, price_info)?;
-
-    // Every check succeeded, replace current with new
-    *ref_price_pubkey = new_price_pubkey;
     oracle_mappings.price_types[token] = price_type.into();
 
     Ok(())

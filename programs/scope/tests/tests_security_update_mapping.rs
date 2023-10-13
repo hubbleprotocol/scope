@@ -33,7 +33,7 @@ async fn test_working_update_mapping() {
         admin: ctx.admin.pubkey(),
         configuration: feed.conf,
         oracle_mappings: feed.mapping,
-        price_info: TEST_PYTH_ORACLE.pubkey,
+        price_info: Some(TEST_PYTH_ORACLE.pubkey),
     };
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),
@@ -62,7 +62,7 @@ async fn test_wrong_feed_name() {
         admin: ctx.admin.pubkey(),
         configuration: feed.conf,
         oracle_mappings: feed.mapping,
-        price_info: TEST_PYTH_ORACLE.pubkey,
+        price_info: Some(TEST_PYTH_ORACLE.pubkey),
     };
     let args = scope::instruction::UpdateMapping {
         feed_name: "randomFeed".to_string(),
@@ -99,7 +99,7 @@ async fn test_wrong_config_account() {
         admin: ctx.admin.pubkey(),
         configuration: fake_config_pk,
         oracle_mappings: feed.mapping,
-        price_info: TEST_PYTH_ORACLE.pubkey,
+        price_info: Some(TEST_PYTH_ORACLE.pubkey),
     };
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),
@@ -136,7 +136,7 @@ async fn test_wrong_mapping_account() {
         admin: ctx.admin.pubkey(),
         configuration: feed.conf,
         oracle_mappings: fake_mapping_pk,
-        price_info: TEST_PYTH_ORACLE.pubkey,
+        price_info: Some(TEST_PYTH_ORACLE.pubkey),
     };
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),
@@ -174,7 +174,7 @@ async fn test_wrong_admin() {
         admin: fake_admin.pubkey(),
         configuration: feed.conf,
         oracle_mappings: feed.mapping,
-        price_info: TEST_PYTH_ORACLE.pubkey,
+        price_info: Some(TEST_PYTH_ORACLE.pubkey),
     };
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),

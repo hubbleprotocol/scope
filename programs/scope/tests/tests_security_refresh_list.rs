@@ -391,7 +391,7 @@ async fn test_refresh_with_unexpected_ix() {
         admin: ctx.admin.pubkey(),
         configuration: feed.conf,
         oracle_mappings: feed.mapping,
-        price_info: TEST_PYTH_ORACLE.pubkey,
+        price_info: Some(TEST_PYTH_ORACLE.pubkey),
     };
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),

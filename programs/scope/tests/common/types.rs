@@ -86,4 +86,5 @@ pub struct TestContext {
 pub struct ScopeZeroCopyAccounts {
     pub mapping: Keypair,
     pub prices: Keypair,
+    pub token_metadatas: Keypair,
 }

@@ -24,6 +24,7 @@ pub async fn setup_scope(
         configuration: configuration_acc,
         oracle_prices: zero_copy_accounts.prices.pubkey(),
         oracle_mappings: zero_copy_accounts.mapping.pubkey(),
+        token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
     };
     let args = scope::instruction::Initialize {
         feed_name: feed_name.to_string(),

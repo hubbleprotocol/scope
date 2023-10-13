@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use std::mem::size_of;
+use std::{collections::HashSet, num::NonZeroU64};
 
 use anchor_client::{
     anchor_lang::ToAccountMetas,
@@ -17,7 +17,10 @@ use anyhow::{anyhow, bail, Context, Result};
 use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
-use scope::{accounts, instruction, Configuration, OracleMappings, OraclePrices};
+use scope::{
+    accounts, instruction, Configuration, OracleMappings, OraclePrices, TokenMetadatas,
+    UpdateTokenMetadataMode,
+};
 use tracing::{debug, error, info, trace, warn};
 
 use crate::{
@@ -40,6 +43,7 @@ pub struct ScopeClient<T: AsyncClient, S: Signer> {
     configuration_acc: Pubkey,
     oracle_prices_acc: Pubkey,
     oracle_mappings_acc: Pubkey,
+    tokens_metadata_acc: Pubkey,
     tokens: TokenEntryList,
 }
 
@@ -58,21 +62,27 @@ where
         let (configuration_acc, _) =
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], &program_id);
 
-        let Configuration { oracle_mappings, oracle_prices, .. } = client
+        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, .. } = client
             .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
-        debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %price_feed);
-
-        Ok(Self {
+        let mut client = Self {
             client,
             program_id,
             feed_name: price_feed.to_string(),
             configuration_acc,
             oracle_prices_acc: oracle_prices,
             oracle_mappings_acc: oracle_mappings,
+            tokens_metadata_acc: tokens_metadata,
             tokens: IntMap::default(),
-        })
+        };
+
+        // if the token_metadatas is not initialized, initialize it here
+        Self::init_token_metadatas_if_needed(&mut client, price_feed).await?;
+
+        debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %tokens_metadata, %price_feed);
+
+        Ok(client)
     }
 
     /// Create a new client instance after initializing the program accounts
@@ -85,6 +95,7 @@ where
         // Generate accounts keypairs.
         let oracle_prices_acc = Keypair::new();
         let oracle_mappings_acc = Keypair::new();
+        let token_metadatas_acc = Keypair::new();
 
         // Compute configuration PDA pbk
         let (configuration_acc, _) =
@@ -96,6 +107,7 @@ where
             &configuration_acc,
             &oracle_prices_acc,
             &oracle_mappings_acc,
+            &token_metadatas_acc,
             price_feed,
         )
         .await?;
@@ -109,8 +121,29 @@ where
             configuration_acc,
             oracle_prices_acc: oracle_prices_acc.pubkey(),
             oracle_mappings_acc: oracle_mappings_acc.pubkey(),
+            tokens_metadata_acc: token_metadatas_acc.pubkey(),
             tokens: IntMap::default(),
         })
+    }
+
+    pub async fn init_token_metadatas_if_needed(&mut self, price_feed: &str) -> Result<()> {
+        if self.tokens_metadata_acc.eq(&Pubkey::default()) {
+            // Generate accounts keypairs.
+            let token_metadatas_acc = Keypair::new();
+
+            Self::ix_initialize_token_metadatas(
+                &self.client,
+                &self.program_id,
+                &self.configuration_acc,
+                &token_metadatas_acc,
+                price_feed,
+            )
+            .await?;
+
+            self.tokens_metadata_acc = token_metadatas_acc.pubkey();
+        }
+
+        Ok(())
     }
 
     /// Set the locally known oracle mapping according to the provided configuration list.
@@ -137,6 +170,7 @@ where
         let program_mapping = self.get_program_mapping().await?;
         let onchain_accounts_mapping = program_mapping.price_info_accounts;
         let onchain_price_type_mapping = program_mapping.price_types;
+        let token_metadatas = self.get_token_metadatas().await?;
 
         // For all "token" local and remote
         for (&token_idx, local_entry) in &self.tokens {
@@ -147,7 +181,38 @@ where
             let local_mapping_pk = local_entry.get_mapping_account();
             let loc_price_type_u8: u8 = local_entry.get_type().into();
             if rem_mapping != local_mapping_pk || rem_price_type != loc_price_type_u8 {
-                self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)
+                self.ix_update_mapping(Some(local_mapping_pk), token_idx.into(), loc_price_type_u8)
+                    .await?;
+            }
+            let token_metadata = token_metadatas.metadatas_array[idx];
+            if token_metadata.max_age_price_seconds != local_entry.get_max_age() {
+                self.ix_update_tokens_metadata(
+                    token_idx.into(),
+                    UpdateTokenMetadataMode::MaxPriceAgeSeconds,
+                    local_entry.get_max_age().to_le_bytes().to_vec(),
+                )
+                .await?;
+            }
+            let local_entry_label_bytes = local_entry.get_label().as_bytes();
+            if token_metadata.name[..local_entry_label_bytes.len()] != local_entry_label_bytes[..] {
+                self.ix_update_tokens_metadata(
+                    token_idx.into(),
+                    UpdateTokenMetadataMode::Name,
+                    local_entry.get_label().as_bytes().to_vec(),
+                )
+                .await?;
+            }
+        }
+
+        // if the token mapping contains entries that are not in the local mapping make their mapping account default
+        for (idx, rem_mapping) in onchain_accounts_mapping.iter().enumerate() {
+            if rem_mapping != &Pubkey::default()
+                && self
+                    .tokens
+                    .iter()
+                    .any(|(local_id, _)| idx == usize::from(*local_id))
+            {
+                self.ix_update_mapping(None, idx.try_into().unwrap(), 0)
                     .await?;
             }
         }
@@ -157,6 +222,7 @@ where
     /// Update the local oracle mapping from the on-chain version
     pub async fn download_oracle_mapping(&mut self, default_max_age: clock::Slot) -> Result<()> {
         let onchain_oracle_mapping = self.get_program_mapping().await?;
+        let token_metadatas = self.get_token_metadatas().await?;
         let onchain_mapping = onchain_oracle_mapping.price_info_accounts;
         let onchain_types = onchain_oracle_mapping.price_types;
 
@@ -167,18 +233,26 @@ where
             .iter()
             .enumerate()
             .zip(onchain_types)
-            .filter(|((_, &oracle_mapping), _)| oracle_mapping != zero_pk)
-            .map(|((idx, &oracle_mapping), oracle_type)| async move {
-                let id: u16 = idx.try_into()?;
-                let oracle_conf = TokenConfig {
-                    label: "".to_string(),
-                    oracle_type: oracle_type.try_into()?,
-                    max_age: None,
-                    oracle_mapping,
-                };
-                let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
-                Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
-            });
+            .zip(token_metadatas.metadatas_array.iter())
+            .filter(|(((_, &oracle_mapping), _), _)| oracle_mapping != zero_pk)
+            .map(
+                |(((idx, &oracle_mapping), oracle_type), token_metadata)| async move {
+                    let id: u16 = idx.try_into()?;
+                    let oracle_conf = TokenConfig {
+                        label: std::str::from_utf8(&token_metadata.name)
+                            .unwrap()
+                            .to_owned(),
+                        oracle_type: oracle_type.try_into()?,
+                        max_age: match NonZeroU64::try_from(token_metadata.max_age_price_seconds) {
+                            Err(_) => None,
+                            Ok(nz) => Some(nz),
+                        },
+                        oracle_mapping,
+                    };
+                    let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
+                    Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
+                },
+            );
 
         self.tokens = join_all(entry_builders)
             .await
@@ -419,6 +493,14 @@ where
         Ok(mapping)
     }
 
+    async fn get_token_metadatas(&self) -> Result<TokenMetadatas> {
+        let token_metadatas: TokenMetadatas = self
+            .client
+            .get_anchor_account(&self.tokens_metadata_acc)
+            .await?;
+        Ok(token_metadatas)
+    }
+
     #[tracing::instrument(skip(client))]
     async fn ix_initialize(
         client: &OrbitLink<T, S>,
@@ -426,6 +508,7 @@ where
         configuration_acc: &Pubkey,
         oracle_prices_acc: &Keypair,
         oracle_mappings_acc: &Keypair,
+        token_metadatas_acc: &Keypair,
         price_feed: &str,
     ) -> Result<()> {
         debug!("Entering initialize ix");
@@ -437,6 +520,7 @@ where
             configuration: *configuration_acc,
             oracle_prices: oracle_prices_acc.pubkey(),
             oracle_mappings: oracle_mappings_acc.pubkey(),
+            token_metadatas: token_metadatas_acc.pubkey(),
         };
 
         let init_tx = client
@@ -463,6 +547,17 @@ where
                     .await?,
                 50_000,
             )
+            // Create the token metadatas account
+            .add_ix_with_budget(
+                client
+                    .create_account_ix(
+                        &token_metadatas_acc.pubkey(),
+                        size_of::<TokenMetadatas>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
             .add_anchor_ix(
                 program_id,
                 init_account,
@@ -482,10 +577,60 @@ where
         }
     }
 
+    #[tracing::instrument(skip(client))]
+    async fn ix_initialize_token_metadatas(
+        client: &OrbitLink<T, S>,
+        program_id: &Pubkey,
+        configuration_acc: &Pubkey,
+        token_metadatas_acc: &Keypair,
+        price_feed: &str,
+    ) -> Result<()> {
+        debug!("Entering token_metadatas initialize ix");
+
+        // Prepare init instruction accounts
+        let init_account = accounts::InitializeTokensMetadata {
+            admin: client.payer(),
+            system_program: system_program::ID,
+            configuration: *configuration_acc,
+            token_metadatas: token_metadatas_acc.pubkey(),
+        };
+
+        let init_tx = client
+            .tx_builder()
+            // Create the price account
+            .add_ix_with_budget(
+                client
+                    .create_account_ix(
+                        &token_metadatas_acc.pubkey(),
+                        size_of::<TokenMetadatas>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
+            .add_anchor_ix(
+                program_id,
+                init_account,
+                instruction::InitializeTokensMetadata {
+                    feed_name: price_feed.to_string(),
+                },
+            )
+            .build_with_budget_and_fee(&[token_metadatas_acc])
+            .await?;
+
+        let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
+
+        info!(%signature, "Init metadatas tx");
+        match init_res {
+            Some(r) => r.context(format!("Init tokens_metadata transaction: {signature}")),
+            None => bail!("Init tokens_metadata transaction failed to confirm: {signature}"),
+        }
+    }
+
     #[tracing::instrument(skip(self))]
     async fn ix_update_mapping(
         &self,
-        oracle_account: &Pubkey,
+        oracle_account: Option<&Pubkey>,
         token: u64,
         price_type: u8,
     ) -> Result<()> {
@@ -493,7 +638,7 @@ where
             admin: self.client.payer(),
             configuration: self.configuration_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            price_info: *oracle_account,
+            price_info: oracle_account.copied(),
         };
 
         let request = self.client.tx_builder();
@@ -521,6 +666,52 @@ where
             }
             None => {
                 error!(%signature, "Could not confirm mapping update transaction");
+                bail!("Could not confirm mapping update transaction");
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn ix_update_tokens_metadata(
+        &self,
+        token: u64,
+        mode: UpdateTokenMetadataMode,
+        value: Vec<u8>,
+    ) -> Result<()> {
+        let update_accounts = accounts::UpdateTokensMetadata {
+            admin: self.client.payer(),
+            configuration: self.configuration_acc,
+            tokens_metadata: self.tokens_metadata_acc,
+        };
+
+        let request = self.client.tx_builder();
+
+        let tx = request
+            .add_anchor_ix(
+                &self.program_id,
+                update_accounts,
+                instruction::UpdateTokenMetadata {
+                    index: token,
+                    mode: mode.to_u64(),
+                    value,
+                    feed_name: self.feed_name.clone(),
+                },
+            )
+            .build_with_budget_and_fee(&[])
+            .await?;
+
+        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
+
+        match res {
+            Some(Ok(())) => info!(%signature, "Token metadata updated successfully"),
+            Some(Err(err)) => {
+                error!(%signature, err = ?err, "Token metadata update failed");
+                bail!(err);
+            }
+            None => {
+                error!(%signature, "Could not confirm token metadata update transaction");
                 bail!("Could not confirm mapping update transaction");
             }
         }

@@ -21,7 +21,7 @@ pub async fn update_oracle_mapping(
         admin: ctx.admin.pubkey(),
         configuration: feed.conf,
         oracle_mappings: feed.mapping,
-        price_info: conf.pubkey,
+        price_info: Some(conf.pubkey),
     };
     let args = scope::instruction::UpdateMapping {
         feed_name: feed.feed_name.clone(),

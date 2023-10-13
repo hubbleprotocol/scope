@@ -86,6 +86,26 @@ pub struct Configuration {
     _padding: [u64; 1267],
 }
 
+#[account(zero_copy)]
+pub struct TokensMetadata {
+    pub metadatas_array: [TokenMetadata; MAX_ENTRIES],
+}
+
+#[zero_copy]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq, Default)]
+pub struct TokenMetadata {
+    pub name: [u8; 32],
+    pub max_age_price_seconds: u64,
+    pub _reserved: [u64; 16],
+}
+
+#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
+#[repr(u64)]
+pub enum UpdateTokenMetadataMode {
+    Name = 0,
+    MaxPriceAgeSeconds = 1,
+}
+
 #[error_code]
 #[derive(PartialEq, Eq, FromPrimitive)]
 pub enum ScopeError {

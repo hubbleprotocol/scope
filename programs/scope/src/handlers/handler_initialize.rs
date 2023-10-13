@@ -14,6 +14,9 @@ pub struct Initialize<'info> {
     #[account(init, seeds = [b"conf", feed_name.as_bytes()], bump, payer = admin, space = 8 + std::mem::size_of::<crate::Configuration>())]
     pub configuration: AccountLoader<'info, crate::Configuration>,
 
+    #[account(zero)]
+    pub token_metadatas: AccountLoader<'info, crate::TokenMetadatas>,
+
     // Account is pre-reserved/payed outside the program
     #[account(zero)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
@@ -39,6 +42,9 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     configuration.admin = admin;
     configuration.oracle_mappings = oracle_pbk;
     configuration.oracle_prices = prices_pbk;
+
+    let _ = ctx.accounts.token_metadatas.load_init()?;
+    configuration.tokens_metadata = ctx.accounts.token_metadatas.key();
 
     Ok(())
 }
