@@ -565,7 +565,11 @@ where
                     feed_name: price_feed.to_string(),
                 },
             )
-            .build_with_budget_and_fee(&[oracle_prices_acc, oracle_mappings_acc])
+            .build_with_budget_and_fee(&[
+                oracle_prices_acc,
+                oracle_mappings_acc,
+                token_metadatas_acc,
+            ])
             .await?;
 
         let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
