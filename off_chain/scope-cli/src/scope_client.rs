@@ -238,8 +238,13 @@ where
             .map(
                 |(((idx, &oracle_mapping), oracle_type), token_metadata)| async move {
                     let id: u16 = idx.try_into()?;
+                    let first_0_or_length = token_metadata
+                        .name
+                        .iter()
+                        .position(|&x| x == 0)
+                        .unwrap_or(token_metadata.name.len());
                     let oracle_conf = TokenConfig {
-                        label: std::str::from_utf8(&token_metadata.name)
+                        label: std::str::from_utf8(&token_metadata.name[..first_0_or_length])
                             .unwrap()
                             .to_owned(),
                         oracle_type: oracle_type.try_into()?,
