@@ -207,7 +207,7 @@ where
         // if the token mapping contains entries that are not in the local mapping make their mapping account default
         for (idx, rem_mapping) in onchain_accounts_mapping.iter().enumerate() {
             if rem_mapping != &Pubkey::default()
-                && self
+                && !self
                     .tokens
                     .iter()
                     .any(|(local_id, _)| idx == usize::from(*local_id))
