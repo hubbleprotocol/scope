@@ -207,7 +207,7 @@ where
         // if the token mapping contains entries that are not in the local mapping make their mapping account default
         for (idx, rem_mapping) in onchain_accounts_mapping.iter().enumerate() {
             if rem_mapping != &Pubkey::default()
-                && self
+                && !self
                     .tokens
                     .iter()
                     .any(|(local_id, _)| idx == usize::from(*local_id))
@@ -238,8 +238,13 @@ where
             .map(
                 |(((idx, &oracle_mapping), oracle_type), token_metadata)| async move {
                     let id: u16 = idx.try_into()?;
+                    let first_0_or_length = token_metadata
+                        .name
+                        .iter()
+                        .position(|&x| x == 0)
+                        .unwrap_or(token_metadata.name.len());
                     let oracle_conf = TokenConfig {
-                        label: std::str::from_utf8(&token_metadata.name)
+                        label: std::str::from_utf8(&token_metadata.name[..first_0_or_length])
                             .unwrap()
                             .to_owned(),
                         oracle_type: oracle_type.try_into()?,
@@ -565,7 +570,11 @@ where
                     feed_name: price_feed.to_string(),
                 },
             )
-            .build_with_budget_and_fee(&[oracle_prices_acc, oracle_mappings_acc])
+            .build_with_budget_and_fee(&[
+                oracle_prices_acc,
+                oracle_mappings_acc,
+                token_metadatas_acc,
+            ])
             .await?;
 
         let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
