@@ -6,7 +6,7 @@ pub struct InitializeTokensMetadata<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
 
-    #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin)]
+    #[account(mut, seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin)]
     pub configuration: AccountLoader<'info, crate::Configuration>,
 
     #[account(zero)]
