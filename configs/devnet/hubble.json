@@ -505,5 +505,17 @@
     "label": "Fake LST/SOL",
     "oracle_mapping": "6NjY29fsq34pTqEmu2CXqGijsGLDSPdHqEyJ3fBkMxtB",
     "oracle_type": "SplStake"
+  },
+  "118": {
+    "label": "Fake kSOL-JITOSOL_Raydium/USD",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "119": {
+    "label": "Fake kSOL-MSOL_Raydium/USD",
+    "oracle_mapping": "EbRR6C3uCRwnHjvbJuuiaipvVCVLYb2ZL5B3GH4zm3FH",
+    "oracle_type": "KToken",
+    "max_age": 250
   }
 }

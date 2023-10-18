@@ -530,5 +530,17 @@
     "oracle_mapping": "DqhH94PjkZsjAqEze2BEkWhFQJ6EyU6MdtMphMgnXqeK",
     "oracle_type": "SplStake",
     "max_age": 150
+  },
+  "118": {
+    "label": "kSOL-JITOSOL_Raydium/USD",
+    "oracle_mapping": "5QgwaBQzzMAHdxpaVUgb4KrpXELgNTaEYXycUvNvRxr6",
+    "oracle_type": "KToken",
+    "max_age": 250
+  },
+  "119": {
+    "label": "kSOL-MSOL_Raydium/USD",
+    "oracle_mapping": "2dczcMRpxWHZTcsiEjPT4YBcSseTaUmWFzw24HxYMFod",
+    "oracle_type": "KToken",
+    "max_age": 250
   }
 }
