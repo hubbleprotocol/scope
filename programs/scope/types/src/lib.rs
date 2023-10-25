@@ -83,7 +83,11 @@ pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
+    //1267
     _padding: [u64; 1267],
+    // _padding1: [u64; 128],
+    // _padding2: [u64; 115],
+    // 243
 }
 
 #[account(zero_copy)]
