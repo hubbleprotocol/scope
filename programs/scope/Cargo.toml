@@ -32,7 +32,7 @@ pyth-sdk-solana = "0.8.0"
 cfg-if = "1.0.0"
 serde = "1.0.136"
 switchboard-program = "0.2.0"
-spl-stake-pool = { version = "0.6.3", features = ["no-entrypoint"] }
+spl-stake-pool = { version = "0.6.4", features = ["no-entrypoint"] }
 arrayref = "0.3.6"
 decimal-wad = "0.1.7"
 rust_decimal = "1.18.0"
