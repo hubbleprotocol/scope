@@ -33,6 +33,8 @@ cfg-if = "1.0.0"
 serde = "1.0.136"
 switchboard-program = "0.2.0"
 spl-stake-pool = { version = "0.6.4", features = ["no-entrypoint"] }
+# We need the exact same version of borsh as the one used by spl stake (0.9.3)
+spl_stake_borsh = { package = "borsh", version = "0.9.3" }
 arrayref = "0.3.6"
 decimal-wad = "0.1.7"
 rust_decimal = "1.18.0"

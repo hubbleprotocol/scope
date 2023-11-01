@@ -4165,6 +4165,7 @@ dependencies = [
  "anchor-lang 0.28.0",
  "arrayref",
  "async-recursion",
+ "borsh 0.9.3",
  "bytemuck",
  "cfg-if",
  "decimal-wad",
