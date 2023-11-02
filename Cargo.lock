@@ -2630,6 +2630,7 @@ dependencies = [
  "quick-protobuf",
  "serde",
  "serde_json",
+ "solana-program",
  "switchboard-program",
  "uint",
 ]
