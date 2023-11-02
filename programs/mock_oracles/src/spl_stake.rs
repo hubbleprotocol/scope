@@ -2,7 +2,6 @@ use anchor_lang::{
     prelude::{AccountInfo, Clock, Result, SolanaSysvar},
     AnchorSerialize,
 };
-use spl_stake_pool::state::StakePool;
 
 pub fn initialize(
     stake_pool_account: &AccountInfo,
