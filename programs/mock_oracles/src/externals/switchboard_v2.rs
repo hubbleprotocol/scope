@@ -2,7 +2,7 @@
 use anchor_lang::prelude::*;
 use bytemuck::{Pod, Zeroable};
 
-#[zero_copy]
+#[zero_copy(unsafe)]
 #[repr(packed)]
 #[derive(Default, Debug, Eq, PartialEq)]
 pub struct SwitchboardDecimal {
@@ -16,14 +16,14 @@ impl SwitchboardDecimal {
     }
 }
 
-#[zero_copy]
+#[zero_copy(unsafe)]
 #[repr(packed)]
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Hash {
     pub data: [u8; 32],
 }
 
-#[zero_copy]
+#[zero_copy(unsafe)]
 #[repr(packed)]
 #[derive(Debug, PartialEq, Eq)]
 pub struct AggregatorAccountData {
@@ -64,7 +64,7 @@ pub struct AggregatorAccountData {
 unsafe impl Pod for AggregatorAccountData {}
 unsafe impl Zeroable for AggregatorAccountData {}
 
-#[zero_copy]
+#[zero_copy(unsafe)]
 #[repr(packed)]
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct AggregatorRound {

@@ -1,4 +1,7 @@
-use anchor_lang::prelude::{AccountInfo, Clock, Result, SolanaSysvar};
+use anchor_lang::{
+    prelude::{AccountInfo, Clock, Result, SolanaSysvar},
+    AnchorSerialize,
+};
 
 use self::spl_stake_pool::StakePool;
 
@@ -39,7 +42,7 @@ pub mod spl_stake_pool {
     use solana_program::stake::state::Lockup;
 
     use anchor_lang::prelude::*;
-    
+
     /// Wrapper type that "counts down" epochs, which is Borsh-compatible with the
     /// native `Option`
     #[repr(C)]
@@ -214,22 +217,5 @@ pub mod spl_stake_pool {
 
         /// Last epoch's total lamports, used only for APR estimation
         pub last_epoch_total_lamports: u64,
-    }
-
-    impl StakePool {
-        /// calculate lamports amount on withdrawal
-        #[inline]
-        pub fn calc_lamports_withdraw_amount(&self, pool_tokens: u64) -> Option<u64> {
-            // `checked_div` returns `None` for a 0 quotient result, but in this
-            // case, a return of 0 is valid for small amounts of pool tokens. So
-            // we check for that separately
-            let numerator = (pool_tokens as u128).checked_mul(self.total_lamports as u128)?;
-            let denominator = self.pool_token_supply as u128;
-            if numerator < denominator || denominator == 0 {
-                Some(0)
-            } else {
-                u64::try_from(numerator.checked_div(denominator)?).ok()
-            }
-        }
     }
 }
