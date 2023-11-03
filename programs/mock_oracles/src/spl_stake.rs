@@ -37,7 +37,7 @@ pub fn update(
     Ok(())
 }
 
-pub mod spl_stake_pool {
+mod spl_stake_pool {
     use anchor_lang::prelude::borsh::BorshSchema;
     use solana_program::stake::state::Lockup;
 
@@ -107,7 +107,7 @@ pub mod spl_stake_pool {
     /// Initialized program details.
     #[repr(C)]
     #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize, BorshSchema)]
-    pub struct StakePool {
+    pub(crate) struct StakePool {
         /// Account type, must be StakePool currently
         pub account_type: AccountType,
 
