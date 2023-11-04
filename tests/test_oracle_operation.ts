@@ -44,6 +44,7 @@ describe('Scope tests', () => {
   let oracleAccount: PublicKey;
   let oracleMappingAccount: PublicKey;
   let tokenMetadatasAccount: PublicKey;
+  let twapBuffersAccount: PublicKey;
 
   let testTokens: ITokenEntry[];
   let testTokensExtra: ITokenEntry[]; // Used to overflow oracle capacity
@@ -60,31 +61,40 @@ describe('Scope tests', () => {
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();
+    let twapBuffersAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
     tokenMetadatasAccount = tokenMetadatasAccount_kp.publicKey;
+    twapBuffersAccount = twapBuffersAccount_kp.publicKey;
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
     console.log(`Price feed name is ${PRICE_FEED}`);
 
-    await program.rpc.initialize(PRICE_FEED, {
-      accounts: {
-        admin: admin.publicKey,
-        systemProgram: SystemProgram.programId,
-        configuration: confAccount,
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        tokenMetadatas: tokenMetadatasAccount,
-        rent: SYSVAR_RENT_PUBKEY,
-      },
-      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp],
-      instructions: [
-        await program.account.oraclePrices.createInstruction(oracleAccount_kp),
-        await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
-        await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
-      ],
-    });
+    try {
+      await program.rpc.initialize(PRICE_FEED, {
+        accounts: {
+          admin: admin.publicKey,
+          systemProgram: SystemProgram.programId,
+          configuration: confAccount,
+          oraclePrices: oracleAccount,
+          oracleMappings: oracleMappingAccount,
+          tokenMetadatas: tokenMetadatasAccount,
+          twapBuffers: twapBuffersAccount,
+          rent: SYSVAR_RENT_PUBKEY,
+        },
+        signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp, twapBuffersAccount_kp],
+        instructions: [
+          await program.account.oraclePrices.createInstruction(oracleAccount_kp),
+          await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
+          await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
+          await program.account.oracleTwaps.createInstruction(twapBuffersAccount_kp),
+        ],
+      });
+    } catch (e) {
+      console.log('Error in initialize', e);
+      throw e;
+    }
 
     console.log('Initialize Tokens mock_oracles prices and oracle mappings');
 
@@ -118,16 +128,21 @@ describe('Scope tests', () => {
   });
 
   it('test_update_srm_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.SRM), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.SRM].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      signers: [],
-    });
+    try {
+      await program.rpc.refreshOnePrice(new BN(HubbleTokens.SRM), {
+        accounts: {
+          oraclePrices: oracleAccount,
+          oracleMappings: oracleMappingAccount,
+          priceInfo: testTokens[HubbleTokens.SRM].account,
+          clock: SYSVAR_CLOCK_PUBKEY,
+          instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
+        },
+        signers: [],
+      });
+    } catch (e) {
+      console.log('Error in refreshOnePrice', e);
+      throw e;
+    }
     {
       let oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkOraclePrice(HubbleTokens.SRM, oracle, testTokens);

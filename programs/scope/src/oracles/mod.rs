@@ -41,6 +41,8 @@ pub enum OracleType {
     KToken = 6,
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA = 7,
+    /// Scope twap
+    ScopeTwap = 8,
 }
 
 impl OracleType {
@@ -57,6 +59,7 @@ impl OracleType {
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
+            OracleType::ScopeTwap => 10000,
         }
     }
 }
@@ -91,6 +94,9 @@ where
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
+        OracleType::ScopeTwap => {
+            panic!("ScopeTwap is not a valid oracle type")
+        }
     }
 }
 
@@ -112,6 +118,9 @@ pub fn validate_oracle_account(
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
+        }
+        OracleType::ScopeTwap => {
+            panic!("ScopeTwap is not a valid oracle type")
         }
     }
 }

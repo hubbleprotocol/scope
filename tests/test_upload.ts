@@ -40,6 +40,7 @@ describe('Scope crank bot tests', () => {
   let oracleAccount: PublicKey;
   let oracleMappingAccount: PublicKey;
   let tokenMetadatasAccount: PublicKey;
+  let twapBuffersAccount: PublicKey;
 
   // NOTE: this only works when the test cases within this describe are
   // executed sequentially
@@ -68,10 +69,12 @@ describe('Scope crank bot tests', () => {
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();
+    let twapBuffersAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
     tokenMetadatasAccount = tokenMetadatasAccount_kp.publicKey;
+    twapBuffersAccount = twapBuffersAccount_kp.publicKey;
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
 
@@ -83,13 +86,15 @@ describe('Scope crank bot tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         tokenMetadatas: tokenMetadatasAccount,
+        twapBuffers: twapBuffersAccount,
         rent: SYSVAR_RENT_PUBKEY,
       },
-      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp],
+      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp, twapBuffersAccount_kp],
       instructions: [
         await program.account.oraclePrices.createInstruction(oracleAccount_kp),
         await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
         await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
+        await program.account.oracleTwaps.createInstruction(twapBuffersAccount_kp),
       ],
     });
 

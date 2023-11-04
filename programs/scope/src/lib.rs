@@ -163,7 +163,8 @@ pub struct OracleTwaps {
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
-    pub _reserved2: [u64; MAX_ENTRIES],
+    pub twap_enabled: [u8; MAX_ENTRIES],
+    pub _reserved2: [u16; MAX_ENTRIES * 3],
 }
 
 #[account(zero_copy)]
@@ -176,7 +177,9 @@ pub struct TokenMetadatas {
 pub struct TokenMetadata {
     pub name: [u8; 32],
     pub max_age_price_seconds: u64,
-    pub _reserved: [u64; 16],
+    pub twap_enabled: u8,
+    pub _reserved: [u16; 3],
+    pub _reserved2: [u64; 15],
 }
 
 // Configuration account of the program
@@ -185,6 +188,7 @@ pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
+    pub oracle_twaps: Pubkey,
     pub tokens_metadata: Pubkey,
     _padding: [u64; 1263],
 }
@@ -194,6 +198,7 @@ pub struct Configuration {
 pub enum UpdateTokenMetadataMode {
     Name = 0,
     MaxPriceAgeSeconds = 1,
+    TwapEnabled = 2,
 }
 
 impl UpdateTokenMetadataMode {
@@ -201,6 +206,7 @@ impl UpdateTokenMetadataMode {
         match self {
             UpdateTokenMetadataMode::Name => 0,
             UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
+            UpdateTokenMetadataMode::TwapEnabled => 2,
         }
     }
 }

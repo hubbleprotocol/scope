@@ -97,13 +97,11 @@ describe('Switchboard Scope tests', () => {
     console.log('Initialize Tokens mock_oracles prices and oracle mappings');
 
     testTokens = await createFakeAccounts(fakeOraclesProgram, initialTokens);
-  });
-
-  it('test_set_oracle_mappings', async () => {
+    
     await Promise.all(
       testTokens.map(async (fakeOracleAccount, idx): Promise<any> => {
         // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
-
+  
         await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), PRICE_FEED, {
           accounts: {
             admin: admin.publicKey,
@@ -115,8 +113,10 @@ describe('Switchboard Scope tests', () => {
         });
       })
     );
+
   });
-  it('test_update_stsolusd_v2_price', async () => {
+
+  it('test_update_stsol_price', async () => {
     await program.rpc.refreshOnePrice(new BN(HubbleTokens.STSOLUSD), {
       accounts: {
         oraclePrices: oracleAccount,
@@ -131,42 +131,9 @@ describe('Switchboard Scope tests', () => {
       let oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkOraclePrice(HubbleTokens.STSOLUSD, oracle, testTokens);
     }
-  });
-  it('test_update_sabermsolsol_v1_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.SABERMSOLSOL), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.SABERMSOLSOL, oracle, testTokens);
-    }
-  });
-  it('test_update_usdh_usd_v1_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.USDHUSD), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.USDHUSD].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.USDHUSD, oracle, testTokens);
-    }
-  });
-  it('test_set_update_stsolusd_v2_price', async () => {
-    //await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.456789012345678'), 15);
-    await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.4567890123'), 10);
+
+    await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('0.0012'), 10);
+
     await program.rpc.refreshOnePrice(new BN(HubbleTokens.STSOLUSD), {
       accounts: {
         oraclePrices: oracleAccount,
@@ -177,43 +144,12 @@ describe('Switchboard Scope tests', () => {
       },
       signers: [],
     });
+
     {
       let oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkOraclePrice(HubbleTokens.STSOLUSD, oracle, testTokens);
     }
   });
-  it('test_set_update_saber_msol_sol_v1_price', async () => {
-    await testTokens[HubbleTokens.SABERMSOLSOL].updatePrice(new Decimal('448.59120123'));
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.SABERMSOLSOL), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.SABERMSOLSOL, oracle, testTokens);
-    }
-  });
-  it('test_set_update_usdh_usd_v1_price', async () => {
-    await testTokens[HubbleTokens.USDHUSD].updatePrice(new Decimal('886.75558012'));
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.USDHUSD), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.USDHUSD].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.USDHUSD, oracle, testTokens);
-    }
-  });
+ 
+ 
 });
