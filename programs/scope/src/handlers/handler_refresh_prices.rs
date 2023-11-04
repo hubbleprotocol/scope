@@ -11,7 +11,7 @@ use solana_program::{
 
 use crate::{
     oracles::{get_price, OracleType},
-    ScopeError,
+    ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBSERVATIONS,
 };
 
 const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111111111");
@@ -22,9 +22,16 @@ pub struct RefreshOne<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
+
+    #[account(mut, has_one = oracle_prices)]
+    pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
+
+    #[account()]
+    pub tokens_metadata: AccountLoader<'info, crate::TokenMetadatas>,
+
     /// CHECK: In ix, check the account is in `oracle_mappings`
     pub price_info: AccountInfo<'info>,
-    pub clock: Sysvar<'info, Clock>,
+
     /// CHECK: Sysvar fixed address
     #[account(address = SYSVAR_INSTRUCTIONS_ID)]
     pub instruction_sysvar_account_info: AccountInfo<'info>,
@@ -32,12 +39,18 @@ pub struct RefreshOne<'info> {
 
 #[derive(Accounts)]
 pub struct RefreshList<'info> {
+    #[account()]
+    pub tokens_metadata: AccountLoader<'info, crate::TokenMetadatas>,
+
     #[account(mut, has_one = oracle_mappings)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
+
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 
-    pub clock: Sysvar<'info, Clock>,
+    #[account(mut, has_one = oracle_prices)]
+    pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
+
     /// CHECK: Sysvar fixed address
     #[account(address = SYSVAR_INSTRUCTIONS_ID)]
     pub instruction_sysvar_account_info: AccountInfo<'info>,
@@ -49,6 +62,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let price_info = &ctx.accounts.price_info;
+    let tokens_metadata = ctx.accounts.tokens_metadata.load()?;
+    let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
 
     // Check that the provided account is the one referenced in oracleMapping
     if oracle_mappings.price_info_accounts[token] != price_info.key() {
@@ -63,6 +78,18 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     let clock = Clock::get()?;
     let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
     price.index = token.try_into().unwrap();
+
+    // Append to the twap buffer, but don't calculate the twap
+    if tokens_metadata.metadatas_array[token].twap_enabled > 0 {
+        let twap_buffer = &mut oracle_twaps.twap_buffers[token];
+        let last_timestamp = twap_buffer.unix_timestamps[twap_buffer.current_index as usize];
+        if clock.unix_timestamp.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS {
+            twap_buffer.current_index =
+                (twap_buffer.current_index + 1) % (TWAP_NUM_OBSERVATIONS as u64);
+            twap_buffer.values[twap_buffer.current_index as usize] = price.price;
+            twap_buffer.unix_timestamps[twap_buffer.current_index as usize] = clock.unix_timestamp;
+        }
+    }
 
     // Only load when needed, allows prices computation to use scope chain
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
@@ -87,6 +114,8 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
     check_execution_ctx(&ctx.accounts.instruction_sysvar_account_info)?;
 
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
+    let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
+    let tokens_metadata = ctx.accounts.tokens_metadata.load()?;
 
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
@@ -147,6 +176,21 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     price.last_updated_slot,
                     clock.slot,
                 );
+
+                // Append to the twap buffer, but don't calculate the twap
+                if tokens_metadata.metadatas_array[token_idx].twap_enabled > 0 {
+                    let twap_buffer = &mut oracle_twaps.twap_buffers[token_idx];
+                    let last_timestamp =
+                        twap_buffer.unix_timestamps[twap_buffer.current_index as usize];
+                    if clock.unix_timestamp.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS
+                    {
+                        twap_buffer.current_index =
+                            (twap_buffer.current_index + 1) % (TWAP_NUM_OBSERVATIONS as u64);
+                        twap_buffer.values[twap_buffer.current_index as usize] = price.price;
+                        twap_buffer.unix_timestamps[twap_buffer.current_index as usize] =
+                            clock.unix_timestamp;
+                    }
+                }
 
                 *to_update = price;
                 to_update.index = token_nb;

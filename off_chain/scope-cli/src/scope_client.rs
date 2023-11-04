@@ -4,13 +4,13 @@ use std::{collections::HashSet, num::NonZeroU64};
 use anchor_client::{
     anchor_lang::ToAccountMetas,
     solana_sdk::{
-        clock::{self, Clock},
+        clock::{self},
         instruction::AccountMeta,
         pubkey::Pubkey,
         signature::{Keypair, Signature},
         signer::Signer,
         system_program,
-        sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+        sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
     },
 };
 use anyhow::{anyhow, bail, Context, Result};
@@ -42,6 +42,7 @@ pub struct ScopeClient<T: AsyncClient, S: Signer> {
     feed_name: String,
     configuration_acc: Pubkey,
     oracle_prices_acc: Pubkey,
+    oracle_twaps_acc: Pubkey,
     oracle_mappings_acc: Pubkey,
     tokens_metadata_acc: Pubkey,
     tokens: TokenEntryList,
@@ -62,7 +63,7 @@ where
         let (configuration_acc, _) =
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], &program_id);
 
-        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, .. } = client
+        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, oracle_twaps, .. } = client
             .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
@@ -71,6 +72,7 @@ where
             program_id,
             feed_name: price_feed.to_string(),
             configuration_acc,
+            oracle_twaps_acc: oracle_twaps,
             oracle_prices_acc: oracle_prices,
             oracle_mappings_acc: oracle_mappings,
             tokens_metadata_acc: tokens_metadata,
@@ -122,6 +124,7 @@ where
             feed_name: price_feed.to_string(),
             configuration_acc,
             oracle_prices_acc: oracle_prices_acc.pubkey(),
+            oracle_twaps_acc: twap_buffers_acc.pubkey(),
             oracle_mappings_acc: oracle_mappings_acc.pubkey(),
             tokens_metadata_acc: token_metadatas_acc.pubkey(),
             tokens: IntMap::default(),
@@ -741,8 +744,9 @@ where
         let mut refresh_accounts = accounts::RefreshOne {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
+            oracle_twaps: self.oracle_twaps_acc,
+            tokens_metadata: self.tokens_metadata_acc,
             price_info: *entry.get_mapping_account(),
-            clock: Clock::id(),
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -783,7 +787,8 @@ where
         let mut refresh_accounts = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            clock: Clock::id(),
+            tokens_metadata: self.tokens_metadata_acc,
+            oracle_twaps: self.oracle_prices_acc,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);

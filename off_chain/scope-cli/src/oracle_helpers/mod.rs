@@ -89,5 +89,6 @@ pub async fn entry_from_config(
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
+        OracleType::ScopeTwap => todo!(),
     })
 }

@@ -28,6 +28,8 @@ pub const MAX_ENTRIES_U16: u16 = 512;
 // Note: Need to be directly integer value to not confuse the IDL generator
 pub const MAX_ENTRIES: usize = 512;
 pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
+pub const TWAP_INTERVAL_SECONDS: i64 = 30;
+pub const TWAP_NUM_OBSERVATIONS: usize = 30;
 
 #[program]
 pub mod scope {
@@ -139,9 +141,9 @@ impl Default for DatedPrice {
 #[zero_copy]
 #[derive(Debug, Eq, PartialEq)]
 pub struct TwapBuffer {
-    pub values: [u64; 32],
-    pub timestamps: [u64; 32],
-    pub index: u64,
+    pub values: [Price; TWAP_NUM_OBSERVATIONS],
+    pub unix_timestamps: [i64; TWAP_NUM_OBSERVATIONS],
+    pub current_index: u64,
 }
 
 // Account to store dated prices
