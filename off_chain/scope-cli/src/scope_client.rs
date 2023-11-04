@@ -96,6 +96,7 @@ where
         let oracle_prices_acc = Keypair::new();
         let oracle_mappings_acc = Keypair::new();
         let token_metadatas_acc = Keypair::new();
+        let twap_buffers_acc = Keypair::new();
 
         // Compute configuration PDA pbk
         let (configuration_acc, _) =
@@ -108,6 +109,7 @@ where
             &oracle_prices_acc,
             &oracle_mappings_acc,
             &token_metadatas_acc,
+            &twap_buffers_acc,
             price_feed,
         )
         .await?;
@@ -514,6 +516,7 @@ where
         oracle_prices_acc: &Keypair,
         oracle_mappings_acc: &Keypair,
         token_metadatas_acc: &Keypair,
+        twap_buffers_acc: &Keypair,
         price_feed: &str,
     ) -> Result<()> {
         debug!("Entering initialize ix");
@@ -526,6 +529,7 @@ where
             oracle_prices: oracle_prices_acc.pubkey(),
             oracle_mappings: oracle_mappings_acc.pubkey(),
             token_metadatas: token_metadatas_acc.pubkey(),
+            twap_buffers: twap_buffers_acc.pubkey(),
         };
 
         let init_tx = client

@@ -87,4 +87,5 @@ pub struct ScopeZeroCopyAccounts {
     pub mapping: Keypair,
     pub prices: Keypair,
     pub token_metadatas: Keypair,
+    pub twap_buffers: Keypair,
 }

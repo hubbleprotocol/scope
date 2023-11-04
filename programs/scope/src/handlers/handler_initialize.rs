@@ -17,6 +17,9 @@ pub struct Initialize<'info> {
     #[account(zero)]
     pub token_metadatas: AccountLoader<'info, crate::TokenMetadatas>,
 
+    #[account(zero)]
+    pub twap_buffers: AccountLoader<'info, crate::OracleTwaps>,
+
     // Account is pre-reserved/payed outside the program
     #[account(zero)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
@@ -35,8 +38,12 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     let mut oracle_prices = ctx.accounts.oracle_prices.load_init()?;
     oracle_prices.oracle_mappings = oracle_pbk;
 
-    // Initialize configuration account
+    // Initialize oracle twap account
     let prices_pbk = ctx.accounts.oracle_prices.key();
+    let mut twap_buffers = ctx.accounts.twap_buffers.load_init()?;
+    twap_buffers.oracle_prices = prices_pbk;
+
+    // Initialize configuration account
     let admin = ctx.accounts.admin.key();
     let mut configuration = ctx.accounts.configuration.load_init()?;
     configuration.admin = admin;

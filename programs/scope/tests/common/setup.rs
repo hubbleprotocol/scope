@@ -59,6 +59,7 @@ impl ScopeZeroCopyAccounts {
             mapping: Keypair::new(),
             prices: Keypair::new(),
             token_metadatas: Keypair::new(),
+            twap_buffers: Keypair::new(),
         }
     }
 

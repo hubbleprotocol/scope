@@ -32,6 +32,7 @@ async fn test_working_init() {
         oracle_prices: zero_copy_accounts.prices.pubkey(),
         oracle_mappings: zero_copy_accounts.mapping.pubkey(),
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
+        twap_buffers: zero_copy_accounts.twap_buffers.pubkey(),
     };
     let args = scope::instruction::Initialize {
         feed_name: DEFAULT_FEED_NAME.to_string(),
@@ -74,6 +75,7 @@ async fn test_non_zeroed_mapping_account() {
         oracle_prices: zero_copy_accounts.prices.pubkey(),
         oracle_mappings: zero_copy_accounts.mapping.pubkey(),
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
+        twap_buffers: zero_copy_accounts.twap_buffers.pubkey(),
     };
     let args = scope::instruction::Initialize {
         feed_name: DEFAULT_FEED_NAME.to_string(),
@@ -117,6 +119,7 @@ async fn test_non_zeroed_price_account() {
         oracle_prices: zero_copy_accounts.prices.pubkey(),
         oracle_mappings: zero_copy_accounts.mapping.pubkey(),
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
+        twap_buffers: zero_copy_accounts.twap_buffers.pubkey(),
     };
     let args = scope::instruction::Initialize {
         feed_name: DEFAULT_FEED_NAME.to_string(),
@@ -151,6 +154,7 @@ async fn test_non_matching_pda() {
         oracle_prices: zero_copy_accounts.prices.pubkey(),
         oracle_mappings: zero_copy_accounts.mapping.pubkey(),
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
+        twap_buffers: zero_copy_accounts.twap_buffers.pubkey(),
     };
     let args = scope::instruction::Initialize {
         feed_name: DEFAULT_FEED_NAME.to_string(),

@@ -115,7 +115,9 @@ pub struct DatedPrice {
     pub last_updated_slot: u64,
     pub unix_timestamp: u64,
     pub _reserved: [u64; 2],
-    pub _reserved2: [u16; 3],
+    pub _reserved2: [u16; 2],
+    // The index of the twap price
+    pub twap_id: u16,
     // Current index of the dated price.
     pub index: u16,
 }
@@ -129,8 +131,17 @@ impl Default for DatedPrice {
             _reserved: Default::default(),
             _reserved2: Default::default(),
             index: MAX_ENTRIES_U16,
+            twap_id: u16::MAX,
         }
     }
+}
+
+#[zero_copy]
+#[derive(Debug, Eq, PartialEq)]
+pub struct TwapBuffer {
+    pub values: [u64; 32],
+    pub timestamps: [u64; 32],
+    pub index: u64,
 }
 
 // Account to store dated prices
@@ -138,6 +149,13 @@ impl Default for DatedPrice {
 pub struct OraclePrices {
     pub oracle_mappings: Pubkey,
     pub prices: [DatedPrice; MAX_ENTRIES],
+}
+
+// Account to store dated prices
+#[account(zero_copy)]
+pub struct OracleTwaps {
+    pub oracle_prices: Pubkey,
+    pub twap_buffers: [TwapBuffer; MAX_ENTRIES],
 }
 
 // Accounts holding source of prices
