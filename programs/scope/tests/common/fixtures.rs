@@ -15,9 +15,11 @@ pub async fn setup_scope(
     let bot = setup::funded_kp(&mut test_program, 100000000);
     let zero_copy_accounts = types::ScopeZeroCopyAccounts::new();
     zero_copy_accounts.add_accounts(&mut test_program);
+
     let mut ctx = runner::start(test_program, admin, bot).await;
     let (configuration_acc, _) =
         Pubkey::find_program_address(&[b"conf", feed_name.as_bytes()], &scope::id());
+
     let accounts = scope::accounts::Initialize {
         admin: ctx.admin.pubkey(),
         system_program: solana_program::system_program::id(),
@@ -27,6 +29,7 @@ pub async fn setup_scope(
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
         twap_buffers: zero_copy_accounts.twap_buffers.pubkey(),
     };
+
     let args = scope::instruction::Initialize {
         feed_name: feed_name.to_string(),
     };
@@ -44,6 +47,8 @@ pub async fn setup_scope(
         conf: configuration_acc,
         mapping: zero_copy_accounts.mapping.pubkey(),
         prices: zero_copy_accounts.prices.pubkey(),
+        twaps: zero_copy_accounts.twap_buffers.pubkey(),
+        metadatas: zero_copy_accounts.token_metadatas.pubkey(),
     };
 
     // Set up the mapping and oracles

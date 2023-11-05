@@ -33,15 +33,22 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     // Initialize oracle mapping account
     let _mappings = ctx.accounts.oracle_mappings.load_init()?;
 
-    // Initialize oracle price account
     let oracle_pbk = ctx.accounts.oracle_mappings.key();
+    let prices_pbk = ctx.accounts.oracle_prices.key();
+    let twaps_pbk = ctx.accounts.twap_buffers.key();
+    let metadata_pbk = ctx.accounts.token_metadatas.key();
+
+    // Initialize oracle price account
     let mut oracle_prices = ctx.accounts.oracle_prices.load_init()?;
     oracle_prices.oracle_mappings = oracle_pbk;
 
     // Initialize oracle twap account
-    let prices_pbk = ctx.accounts.oracle_prices.key();
     let mut twap_buffers = ctx.accounts.twap_buffers.load_init()?;
     twap_buffers.oracle_prices = prices_pbk;
+    twap_buffers.token_metadatas = metadata_pbk;
+
+    // Initialize token metadata
+    let _ = ctx.accounts.token_metadatas.load_init()?;
 
     // Initialize configuration account
     let admin = ctx.accounts.admin.key();
@@ -49,9 +56,8 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     configuration.admin = admin;
     configuration.oracle_mappings = oracle_pbk;
     configuration.oracle_prices = prices_pbk;
-
-    let _ = ctx.accounts.token_metadatas.load_init()?;
-    configuration.tokens_metadata = ctx.accounts.token_metadatas.key();
+    configuration.oracle_twaps = twaps_pbk;
+    configuration.tokens_metadata = metadata_pbk;
 
     Ok(())
 }

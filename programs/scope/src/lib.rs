@@ -29,7 +29,7 @@ pub const MAX_ENTRIES_U16: u16 = 512;
 pub const MAX_ENTRIES: usize = 512;
 pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
 pub const TWAP_INTERVAL_SECONDS: i64 = 30;
-pub const TWAP_NUM_OBSERVATIONS: usize = 30;
+pub const TWAP_NUM_OBS: usize = 30;
 
 #[program]
 pub mod scope {
@@ -117,9 +117,7 @@ pub struct DatedPrice {
     pub last_updated_slot: u64,
     pub unix_timestamp: u64,
     pub _reserved: [u64; 2],
-    pub _reserved2: [u16; 2],
-    // The index of the twap price
-    pub twap_id: u16,
+    pub _reserved2: [u16; 3],
     // Current index of the dated price.
     pub index: u16,
 }
@@ -133,7 +131,6 @@ impl Default for DatedPrice {
             _reserved: Default::default(),
             _reserved2: Default::default(),
             index: MAX_ENTRIES_U16,
-            twap_id: u16::MAX,
         }
     }
 }
@@ -141,9 +138,11 @@ impl Default for DatedPrice {
 #[zero_copy]
 #[derive(Debug, Eq, PartialEq)]
 pub struct TwapBuffer {
-    pub values: [Price; TWAP_NUM_OBSERVATIONS],
-    pub unix_timestamps: [i64; TWAP_NUM_OBSERVATIONS],
-    pub current_index: u64,
+    pub values: [Price; TWAP_NUM_OBS],
+    pub unix_timestamps: [i64; TWAP_NUM_OBS],
+
+    // The value at this index has not been filled yet.
+    pub next_index: u64,
 }
 
 // Account to store dated prices
@@ -157,6 +156,7 @@ pub struct OraclePrices {
 #[account(zero_copy)]
 pub struct OracleTwaps {
     pub oracle_prices: Pubkey,
+    pub token_metadatas: Pubkey,
     pub twap_buffers: [TwapBuffer; MAX_ENTRIES],
 }
 
@@ -192,7 +192,7 @@ pub struct Configuration {
     pub oracle_prices: Pubkey,
     pub oracle_twaps: Pubkey,
     pub tokens_metadata: Pubkey,
-    _padding: [u64; 1263],
+    _padding: [u64; 1259],
 }
 
 #[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]

@@ -1,8 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use solana_program::{
-    clock::Clock,
-    instruction::Instruction,
-    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
 use solana_sdk::signature::Signer;
 
@@ -45,8 +43,9 @@ pub async fn refresh_price(
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         price_info: conf.pubkey,
-        clock: Clock::id(),
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        oracle_twaps: feed.twaps,
+        tokens_metadata: feed.metadatas,
     }
     .to_account_metas(None);
     let mut refresh_accounts = utils::get_remaining_accounts(ctx, conf).await;

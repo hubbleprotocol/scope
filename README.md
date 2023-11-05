@@ -92,3 +92,9 @@ anchor build -p scope -- --no-default-features --features mainnet
 ```sh
 cargo build -p scope-cli --no-default-features --features rpc-client
 ```
+
+
+## TODO
+- [ ] Twap 5m
+- [ ] Twap 24h 
+- [ ] Twap 7d

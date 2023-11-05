@@ -11,7 +11,7 @@ use solana_program::{
 
 use crate::{
     oracles::{get_price, OracleType},
-    ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBSERVATIONS,
+    ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS,
 };
 
 const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111111111");
@@ -82,12 +82,11 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     // Append to the twap buffer, but don't calculate the twap
     if tokens_metadata.metadatas_array[token].twap_enabled > 0 {
         let twap_buffer = &mut oracle_twaps.twap_buffers[token];
-        let last_timestamp = twap_buffer.unix_timestamps[twap_buffer.current_index as usize];
+        let last_timestamp = twap_buffer.unix_timestamps[twap_buffer.next_index as usize];
         if clock.unix_timestamp.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS {
-            twap_buffer.current_index =
-                (twap_buffer.current_index + 1) % (TWAP_NUM_OBSERVATIONS as u64);
-            twap_buffer.values[twap_buffer.current_index as usize] = price.price;
-            twap_buffer.unix_timestamps[twap_buffer.current_index as usize] = clock.unix_timestamp;
+            twap_buffer.values[twap_buffer.next_index as usize] = price.price;
+            twap_buffer.unix_timestamps[twap_buffer.next_index as usize] = clock.unix_timestamp;
+            twap_buffer.next_index = (twap_buffer.next_index + 1) % (TWAP_NUM_OBS as u64);
         }
     }
 
@@ -181,14 +180,14 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                 if tokens_metadata.metadatas_array[token_idx].twap_enabled > 0 {
                     let twap_buffer = &mut oracle_twaps.twap_buffers[token_idx];
                     let last_timestamp =
-                        twap_buffer.unix_timestamps[twap_buffer.current_index as usize];
+                        twap_buffer.unix_timestamps[twap_buffer.next_index as usize];
                     if clock.unix_timestamp.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS
                     {
-                        twap_buffer.current_index =
-                            (twap_buffer.current_index + 1) % (TWAP_NUM_OBSERVATIONS as u64);
-                        twap_buffer.values[twap_buffer.current_index as usize] = price.price;
-                        twap_buffer.unix_timestamps[twap_buffer.current_index as usize] =
+                        twap_buffer.values[twap_buffer.next_index as usize] = price.price;
+                        twap_buffer.unix_timestamps[twap_buffer.next_index as usize] =
                             clock.unix_timestamp;
+                        twap_buffer.next_index =
+                            (twap_buffer.next_index + 1) % (TWAP_NUM_OBS as u64);
                     }
                 }
 
