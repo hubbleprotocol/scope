@@ -511,6 +511,7 @@ where
         Ok(token_metadatas)
     }
 
+    #[allow(clippy::too_many_arguments)]
     #[tracing::instrument(skip(client))]
     async fn ix_initialize(
         client: &OrbitLink<T, S>,

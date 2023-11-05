@@ -10,8 +10,8 @@ use solana_program::{
 };
 
 use crate::{
-    oracles::{get_price, get_twap_from_observations, OracleType},
-    OracleTwaps, Price, ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS,
+    oracles::{get_price, twap::get_twap_from_observations, OracleType},
+    ScopeError,
 };
 
 const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111111111");
@@ -82,8 +82,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     let price = if price_type.is_twap() {
         // Then start calculating the twap
         let source = tokens_metadata.get_twap_source(token);
-        let twap = get_twap_from_observations(price_type, &oracle_twaps, source, &clock)?;
-        twap
+        get_twap_from_observations(price_type, &oracle_twaps, source, &clock)?
     } else {
         let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
 
@@ -91,13 +90,13 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
         price.index = token.try_into().unwrap();
 
         if tokens_metadata.should_store_twap_observations(token) {
-            store_observation(
+            crate::oracles::twap::store_observation(
                 &mut oracle_twaps,
                 token,
                 price.price,
                 clock.unix_timestamp as u64,
                 clock.slot,
-            );
+            )?;
         }
 
         price
@@ -187,13 +186,13 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                 );
 
                 if tokens_metadata.should_store_twap_observations(token_idx) {
-                    store_observation(
+                    crate::oracles::twap::store_observation(
                         &mut oracle_twaps,
                         token_idx,
                         price.price,
                         clock.unix_timestamp as u64,
                         clock.slot,
-                    );
+                    )?;
                 }
 
                 *to_update = price;
@@ -242,31 +241,4 @@ fn check_execution_ctx(instruction_sysvar_account_info: &AccountInfo) -> Result<
     }
 
     Ok(())
-}
-
-fn store_observation(
-    oracle_twaps: &mut OracleTwaps,
-    token: usize,
-    price: Price,
-    current_ts: u64,
-    current_slot: u64,
-) {
-    let twap_buffer = &mut oracle_twaps.twap_buffers[token];
-    let (curr_index, next_index): (usize, usize) = if twap_buffer.unix_timestamps[0] == 0 {
-        let next_index = 0;
-        let curr_index = 0;
-        (curr_index, next_index)
-    } else {
-        let curr_index = twap_buffer.curr_index as usize;
-        let next_index = (curr_index + 1) % TWAP_NUM_OBS;
-        (curr_index, next_index)
-    };
-
-    let last_timestamp = twap_buffer.unix_timestamps[curr_index];
-    if current_ts.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS {
-        twap_buffer.observations[next_index] = price;
-        twap_buffer.unix_timestamps[next_index] = current_ts;
-        twap_buffer.slots[next_index] = current_slot;
-        twap_buffer.curr_index = next_index as u64;
-    }
 }

@@ -281,6 +281,12 @@ pub enum ScopeError {
 
     #[msg("Too few observations for twap")]
     NotEnoughTwapObservations,
+
+    #[msg("Invalid timestamp")]
+    BadTimestamp,
+
+    #[msg("Invalid slot")]
+    BadSlot,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
