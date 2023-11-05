@@ -48,40 +48,32 @@ where
     'a: 'b,
 {
     // Get the root account
-    msg!("A");
     let strategy_account_ref = zero_copy_deserialize::<WhirlpoolStrategy>(k_account)?;
 
-    msg!("B");
     // extract the accounts from extra iterator
     let global_config_account_info = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
-    msg!("C");
     // Get the global config account (checked below)
     let global_config_account_ref =
         zero_copy_deserialize::<GlobalConfig>(global_config_account_info)?;
 
-    msg!("D");
     let collateral_infos_account_info = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
-    msg!("E");
     let pool_account_info = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
-    msg!("F");
     let position_account_info = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
-    msg!("G");
     let scope_prices_account_info = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
-    msg!("H");
     let account_check = |account: &AccountInfo, expected, name| {
         let pk = account.key();
         if pk != expected {
@@ -97,49 +89,41 @@ where
         }
     };
 
-    msg!("I");
     // Check the pubkeys
     account_check(
         global_config_account_info,
         strategy_account_ref.global_config,
         "global_config",
     )?;
-    msg!("J");
     account_check(
         collateral_infos_account_info,
         global_config_account_ref.token_infos,
         "collateral_infos",
     )?;
-    msg!("K");
     account_check(pool_account_info, strategy_account_ref.pool, "pool")?;
     account_check(
         position_account_info,
         strategy_account_ref.position,
         "position",
     )?;
-    msg!("L");
     account_check(
         scope_prices_account_info,
         strategy_account_ref.scope_prices,
         "scope_prices",
     )?;
 
-    msg!("M");
     // Deserialize accounts
     let collateral_infos_ref =
         zero_copy_deserialize::<CollateralInfos>(collateral_infos_account_info)?;
-    msg!("N");
     let scope_prices_ref =
         zero_copy_deserialize::<kamino::scope::OraclePrices>(scope_prices_account_info)?;
 
-    msg!("O");
     let clmm = get_clmm(
         pool_account_info,
         position_account_info,
         &strategy_account_ref,
     )?;
 
-    msg!("P");
     let token_prices = kamino::utils::scope::get_prices_from_data(
         scope_prices_ref.deref(),
         &collateral_infos_ref.infos,

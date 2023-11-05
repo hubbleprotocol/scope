@@ -6416,7 +6416,7 @@ dependencies = [
 [[package]]
 name = "yvaults"
 version = "0.1.0"
-source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git?branch=feature/add-twap-to-yvaults#7fe0827f1c5fdd72663f7210ac2c7a25a9847aae"
+source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git?branch=feature/add-twap-to-yvaults#86d5b3ea858e4f40b031a90111024a2e1bb09122"
 dependencies = [
  "anchor-lang",
  "anchor-spl",

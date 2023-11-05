@@ -1,5 +1,4 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use num_traits::ToBytes;
 use scope::UpdateTokenMetadataMode;
 use solana_program::instruction::Instruction;
 use solana_sdk::signer::Signer;

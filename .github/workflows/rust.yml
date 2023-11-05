@@ -46,7 +46,6 @@ jobs:
         name: Clippy
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions-rs/cargo@v1
-        name: Cargo test
-        with:
-          command: test
+      - name: Cargo test
+        run: |
+          RUST_MIN_STACK=104857600 cargo test

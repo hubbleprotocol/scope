@@ -18,16 +18,17 @@ const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
+    #[account()]
+    pub tokens_metadata: AccountLoader<'info, crate::TokenMetadatas>,
+
     #[account(mut, has_one = oracle_mappings)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
+
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 
     #[account(mut, has_one = oracle_prices, has_one = tokens_metadata)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
-
-    #[account()]
-    pub tokens_metadata: AccountLoader<'info, crate::TokenMetadatas>,
 
     /// CHECK: In ix, check the account is in `oracle_mappings`
     pub price_info: AccountInfo<'info>,
@@ -48,7 +49,7 @@ pub struct RefreshList<'info> {
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 
-    #[account(mut, has_one = oracle_prices)]
+    #[account(mut, has_one = oracle_prices, has_one = tokens_metadata)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
 
     /// CHECK: Sysvar fixed address
@@ -64,7 +65,6 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     let price_info = &ctx.accounts.price_info;
     let tokens_metadata = ctx.accounts.tokens_metadata.load()?;
     let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
-    let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
     // Check that the provided account is the one referenced in oracleMapping
     if oracle_mappings.price_info_accounts[token] != price_info.key() {
@@ -101,6 +101,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
         price
     };
+
+    let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
     msg!(
         "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
