@@ -25,7 +25,7 @@ mainnet = []
 
 [dependencies]
 anchor-lang = "0.28.0"
-solana-program = "^1.16"
+solana-program = "~1.16.18"
 num_enum = "0.7.0"
 num = "0.4"
 pyth-sdk-solana = "0.4.2"
@@ -50,8 +50,8 @@ spl-associated-token-account = "1.0.3"
 [dev-dependencies]
 async-recursion = "1.0.5"
 proptest = "1.0"
-solana-logger = "^1.16"
-solana-program-test = "^1.16"
-solana-sdk = "^1.16"
+solana-logger = "~1.16.18"
+solana-program-test = "~1.16.18"
+solana-sdk = "~1.16.18"
 thiserror = "1.0.38"
 test_cpi_caller = { path = "../test_cpi_caller" }
