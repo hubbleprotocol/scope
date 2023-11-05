@@ -1,9 +1,7 @@
-use anchor_lang::err;
+use anchor_lang::{err, require};
 use solana_program::clock::Clock;
 
-use crate::{
-    DatedPrice, OracleTwaps, Price, ScopeError, MAX_ENTRIES, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS,
-};
+use crate::{DatedPrice, OracleTwaps, Price, ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS};
 
 use super::OracleType;
 #[cfg(test)]
@@ -16,58 +14,41 @@ pub fn store_observation(
     current_ts: u64,
     current_slot: u64,
 ) -> crate::Result<()> {
-    if current_ts == 0 {
-        // Should be non zero
-        return err!(ScopeError::BadTimestamp);
-    }
-
-    if current_slot == 0 {
-        // Should be non zero
-        return err!(ScopeError::BadSlot);
-    }
+    require!(current_ts > 0, ScopeError::BadTimestamp);
+    require!(current_slot > 0, ScopeError::BadSlot);
 
     let twap_buffer = &mut oracle_twaps.twap_buffers[token];
-    let unchecked_current_index = twap_buffer.curr_index as usize;
-    let (curr_index, next_index): (usize, usize) =
-        // Check if uninitialized buffer, special case
-        if twap_buffer.unix_timestamps[0] == 0 && unchecked_current_index == 0 {
-            println!("First time");
-            let next_index = 0;
-            let curr_index = 0;
-            (curr_index, next_index)
-        } else {
-            let curr_index = twap_buffer.curr_index as usize;
-            let next_index = (curr_index + 1) % TWAP_NUM_OBS;
-            println!("Not first time, {} {}", twap_buffer.curr_index, next_index);
-            (curr_index, next_index)
-        };
+    let curr_index = twap_buffer.curr_index as usize;
 
-    let (last_timestamp, last_slot) = (
-        twap_buffer.unix_timestamps[curr_index],
-        twap_buffer.slots[curr_index],
-    );
-    println!("Storing in {:?}, last_ts {}", next_index, last_timestamp);
-
-    if last_timestamp > current_ts {
-        // Should be always increasing
-        return err!(ScopeError::BadTimestamp);
+    // If the buffer is uninitialized, we directly store the observation at index 0.
+    if twap_buffer.unix_timestamps[0] == 0 {
+        twap_buffer.observations[0] = price;
+        twap_buffer.unix_timestamps[0] = current_ts;
+        twap_buffer.slots[0] = current_slot;
+        twap_buffer.curr_index = 0; // Explicitly set to 0 for clarity.
+        return Ok(());
     }
 
-    if last_slot > current_slot {
-        // Should be always increasing
-        return err!(ScopeError::BadSlot);
+    // Determine if the new timestamp is valid for storing a new observation.
+    let last_timestamp = twap_buffer.unix_timestamps[curr_index];
+    let last_slot = twap_buffer.slots[curr_index];
+
+    require!(last_timestamp <= current_ts, ScopeError::BadTimestamp);
+    require!(last_slot <= current_slot, ScopeError::BadSlot);
+
+    // Check if enough time has elapsed since the last timestamp.
+    if current_ts.saturating_sub(last_timestamp) < TWAP_INTERVAL_SECONDS {
+        return Ok(()); // Not enough time has passed.
     }
 
-    // last_timestamp == 0 means the buffer is empty
-    // and we are in tests. because otherwise current_ts - last_timestamp will be huge if last_ts = 0
-    if current_ts.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS || last_timestamp == 0 {
-        twap_buffer.observations[next_index] = price;
-        twap_buffer.unix_timestamps[next_index] = current_ts;
-        twap_buffer.slots[next_index] = current_slot;
-        twap_buffer.curr_index = next_index as u64;
-    } else {
-        println!("Not enough time elapsed");
-    }
+    // Calculate the next index.
+    let next_index = (curr_index + 1) % TWAP_NUM_OBS;
+
+    // Update the TWAP buffer with the new observation.
+    twap_buffer.observations[next_index] = price;
+    twap_buffer.unix_timestamps[next_index] = current_ts;
+    twap_buffer.slots[next_index] = current_slot;
+    twap_buffer.curr_index = next_index as u64;
 
     Ok(())
 }
@@ -1157,7 +1138,6 @@ mod error_handling_tests {
     use crate::MAX_ENTRIES;
 
     use super::*;
-    use std::error::Error;
 
     // Test that an error is returned when trying to store an observation with an invalid timestamp
     #[test]
