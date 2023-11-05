@@ -86,11 +86,13 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     // If price type is normal (not twap, not derived) and twap is enabled, append twap
     let price = if price_type.is_twap() {
+        msg!("Is Twap");
         // Then start calculating the twap
         let source = tokens_metadata.get_twap_source(token);
         let twap = get_twap_from_observations(price_type, &oracle_twaps, source, &clock)?;
         twap
     } else {
+        msg!("Is Price");
         let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
 
         // TODO: should we get rid of this

@@ -138,19 +138,19 @@ pub fn get_twap_from_observations(
 
     let twap_buffer = oracle_twaps.twap_buffers[twap_buffer_source];
 
-    let (mut running_index, mut twap, mut num_obs) = (twap_buffer.curr_index as usize, 0, 0);
-
+    let (mut running_index, mut twap, mut num_obs, mut max_exp) =
+        (twap_buffer.curr_index as usize, 0, 0, 0);
     loop {
         let obs = twap_buffer.observations[running_index as usize];
         let ts = twap_buffer.unix_timestamps[running_index as usize];
 
-        if ts < oldest_ts || ts == 0 {
+        if ts < oldest_ts || ts == 0 || num_obs >= TWAP_NUM_OBS {
             break;
         }
 
         twap += obs.value * 10u64.pow(obs.exp as u32);
         num_obs += 1;
-
+        max_exp = max_exp.max(obs.exp);
         running_index = (running_index + TWAP_NUM_OBS - 1) % TWAP_NUM_OBS;
     }
 
@@ -158,8 +158,14 @@ pub fn get_twap_from_observations(
         return err!(ScopeError::NotEnoughTwapObservations);
     }
 
+    twap /= num_obs as u64;
+    twap /= 10u64.pow(max_exp as u32);
+
     Ok(DatedPrice {
-        price: crate::Price { value: 0, exp: 0 },
+        price: crate::Price {
+            value: twap,
+            exp: max_exp,
+        },
         last_updated_slot: twap_buffer.slots[twap_buffer.curr_index as usize],
         unix_timestamp: twap_buffer.unix_timestamps[twap_buffer.curr_index as usize],
         _reserved: [0; 2],

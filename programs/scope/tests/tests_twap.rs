@@ -207,13 +207,14 @@ async fn test_refresh_one_with_twap_price_type() {
 
     let seconds_step_size = TWAP_INTERVAL_SECONDS; // seconds
     let price_step_size = 5;
-
+    let mut prices = vec![];
     for _ in 0..100 {
         ctx.fast_forward_seconds(seconds_step_size).await;
 
         // Update price
         px.value += price_step_size;
         mock_oracles::set_price(&mut ctx, &feed, &px_oracle, &px).await;
+        prices.push(px.value);
 
         let ix = client::refresh_one_ix(&feed, px_oracle);
         ctx.send_transaction_with_bot(&[ix]).await.unwrap();
@@ -223,7 +224,9 @@ async fn test_refresh_one_with_twap_price_type() {
     let ix = client::refresh_one_ix(&feed, twap_oracle);
     ctx.send_transaction_with_bot(&[ix]).await.unwrap();
 
+    let expected_price = prices.iter().rev().take(TWAP_NUM_OBS).sum::<u64>() / TWAP_NUM_OBS as u64;
+
     let data: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
-    assert_eq!(data.prices[twap_idx].price.value, 1);
+    assert_eq!(data.prices[twap_idx].price.value, expected_price);
     assert_eq!(data.prices[twap_idx].price.exp, 6);
 }
