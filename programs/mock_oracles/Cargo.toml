@@ -22,7 +22,7 @@ localnet = []
 default = ["localnet"]
 
 [dependencies]
-solana-program = "^1.16"
+solana-program = "~1.16.18"
 anchor-lang = "0.28.0"
 arrayref = "0.3.6"
 bytemuck = { version = "1.7.2" }
