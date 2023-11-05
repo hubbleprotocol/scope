@@ -1,12 +1,13 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
+use num_traits::ToBytes;
 use scope::UpdateTokenMetadataMode;
 use solana_program::instruction::Instruction;
 use solana_sdk::signer::Signer;
 
 use super::types::{OracleConf, ScopeFeedDefinition, TestContext};
-use solana_program::sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId};
+use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
 
-pub fn enable_twap_token_metadata(
+pub fn metadata_enable_store_observations(
     ctx: &mut TestContext,
     feed: &ScopeFeedDefinition,
     oracle: OracleConf,
@@ -15,8 +16,23 @@ pub fn enable_twap_token_metadata(
         ctx,
         feed,
         oracle,
-        UpdateTokenMetadataMode::TwapEnabled,
+        UpdateTokenMetadataMode::StoreObservations,
         vec![1],
+    )
+}
+
+pub fn metadata_set_twap_source(
+    ctx: &mut TestContext,
+    feed: &ScopeFeedDefinition,
+    oracle: OracleConf,
+    source: usize,
+) -> Instruction {
+    update_token_metadata_ix(
+        ctx,
+        feed,
+        oracle,
+        UpdateTokenMetadataMode::TwapSource,
+        (source as u16).to_le_bytes().into(),
     )
 }
 

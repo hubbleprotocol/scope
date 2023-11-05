@@ -11,7 +11,7 @@ use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
-use crate::{DatedPrice, ScopeError};
+use crate::{DatedPrice, OracleTwaps, ScopeError, TWAP_NUM_OBS};
 
 pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
     //make sure there are no extra accounts
@@ -46,6 +46,27 @@ pub enum OracleType {
 }
 
 impl OracleType {
+    pub fn is_twap(&self) -> bool {
+        match self {
+            OracleType::ScopeTwap => true,
+            _ => false,
+        }
+    }
+
+    pub fn min_twap_observations(&self) -> usize {
+        match self {
+            OracleType::ScopeTwap => 2,
+            _ => unimplemented!(),
+        }
+    }
+
+    pub fn twap_duration_seconds(&self) -> u64 {
+        match self {
+            OracleType::ScopeTwap => 60 * 60, // 1H
+            _ => unimplemented!(),
+        }
+    }
+
     /// Get the number of compute unit needed to refresh the price of a token
     pub fn get_update_cu_budget(&self) -> u32 {
         match self {
@@ -100,6 +121,53 @@ where
     }
 }
 
+pub fn get_twap_from_observations(
+    price_type: OracleType,
+    oracle_twaps: &OracleTwaps,
+    twap_buffer_source: usize,
+    clock: &Clock,
+) -> crate::Result<DatedPrice> {
+    // Basically iterate through the observations of the [token] from OracleTwaps
+    // and calculate twap up to a certain point in time, given how far back this current
+    // OracleTwap twap duration is
+    // TODO: add constraints about min num observations
+
+    let twap_duration_seconds = price_type.twap_duration_seconds();
+    let min_twap_observations = price_type.min_twap_observations();
+    let oldest_ts = clock.unix_timestamp as u64 - twap_duration_seconds;
+
+    let twap_buffer = oracle_twaps.twap_buffers[twap_buffer_source];
+
+    let (mut running_index, mut twap, mut num_obs) = (twap_buffer.curr_index as usize, 0, 0);
+
+    loop {
+        let obs = twap_buffer.observations[running_index as usize];
+        let ts = twap_buffer.unix_timestamps[running_index as usize];
+
+        if ts < oldest_ts || ts == 0 {
+            break;
+        }
+
+        twap += obs.value * 10u64.pow(obs.exp as u32);
+        num_obs += 1;
+
+        running_index = (running_index + TWAP_NUM_OBS - 1) % TWAP_NUM_OBS;
+    }
+
+    if min_twap_observations > num_obs {
+        return err!(ScopeError::NotEnoughTwapObservations);
+    }
+
+    Ok(DatedPrice {
+        price: crate::Price { value: 0, exp: 0 },
+        last_updated_slot: twap_buffer.slots[twap_buffer.curr_index as usize],
+        unix_timestamp: twap_buffer.unix_timestamps[twap_buffer.curr_index as usize],
+        _reserved: [0; 2],
+        _reserved2: [0; 3],
+        index: 0,
+    })
+}
+
 /// Validate the given account as being an appropriate price account for the
 /// given oracle type.
 ///
@@ -119,8 +187,6 @@ pub fn validate_oracle_account(
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
-        OracleType::ScopeTwap => {
-            panic!("ScopeTwap is not a valid oracle type")
-        }
+        OracleType::ScopeTwap => Ok(()),
     }
 }

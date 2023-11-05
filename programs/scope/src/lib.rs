@@ -28,7 +28,7 @@ pub const MAX_ENTRIES_U16: u16 = 512;
 // Note: Need to be directly integer value to not confuse the IDL generator
 pub const MAX_ENTRIES: usize = 512;
 pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
-pub const TWAP_INTERVAL_SECONDS: i64 = 100;
+pub const TWAP_INTERVAL_SECONDS: u64 = 100;
 pub const TWAP_NUM_OBS: usize = 30;
 
 #[program]
@@ -138,10 +138,12 @@ impl Default for DatedPrice {
 #[zero_copy]
 #[derive(Debug, Eq, PartialEq)]
 pub struct TwapBuffer {
-    pub values: [Price; TWAP_NUM_OBS],
-    pub unix_timestamps: [i64; TWAP_NUM_OBS],
+    pub observations: [Price; TWAP_NUM_OBS],
+    pub unix_timestamps: [u64; TWAP_NUM_OBS],
+    pub slots: [u64; TWAP_NUM_OBS],
 
-    // The value at this index has not been filled yet.
+    /// The value of the last filled observation
+    /// if unix_timestamps[0] == 0, then the buffer is empty
     pub curr_index: u64,
 }
 
@@ -156,7 +158,7 @@ pub struct OraclePrices {
 #[account(zero_copy)]
 pub struct OracleTwaps {
     pub oracle_prices: Pubkey,
-    pub token_metadatas: Pubkey,
+    pub tokens_metadata: Pubkey,
     pub twap_buffers: [TwapBuffer; MAX_ENTRIES],
 }
 
@@ -175,8 +177,12 @@ pub struct TokenMetadatas {
 }
 
 impl TokenMetadatas {
-    pub fn twap_enabled(&self, token: usize) -> bool {
-        self.metadatas_array[token].twap_enabled > 0
+    pub fn should_store_twap_observations(&self, token: usize) -> bool {
+        self.metadatas_array[token].store_observations > 0
+    }
+
+    pub fn get_twap_source(&self, token: usize) -> usize {
+        self.metadatas_array[token].twap_source as usize
     }
 }
 
@@ -185,8 +191,9 @@ impl TokenMetadatas {
 pub struct TokenMetadata {
     pub name: [u8; 32],
     pub max_age_price_seconds: u64,
-    pub twap_enabled: u8,
-    pub _reserved: [u16; 3],
+    pub twap_source: u16,
+    pub store_observations: u8,
+    pub _reserved: [u16; 2],
     pub _reserved2: [u64; 15],
 }
 
@@ -206,7 +213,8 @@ pub struct Configuration {
 pub enum UpdateTokenMetadataMode {
     Name = 0,
     MaxPriceAgeSeconds = 1,
-    TwapEnabled = 2,
+    StoreObservations = 2,
+    TwapSource = 3,
 }
 
 impl UpdateTokenMetadataMode {
@@ -214,7 +222,8 @@ impl UpdateTokenMetadataMode {
         match self {
             UpdateTokenMetadataMode::Name => 0,
             UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
-            UpdateTokenMetadataMode::TwapEnabled => 2,
+            UpdateTokenMetadataMode::StoreObservations => 2,
+            UpdateTokenMetadataMode::TwapSource => 3,
         }
     }
 }
@@ -269,6 +278,9 @@ pub enum ScopeError {
 
     #[msg("Invalid token metadata update mode")]
     InvalidTokenUpdateMode,
+
+    #[msg("Too few observations for twap")]
+    NotEnoughTwapObservations,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

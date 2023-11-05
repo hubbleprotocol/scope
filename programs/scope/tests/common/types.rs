@@ -42,6 +42,7 @@ pub enum TestOracleType {
     KToken(DEX),
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA,
+    ScopeTwap(usize),
 }
 
 impl TestOracleType {
@@ -64,6 +65,7 @@ impl Into<OracleType> for TestOracleType {
             TestOracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
+            TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap,
         }
     }
 }

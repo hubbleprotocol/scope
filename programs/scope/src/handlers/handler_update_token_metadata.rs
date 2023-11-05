@@ -45,10 +45,15 @@ pub fn process(
             let str_name = std::str::from_utf8(&token_metadata.name).unwrap();
             msg!("Setting token name for index {} to {}", index, str_name);
         }
-        UpdateTokenMetadataMode::TwapEnabled => {
+        UpdateTokenMetadataMode::StoreObservations => {
             let value = value[0];
-            msg!("Setting twap enabled for index {:?} to {}", index, value);
-            token_metadata.twap_enabled = value;
+            msg!("Setting store obs for index {:?} to {}", index, value);
+            token_metadata.store_observations = value;
+        }
+        UpdateTokenMetadataMode::TwapSource => {
+            let value = u16::from_le_bytes(value[..2].try_into().unwrap());
+            msg!("Setting twap source for index {:?} to {}", index, value);
+            token_metadata.twap_source = value;
         }
     }
 

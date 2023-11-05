@@ -45,7 +45,7 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     // Initialize oracle twap account
     let mut twap_buffers = ctx.accounts.twap_buffers.load_init()?;
     twap_buffers.oracle_prices = prices_pbk;
-    twap_buffers.token_metadatas = metadata_pbk;
+    twap_buffers.tokens_metadata = metadata_pbk;
 
     // Initialize token metadata
     let _ = ctx.accounts.token_metadatas.load_init()?;
