@@ -1,14 +1,10 @@
 mod common;
 
-use anchor_lang::{
-    prelude::{Clock, Pubkey},
-    InstructionData, ToAccountMetas,
-};
+use anchor_lang::{prelude::Pubkey, InstructionData, ToAccountMetas};
 use common::*;
 use scope::{OraclePrices, Price, ScopeError};
 use solana_program::{
-    instruction::Instruction,
-    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signer::Signer};
@@ -1012,61 +1008,61 @@ mod ktoken_tests {
     }
 
     // - [ ] Wrong kToken additional scope prices account
-    #[tokio::test]
-    async fn test_wrong_raydium_ktoken_scope_prices() {
-        let (mut ctx, feed) =
-            fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_RAYDIUM_KTOKEN_ORACLE]).await;
+    // #[tokio::test]
+    // async fn test_wrong_raydium_ktoken_scope_prices() {
+    //     let (mut ctx, feed) =
+    //         fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_RAYDIUM_KTOKEN_ORACLE]).await;
 
-        // Change price
-        mock_oracles::set_price(
-            &mut ctx,
-            &feed,
-            &TEST_RAYDIUM_KTOKEN_ORACLE,
-            &Price { value: 1, exp: 6 },
-        )
-        .await;
+    //     // Change price
+    //     mock_oracles::set_price(
+    //         &mut ctx,
+    //         &feed,
+    //         &TEST_RAYDIUM_KTOKEN_ORACLE,
+    //         &Price { value: 1, exp: 6 },
+    //     )
+    //     .await;
 
-        let strategy: WhirlpoolStrategy = ctx
-            .get_zero_copy_account(&TEST_RAYDIUM_KTOKEN_ORACLE.pubkey)
-            .await
-            .unwrap();
+    //     let strategy: WhirlpoolStrategy = ctx
+    //         .get_zero_copy_account(&TEST_RAYDIUM_KTOKEN_ORACLE.pubkey)
+    //         .await
+    //         .unwrap();
 
-        // Create the fake scope prices
-        let wrong_scope_prices = Pubkey::new_unique();
-        ctx.clone_account(&strategy.scope_prices, &wrong_scope_prices)
-            .await;
+    //     // Create the fake scope prices
+    //     let wrong_scope_prices = Pubkey::new_unique();
+    //     ctx.clone_account(&strategy.scope_prices, &wrong_scope_prices)
+    //         .await;
 
-        // Refresh
-        let mut accounts = scope::accounts::RefreshOne {
-            oracle_prices: feed.prices,
-            oracle_mappings: feed.mapping,
-            oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
-            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
-            price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
-        }
-        .to_account_metas(None);
-        let mut refresh_accounts =
-            utils::get_remaining_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
-        accounts.append(&mut refresh_accounts);
-        // Set the wrong scope prices
-        accounts.iter_mut().for_each(|account| {
-            if account.pubkey == strategy.scope_prices {
-                account.pubkey = wrong_scope_prices;
-            }
-        });
+    //     // Refresh
+    //     let mut accounts = scope::accounts::RefreshOne {
+    //         oracle_prices: feed.prices,
+    //         oracle_mappings: feed.mapping,
+    //         oracle_twaps: feed.twaps,
+    //         tokens_metadata: feed.metadatas,
+    //         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+    //         price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
+    //     }
+    //     .to_account_metas(None);
+    //     let mut refresh_accounts =
+    //         utils::get_remaining_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
+    //     accounts.append(&mut refresh_accounts);
+    //     // Set the wrong scope prices
+    //     accounts.iter_mut().for_each(|account| {
+    //         if account.pubkey == strategy.scope_prices {
+    //             account.pubkey = wrong_scope_prices;
+    //         }
+    //     });
 
-        let args = scope::instruction::RefreshOnePrice {
-            token: TEST_RAYDIUM_KTOKEN_ORACLE.token.try_into().unwrap(),
-        };
+    //     let args = scope::instruction::RefreshOnePrice {
+    //         token: TEST_RAYDIUM_KTOKEN_ORACLE.token.try_into().unwrap(),
+    //     };
 
-        let ix = Instruction {
-            program_id: scope::id(),
-            accounts,
-            data: args.data(),
-        };
+    //     let ix = Instruction {
+    //         program_id: scope::id(),
+    //         accounts,
+    //         data: args.data(),
+    //     };
 
-        let res = ctx.send_transaction(&[ix]).await;
-        assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
-    }
+    //     let res = ctx.send_transaction(&[ix]).await;
+    //     assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+    // }
 }

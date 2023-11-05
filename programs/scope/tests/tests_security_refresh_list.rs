@@ -1,12 +1,11 @@
 use anchor_lang::{
-    prelude::{AccountMeta, Clock, Pubkey},
+    prelude::{AccountMeta, Pubkey},
     InstructionData, ToAccountMetas,
 };
 use common::*;
 use scope::{OraclePrices, Price, ScopeError};
 use solana_program::{
-    instruction::Instruction,
-    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signer::Signer};
@@ -199,7 +198,7 @@ async fn test_wrong_oracle_account_with_copy() {
         accounts.append(&mut refresh_accounts);
     }
     // Replace fake account
-    accounts[4] = AccountMeta {
+    accounts[5] = AccountMeta {
         pubkey: fake_price_account,
         is_signer: false,
         is_writable: false,
