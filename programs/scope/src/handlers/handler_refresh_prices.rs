@@ -11,7 +11,7 @@ use solana_program::{
 
 use crate::{
     oracles::{get_price, OracleType},
-    ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS,
+    OracleTwaps, Price, ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS,
 };
 
 const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111111111");
@@ -81,13 +81,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     // Append to the twap buffer, but don't calculate the twap
     if tokens_metadata.metadatas_array[token].twap_enabled > 0 {
-        let twap_buffer = &mut oracle_twaps.twap_buffers[token];
-        let last_timestamp = twap_buffer.unix_timestamps[twap_buffer.next_index as usize];
-        if clock.unix_timestamp.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS {
-            twap_buffer.values[twap_buffer.next_index as usize] = price.price;
-            twap_buffer.unix_timestamps[twap_buffer.next_index as usize] = clock.unix_timestamp;
-            twap_buffer.next_index = (twap_buffer.next_index + 1) % (TWAP_NUM_OBS as u64);
-        }
+        append_twap(&mut oracle_twaps, token, price.price, clock.unix_timestamp);
     }
 
     // Only load when needed, allows prices computation to use scope chain
@@ -107,6 +101,26 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     oracle.prices[token] = price;
 
     Ok(())
+}
+
+fn append_twap(oracle_twaps: &mut OracleTwaps, token: usize, price: Price, current_ts: i64) {
+    let twap_buffer = &mut oracle_twaps.twap_buffers[token];
+    let (curr_index, next_index): (usize, usize) = if twap_buffer.unix_timestamps[0] == 0 {
+        let next_index = 0;
+        let curr_index = 0;
+        (curr_index, next_index)
+    } else {
+        let curr_index = twap_buffer.curr_index as usize;
+        let next_index = (curr_index + 1) % TWAP_NUM_OBS;
+        (curr_index, next_index)
+    };
+
+    let last_timestamp = twap_buffer.unix_timestamps[curr_index];
+    if current_ts.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS {
+        twap_buffer.values[next_index] = price;
+        twap_buffer.unix_timestamps[next_index] = current_ts;
+        twap_buffer.curr_index = next_index as u64;
+    }
 }
 
 pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<()> {
@@ -178,17 +192,12 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
 
                 // Append to the twap buffer, but don't calculate the twap
                 if tokens_metadata.metadatas_array[token_idx].twap_enabled > 0 {
-                    let twap_buffer = &mut oracle_twaps.twap_buffers[token_idx];
-                    let last_timestamp =
-                        twap_buffer.unix_timestamps[twap_buffer.next_index as usize];
-                    if clock.unix_timestamp.saturating_sub(last_timestamp) >= TWAP_INTERVAL_SECONDS
-                    {
-                        twap_buffer.values[twap_buffer.next_index as usize] = price.price;
-                        twap_buffer.unix_timestamps[twap_buffer.next_index as usize] =
-                            clock.unix_timestamp;
-                        twap_buffer.next_index =
-                            (twap_buffer.next_index + 1) % (TWAP_NUM_OBS as u64);
-                    }
+                    append_twap(
+                        &mut oracle_twaps,
+                        token_idx,
+                        price.price,
+                        clock.unix_timestamp,
+                    );
                 }
 
                 *to_update = price;

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anchor_lang::prelude::AccountMeta;
 use anchor_lang::{
     prelude::{Clock, Pubkey},
@@ -157,6 +159,55 @@ impl TestContext {
             .get_sysvar::<Clock>()
             .await
             .unwrap()
+    }
+
+    pub async fn fast_forward_slots(&mut self, slots: u64) {
+        // assert!(slots > 1, "Forwarding by less than 2 slots always fails");
+        let mut clock = self
+            .context
+            .banks_client
+            .get_sysvar::<Clock>()
+            .await
+            .unwrap();
+
+        clock.slot += slots - 1;
+
+        self.context.set_sysvar(&clock);
+        self.context.warp_to_slot(clock.slot + 1).unwrap();
+    }
+
+    async fn fast_forward(&mut self, duration: Duration) {
+        let mut clock = self
+            .context
+            .banks_client
+            .get_sysvar::<Clock>()
+            .await
+            .unwrap();
+        let target = clock.unix_timestamp + duration.as_secs() as i64;
+        println!(
+            "Fast forwarding from {}, seconds {}",
+            clock.unix_timestamp,
+            duration.as_secs()
+        );
+
+        clock.unix_timestamp = target;
+
+        self.context.set_sysvar(&clock);
+
+        // Force states refresh with fast forward
+        self.fast_forward_slots(2).await;
+
+        let current_ts = self.get_clock().await.unix_timestamp;
+
+        println!(
+            "Fast forwarded seconds {}, now {}",
+            duration.as_secs(),
+            current_ts,
+        );
+    }
+
+    pub async fn fast_forward_seconds(&mut self, seconds: u64) {
+        self.fast_forward(Duration::from_secs(seconds)).await
     }
 
     pub async fn get_now_timestamp(&mut self) -> u64 {

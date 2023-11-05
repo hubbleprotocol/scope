@@ -28,7 +28,7 @@ pub const MAX_ENTRIES_U16: u16 = 512;
 // Note: Need to be directly integer value to not confuse the IDL generator
 pub const MAX_ENTRIES: usize = 512;
 pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
-pub const TWAP_INTERVAL_SECONDS: i64 = 30;
+pub const TWAP_INTERVAL_SECONDS: i64 = 100;
 pub const TWAP_NUM_OBS: usize = 30;
 
 #[program]
@@ -142,7 +142,7 @@ pub struct TwapBuffer {
     pub unix_timestamps: [i64; TWAP_NUM_OBS],
 
     // The value at this index has not been filled yet.
-    pub next_index: u64,
+    pub curr_index: u64,
 }
 
 // Account to store dated prices
