@@ -3834,7 +3834,7 @@ dependencies = [
 [[package]]
 name = "scope-types"
 version = "0.1.0"
-source = "git+https://github.com/hubbleprotocol/scope?branch=master#8614360663ccb45ceefb0e85485fb8cd027ccc70"
+source = "git+https://github.com/hubbleprotocol/scope?branch=feature/moar-oracle-types#12523d3d7d64a9baaf1d5b20b8e96dd93ba80d2a"
 dependencies = [
  "anchor-lang",
  "bytemuck",
@@ -6416,7 +6416,7 @@ dependencies = [
 [[package]]
 name = "yvaults"
 version = "0.1.0"
-source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git#5cf35366a3687afb4eedd2aeec010327024b9a6b"
+source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git?branch=feature/add-twap-to-yvaults#7fe0827f1c5fdd72663f7210ac2c7a25a9847aae"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -6430,7 +6430,7 @@ dependencies = [
  "num_enum",
  "raydium-amm-v3",
  "rust_decimal",
- "scope-types 0.1.0 (git+https://github.com/hubbleprotocol/scope?branch=master)",
+ "scope-types 0.1.0 (git+https://github.com/hubbleprotocol/scope?branch=feature/moar-oracle-types)",
  "sha2 0.10.7",
  "solana-security-txt",
  "spl-token",
