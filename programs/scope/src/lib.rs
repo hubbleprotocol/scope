@@ -136,7 +136,7 @@ impl Default for DatedPrice {
 }
 
 #[zero_copy]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Default)]
 pub struct TwapBuffer {
     pub observations: [Price; TWAP_NUM_OBS],
     pub unix_timestamps: [u64; TWAP_NUM_OBS],

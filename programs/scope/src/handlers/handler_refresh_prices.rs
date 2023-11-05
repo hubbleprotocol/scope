@@ -78,12 +78,19 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     let mut remaining_iter = ctx.remaining_accounts.iter();
     let clock = Clock::get()?;
 
-    // If price type is normal (not twap, not derived) and twap is enabled, append twap
+    // If price type is twap, then calculate the twap
     let price = if price_type.is_twap() {
         // Then start calculating the twap
         let source = tokens_metadata.get_twap_source(token);
-        get_twap_from_observations(price_type, &oracle_twaps, source, &clock)?
+        get_twap_from_observations(
+            &oracle_twaps,
+            source,
+            clock.unix_timestamp as u64,
+            price_type.twap_duration_seconds(),
+            price_type.min_twap_observations(),
+        )?
     } else {
+        // If price type is normal (not twap, not derived) and twap is enabled, append twap
         let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
 
         // TODO: should we get rid of this
@@ -166,49 +173,68 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
             return err!(ScopeError::UnexpectedAccount);
         }
         let clock = Clock::get()?;
-        match get_price(price_type, received_account, &mut accounts_iter, &clock) {
-            Ok(price) => {
-                // Only temporary load as mut to allow prices to be computed based on a scope chain
-                // from the price feed that is currently updated
-                let mut oracle_prices = ctx.accounts.oracle_prices.load_mut()?;
-                let to_update = oracle_prices
-                    .prices
-                    .get_mut(token_idx)
-                    .ok_or(ScopeError::BadTokenNb)?;
+        let price = if price_type.is_twap() {
+            // Then start calculating the twap
+            let source = tokens_metadata.get_twap_source(token_idx);
+            let price = get_twap_from_observations(
+                &oracle_twaps,
+                source,
+                clock.unix_timestamp as u64,
+                price_type.twap_duration_seconds(),
+                price_type.min_twap_observations(),
+            )?;
+            Some(price)
+        } else {
+            match get_price(price_type, received_account, &mut accounts_iter, &clock) {
+                Ok(price) => {
+                    if tokens_metadata.should_store_twap_observations(token_idx) {
+                        crate::oracles::twap::store_observation(
+                            &mut oracle_twaps,
+                            token_idx,
+                            price.price,
+                            clock.unix_timestamp as u64,
+                            clock.slot,
+                        )?;
+                    }
 
-                msg!(
-                    "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
-                    token_idx,
-                    price_type,
-                    to_update.price.value,
-                    price.price.value,
-                    to_update.last_updated_slot,
-                    price.last_updated_slot,
-                    clock.slot,
-                );
-
-                if tokens_metadata.should_store_twap_observations(token_idx) {
-                    crate::oracles::twap::store_observation(
-                        &mut oracle_twaps,
-                        token_idx,
-                        price.price,
-                        clock.unix_timestamp as u64,
-                        clock.slot,
-                    )?;
+                    Some(price)
                 }
-
-                *to_update = price;
-                to_update.index = token_nb;
-            }
-            Err(_) => {
-                // Skip the error, details is already logged in get_price and formatting here cost a lot of CU
-                msg!(
-                    "Price skipped as validation failed (token {}, type {:?})",
-                    token_idx,
-                    price_type
-                );
+                Err(_) => {
+                    // Skip the error, details is already logged in get_price and formatting here cost a lot of CU
+                    msg!(
+                        "Price skipped as validation failed (token {}, type {:?})",
+                        token_idx,
+                        price_type
+                    );
+                    None
+                }
             }
         };
+
+        if let Some(price) = price {
+            // Only temporary load as mut to allow prices to be computed based on a scope chain
+            // from the price feed that is currently updated
+
+            let mut oracle_prices = ctx.accounts.oracle_prices.load_mut()?;
+            let to_update = oracle_prices
+                .prices
+                .get_mut(token_idx)
+                .ok_or(ScopeError::BadTokenNb)?;
+
+            msg!(
+                "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
+                token_idx,
+                price_type,
+                to_update.price.value,
+                price.price.value,
+                to_update.last_updated_slot,
+                price.last_updated_slot,
+                clock.slot,
+            );
+
+            *to_update = price;
+            to_update.index = token_nb;
+        }
     }
 
     Ok(())

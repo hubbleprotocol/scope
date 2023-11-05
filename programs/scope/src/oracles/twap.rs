@@ -54,19 +54,18 @@ pub fn store_observation(
 }
 
 pub fn get_twap_from_observations(
-    price_type: OracleType,
     oracle_twaps: &OracleTwaps,
     twap_buffer_source: usize,
-    clock: &Clock,
+    unix_timestamp: u64,
+    twap_duration_seconds: u64,
+    min_twap_observations: usize,
 ) -> crate::Result<DatedPrice> {
     // Basically iterate through the observations of the [token] from OracleTwaps
     // and calculate twap up to a certain point in time, given how far back this current
     // OracleTwap twap duration is
     // TODO: add constraints about min num observations
 
-    let twap_duration_seconds = price_type.twap_duration_seconds();
-    let min_twap_observations = price_type.min_twap_observations();
-    let oldest_ts = clock.unix_timestamp as u64 - twap_duration_seconds;
+    let oldest_ts = unix_timestamp - twap_duration_seconds;
 
     let twap_buffer = oracle_twaps.twap_buffers[twap_buffer_source];
 
@@ -86,6 +85,10 @@ pub fn get_twap_from_observations(
         running_index = (running_index + TWAP_NUM_OBS - 1) % TWAP_NUM_OBS;
     }
 
+    println!(
+        "Mint twap obs {} num obs {}",
+        min_twap_observations, num_obs
+    );
     if min_twap_observations > num_obs {
         return err!(ScopeError::NotEnoughTwapObservations);
     }
@@ -1576,3 +1579,84 @@ mod price_value_tests {
 //         }
 //     }
 // }
+
+#[cfg(test)]
+mod tests_twap_calculation {
+    use super::*;
+
+    #[test]
+    fn test_correct_twap_calculation() {
+        // // Setup mock data for OracleTwaps, Clock, etc.
+        // let mut oracle_twaps = create_default_oracle_twaps();
+        // let unix_timestamp = 1_000_000;
+
+        // // Setup a price type that requires a certain twap duration and minimum observations
+        // let (_price_type, twap_duration_seconds, min_twap_observations) =
+        //     (OracleType::ScopeTwap, 5 * 60, 3); // 5 minutes duration, minimum 3 observations
+
+        // // Fill the buffer with mock observations
+        // // Assuming TWAP_NUM_OBS = 10 for this example
+        // for i in 0..10 {
+        //     oracle_twaps.twap_buffers[0].observations[i] = Price {
+        //         value: 100 * (i as u64 + 1),
+        //         exp: 2,
+        //     };
+        //     oracle_twaps.twap_buffers[0].unix_timestamps[i] = unix_timestamp - (i as u64 * 60);
+        //     oracle_twaps.twap_buffers[0].slots[i] = i as u64;
+        // }
+        // oracle_twaps.twap_buffers[0].curr_index = 9;
+
+        // // Calculate TWAP
+        // let result = get_twap_from_observations(
+        //     &oracle_twaps,
+        //     0,
+        //     unix_timestamp,
+        //     twap_duration_seconds,
+        //     min_twap_observations,
+        // );
+
+        // // Check for Ok result and correct twap calculation
+        // println!("Result: {:?}", result);
+        // assert!(result.is_ok());
+        // let dated_price = result.unwrap();
+        // assert_eq!(dated_price.price.value, 550); // Expected TWAP with mock data
+        // assert_eq!(dated_price.price.exp, 2);
+    }
+
+    #[test]
+    fn test_zero_timestamp_observations_ignored() {
+        // // Setup mock data for OracleTwaps, etc.
+        // let mut oracle_twaps = create_default_oracle_twaps();
+
+        // let (_price_type, twap_duration_seconds, min_twap_observations) =
+        //     (OracleType::ScopeTwap, 300, 3);
+
+        // // Provide a mix of valid and uninitialized observations
+        // for i in 0..3 {
+        //     oracle_twaps.twap_buffers[0].observations[i] = Price { value: 200, exp: 2 };
+        //     oracle_twaps.twap_buffers[0].unix_timestamps[i] = if i == 1 {
+        //         0
+        //     } else {
+        //         1_000_000 - (i as u64 * 60)
+        //     };
+        //     oracle_twaps.twap_buffers[0].slots[i] = i as u64;
+        // }
+        // oracle_twaps.twap_buffers[0].curr_index = 2;
+
+        // let unix_timestamp = 1_000_000;
+
+        // // Calculate TWAP
+        // let result = get_twap_from_observations(
+        //     &oracle_twaps,
+        //     0,
+        //     unix_timestamp,
+        //     twap_duration_seconds,
+        //     min_twap_observations,
+        // );
+
+        // // Check for Ok result and that the zero timestamp observation was ignored in the calculation
+        // assert!(result.is_ok());
+        // let dated_price = result.unwrap();
+        // // Expected TWAP calculation with one observation ignored needs to be asserted here
+    }
+}
