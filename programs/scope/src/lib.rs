@@ -174,6 +174,12 @@ pub struct TokenMetadatas {
     pub metadatas_array: [TokenMetadata; MAX_ENTRIES],
 }
 
+impl TokenMetadatas {
+    pub fn twap_enabled(&self, token: usize) -> bool {
+        self.metadatas_array[token].twap_enabled > 0
+    }
+}
+
 #[zero_copy]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq, Default)]
 pub struct TokenMetadata {
