@@ -26,12 +26,10 @@ pub fn process(
     check_context(&ctx)?;
 
     let mut oracle_mappings = ctx.accounts.oracle_mappings.load_mut()?;
-
     let ref_price_pubkey = oracle_mappings
         .price_info_accounts
         .get_mut(token)
         .ok_or(ScopeError::BadTokenNb)?;
-
     let price_type: OracleType = price_type
         .try_into()
         .map_err(|_| ScopeError::BadTokenType)?;
