@@ -167,8 +167,12 @@ pub struct OracleTwaps {
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
+
     pub twap_enabled: [u8; MAX_ENTRIES],
-    pub _reserved2: [u16; MAX_ENTRIES * 3],
+    pub _reserved1: [u8; MAX_ENTRIES],
+    pub _reserved2: [u16; MAX_ENTRIES],
+    pub _reserved3: [u16; MAX_ENTRIES],
+    pub _reserved4: [u16; MAX_ENTRIES],
 }
 
 #[account(zero_copy)]

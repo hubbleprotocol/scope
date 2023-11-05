@@ -74,6 +74,7 @@ pub struct OraclePrices {
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
+
     pub _reserved2: [u64; MAX_ENTRIES],
 }
 
@@ -83,7 +84,9 @@ pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
-    _padding: [u64; 1267],
+    pub oracle_twaps: Pubkey,
+    pub tokens_metadata: Pubkey,
+    _padding: [u64; 1259],
 }
 
 #[account(zero_copy)]
@@ -96,7 +99,10 @@ pub struct TokensMetadata {
 pub struct TokenMetadata {
     pub name: [u8; 32],
     pub max_age_price_seconds: u64,
-    pub _reserved: [u64; 16],
+    pub twap_source: u16,
+    pub store_observations: u8,
+    pub _reserved: [u16; 2],
+    pub _reserved2: [u64; 15],
 }
 
 #[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
@@ -104,6 +110,8 @@ pub struct TokenMetadata {
 pub enum UpdateTokenMetadataMode {
     Name = 0,
     MaxPriceAgeSeconds = 1,
+    StoreObservations = 2,
+    TwapSource = 3,
 }
 
 #[error_code]
