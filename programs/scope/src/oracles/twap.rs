@@ -1,9 +1,7 @@
 use anchor_lang::{err, require};
-use solana_program::clock::Clock;
 
 use crate::{DatedPrice, OracleTwaps, Price, ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS};
 
-use super::OracleType;
 #[cfg(test)]
 use crate::TwapBuffer;
 

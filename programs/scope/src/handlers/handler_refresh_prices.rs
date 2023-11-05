@@ -174,19 +174,19 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
         }
         let clock = Clock::get()?;
         let price = if price_type.is_twap() {
-            // Then start calculating the twap
+            // Calculating the twap
             let source = tokens_metadata.get_twap_source(token_idx);
-            let price = get_twap_from_observations(
+            get_twap_from_observations(
                 &oracle_twaps,
                 source,
                 clock.unix_timestamp as u64,
                 price_type.twap_duration_seconds(),
                 price_type.min_twap_observations(),
-            )?;
-            Some(price)
+            )
+            .ok()
         } else {
-            match get_price(price_type, received_account, &mut accounts_iter, &clock) {
-                Ok(price) => {
+            get_price(price_type, received_account, &mut accounts_iter, &clock)
+                .and_then(|price| {
                     if tokens_metadata.should_store_twap_observations(token_idx) {
                         crate::oracles::twap::store_observation(
                             &mut oracle_twaps,
@@ -196,19 +196,16 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                             clock.slot,
                         )?;
                     }
-
-                    Some(price)
-                }
-                Err(_) => {
-                    // Skip the error, details is already logged in get_price and formatting here cost a lot of CU
+                    Ok(Some(price))
+                })
+                .unwrap_or_else(|_| {
                     msg!(
                         "Price skipped as validation failed (token {}, type {:?})",
                         token_idx,
                         price_type
                     );
                     None
-                }
-            }
+                })
         };
 
         if let Some(price) = price {
