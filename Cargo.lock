@@ -6970,7 +6970,7 @@ dependencies = [
 [[package]]
 name = "yvaults"
 version = "0.1.0"
-source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git?branch=silviu/anchor-0-28#7691b46b4905e1c65eed02f9d8ed82f3a2bb7792"
+source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git#ba441b854193b5f8e51f7224cd1440ae6bc3fa2f"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
