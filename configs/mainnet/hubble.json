@@ -233,7 +233,7 @@
     "label": "EMA DAI/USD",
     "oracle_mapping": "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
     "oracle_type": "PythEMA",
-    "max_age": 300
+    "max_age": 200
   },
   "66": {
     "label": "TWAP wstETH/USD",
@@ -542,5 +542,17 @@
     "oracle_mapping": "2dczcMRpxWHZTcsiEjPT4YBcSseTaUmWFzw24HxYMFod",
     "oracle_type": "KToken",
     "max_age": 250
+  },
+  "120": {
+    "label": "RNDR/USD",
+    "oracle_mapping": "CYGfrBJB9HgLf9iZyN4aH5HvUAi2htQ4MjPxeXMf4Egn",
+    "oracle_type": "Pyth",
+    "max_age": 150
+  },
+  "121": {
+    "label": "EMA RNDR/USD",
+    "oracle_mapping": "CYGfrBJB9HgLf9iZyN4aH5HvUAi2htQ4MjPxeXMf4Egn",
+    "oracle_type": "PythEMA",
+    "max_age": 200
   }
 }
