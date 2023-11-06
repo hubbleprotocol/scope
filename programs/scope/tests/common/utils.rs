@@ -54,13 +54,13 @@ mod ktokens {
             .await
             .unwrap();
 
-        let mut accounts = vec![];
-        accounts.push(AccountMeta::new_readonly(strategy.global_config, false));
-        accounts.push(AccountMeta::new_readonly(global_config.token_infos, false));
-        accounts.push(AccountMeta::new_readonly(strategy.pool, false));
-        accounts.push(AccountMeta::new_readonly(strategy.position, false));
-        accounts.push(AccountMeta::new_readonly(strategy.scope_prices, false));
-        accounts
+        vec![
+            AccountMeta::new_readonly(strategy.global_config, false),
+            AccountMeta::new_readonly(global_config.token_infos, false),
+            AccountMeta::new_readonly(strategy.pool, false),
+            AccountMeta::new_readonly(strategy.position, false),
+            AccountMeta::new_readonly(strategy.scope_prices, false),
+        ]
     }
 }
 

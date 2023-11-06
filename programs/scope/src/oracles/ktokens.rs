@@ -429,8 +429,8 @@ mod tests_price_utils {
 
     pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
         let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
-        let res = (px * 2.0_f64.powf(64.0)) as u128;
-        res
+
+        (px * 2.0_f64.powf(64.0)) as u128
     }
 
     pub fn f(price: Price) -> f64 {
@@ -521,8 +521,8 @@ mod tests_price_utils {
         let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
 
         // Now go the other way around
-        let a = p(a, decimals_a.into());
-        let b = p(b, decimals_b.into());
+        let a = p(a, decimals_a);
+        let b = p(b, decimals_b);
         let actual = sqrt_price_from_scope_prices(&a, &b, decimals_a, decimals_b).unwrap();
 
         println!("expected: {}", expected);
@@ -664,8 +664,8 @@ mod tests {
     }
 
     fn new_oracle_prices(
-        token_a_chain: &Vec<(u64, u64)>,
-        token_b_chain: &Vec<(u64, u64)>,
+        token_a_chain: &[(u64, u64)],
+        token_b_chain: &[(u64, u64)],
     ) -> OraclePrices {
         let price = DatedPrice {
             ..DatedPrice::default()
@@ -705,13 +705,12 @@ mod tests {
             infos: [CollateralInfo::default(); 256],
         };
         let mut token_a_chain = [u16::MAX, u16::MAX, u16::MAX, u16::MAX];
-        for a in 0..token_a_chain_len {
-            token_a_chain[a] = a as u16;
+        for (a, token) in token_a_chain.iter_mut().enumerate().take(token_a_chain_len) {
+            *token = a as u16;
         }
         let mut token_b_chain = [u16::MAX, u16::MAX, u16::MAX, u16::MAX];
-        for b in 0..token_b_chain_len {
-            let b_offset = b + 4;
-            token_b_chain[b] = b_offset as u16;
+        for (b, token) in token_b_chain.iter_mut().enumerate().take(token_b_chain_len) {
+            *token = b as u16 + 4;
         }
         collateral_infos.infos[0].scope_price_chain = token_a_chain;
         collateral_infos.infos[1].scope_price_chain = token_b_chain;

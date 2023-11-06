@@ -40,31 +40,21 @@ mod pyth_tools {
         pub val: [u8; 32],
     }
 
-    #[derive(PartialEq, Eq, Debug, Copy, Clone)]
+    #[derive(PartialEq, Eq, Debug, Copy, Clone, Default)]
     #[repr(C)]
     pub enum PriceStatus {
         Unknown = 0,
+        #[default]
         Trading = 1,
         Halted = 2,
         Auction = 3,
     }
 
-    impl Default for PriceStatus {
-        fn default() -> Self {
-            PriceStatus::Trading
-        }
-    }
-
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     #[repr(C)]
     pub enum CorpAction {
+        #[default]
         NoCorpAct,
-    }
-
-    impl Default for CorpAction {
-        fn default() -> Self {
-            CorpAction::NoCorpAct
-        }
     }
 
     #[derive(Default, Copy, Clone)]
@@ -84,10 +74,11 @@ mod pyth_tools {
         latest: PriceInfo,
     }
 
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     #[repr(C)]
     pub enum PriceType {
         Unknown,
+        #[default]
         Price,
         Twap,
         Volatility,
@@ -101,12 +92,6 @@ mod pyth_tools {
                 PriceStatus::Halted => 2,
                 PriceStatus::Auction => 3,
             }
-        }
-    }
-
-    impl Default for PriceType {
-        fn default() -> Self {
-            PriceType::Price
         }
     }
 
