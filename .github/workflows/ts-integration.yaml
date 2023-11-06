@@ -27,9 +27,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: hubbleprotocol/solana-setup-action@v0.1
         with:
-          solana-version: v1.14.15
+          solana-version: v1.16.18
           rust-version: stable
-          anchor-version: v0.26.0
+          anchor-version: v0.28.0
           setup-node: 19
 
       - name: build programs

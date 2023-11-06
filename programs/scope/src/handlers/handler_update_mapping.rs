@@ -36,7 +36,7 @@ pub fn process(
 
     match &ctx.accounts.price_info {
         Some(price_info_acc) => {
-            validate_oracle_account(price_type, &price_info_acc)?;
+            validate_oracle_account(price_type, price_info_acc)?;
             // Every check succeeded, replace current with new
             let new_price_pubkey = price_info_acc.key();
             *ref_price_pubkey = new_price_pubkey;
