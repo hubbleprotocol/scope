@@ -6,7 +6,7 @@
 //! - [`OracleHelper`] to provide all required data to perform trigger the
 //!   refresh ix.
 //! - [`std::fmt::Display`] for basic logging of a reference to a token.
-//! - [`std::fmt::Debug`] for detailled debug and error logs.
+//! - [`std::fmt::Debug`] for detailed debug and error logs.
 
 use anchor_client::solana_sdk::clock;
 use anyhow::Result;
