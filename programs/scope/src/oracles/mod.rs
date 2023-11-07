@@ -1,6 +1,7 @@
 pub mod ctokens;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
+pub mod msol_stake;
 pub mod pyth;
 pub mod pyth_ema;
 pub mod spl_stake;
@@ -41,6 +42,8 @@ pub enum OracleType {
     KToken = 6,
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA = 7,
+    /// MSOL Stake Pool token
+    MsolStake = 8,
 }
 
 impl OracleType {
@@ -54,6 +57,7 @@ impl OracleType {
             OracleType::SplStake => 20000,
             OracleType::KToken => 120000,
             OracleType::PythEMA => 15000,
+            OracleType::MsolStake => 20000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -88,6 +92,7 @@ where
         #[cfg(feature = "yvaults")]
         OracleType::KToken => ktokens::get_price(base_account, clock, _extra_accounts),
         OracleType::PythEMA => pyth_ema::get_price(base_account),
+        OracleType::MsolStake => msol_stake::get_price(base_account, clock),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
@@ -110,6 +115,7 @@ pub fn validate_oracle_account(
         OracleType::SplStake => Ok(()),
         OracleType::KToken => Ok(()),
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
+        OracleType::MsolStake => Ok(()),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

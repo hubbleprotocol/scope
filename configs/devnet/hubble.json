@@ -529,5 +529,10 @@
     "oracle_mapping": "EhgAdTrgxi4ZoVZLQx1n93vULucPpiFi2BQtz9RJr1y6",
     "oracle_type": "PythEMA",
     "max_age": 300
+  },
+  "122": {
+    "label": "MSOL/SOL",
+    "oracle_mapping": "8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC",
+    "oracle_type": "MsolStake"
   }
 }
