@@ -1,6 +1,9 @@
 pub mod scope_chain;
 
-use std::{cell::Ref, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    cell::Ref,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use anchor_lang::{
     __private::bytemuck,
