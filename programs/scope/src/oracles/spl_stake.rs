@@ -20,8 +20,10 @@ pub fn get_price(
 
     #[cfg(not(feature = "skip_price_validation"))]
     {
-        let hours_since_epoch_started =
-            hours_since_timestamp(current_clock.epoch_start_timestamp as u64);
+        let hours_since_epoch_started = hours_since_timestamp(
+            current_clock.unix_timestamp as u64,
+            current_clock.epoch_start_timestamp as u64,
+        );
         if stake_pool.last_update_epoch != current_clock.epoch && hours_since_epoch_started >= 1 {
             // The price has not been refreshed this epoch and it's been 1 hour
             msg!("SPL Stake account has not been refreshed in current epoch");
