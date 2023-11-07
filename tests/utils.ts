@@ -66,10 +66,10 @@ export const initialTokens: ITokenInput[] = [
     priceType: OracleType.Pyth,
   },
   {
-    price: new Decimal('253.41550900'),
+    price: new Decimal('1.14709024'),
     ticker: 'MSOL',
-    decimals: 8,
-    priceType: OracleType.Pyth,
+    decimals: 15,
+    priceType: OracleType.MsolStake,
   },
   {
     price: new Decimal('228.415509'),

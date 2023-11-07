@@ -8,6 +8,7 @@ import * as switchboardV1 from './switchboard_v1';
 import * as switchboardV2 from './switchboard_v2';
 import * as ctokens from './ctokens';
 import * as spl_stake from './spl_stake';
+import * as msol_stake from './msol_stake';
 
 const mockOracleProgram = anchor.workspace.MockOracle;
 
@@ -17,7 +18,9 @@ export enum OracleType {
   SwitchboardV2 = 2,
   CToken = 4,
   SplStake = 5,
-  PythEMA = 6,
+  KToken = 6,
+  PythEMA = 7,
+  MsolStake = 8,
 }
 
 export interface ITokenInput {
@@ -53,6 +56,7 @@ export const oracles: Record<OracleType, IMockOracle> = {
   [OracleType.CToken]: new ctokens.CTokenMockOracle(),
   [OracleType.SplStake]: new spl_stake.StakePoolMockOracle(),
   [OracleType.PythEMA]: new pyth.PythMockOracle(),
+  [OracleType.MsolStake]: new msol_stake.MsolStakePoolMockOracle(),
 };
 
 export async function createFakeAccounts(
