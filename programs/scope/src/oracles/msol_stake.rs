@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use solana_program::borsh0_10::try_from_slice_unchecked;
 
-use crate::{DatedPrice, Price, Result, ScopeError};
+use crate::{utils::hours_since_timestamp, DatedPrice, Price, Result, ScopeError};
 
 use self::msol_stake_pool::State;
 
@@ -18,11 +18,17 @@ pub fn get_price(
             ScopeError::UnexpectedAccount
         })?;
     #[cfg(not(feature = "skip_price_validation"))]
-    if stake_pool.stake_system.last_stake_delta_epoch != current_clock.epoch {
-        // The price has not been refreshed this epoch
-        msg!("MSOL Stake account has not been refreshed in current epoch");
-        #[cfg(not(feature = "localnet"))]
-        return Err(ScopeError::PriceNotValid.into());
+    {
+        let hours_since_epoch_started =
+            hours_since_timestamp(current_clock.epoch_start_timestamp as u64);
+        if stake_pool.stake_system.last_stake_delta_epoch != current_clock.epoch
+            && hours_since_epoch_started >= 1
+        {
+            // The price has not been refreshed this epoch and it's been 1 hour
+            msg!("MSOL Stake account has not been refreshed in current epoch");
+            #[cfg(not(feature = "localnet"))]
+            return Err(ScopeError::PriceNotValid.into());
+        }
     }
 
     let value = scaled_rate(&stake_pool)?;
@@ -209,7 +215,7 @@ mod msol_stake_pool {
             self.validator_system
                 .total_active_balance
                 .checked_add(self.total_cooling_down()?)
-                .ok_or_else(|| ScopeError::MathOverflow)?
+                .ok_or(ScopeError::MathOverflow)?
                 .checked_add(self.available_reserve_balance) // reserve_pda.lamports() - self.rent_exempt_for_token_acc
                 .ok_or_else(|| ScopeError::MathOverflow.into())
         }

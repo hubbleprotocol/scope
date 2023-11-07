@@ -54,6 +54,8 @@ export const oracles: Record<OracleType, IMockOracle> = {
   [OracleType.SwitchboardV1]: new switchboardV1.Sb1MockOracle(),
   [OracleType.SwitchboardV2]: new switchboardV2.Sb2MockOracle(),
   [OracleType.CToken]: new ctokens.CTokenMockOracle(),
+  // TODO: modify this to use the correct mock oracle
+  [OracleType.KToken]: new ctokens.CTokenMockOracle(),
   [OracleType.SplStake]: new spl_stake.StakePoolMockOracle(),
   [OracleType.PythEMA]: new pyth.PythMockOracle(),
   [OracleType.MsolStake]: new msol_stake.MsolStakePoolMockOracle(),

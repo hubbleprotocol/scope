@@ -1,6 +1,6 @@
 pub mod scope_chain;
 
-use std::cell::Ref;
+use std::{cell::Ref, time::{SystemTime, UNIX_EPOCH}};
 
 use anchor_lang::{
     __private::bytemuck,
@@ -9,6 +9,8 @@ use anchor_lang::{
 };
 
 use crate::{ScopeError, ScopeResult};
+
+const SECONDS_IN_AN_HOUR: u64 = 60 * 60;
 
 pub fn account_deserialize<T: AccountDeserialize + Discriminator>(
     account: &AccountInfo<'_>,
@@ -63,4 +65,17 @@ pub fn zero_copy_deserialize<'info, T: bytemuck::AnyBitPattern + Discriminator>(
     }
 
     Ok(Ref::map(data, |data| bytemuck::from_bytes(&data[8..])))
+}
+
+fn get_current_timestamp() -> u64 {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    since_the_epoch.as_secs()
+}
+
+pub fn hours_since_timestamp(previous_timestamp: u64) -> u64 {
+    let seconds_elapsed = get_current_timestamp().saturating_sub(previous_timestamp);
+    seconds_elapsed / SECONDS_IN_AN_HOUR
 }
