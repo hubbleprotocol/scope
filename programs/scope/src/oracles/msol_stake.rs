@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use solana_program::borsh0_10::try_from_slice_unchecked;
 
-use crate::{utils::hours_since_timestamp, DatedPrice, Price, Result, ScopeError};
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 use self::msol_stake_pool::State;
 
@@ -17,21 +17,6 @@ pub fn get_price(
             msg!("Provided pubkey is not a MSOL Stake account");
             ScopeError::UnexpectedAccount
         })?;
-    #[cfg(not(feature = "skip_price_validation"))]
-    {
-        let hours_since_epoch_started = hours_since_timestamp(
-            current_clock.unix_timestamp as u64,
-            current_clock.epoch_start_timestamp as u64,
-        );
-        if stake_pool.stake_system.last_stake_delta_epoch != current_clock.epoch
-            && hours_since_epoch_started >= 1
-        {
-            // The price has not been refreshed this epoch and it's been 1 hour
-            msg!("MSOL Stake account has not been refreshed in current epoch");
-            #[cfg(not(feature = "localnet"))]
-            return Err(ScopeError::PriceNotValid.into());
-        }
-    }
 
     let value = scaled_rate(&stake_pool)?;
 
