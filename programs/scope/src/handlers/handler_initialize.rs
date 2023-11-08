@@ -17,11 +17,11 @@ pub struct Initialize<'info> {
     #[account(zero)]
     pub token_metadatas: AccountLoader<'info, crate::TokenMetadatas>,
 
-    // Account is pre-reserved/payed outside the program
+    // Account is pre-reserved/paid outside the program
     #[account(zero)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
 
-    // Account is pre-reserved/payed outside the program
+    // Account is pre-reserved/paid outside the program
     #[account(zero)]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 }
