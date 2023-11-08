@@ -410,8 +410,10 @@ mod ktoken_tests {
 
         // Check price
         let data: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
-        assert_eq!(data.prices[TEST_ORCA_KTOKEN_ORACLE.token].price.value, 1);
-        assert_eq!(data.prices[TEST_ORCA_KTOKEN_ORACLE.token].price.exp, 6);
+        assert_eq!(
+            data.prices[TEST_ORCA_KTOKEN_ORACLE.token].price,
+            Price { value: 1, exp: 6 }
+        );
         assert!(data.prices[TEST_ORCA_KTOKEN_ORACLE.token].last_updated_slot > 0);
     }
 
@@ -457,10 +459,9 @@ mod ktoken_tests {
         // Check price
         let data: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
         assert_eq!(
-            data.prices[TEST_RAYDIUM_KTOKEN_ORACLE.token].price.value,
-            100
+            data.prices[TEST_RAYDIUM_KTOKEN_ORACLE.token].price,
+            Price { value: 100, exp: 6 }
         );
-        assert_eq!(data.prices[TEST_RAYDIUM_KTOKEN_ORACLE.token].price.exp, 6);
         assert!(data.prices[TEST_RAYDIUM_KTOKEN_ORACLE.token].last_updated_slot > 0);
     }
 

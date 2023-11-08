@@ -1,6 +1,8 @@
 pub mod ctokens;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
+
+#[cfg(feature = "yvaults")]
 pub mod ktokens_token_x;
 pub mod msol_stake;
 pub mod pyth;
@@ -113,6 +115,14 @@ where
             extra_accounts,
             TokenTypes::TokenB,
         ),
+        #[cfg(not(feature = "yvaults"))]
+        OracleType::KTokenToTokenA => {
+            panic!("yvaults feature is not enabled, KToken oracle type is not available")
+        }
+        #[cfg(not(feature = "yvaults"))]
+        OracleType::KTokenToTokenB => {
+            panic!("yvaults feature is not enabled, KToken oracle type is not available")
+        }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")

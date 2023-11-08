@@ -26,13 +26,28 @@ pub fn u64_div_to_price(numerator: u64, denominator: u64) -> Price {
         1000000000000001..=10000000000000000 => (15, 1000000000000000),
         10000000000000001..=100000000000000000 => (16, 10000000000000000),
         100000000000000001..=1000000000000000000 => (17, 100000000000000000),
-        1000000000000000001..=10000000000000000000 => (18, 1000000000000000000),
-        _ => panic!("Denominator is too large"),
+        _ => (18, 1000000000000000000),
     };
     let numerator_scaled = U128::from(numerator) * U128::from(ten_pow_exp);
     let price_value = numerator_scaled / U128::from(denominator);
     Price {
         value: price_value.as_u64(),
         exp,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_u64_div_to_price(numerator in 1_u64..=u64::MAX, denominator in 1_u64..=u64::MAX) {
+            let price = u64_div_to_price(numerator, denominator);
+            let price_f64: f64 =  price.into();
+            let expected_price_f64: f64 = numerator as f64 / denominator as f64;
+            prop_assert!((price_f64 - expected_price_f64).abs() < expected_price_f64/1000000000.0, "price_f64: {}, expected_price_f64: {}", price_f64, expected_price_f64);
+        }
     }
 }

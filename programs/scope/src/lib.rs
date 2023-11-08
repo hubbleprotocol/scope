@@ -92,7 +92,7 @@ pub mod scope {
 }
 
 #[zero_copy]
-#[derive(Debug, Eq, PartialEq, Default)]
+#[derive(Debug, Default)]
 pub struct Price {
     // Pyth price, integer + exponent representation
     // decimal price would be
