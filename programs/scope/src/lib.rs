@@ -197,7 +197,7 @@ pub struct TokenMetadata {
     pub max_age_price_seconds: u64,
     pub twap_source: u16,
     pub store_observations: u8,
-    pub _reserved: [u16; 2],
+    pub _reserved: [u8; 5],
     pub _reserved2: [u64; 15],
 }
 

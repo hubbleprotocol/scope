@@ -21,7 +21,7 @@ banks-client = ["orbit-link/banks-client"]
 yvaults = ["scope/yvaults"]
 
 [dependencies]
-anchor-client = "0.26.0"
+anchor-client = "0.28.0"
 scope = { path = "../../programs/scope", default-features = false, features = ["no-entrypoint"] }
 anyhow = "1.0.0"
 clap = { version = "3.2.11", features = ["derive", "env", "wrap_help"] }

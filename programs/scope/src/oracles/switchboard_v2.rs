@@ -137,7 +137,7 @@ mod switchboard {
     use rust_decimal::{prelude::FromPrimitive, Decimal};
 
     use super::*;
-    #[zero_copy]
+    #[zero_copy(unsafe)]
     #[repr(packed)]
     #[derive(Default, Debug, Eq, PartialEq)]
     pub struct SwitchboardDecimal {
@@ -158,7 +158,7 @@ mod switchboard {
         }
     }
 
-    #[zero_copy]
+    #[zero_copy(unsafe)]
     #[repr(packed)]
     #[derive(Debug)]
     pub struct AggregatorAccountData {
@@ -235,7 +235,7 @@ mod switchboard {
     unsafe impl Pod for AggregatorAccountData {}
     unsafe impl Zeroable for AggregatorAccountData {}
 
-    #[zero_copy]
+    #[zero_copy(unsafe)]
     #[repr(packed)]
     #[derive(Default, Debug, PartialEq, Eq)]
     pub struct AggregatorRound {
@@ -271,7 +271,7 @@ mod switchboard {
         pub errors_fulfilled: [bool; 16],
     }
 
-    #[zero_copy]
+    #[zero_copy(unsafe)]
     #[repr(packed)]
     #[derive(Default, Debug, PartialEq, Eq)]
     pub struct Hash {
