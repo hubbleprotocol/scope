@@ -102,7 +102,7 @@ describe('Scope tests', () => {
   it('test_set_oracle_mappings', async () => {
     await Promise.all(
       testTokens.map(async (fakeOracleAccount, idx): Promise<any> => {
-        // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
+        // console.log(`Set mapping of ${fakeOracleAccount.ticker} ${fakeOracleAccount.getType()}`);
 
         await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), PRICE_FEED, {
           accounts: {
@@ -115,6 +115,23 @@ describe('Scope tests', () => {
         });
       })
     );
+  });
+
+  it('test_update_msol_price', async () => {
+    await program.rpc.refreshOnePrice(new BN(HubbleTokens.MSOL), {
+      accounts: {
+        oraclePrices: oracleAccount,
+        oracleMappings: oracleMappingAccount,
+        priceInfo: testTokens[HubbleTokens.MSOL].account,
+        clock: SYSVAR_CLOCK_PUBKEY,
+        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
+      },
+      signers: [],
+    });
+    {
+      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
+      checkOraclePrice(HubbleTokens.MSOL, oracle, testTokens);
+    }
   });
 
   it('test_update_srm_price', async () => {

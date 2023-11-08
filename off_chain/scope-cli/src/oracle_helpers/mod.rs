@@ -77,6 +77,7 @@ pub async fn entry_from_config(
         | OracleType::SwitchboardV2
         | OracleType::CToken
         | OracleType::SplStake
+        | OracleType::MsolStake
         | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
         #[cfg(feature = "yvaults")]
         OracleType::KToken => {
