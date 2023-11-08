@@ -3920,7 +3920,7 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "spl-associated-token-account 1.1.3",
- "strum 0.24.0",
+ "strum 0.24.0 (git+https://github.com/hubbleprotocol/strum?branch=checked_arithmetics)",
  "switchboard-program",
  "test_cpi_caller",
  "thiserror",
@@ -3963,7 +3963,7 @@ dependencies = [
 [[package]]
 name = "scope-types"
 version = "1.0.0"
-source = "git+https://github.com/hubbleprotocol/scope#ee9a104e75cf74f248b09e399396f375edcbcf74"
+source = "git+https://github.com/hubbleprotocol/scope?branch=feature/moar-oracle-types#7654a3498210b585a63c2d9264decfbe83b759a8"
 dependencies = [
  "anchor-lang",
  "bytemuck",
@@ -5672,7 +5672,15 @@ name = "strum"
 version = "0.24.0"
 source = "git+https://github.com/hubbleprotocol/strum?branch=checked_arithmetics#95f44367da40546bc94f4ff565268f45fb68ed5e"
 dependencies = [
- "strum_macros 0.24.0",
+ "strum_macros 0.24.0 (git+https://github.com/hubbleprotocol/strum?branch=checked_arithmetics)",
+]
+
+[[package]]
+name = "strum"
+version = "0.24.0"
+source = "git+https://github.com/hubbleprotocol/strum#054df849e19fb686d9c4c42366bc8baa99f41d48"
+dependencies = [
+ "strum_macros 0.24.0 (git+https://github.com/hubbleprotocol/strum)",
 ]
 
 [[package]]
@@ -5688,6 +5696,18 @@ dependencies = [
 name = "strum_macros"
 version = "0.24.0"
 source = "git+https://github.com/hubbleprotocol/strum?branch=checked_arithmetics#95f44367da40546bc94f4ff565268f45fb68ed5e"
+dependencies = [
+ "heck 0.4.1",
+ "proc-macro2 1.0.69",
+ "quote 1.0.33",
+ "rustversion",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.24.0"
+source = "git+https://github.com/hubbleprotocol/strum#054df849e19fb686d9c4c42366bc8baa99f41d48"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2 1.0.69",
@@ -6970,7 +6990,7 @@ dependencies = [
 [[package]]
 name = "yvaults"
 version = "0.1.0"
-source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git#e7c620d0d210845c7607c98d1c2f58acfaadc708"
+source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git?branch=feature/add-twap-to-yvaults#7f53dd69b553cdd5eb0523b7255e264ae54f1bce"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -6983,12 +7003,12 @@ dependencies = [
  "num_enum 0.7.1",
  "raydium-amm-v3",
  "rust_decimal",
- "scope-types 1.0.0 (git+https://github.com/hubbleprotocol/scope)",
+ "scope-types 1.0.0 (git+https://github.com/hubbleprotocol/scope?branch=feature/moar-oracle-types)",
  "sha2 0.10.8",
  "solana-security-txt",
  "spl-token 3.5.0",
  "static-pubkey",
- "strum 0.24.0",
+ "strum 0.24.0 (git+https://github.com/hubbleprotocol/strum)",
  "uint",
  "whirlpool",
 ]
