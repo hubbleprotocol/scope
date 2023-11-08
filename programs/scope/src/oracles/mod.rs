@@ -100,15 +100,17 @@ where
         OracleType::KToken => {
             panic!("yvaults feature is not enabled, KToken oracle type is not available")
         }
-        #[cfg(feature = "yvaults")]
         OracleType::PythEMA => pyth_ema::get_price(base_account),
+        #[cfg(feature = "yvaults")]
         OracleType::KToken => ktokens::get_price(base_account, clock, extra_accounts),
+        #[cfg(feature = "yvaults")]
         OracleType::KTokenToTokenA => ktokens_token_x::get_token_x_per_share(
             base_account,
             clock,
             extra_accounts,
             TokenTypes::TokenA,
         ),
+        #[cfg(feature = "yvaults")]
         OracleType::KTokenToTokenB => ktokens_token_x::get_token_x_per_share(
             base_account,
             clock,

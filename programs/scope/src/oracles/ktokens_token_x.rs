@@ -199,7 +199,7 @@ pub fn holdings_of_token_x(
     // https://github.com/0xparashar/UniV3NFTOracle/blob/master/contracts/UniV3NFTOracle.sol#L27
     // We are using the sqrt price derived from price_a and price_b
     // instead of the whirlpool price which could be manipulated/stale
-    let pool_sqrt_price = price_utils::sqrt_price_from_scope_prices(
+    let pool_sqrt_price_from_oracle_prices = price_utils::sqrt_price_from_scope_prices(
         &prices.get(
             CollateralToken::try_from(strategy.token_a_collateral_id)
                 .map_err(|_| ScopeError::ConversionFailure)?,
@@ -211,6 +211,10 @@ pub fn holdings_of_token_x(
         strategy.token_a_mint_decimals,
         strategy.token_b_mint_decimals,
     )?;
+
+    let pool_sqrt_price = clmm.get_current_sqrt_price();
+
+    msg!("[KToken to Token X] pool_sqrt_price: {pool_sqrt_price} vs sqrt_price_from_oracle_prices: {pool_sqrt_price_from_oracle_prices}",);
 
     let (available, invested, fees) = common::underlying_inventory(
         strategy,
