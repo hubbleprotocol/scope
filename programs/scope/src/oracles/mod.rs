@@ -2,6 +2,7 @@ pub mod ctokens;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod ktokens_token_x;
+pub mod msol_stake;
 pub mod pyth;
 pub mod pyth_ema;
 pub mod spl_stake;
@@ -44,10 +45,12 @@ pub enum OracleType {
     KToken = 6,
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA = 7,
+    /// MSOL Stake Pool token
+    MsolStake = 8,
     /// Number of lamports of token A for 1 lamport of kToken
-    KTokenToTokenA = 8,
+    KTokenToTokenA = 9,
     /// Number of lamports of token B for 1 lamport of kToken
-    KTokenToTokenB = 9,
+    KTokenToTokenB = 10,
 }
 
 impl OracleType {
@@ -63,6 +66,7 @@ impl OracleType {
             OracleType::PythEMA => 15000,
             OracleType::KTokenToTokenA => 100000,
             OracleType::KTokenToTokenB => 100000,
+            OracleType::MsolStake => 20000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -109,6 +113,7 @@ where
             extra_accounts,
             TokenTypes::TokenB,
         ),
+        OracleType::MsolStake => msol_stake::get_price(base_account, clock),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
@@ -133,6 +138,7 @@ pub fn validate_oracle_account(
         OracleType::KTokenToTokenA => Ok(()), // TODO, should validate ownership of the ktoken account
         OracleType::KTokenToTokenB => Ok(()), // TODO, should validate ownership of the ktoken account
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
+        OracleType::MsolStake => Ok(()),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

@@ -1,6 +1,7 @@
 #![allow(clippy::result_large_err)] //Needed because we can't change Anchor result type
 mod ctokens;
 mod externals;
+mod msol_stake;
 pub mod pc;
 mod spl_stake;
 
@@ -166,6 +167,25 @@ pub mod mock_oracles {
         Ok(())
     }
 
+    pub fn initialize_msol_stake_pool(
+        ctx: Context<Initialize>,
+        mint_total_supply: u64,
+        total_liquidity: u64,
+    ) -> Result<()> {
+        msol_stake::initialize(
+            &ctx.accounts.oracle_account,
+            mint_total_supply,
+            total_liquidity,
+        )?;
+        msg!(
+            "MSOL stake pool token price {} updated to supply: {} liquidity: {}",
+            ctx.accounts.oracle_account.key(),
+            mint_total_supply,
+            total_liquidity
+        );
+        Ok(())
+    }
+
     pub fn set_price_pyth(ctx: Context<SetPrice>, price: i64) -> Result<()> {
         let oracle = &ctx.accounts.oracle_account;
 
@@ -268,6 +288,25 @@ pub mod mock_oracles {
         )?;
         msg!(
             "SPL Stake pool token Price {} updated at slot {}",
+            ctx.accounts.oracle_account.key(),
+            ctx.accounts.clock.slot
+        );
+
+        Ok(())
+    }
+
+    pub fn set_price_msol_stake_pool(
+        ctx: Context<SetPrice>,
+        mint_total_supply: u64,
+        total_liquidity: u64,
+    ) -> Result<()> {
+        msol_stake::update(
+            &ctx.accounts.oracle_account,
+            mint_total_supply,
+            total_liquidity,
+        )?;
+        msg!(
+            "MSOL stake pool token Price {} updated at slot {}",
             ctx.accounts.oracle_account.key(),
             ctx.accounts.clock.slot
         );
