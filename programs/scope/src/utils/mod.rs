@@ -1,3 +1,4 @@
+pub mod math;
 pub mod scope_chain;
 
 use std::cell::Ref;

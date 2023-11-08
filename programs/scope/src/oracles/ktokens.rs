@@ -305,7 +305,7 @@ pub fn holdings_no_rewards(
     Ok(holdings)
 }
 
-mod price_utils {
+pub(super) mod price_utils {
     use decimal_wad::rate::U128;
     use num_traits::Pow;
 

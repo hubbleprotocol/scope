@@ -6,7 +6,7 @@
 //! - [`OracleHelper`] to provide all required data to perform trigger the
 //!   refresh ix.
 //! - [`std::fmt::Display`] for basic logging of a reference to a token.
-//! - [`std::fmt::Debug`] for detailled debug and error logs.
+//! - [`std::fmt::Debug`] for detailed debug and error logs.
 
 use anchor_client::solana_sdk::clock;
 use anyhow::Result;
@@ -79,11 +79,11 @@ pub async fn entry_from_config(
         | OracleType::SplStake
         | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
         #[cfg(feature = "yvaults")]
-        OracleType::KToken => {
+        OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, rpc).await?)
         }
         #[cfg(not(feature = "yvaults"))]
-        OracleType::KToken => {
+        OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             panic!("yvaults feature is not enabled, KTokenOracle is not available")
         }
         OracleType::DeprecatedPlaceholder => {
