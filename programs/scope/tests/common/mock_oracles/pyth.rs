@@ -19,6 +19,16 @@ pub fn get_account_data_for_price(price: &Price, clock: &Clock) -> Vec<u8> {
         valid_slot: clock.slot,
         last_slot: clock.slot,
         num_qt: 3,
+        twap: pyth_tools::Ema {
+            val: int_price,
+            numer: int_price,
+            denom: 1,
+        },
+        twac: pyth_tools::Ema {
+            val: 0,
+            numer: 0,
+            denom: 1,
+        },
         agg: pyth_tools::PriceInfo {
             price: int_price,
             conf: 0,
