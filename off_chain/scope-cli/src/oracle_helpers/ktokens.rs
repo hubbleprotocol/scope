@@ -23,6 +23,9 @@ pub struct KTokenOracle {
     /// Pubkey to Kamino's strategy account of type [`WhirlpoolStrategy`]
     mapping: Pubkey,
 
+    /// Oracle type
+    oracle_type: OracleType,
+
     /// Extra accounts are:
     /// 0. The [`ktokens::GlobalConfig`] allowing to validate the `CollateralInfos` account.
     /// 1. The [`ktokens::CollateralInfos`] mapping underlying token prices.
@@ -64,6 +67,7 @@ impl KTokenOracle {
 
         Ok(Self {
             label: conf.label.clone(),
+            oracle_type: conf.oracle_type,
             mapping,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
             extra_accounts: [global_config, collateral_infos, pool, position, prices],
@@ -74,7 +78,7 @@ impl KTokenOracle {
 #[async_trait::async_trait]
 impl OracleHelper for KTokenOracle {
     fn get_type(&self) -> OracleType {
-        OracleType::KToken
+        self.oracle_type
     }
 
     fn get_number_of_extra_accounts(&self) -> usize {
