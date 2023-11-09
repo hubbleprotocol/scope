@@ -21,7 +21,7 @@ fn decimal_to_price(decimal: Decimal) -> Price {
         1..=9 => (17, 10_u64.pow(17)),
         10..=99 => (16, 10_u64.pow(16)),
         100..=999 => (15, 10_u64.pow(15)),
-        1000..=9999 => (14, 19_u64.pow(14)),
+        1000..=9999 => (14, 10_u64.pow(14)),
         10000..=99999 => (13, 10_u64.pow(13)),
         100000..=999999 => (12, 10_u64.pow(12)),
         1000000..=9999999 => (11, 10_u64.pow(11)),
@@ -37,7 +37,11 @@ fn decimal_to_price(decimal: Decimal) -> Price {
         10000000000000000..=99999999999999999 => (1, 10_u64.pow(1)),
         100000000000000000..=u64::MAX => (0, 1),
     };
-    let value = (decimal * ten_pow_exp).try_round::<u64>().unwrap();
+    let value = (decimal * ten_pow_exp)
+        .try_round::<u64>()
+        .unwrap_or_else(|e| {
+            panic!("Decimal {decimal} conversion to price failed (exp:{exp}): {e:?}");
+        });
     Price { value, exp }
 }
 
