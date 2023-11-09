@@ -106,7 +106,7 @@ export class ScopeBot {
       this.childProcess.stdout.on('data', (data) => {
         const chunks = data.trim().split(/\r?\n/);
         for (let chunk of chunks) {
-          this.log(`Bot log: ${chunk}`);
+          //this.log(`Bot log: ${chunk}`);
           this.logChunks.push(chunk);
           //TODO: Json logs
           /*try {
