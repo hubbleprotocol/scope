@@ -237,6 +237,9 @@ pub enum ScopeError {
 
     #[msg("Invalid token metadata update mode")]
     InvalidTokenUpdateMode,
+
+    #[msg("Unable to derive PDA address")]
+    UnableToDerivePDA,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
