@@ -197,8 +197,8 @@ pub fn holdings_of_token_x(
     token: TokenTypes,
 ) -> Result<u64> {
     // https://github.com/0xparashar/UniV3NFTOracle/blob/master/contracts/UniV3NFTOracle.sol#L27
-    // We are using the sqrt price derived from price_a and price_b
-    // instead of the whirlpool price which could be manipulated/stale
+    // compute sqrt price derived from price_a and price_b
+    // We still use the pool price to compute the sqrt price but print this one as a reference
     let pool_sqrt_price_from_oracle_prices = price_utils::sqrt_price_from_scope_prices(
         &prices.get(
             CollateralToken::try_from(strategy.token_a_collateral_id)
