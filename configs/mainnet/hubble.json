@@ -544,13 +544,13 @@
     "max_age": 250
   },
   "120": {
-    "label": "RNDR/USD",
+    "label": "RENDER/USD",
     "oracle_mapping": "CYGfrBJB9HgLf9iZyN4aH5HvUAi2htQ4MjPxeXMf4Egn",
     "oracle_type": "Pyth",
     "max_age": 150
   },
   "121": {
-    "label": "EMA RNDR/USD",
+    "label": "EMA RENDER/USD",
     "oracle_mapping": "CYGfrBJB9HgLf9iZyN4aH5HvUAi2htQ4MjPxeXMf4Egn",
     "oracle_type": "PythEMA",
     "max_age": 200
