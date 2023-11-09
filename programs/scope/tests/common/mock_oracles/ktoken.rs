@@ -59,7 +59,7 @@ pub async fn get_ktoken_price_accounts(
     // Set the price
     mock_oracles::set_price(
         ctx,
-        &feed,
+        feed,
         &token_a_oracle_conf,
         &Price {
             value: 1_000_000,
@@ -69,7 +69,7 @@ pub async fn get_ktoken_price_accounts(
     .await;
     mock_oracles::set_price(
         ctx,
-        &feed,
+        feed,
         &token_b_oracle_conf,
         &Price {
             value: 1_000_000,
@@ -78,11 +78,11 @@ pub async fn get_ktoken_price_accounts(
     )
     .await;
     // Set the mappings
-    operations::update_oracle_mapping(ctx, &feed, &token_a_oracle_conf).await;
-    operations::update_oracle_mapping(ctx, &feed, &token_b_oracle_conf).await;
+    operations::update_oracle_mapping(ctx, feed, &token_a_oracle_conf).await;
+    operations::update_oracle_mapping(ctx, feed, &token_b_oracle_conf).await;
     // Refresh the prices
-    operations::refresh_price(ctx, &feed, &token_a_oracle_conf).await;
-    operations::refresh_price(ctx, &feed, &token_b_oracle_conf).await;
+    operations::refresh_price(ctx, feed, &token_a_oracle_conf).await;
+    operations::refresh_price(ctx, feed, &token_b_oracle_conf).await;
 
     let collateral_infos = get_account_data_for_collateral_infos(
         &[
@@ -179,7 +179,7 @@ pub fn get_account_data_for_raydium_pool() -> (Pubkey, Pubkey, Vec<u8>) {
     let mut data = [0u8; PoolState::LEN];
     data[0..8].copy_from_slice(&PoolState::discriminator());
     let state = PoolState::default();
-    data[8..].copy_from_slice(&bytemuck::bytes_of(&state));
+    data[8..].copy_from_slice(bytemuck::bytes_of(&state));
     (
         pubkey!("KaminoRaydiumPoo111111111111111111111111111"),
         whirlpool::id(),
@@ -208,11 +208,11 @@ pub fn get_account_data_for_collateral_infos(
     b_scope_chain: &[u16; MAX_CHAIN_LENGTH],
 ) -> (Pubkey, Pubkey, Vec<u8>) {
     let token_a_info = CollateralInfo {
-        scope_price_chain: a_scope_chain.clone(),
+        scope_price_chain: *a_scope_chain,
         ..Default::default()
     };
     let token_b_info = CollateralInfo {
-        scope_price_chain: b_scope_chain.clone(),
+        scope_price_chain: *b_scope_chain,
         ..Default::default()
     };
     let mut collateral_infos = new_collateral_infos();

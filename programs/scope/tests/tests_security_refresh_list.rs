@@ -101,8 +101,11 @@ async fn test_working_refresh_list() {
     // Check prices
     let data: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
     for (i, conf) in TEST_ORACLE_CONF.iter().enumerate() {
-        assert_eq!(data.prices[conf.token].price.value, (i as u64) + 1);
-        assert_eq!(data.prices[conf.token].price.exp, 6);
+        let ref_price = Price {
+            value: (i as u64) + 1,
+            exp: 6,
+        };
+        assert_eq!(data.prices[conf.token].price, ref_price);
         assert!(data.prices[conf.token].last_updated_slot > 0);
     }
 }

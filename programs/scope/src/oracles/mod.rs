@@ -1,6 +1,9 @@
 pub mod ctokens;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
+
+#[cfg(feature = "yvaults")]
+pub mod ktokens_token_x;
 pub mod msol_stake;
 pub mod pyth;
 pub mod pyth_ema;
@@ -15,6 +18,8 @@ use serde::{Deserialize, Serialize};
 use yvaults::raydium_amm_v3::states::oracle;
 
 use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError};
+
+use self::ktokens_token_x::TokenTypes;
 
 pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
     //make sure there are no extra accounts
@@ -46,8 +51,12 @@ pub enum OracleType {
     PythEMA = 7,
     /// MSOL Stake Pool token
     MsolStake = 8,
+    /// Number of lamports of token A for 1 lamport of kToken
+    KTokenToTokenA = 9,
+    /// Number of lamports of token B for 1 lamport of kToken
+    KTokenToTokenB = 10,
     /// Scope twap
-    ScopeTwap = 9,
+    ScopeTwap = 11,
 }
 
 impl OracleType {
@@ -79,6 +88,8 @@ impl OracleType {
             OracleType::SplStake => 20000,
             OracleType::KToken => 120000,
             OracleType::PythEMA => 15000,
+            OracleType::KTokenToTokenA => 100000,
+            OracleType::KTokenToTokenB => 100000,
             OracleType::MsolStake => 20000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
@@ -96,7 +107,7 @@ impl OracleType {
 pub fn get_price<'a, 'b>(
     price_type: OracleType,
     base_account: &AccountInfo,
-    _extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
+    extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
     clock: &Clock,
     oracle_twaps: &OracleTwaps,
     oracle_mappings: &OracleMappings,
@@ -115,9 +126,31 @@ where
         OracleType::KToken => {
             panic!("yvaults feature is not enabled, KToken oracle type is not available")
         }
-        #[cfg(feature = "yvaults")]
-        OracleType::KToken => ktokens::get_price(base_account, clock, _extra_accounts),
         OracleType::PythEMA => pyth_ema::get_price(base_account),
+        #[cfg(feature = "yvaults")]
+        OracleType::KToken => ktokens::get_price(base_account, clock, extra_accounts),
+        #[cfg(feature = "yvaults")]
+        OracleType::KTokenToTokenA => ktokens_token_x::get_token_x_per_share(
+            base_account,
+            clock,
+            extra_accounts,
+            TokenTypes::TokenA,
+        ),
+        #[cfg(feature = "yvaults")]
+        OracleType::KTokenToTokenB => ktokens_token_x::get_token_x_per_share(
+            base_account,
+            clock,
+            extra_accounts,
+            TokenTypes::TokenB,
+        ),
+        #[cfg(not(feature = "yvaults"))]
+        OracleType::KTokenToTokenA => {
+            panic!("yvaults feature is not enabled, KToken oracle type is not available")
+        }
+        #[cfg(not(feature = "yvaults"))]
+        OracleType::KTokenToTokenB => {
+            panic!("yvaults feature is not enabled, KToken oracle type is not available")
+        }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
         OracleType::ScopeTwap => twap::get_twap_from_observations(
             oracle_mappings,
@@ -125,7 +158,6 @@ where
             index,
             price_type.twap_duration_seconds(),
             u64::try_from(clock.unix_timestamp).unwrap(),
-            
         ),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
@@ -149,13 +181,15 @@ pub fn validate_oracle_account(
         OracleType::SwitchboardV1 => Ok(()), // TODO at least check account ownership?
         OracleType::SwitchboardV2 => Ok(()), // TODO at least check account ownership?
         OracleType::CToken => Ok(()),        // TODO how shall we validate ctoken account?
-        OracleType::SplStake => Ok(()),
-        OracleType::KToken => Ok(()),
+        OracleType::SplStake => Ok(()),      // TODO, should validate ownership of the account
+        OracleType::KToken => Ok(()), // TODO, should validate ownership of the ktoken account
+        OracleType::KTokenToTokenA => Ok(()), // TODO, should validate ownership of the ktoken account
+        OracleType::KTokenToTokenB => Ok(()), // TODO, should validate ownership of the ktoken account
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::MsolStake => Ok(()),
+        OracleType::ScopeTwap => Ok(()),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
-        OracleType::ScopeTwap => Ok(()),
     }
 }

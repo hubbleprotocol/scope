@@ -628,7 +628,7 @@ pub mod solend {
         pub fee_receiver: Pubkey,
         /// Cut of the liquidation bonus that the protocol receives, as a percentage
         pub protocol_liquidation_fee: u8,
-        /// Protocol take rate is the amount borrowed interest protocol recieves, as a percentage  
+        /// Protocol take rate is the amount borrowed interest protocol receives, as a percentage  
         pub protocol_take_rate: u8,
     }
 

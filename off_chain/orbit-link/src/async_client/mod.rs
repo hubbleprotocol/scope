@@ -4,7 +4,7 @@ pub mod banks_client;
 pub mod rpc_client;
 
 use anchor_client::{
-    solana_client::rpc_response::{Response, RpcSimulateTransactionResult},
+    solana_client::rpc_response::RpcSimulateTransactionResult,
     solana_sdk::{
         account::Account, clock::Slot, commitment_config::CommitmentConfig, hash::Hash,
         pubkey::Pubkey, signature::Signature, transaction::VersionedTransaction,
@@ -20,7 +20,7 @@ pub trait AsyncClient: Sync {
     async fn simulate_transaction(
         &self,
         transaction: &VersionedTransaction,
-    ) -> Result<Response<RpcSimulateTransactionResult>>;
+    ) -> Result<RpcSimulateTransactionResult>;
 
     async fn send_transaction(&self, transaction: &VersionedTransaction) -> Result<Signature>;
 

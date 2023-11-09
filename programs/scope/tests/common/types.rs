@@ -52,9 +52,9 @@ impl TestOracleType {
     }
 }
 
-impl Into<OracleType> for TestOracleType {
-    fn into(self) -> OracleType {
-        match self {
+impl From<TestOracleType> for OracleType {
+    fn from(val: TestOracleType) -> Self {
+        match val {
             TestOracleType::Pyth => OracleType::Pyth,
             TestOracleType::SwitchboardV1 => OracleType::SwitchboardV1,
             TestOracleType::SwitchboardV2 => OracleType::SwitchboardV2,

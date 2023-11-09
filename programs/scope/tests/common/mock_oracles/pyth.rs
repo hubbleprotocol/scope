@@ -19,6 +19,16 @@ pub fn get_account_data_for_price(price: &Price, clock: &Clock) -> Vec<u8> {
         valid_slot: clock.slot,
         last_slot: clock.slot,
         num_qt: 3,
+        twap: pyth_tools::Ema {
+            val: int_price,
+            numer: int_price,
+            denom: 1,
+        },
+        twac: pyth_tools::Ema {
+            val: 0,
+            numer: 0,
+            denom: 1,
+        },
         agg: pyth_tools::PriceInfo {
             price: int_price,
             conf: 0,
@@ -40,31 +50,21 @@ mod pyth_tools {
         pub val: [u8; 32],
     }
 
-    #[derive(PartialEq, Eq, Debug, Copy, Clone)]
+    #[derive(PartialEq, Eq, Debug, Copy, Clone, Default)]
     #[repr(C)]
     pub enum PriceStatus {
         Unknown = 0,
+        #[default]
         Trading = 1,
         Halted = 2,
         Auction = 3,
     }
 
-    impl Default for PriceStatus {
-        fn default() -> Self {
-            PriceStatus::Trading
-        }
-    }
-
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     #[repr(C)]
     pub enum CorpAction {
+        #[default]
         NoCorpAct,
-    }
-
-    impl Default for CorpAction {
-        fn default() -> Self {
-            CorpAction::NoCorpAct
-        }
     }
 
     #[derive(Default, Copy, Clone)]
@@ -84,10 +84,11 @@ mod pyth_tools {
         latest: PriceInfo,
     }
 
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     #[repr(C)]
     pub enum PriceType {
         Unknown,
+        #[default]
         Price,
         Twap,
         Volatility,
@@ -101,12 +102,6 @@ mod pyth_tools {
                 PriceStatus::Halted => 2,
                 PriceStatus::Auction => 3,
             }
-        }
-    }
-
-    impl Default for PriceType {
-        fn default() -> Self {
-            PriceType::Price
         }
     }
 

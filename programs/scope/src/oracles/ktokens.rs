@@ -1,6 +1,9 @@
 use std::ops::Deref;
 
 use anchor_lang::{prelude::*, Result};
+use decimal_wad::decimal::Decimal;
+use decimal_wad::rate::U128;
+use kamino::operations::vault_operations::common::underlying_unit;
 use kamino::{
     clmm::{orca_clmm::OrcaClmm, Clmm},
     raydium_amm_v3::states::{PersonalPositionState as RaydiumPosition, PoolState as RaydiumPool},
@@ -11,7 +14,7 @@ use kamino::{
 };
 use yvaults as kamino;
 use yvaults::{
-    operations::vault_operations::{common, common::get_price_per_full_share_impl},
+    operations::vault_operations::common,
     state::CollateralToken,
     utils::{
         enums::LiquidityCalculationMode,
@@ -26,7 +29,8 @@ use crate::{
     DatedPrice, Price, ScopeError,
 };
 
-const USD_DECIMALS_PRECISION: u8 = 6;
+const SCALE_DECIMALS: u8 = 6;
+const SCALE_FACTOR: u64 = 10_u64.pow(SCALE_DECIMALS as u32);
 
 /// Gives the price of 1 kToken in USD
 ///
@@ -134,11 +138,11 @@ where
 
     let holdings = holdings(&strategy_account_ref, clmm.as_ref(), &token_prices)?;
 
-    let token_price = get_price_per_full_share_impl(
-        &holdings.total_sum,
+    let price = get_price_per_full_share(
+        holdings.total_sum,
         strategy_account_ref.shares_issued,
         strategy_account_ref.shares_mint_decimals,
-    )?;
+    );
 
     // Get the least-recently updated component price from both scope chains
     let (last_updated_slot, unix_timestamp) = get_component_px_last_update(
@@ -146,11 +150,9 @@ where
         &collateral_infos_ref,
         &strategy_account_ref,
     )?;
-    let value: u64 = token_price.as_u64();
-    let exp = USD_DECIMALS_PRECISION.into();
 
     Ok(DatedPrice {
-        price: Price { value, exp },
+        price,
         last_updated_slot,
         unix_timestamp,
         ..Default::default()
@@ -305,7 +307,23 @@ pub fn holdings_no_rewards(
     Ok(holdings)
 }
 
-mod price_utils {
+fn get_price_per_full_share(
+    total_holdings_value_scaled: U128,
+    shares_issued: u64,
+    shares_decimals: u64,
+) -> Price {
+    if shares_issued == 0 {
+        // Assume price is 0 without shares issued
+        Price { value: 0, exp: 1 }
+    } else {
+        let price_decimal = Decimal::from(underlying_unit(shares_decimals))
+            * total_holdings_value_scaled
+            / (u128::from(SCALE_FACTOR) * u128::from(shares_issued));
+        (price_decimal).into()
+    }
+}
+
+pub(super) mod price_utils {
     use decimal_wad::rate::U128;
     use num_traits::Pow;
 
@@ -429,8 +447,8 @@ mod tests_price_utils {
 
     pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
         let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
-        let res = (px * 2.0_f64.powf(64.0)) as u128;
-        res
+
+        (px * 2.0_f64.powf(64.0)) as u128
     }
 
     pub fn f(price: Price) -> f64 {
@@ -521,8 +539,8 @@ mod tests_price_utils {
         let expected = calc_sqrt_price_from_float_price(price, decimals_a, decimals_b);
 
         // Now go the other way around
-        let a = p(a, decimals_a.into());
-        let b = p(b, decimals_b.into());
+        let a = p(a, decimals_a);
+        let b = p(b, decimals_b);
         let actual = sqrt_price_from_scope_prices(&a, &b, decimals_a, decimals_b).unwrap();
 
         println!("expected: {}", expected);
@@ -664,8 +682,8 @@ mod tests {
     }
 
     fn new_oracle_prices(
-        token_a_chain: &Vec<(u64, u64)>,
-        token_b_chain: &Vec<(u64, u64)>,
+        token_a_chain: &[(u64, u64)],
+        token_b_chain: &[(u64, u64)],
     ) -> OraclePrices {
         let price = DatedPrice {
             ..DatedPrice::default()
@@ -705,13 +723,12 @@ mod tests {
             infos: [CollateralInfo::default(); 256],
         };
         let mut token_a_chain = [u16::MAX, u16::MAX, u16::MAX, u16::MAX];
-        for a in 0..token_a_chain_len {
-            token_a_chain[a] = a as u16;
+        for (a, token) in token_a_chain.iter_mut().enumerate().take(token_a_chain_len) {
+            *token = a as u16;
         }
         let mut token_b_chain = [u16::MAX, u16::MAX, u16::MAX, u16::MAX];
-        for b in 0..token_b_chain_len {
-            let b_offset = b + 4;
-            token_b_chain[b] = b_offset as u16;
+        for (b, token) in token_b_chain.iter_mut().enumerate().take(token_b_chain_len) {
+            *token = b as u16 + 4;
         }
         collateral_infos.infos[0].scope_price_chain = token_a_chain;
         collateral_infos.infos[1].scope_price_chain = token_b_chain;
