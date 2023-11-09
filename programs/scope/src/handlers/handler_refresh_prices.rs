@@ -18,16 +18,13 @@ const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111
 
 #[derive(Accounts)]
 pub struct RefreshOne<'info> {
-    #[account()]
-    pub tokens_metadata: AccountLoader<'info, crate::TokenMetadatas>,
-
     #[account(mut, has_one = oracle_mappings)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
 
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 
-    #[account(mut, has_one = oracle_prices, has_one = tokens_metadata)]
+    #[account(mut, has_one = oracle_prices)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
 
     /// CHECK: In ix, check the account is in `oracle_mappings`
@@ -40,16 +37,13 @@ pub struct RefreshOne<'info> {
 
 #[derive(Accounts)]
 pub struct RefreshList<'info> {
-    #[account()]
-    pub tokens_metadata: AccountLoader<'info, crate::TokenMetadatas>,
-
     #[account(mut, has_one = oracle_mappings)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
 
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 
-    #[account(mut, has_one = oracle_prices, has_one = tokens_metadata)]
+    #[account(mut, has_one = oracle_prices)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
 
     /// CHECK: Sysvar fixed address
@@ -63,7 +57,6 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let price_info = &ctx.accounts.price_info;
-    let tokens_metadata = ctx.accounts.tokens_metadata.load()?;
     let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
 
     // Check that the provided account is the one referenced in oracleMapping
@@ -78,36 +71,42 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     let mut remaining_iter = ctx.remaining_accounts.iter();
     let clock = Clock::get()?;
 
-    // If price type is twap, then calculate the twap
-    let price = if price_type.is_twap() {
-        // Then start calculating the twap
-        let source = tokens_metadata.get_twap_source(token);
-        get_twap_from_observations(
-            &oracle_twaps,
-            source,
+    // // If price type is twap, then calculate the twap
+    // let price = if price_type.is_twap() {
+    //     // Then start calculating the twap
+    //     let source = oracle_mappings.get_twap_source(token);
+    //     get_twap_from_observations(
+    //         &oracle_mappings,
+    //         &oracle_twaps,
+    //         source.try_into().unwrap(),
+    //         price_type.twap_duration_seconds(),
+    //         u64::try_from(clock.unix_timestamp).unwrap(),
+    //     )?
+    // } else {
+    // If price type is normal (not twap, not derived) and twap is enabled, append twap
+    let mut price = get_price(
+        price_type,
+        price_info,
+        &mut remaining_iter,
+        &clock,
+        &oracle_twaps,
+        &oracle_mappings,
+        token,
+    )?;
+
+    // TODO: should we get rid of this
+    price.index = token.try_into().unwrap();
+
+    if oracle_mappings.should_store_twap_observations(token) {
+        crate::oracles::twap::store_observation(
+            &mut oracle_twaps,
+            token,
+            price.price.value as u128,
             clock.unix_timestamp as u64,
-            price_type.twap_duration_seconds(),
-            price_type.min_twap_observations(),
-        )?
-    } else {
-        // If price type is normal (not twap, not derived) and twap is enabled, append twap
-        let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
-
-        // TODO: should we get rid of this
-        price.index = token.try_into().unwrap();
-
-        if tokens_metadata.should_store_twap_observations(token) {
-            crate::oracles::twap::store_observation(
-                &mut oracle_twaps,
-                token,
-                price.price,
-                clock.unix_timestamp as u64,
-                clock.slot,
-            )?;
-        }
-
-        price
-    };
+            clock.slot,
+        )?;
+    }
+    // };
 
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
 
@@ -132,7 +131,6 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
 
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
     let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
-    let tokens_metadata = ctx.accounts.tokens_metadata.load()?;
 
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
@@ -173,40 +171,48 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
             return err!(ScopeError::UnexpectedAccount);
         }
         let clock = Clock::get()?;
-        let price = if price_type.is_twap() {
-            // Calculating the twap
-            let source = tokens_metadata.get_twap_source(token_idx);
-            get_twap_from_observations(
-                &oracle_twaps,
-                source,
-                clock.unix_timestamp as u64,
-                price_type.twap_duration_seconds(),
-                price_type.min_twap_observations(),
-            )
-            .ok()
-        } else {
-            get_price(price_type, received_account, &mut accounts_iter, &clock)
-                .and_then(|price| {
-                    if tokens_metadata.should_store_twap_observations(token_idx) {
-                        crate::oracles::twap::store_observation(
-                            &mut oracle_twaps,
-                            token_idx,
-                            price.price,
-                            clock.unix_timestamp as u64,
-                            clock.slot,
-                        )?;
-                    }
-                    Ok(Some(price))
-                })
-                .unwrap_or_else(|_| {
-                    msg!(
-                        "Price skipped as validation failed (token {}, type {:?})",
-                        token_idx,
-                        price_type
-                    );
-                    None
-                })
-        };
+        // let price = if price_type.is_twap() {
+        //     // Calculating the twap
+        //     let source = oracle_mappings.get_twap_source(token_idx);
+        //     get_twap_from_observations(
+        //         &oracle_mappings,
+        //         &oracle_twaps,
+        //         source,
+        //         price_type.twap_duration_seconds(),
+        //         u64::try_from(clock.unix_timestamp).unwrap(),
+        //     )
+        //     .ok()
+        // } else {
+        let price = get_price(
+            price_type,
+            received_account,
+            &mut accounts_iter,
+            &clock,
+            &oracle_twaps,
+            &oracle_mappings,
+            token_nb.into(),
+        )
+        .and_then(|price| {
+            if oracle_mappings.should_store_twap_observations(token_idx) {
+                crate::oracles::twap::store_observation(
+                    &mut oracle_twaps,
+                    token_idx,
+                    price.price.value as u128,
+                    clock.unix_timestamp as u64,
+                    clock.slot,
+                )?;
+            }
+            Ok(Some(price))
+        })
+        .unwrap_or_else(|_| {
+            msg!(
+                "Price skipped as validation failed (token {}, type {:?})",
+                token_idx,
+                price_type
+            );
+            None
+        });
+        // };
 
         if let Some(price) = price {
             // Only temporary load as mut to allow prices to be computed based on a scope chain

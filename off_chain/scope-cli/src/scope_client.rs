@@ -746,7 +746,6 @@ where
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
             oracle_twaps: self.oracle_twaps_acc,
-            tokens_metadata: self.tokens_metadata_acc,
             price_info: *entry.get_mapping_account(),
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
@@ -788,7 +787,6 @@ where
         let mut refresh_accounts = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            tokens_metadata: self.tokens_metadata_acc,
             oracle_twaps: self.oracle_prices_acc,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }

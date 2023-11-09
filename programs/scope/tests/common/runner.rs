@@ -177,33 +177,10 @@ impl TestContext {
     }
 
     async fn fast_forward(&mut self, duration: Duration) {
-        let mut clock = self
-            .context
-            .banks_client
-            .get_sysvar::<Clock>()
-            .await
-            .unwrap();
-        let target = clock.unix_timestamp + duration.as_secs() as i64;
-        println!(
-            "Fast forwarding from {}, seconds {}",
-            clock.unix_timestamp,
-            duration.as_secs()
-        );
-
-        clock.unix_timestamp = target;
-
+        let mut clock = self.get_clock().await;
+        clock.unix_timestamp += duration.as_secs() as i64;
+        clock.slot += duration.as_secs() as u64 * 2;
         self.context.set_sysvar(&clock);
-
-        // Force states refresh with fast forward
-        self.fast_forward_slots(2).await;
-
-        let current_ts = self.get_clock().await.unix_timestamp;
-
-        println!(
-            "Fast forwarded seconds {}, now {}",
-            duration.as_secs(),
-            current_ts,
-        );
     }
 
     pub async fn fast_forward_seconds(&mut self, seconds: u64) {

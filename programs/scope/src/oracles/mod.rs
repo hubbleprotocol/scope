@@ -12,8 +12,9 @@ pub mod twap;
 use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
+use yvaults::raydium_amm_v3::states::oracle;
 
-use crate::{DatedPrice, ScopeError};
+use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError};
 
 pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
     //make sure there are no extra accounts
@@ -97,6 +98,9 @@ pub fn get_price<'a, 'b>(
     base_account: &AccountInfo,
     _extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
     clock: &Clock,
+    oracle_twaps: &OracleTwaps,
+    oracle_mappings: &OracleMappings,
+    index: usize,
 ) -> crate::Result<DatedPrice>
 where
     'a: 'b,
@@ -115,6 +119,14 @@ where
         OracleType::KToken => ktokens::get_price(base_account, clock, _extra_accounts),
         OracleType::PythEMA => pyth_ema::get_price(base_account),
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
+        OracleType::ScopeTwap => twap::get_twap_from_observations(
+            oracle_mappings,
+            oracle_twaps,
+            index,
+            price_type.twap_duration_seconds(),
+            u64::try_from(clock.unix_timestamp).unwrap(),
+            
+        ),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

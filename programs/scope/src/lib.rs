@@ -28,8 +28,9 @@ pub const MAX_ENTRIES_U16: u16 = 512;
 // Note: Need to be directly integer value to not confuse the IDL generator
 pub const MAX_ENTRIES: usize = 512;
 pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
-pub const TWAP_INTERVAL_SECONDS: u64 = 100;
-pub const TWAP_NUM_OBS: usize = 30;
+pub const TWAP_INTERVAL_SECONDS: u64 = 60;
+pub const TWAP_NUM_OBS: usize = 60;
+pub const MIN_ACCEPTABLE_TWAP_NUM_OBS: usize = 40; // if there are at least these many observations, we can calculate the TWAP based on them
 
 #[program]
 pub mod scope {
@@ -136,15 +137,35 @@ impl Default for DatedPrice {
 }
 
 #[zero_copy]
-#[derive(Debug, Eq, PartialEq, Default)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct TwapBuffer {
-    pub observations: [Price; TWAP_NUM_OBS],
-    pub unix_timestamps: [u64; TWAP_NUM_OBS],
-    pub slots: [u64; TWAP_NUM_OBS],
-
     /// The value of the last filled observation
     /// if unix_timestamps[0] == 0, then the buffer is empty
     pub curr_index: u64,
+
+    pub last_update_slot: u64, // the slot when the last observation was added
+    pub last_update_unix_timestamp: u64,
+    pub observations: [TwapEntry; TWAP_NUM_OBS],
+    pub padding: [u128; 65536],
+}
+
+impl Default for TwapBuffer {
+    fn default() -> Self {
+        Self {
+            curr_index: 0,
+            last_update_slot: 0,
+            last_update_unix_timestamp: 0,
+            observations: [TwapEntry::default(); TWAP_NUM_OBS],
+            padding: [0; 65536],
+        }
+    }
+}
+
+#[zero_copy]
+#[derive(Debug, Eq, PartialEq, Default)]
+pub struct TwapEntry {
+    pub observation: u128, // scaled by 18 decimals
+    pub unix_timestamp: u64,
 }
 
 // Account to store dated prices
@@ -160,6 +181,7 @@ pub struct OracleTwaps {
     pub oracle_prices: Pubkey,
     pub tokens_metadata: Pubkey,
     pub twap_buffers: [TwapBuffer; MAX_ENTRIES],
+    // todo: add padding and maybe increase twap_buffers size
 }
 
 // Accounts holding source of prices
@@ -168,26 +190,25 @@ pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
 
-    pub twap_enabled: [u8; MAX_ENTRIES],
+    pub twap_source: [u16; MAX_ENTRIES], // meaningful only if type == TWAP; the index of where we find the TWAP
+    pub store_observations: [u8; MAX_ENTRIES], // true or false
     pub _reserved1: [u8; MAX_ENTRIES],
-    pub _reserved2: [u16; MAX_ENTRIES],
-    pub _reserved3: [u16; MAX_ENTRIES],
-    pub _reserved4: [u16; MAX_ENTRIES],
+    pub _reserved2: [u32; MAX_ENTRIES],
+}
+
+impl OracleMappings {
+    pub fn should_store_twap_observations(&self, token: usize) -> bool {
+        self.store_observations[token] > 0
+    }
+
+    pub fn get_twap_source(&self, token: usize) -> usize {
+        usize::from(self.twap_source[token])
+    }
 }
 
 #[account(zero_copy)]
 pub struct TokenMetadatas {
     pub metadatas_array: [TokenMetadata; MAX_ENTRIES],
-}
-
-impl TokenMetadatas {
-    pub fn should_store_twap_observations(&self, token: usize) -> bool {
-        self.metadatas_array[token].store_observations > 0
-    }
-
-    pub fn get_twap_source(&self, token: usize) -> usize {
-        self.metadatas_array[token].twap_source as usize
-    }
 }
 
 #[zero_copy]
