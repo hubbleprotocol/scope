@@ -1,7 +1,12 @@
 use async_trait::async_trait;
 use solana_banks_client::{BanksClient, TransactionStatus as BankTransactionStatus};
-use solana_banks_interface::TransactionConfirmationStatus as BankTransactionConfirmationStatus;
-use solana_transaction_status::TransactionConfirmationStatus;
+use solana_banks_interface::{
+    TransactionConfirmationStatus as BankTransactionConfirmationStatus,
+    TransactionSimulationDetails,
+};
+use solana_transaction_status::{
+    TransactionConfirmationStatus, UiReturnDataEncoding, UiTransactionReturnData,
+};
 use tokio::sync::Mutex;
 
 use super::*;
@@ -36,15 +41,51 @@ fn bank_status_to_transaction_status(bank_status: BankTransactionStatus) -> Tran
 impl AsyncClient for Mutex<BanksClient> {
     async fn simulate_transaction(
         &self,
-        _transaction: &VersionedTransaction,
-    ) -> Result<Response<RpcSimulateTransactionResult>> {
-        unimplemented!("Versioned transaction simulations are not supported by BanksClient yet (wait for solana 1.15.0)")
+        transaction: &VersionedTransaction,
+    ) -> Result<RpcSimulateTransactionResult> {
+        let mut bank = self.lock().await;
+
+        bank.simulate_transaction(transaction.clone())
+            .await
+            .map(|response| {
+                let err = response.result.and_then(|r| match r {
+                    Ok(_) => None,
+                    Err(e) => Some(e),
+                });
+                let (logs, units_consumed, return_data) = response
+                    .simulation_details
+                    .map(|v| {
+                        let TransactionSimulationDetails {
+                            logs,
+                            units_consumed,
+                            return_data,
+                        } = v;
+                        let return_data = return_data.map(|v| {
+                            let data_str = BS64.encode(&v.data);
+                            UiTransactionReturnData {
+                                program_id: v.program_id.to_string(),
+                                data: (data_str, UiReturnDataEncoding::Base64),
+                            }
+                        });
+                        (Some(logs), Some(units_consumed), return_data)
+                    })
+                    .unwrap_or_default();
+                RpcSimulateTransactionResult {
+                    err,
+                    logs,
+                    accounts: None,
+                    units_consumed,
+                    return_data,
+                }
+            })
+            .map_err(Into::into)
     }
 
-    async fn send_transaction(&self, _transaction: &VersionedTransaction) -> Result<Signature> {
-        unimplemented!(
-            "Versioned transactions are not supported by BanksClient yet (wait for solana 1.15.0)"
-        )
+    async fn send_transaction(&self, transaction: &VersionedTransaction) -> Result<Signature> {
+        let mut bank = self.lock().await;
+
+        bank.send_transaction(transaction.clone()).await?;
+        Ok(transaction.signatures[0])
     }
 
     async fn get_minimum_balance_for_rent_exemption(&self, data_len: usize) -> Result<u64> {
