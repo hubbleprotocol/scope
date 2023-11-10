@@ -91,7 +91,7 @@ impl ScopeZeroCopyAccounts {
         test.add_account(
             self.twap_buffers.pubkey(),
             Account::new(
-                u32::MAX as u64,
+                2 * u32::MAX as u64,
                 std::mem::size_of::<OracleTwaps>() + 8,
                 &scope::ID,
             ),

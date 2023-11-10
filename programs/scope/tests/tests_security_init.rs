@@ -53,7 +53,7 @@ async fn test_working_init() {
 #[tokio::test]
 async fn test_non_zeroed_mapping_account() {
     let mut test_program = runner::program();
-    let admin = funded_kp(&mut test_program, 100000000);
+    let admin = funded_kp(&mut test_program, 10000000000);
     let zero_copy_accounts = types::ScopeZeroCopyAccounts::new();
     zero_copy_accounts.add_accounts(&mut test_program);
     let mut ctx = runner::start(test_program, Keypair::new(), Keypair::new()).await;
