@@ -1,5 +1,7 @@
+use std::ops::Add;
+
 use anchor_lang::{err, require};
-use solana_program::clock::{self, Clock};
+use decimal_wad::decimal::Decimal;
 
 use crate::{
     DatedPrice, OracleMappings, OracleTwaps, Price, ScopeError, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS,
@@ -11,7 +13,7 @@ use crate::TwapBuffer;
 pub fn store_observation(
     oracle_twaps: &mut OracleTwaps,
     token: usize,
-    price: u128,
+    price: Price,
     current_ts: u64,
     current_slot: u64,
 ) -> crate::Result<()> {
@@ -23,7 +25,7 @@ pub fn store_observation(
 
     // If the buffer is uninitialized, we directly store the observation at index 0.
     if twap_buffer.last_update_slot == 0 {
-        twap_buffer.observations[0].observation = price;
+        twap_buffer.observations[0].observation = Decimal::from(price).to_scaled_val().unwrap();
         twap_buffer.observations[0].unix_timestamp = current_ts;
         twap_buffer.last_update_slot = current_slot;
         twap_buffer.curr_index = 0; // Explicitly set to 0 for clarity.
@@ -46,7 +48,8 @@ pub fn store_observation(
     let next_index = (curr_index + 1) % TWAP_NUM_OBS;
 
     // Update the TWAP buffer with the new observation.
-    twap_buffer.observations[next_index].observation = price;
+    twap_buffer.observations[next_index].observation =
+        Decimal::from(price).to_scaled_val().unwrap();
     twap_buffer.observations[next_index].unix_timestamp = current_ts;
     twap_buffer.curr_index = next_index as u64;
 
@@ -66,22 +69,22 @@ pub fn get_twap_from_observations(
     // OracleTwap twap duration is
     // TODO: add constraints about min num observations
 
-    let oldest_ts = current_unix_timestamp - twap_duration_seconds;
+    let oldest_ts = Decimal::from(current_unix_timestamp - twap_duration_seconds);
 
-    let twap_buffer = oracle_twaps.twap_buffers[twap_buffer_source];
+    let source_index = usize::from(oracle_mappings.twap_source[twap_buffer_source]);
+    let twap_buffer = &oracle_twaps.twap_buffers[source_index];
 
-    let (mut running_index, mut twap, mut num_obs, max_exp) =
-        (twap_buffer.curr_index as usize, 0, 0, 0);
+    let (mut running_index, mut twap, mut num_obs) =
+        (twap_buffer.curr_index as usize, Decimal::zero(), 0);
     loop {
-        let obs = twap_buffer.observations[running_index].observation;
-        // let ts = twap_buffer.unix_timestamps[running_index];
-        let ts = twap_buffer.observations[running_index].unix_timestamp;
+        let obs = Decimal::from_scaled_val(twap_buffer.observations[running_index].observation);
+        let ts = Decimal::from(twap_buffer.observations[running_index].unix_timestamp);
 
-        if ts < oldest_ts || ts == 0 || num_obs >= TWAP_NUM_OBS {
+        if ts < oldest_ts || ts.ne(&Decimal::zero()) || num_obs >= TWAP_NUM_OBS {
             break;
         }
 
-        twap += obs; // * 10u64.pow(obs.exp as u32);
+        twap = twap.add(obs); // * 10u64.pow(obs.exp as u32);
         num_obs += 1;
         // max_exp = max_exp.max(obs.exp);
         running_index = (running_index + TWAP_NUM_OBS - 1) % TWAP_NUM_OBS;
@@ -95,14 +98,10 @@ pub fn get_twap_from_observations(
         return err!(ScopeError::NotEnoughTwapObservations);
     }
 
-    twap /= num_obs as u128;
-    // twap /= 10u64.pow(max_exp as u32);
+    twap = twap / Decimal::from(num_obs);
 
     Ok(DatedPrice {
-        price: crate::Price {
-            value: twap as u64, // todo: siviu fix this
-            exp: max_exp,
-        },
+        price: twap.into(),
         last_updated_slot: twap_buffer.last_update_slot,
         unix_timestamp: twap_buffer.last_update_unix_timestamp,
         _reserved: [0; 2],
@@ -172,7 +171,7 @@ mod tests {
     #[test]
     fn test_add_observation_proper_interval() {
         let mut oracle_twaps = create_default_oracle_twaps();
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = TWAP_INTERVAL_SECONDS; // Assuming the initial timestamp was 0.
         let current_slot = 1;
 
@@ -182,7 +181,7 @@ mod tests {
         // Assert
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].unix_timestamp,
@@ -201,7 +200,7 @@ mod boundary_tests {
 
     #[test]
     fn test_store_observation_at_first_index() {
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = TWAP_INTERVAL_SECONDS + 1; // Ensure the timestamp interval has passed.
         let current_slot = 1;
 
@@ -209,13 +208,13 @@ mod boundary_tests {
         store_observation(&mut oracle_twaps, 0, test_price, current_ts, current_slot).unwrap();
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
     }
 
     #[test]
     fn test_store_observation_at_last_index() {
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = TWAP_INTERVAL_SECONDS + 1; // Ensure the timestamp interval has passed.
         let current_slot = 1;
 
@@ -231,14 +230,14 @@ mod boundary_tests {
         .unwrap();
         assert_eq!(
             oracle_twaps.twap_buffers[last_index].observations[0].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
     }
 
     #[test]
     #[should_panic(expected = "index out of bounds")]
     fn test_store_observation_at_out_of_bounds_index() {
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = TWAP_INTERVAL_SECONDS + 1; // Ensure the timestamp interval has passed.
         let current_slot = 1;
 
@@ -255,7 +254,7 @@ mod boundary_tests {
 
     #[test]
     fn test_store_observation_at_boundary_after_wrap() {
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = TWAP_INTERVAL_SECONDS + 1; // Ensure the timestamp interval has passed.
         let current_slot = 1;
 
@@ -266,13 +265,13 @@ mod boundary_tests {
         // Expect that the observation is stored at index 0 after the wrap
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
     }
 
     #[test]
     fn test_store_observation_multiple_boundaries() {
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = TWAP_INTERVAL_SECONDS + 1; // Ensure the timestamp interval has passed.
         let current_slot = 1;
 
@@ -282,11 +281,11 @@ mod boundary_tests {
         store_observation(&mut oracle_twaps, 0, test_price, current_ts, current_slot).unwrap();
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
 
         // Now add another observation to ensure curr_index correctly wraps and stores
-        let new_price = 200;
+        let new_price = Price { value: 200, exp: 2 };
 
         println!("Before: {:?}", oracle_twaps.twap_buffers[0].observations);
         store_observation(
@@ -300,7 +299,7 @@ mod boundary_tests {
         println!("After: {:?}", oracle_twaps.twap_buffers[1].observations);
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[1].observation,
-            new_price
+            Decimal::from(new_price).to_scaled_val().unwrap()
         );
     }
 }
@@ -328,7 +327,7 @@ mod empty_buffer_tests {
         // Ensure the buffer is empty
         oracle_twaps.twap_buffers[0] = create_empty_twap_buffer();
 
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = 1; // Non-zero timestamp
         let current_slot = 1;
 
@@ -338,7 +337,7 @@ mod empty_buffer_tests {
         // Assert that the observation was stored correctly at the first index
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].unix_timestamp,
@@ -354,7 +353,7 @@ mod empty_buffer_tests {
         // Ensure the buffer is empty
         oracle_twaps.twap_buffers[0] = create_empty_twap_buffer();
 
-        let test_price = 100;
+        let test_price = Price { value: 100, exp: 2 };
         let current_ts = 1; // Non-zero timestamp
         let current_slot = 1;
 
@@ -368,7 +367,7 @@ mod empty_buffer_tests {
         // Assert that the first observation remains unchanged
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[0].unix_timestamp,
@@ -395,7 +394,7 @@ mod partial_empty_buffer_tests {
         oracle_twaps.twap_buffers[0] = create_partially_empty_twap_buffer(5);
 
         let current_index = oracle_twaps.twap_buffers[0].curr_index as usize;
-        let test_price = 999;
+        let test_price = Price { value: 999, exp: 2 };
         let current_ts = oracle_twaps.twap_buffers[0].observations[current_index].unix_timestamp
             + TWAP_INTERVAL_SECONDS; // Ensure we're past the last non-empty slot's timestamp
         let current_slot = oracle_twaps.twap_buffers[0].last_update_slot;
@@ -407,7 +406,7 @@ mod partial_empty_buffer_tests {
         let expected_index = TWAP_NUM_OBS - 5; // The first empty slot
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[expected_index].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[0].observations[expected_index].unix_timestamp,
@@ -429,7 +428,7 @@ mod partial_empty_buffer_tests {
         println!("Observations {:?}", oracle_twaps.twap_buffers[0]);
 
         let current_index = oracle_twaps.twap_buffers[0].curr_index as usize;
-        let test_price = 999;
+        let test_price = Price { value: 999, exp: 2 };
         let current_ts =
             oracle_twaps.twap_buffers[0].observations[current_index].unix_timestamp + 1; // One second past the second-to-last non-empty slot's timestamp
         let current_slot = 10000;
@@ -441,7 +440,7 @@ mod partial_empty_buffer_tests {
         let expected_index = TWAP_NUM_OBS - 6; // Second-to-last non-empty slot
         assert_ne!(
             oracle_twaps.twap_buffers[0].observations[expected_index].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_ne!(
             oracle_twaps.twap_buffers[0].observations[expected_index].unix_timestamp,
@@ -462,7 +461,10 @@ mod extended_partial_empty_buffer_tests {
         let buffer_index = 3; // Arbitrary index for the test
         oracle_twaps.twap_buffers[buffer_index] = create_partially_empty_twap_buffer(5);
 
-        let test_price = 12345;
+        let test_price = Price {
+            value: 12345,
+            exp: 2,
+        };
         // Simulate a timestamp exactly at the interval after the last non-zero timestamp
         let last_non_zero_index = oracle_twaps.twap_buffers[buffer_index].curr_index; // The last entry before the empty slots
         let current_ts = oracle_twaps.twap_buffers[buffer_index].observations
@@ -485,7 +487,7 @@ mod extended_partial_empty_buffer_tests {
         let expected_index = TWAP_NUM_OBS - 5; // The first empty slot
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].unix_timestamp,
@@ -509,7 +511,10 @@ mod extended_partial_empty_buffer_tests {
                               // Create a buffer with all but the last slot filled
         oracle_twaps.twap_buffers[buffer_index] = create_partially_empty_twap_buffer(0);
 
-        let test_price = 67890;
+        let test_price = Price {
+            value: 67890,
+            exp: 2,
+        };
         // Simulate a timestamp far enough in the future to cause a wraparound
         let current_ts = 1000 + TWAP_INTERVAL_SECONDS * TWAP_NUM_OBS as u64 + 1;
         let current_slot = 1000 + TWAP_NUM_OBS as u64 + 1; // Simulate a future slot
@@ -528,7 +533,7 @@ mod extended_partial_empty_buffer_tests {
         let expected_index = 0;
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].unix_timestamp,
@@ -551,7 +556,10 @@ mod extended_partial_empty_buffer_tests {
                               // Create a buffer with all but the last slot filled
         oracle_twaps.twap_buffers[buffer_index] = create_partially_empty_twap_buffer(1);
 
-        let test_price = 67890;
+        let test_price = Price {
+            value: 67890,
+            exp: 2,
+        };
         // Simulate a timestamp far enough in the future to cause a wraparound
         let current_ts = 1000 + TWAP_INTERVAL_SECONDS * TWAP_NUM_OBS as u64 + 1;
         let current_slot = 1000 + TWAP_NUM_OBS as u64 + 1; // Simulate a future slot
@@ -570,7 +578,7 @@ mod extended_partial_empty_buffer_tests {
         let expected_index = TWAP_NUM_OBS - 1;
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].unix_timestamp,
@@ -599,7 +607,10 @@ mod additional_tests_partial_empty_buffer_tests {
                               // Create a full buffer with no empty slots
         oracle_twaps.twap_buffers[buffer_index] = create_populated_twap_buffer();
 
-        let test_price = 10000;
+        let test_price = Price {
+            value: 10000,
+            exp: 2,
+        };
         // Simulate a timestamp that would cause an overwrite
         let current_ts = TWAP_INTERVAL_SECONDS * (TWAP_NUM_OBS as u64 + 1);
         let current_slot = 10000 + TWAP_NUM_OBS as u64 + 1;
@@ -618,7 +629,7 @@ mod additional_tests_partial_empty_buffer_tests {
         let expected_index = 0; // Since buffer was full, we overwrite the second oldest entry
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].observation,
-            test_price
+            Decimal::from(test_price).to_scaled_val().unwrap()
         );
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[expected_index].unix_timestamp,
@@ -642,7 +653,10 @@ mod additional_tests_partial_empty_buffer_tests {
         oracle_twaps.twap_buffers[buffer_index] = create_partially_empty_twap_buffer(10);
 
         let last_filled_index = oracle_twaps.twap_buffers[buffer_index].curr_index as usize;
-        let test_price = 20000;
+        let test_price = Price {
+            value: 20000,
+            exp: 2,
+        };
         // Simulate a timestamp that is not enough past the last timestamp
         let current_ts = oracle_twaps.twap_buffers[buffer_index].observations[last_filled_index]
             .unix_timestamp
@@ -675,7 +689,10 @@ mod additional_tests_partial_empty_buffer_tests {
         oracle_twaps.twap_buffers[buffer_index] = create_partially_empty_twap_buffer(20);
 
         let start_filled_index = TWAP_NUM_OBS - 21; // Start index for filled slots
-        let test_price = 30000;
+        let test_price = Price {
+            value: 30000,
+            exp: 2,
+        };
         let mut current_ts =
             oracle_twaps.twap_buffers[buffer_index].observations[start_filled_index].unix_timestamp;
         let mut current_slot = oracle_twaps.twap_buffers[buffer_index].last_update_slot;
@@ -698,7 +715,7 @@ mod additional_tests_partial_empty_buffer_tests {
             let expected_index = (start_filled_index + i) % TWAP_NUM_OBS;
             assert_eq!(
                 oracle_twaps.twap_buffers[buffer_index].observations[expected_index].observation,
-                test_price
+                Decimal::from(test_price).to_scaled_val().unwrap()
             );
             assert_eq!(
                 oracle_twaps.twap_buffers[buffer_index].observations[expected_index].unix_timestamp,
@@ -731,7 +748,10 @@ mod time_interval_checks {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
         oracle_twaps.twap_buffers[buffer_index] = create_initial_twap_buffer_with_one_entry();
-        let price = 10000;
+        let price = Price {
+            value: 10000,
+            exp: 2,
+        };
 
         let last_index = oracle_twaps.twap_buffers[buffer_index].curr_index as usize;
         let current_ts = oracle_twaps.twap_buffers[buffer_index].observations[last_index]
@@ -756,7 +776,7 @@ mod time_interval_checks {
         );
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[1].observation,
-            price
+            Decimal::from(price).to_scaled_val().unwrap()
         );
 
         // assert incremented
@@ -772,7 +792,10 @@ mod time_interval_checks {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
         oracle_twaps.twap_buffers[buffer_index] = create_initial_twap_buffer_with_one_entry();
-        let price = 20000;
+        let price = Price {
+            value: 20000,
+            exp: 2,
+        };
         // Adding extra time to ensure we are beyond the TWAP interval
         let current_ts = oracle_twaps.twap_buffers[buffer_index].observations[0].unix_timestamp
             + TWAP_INTERVAL_SECONDS
@@ -796,7 +819,7 @@ mod time_interval_checks {
         );
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[1].observation,
-            price
+            Decimal::from(price).to_scaled_val().unwrap()
         );
     }
 
@@ -806,7 +829,10 @@ mod time_interval_checks {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
         oracle_twaps.twap_buffers[buffer_index] = create_initial_twap_buffer_with_one_entry();
-        let price = 30000;
+        let price = Price {
+            value: 30000,
+            exp: 2,
+        };
         // Subtracting time to ensure we are within the TWAP interval
         let last_idx = oracle_twaps.twap_buffers[buffer_index].curr_index as usize;
         let current_ts = oracle_twaps.twap_buffers[buffer_index].observations[last_idx]
@@ -856,7 +882,10 @@ mod index_incrementation_tests {
             create_initial_twap_buffer_with_sequential_entries(TWAP_NUM_OBS / 2);
 
         let last_index = oracle_twaps.twap_buffers[buffer_index].curr_index;
-        let price = 10000;
+        let price = Price {
+            value: 10000,
+            exp: 2,
+        };
 
         println!(
             "Initial index: {:?} vs {} TWAP_NUM_OBS: {}, TWAP_NUM_OBS / 2 = {}",
@@ -896,7 +925,10 @@ mod index_incrementation_tests {
 
         oracle_twaps.twap_buffers[buffer_index] = initial_twap_buffer;
         let last_index = (TWAP_NUM_OBS - 1) as u64;
-        let price = 20000;
+        let price = Price {
+            value: 20000,
+            exp: 2,
+        };
         let current_ts = oracle_twaps.twap_buffers[buffer_index].observations[last_index as usize]
             .unix_timestamp
             + TWAP_INTERVAL_SECONDS;
@@ -928,7 +960,10 @@ mod index_incrementation_tests {
             + TWAP_INTERVAL_SECONDS;
         let mut current_slot = oracle_twaps.twap_buffers[buffer_index].last_update_slot + 1;
 
-        let price = 30000;
+        let price = Price {
+            value: 30000,
+            exp: 2,
+        };
 
         println!(
             "Initial index: {:?}",
@@ -998,7 +1033,10 @@ mod non_chronological_timestamps_tests {
             [last_index as usize]
             .unix_timestamp;
         let out_of_order_timestamp = last_timestamp - 10; // Earlier than the last timestamp
-        let price = 40000;
+        let price = Price {
+            value: 40000,
+            exp: 2,
+        };
         let current_slot = oracle_twaps.twap_buffers[buffer_index].last_update_slot + 1;
 
         // Act
@@ -1018,7 +1056,7 @@ mod non_chronological_timestamps_tests {
         ); // Index should not increment
         assert_ne!(
             oracle_twaps.twap_buffers[buffer_index].observations[last_index as usize].observation,
-            price
+            Decimal::from(price).to_scaled_val().unwrap()
         ); // Price should not update
         assert_ne!(
             oracle_twaps.twap_buffers[buffer_index].observations[last_index as usize]
@@ -1041,8 +1079,14 @@ mod non_chronological_timestamps_tests {
             .unix_timestamp;
 
         let out_of_order_timestamp = last_timestamp - 10;
-        let price_out_of_order = 40000;
-        let price_correct = 50000;
+        let price_out_of_order = Price {
+            value: 40000,
+            exp: 2,
+        };
+        let price_correct = Price {
+            value: 50000,
+            exp: 2,
+        };
         let correct_timestamp = last_timestamp + TWAP_INTERVAL_SECONDS;
         let current_slot = oracle_twaps.twap_buffers[buffer_index].last_update_slot + 1;
 
@@ -1074,7 +1118,7 @@ mod non_chronological_timestamps_tests {
         ); // Index should increment now
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[new_index as usize].observation,
-            price_correct
+            Decimal::from(price_correct).to_scaled_val().unwrap()
         ); // Price should update
         assert_eq!(
             oracle_twaps.twap_buffers[buffer_index].observations[new_index as usize].unix_timestamp,
@@ -1112,7 +1156,10 @@ mod error_handling_tests {
     fn returns_error_for_invalid_timestamp() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let price = 60000;
+        let price = Price {
+            value: 60000,
+            exp: 2,
+        };
         let invalid_timestamp = 0; // Simulate an invalid timestamp
         let current_slot = 1;
 
@@ -1133,7 +1180,10 @@ mod error_handling_tests {
     fn returns_error_for_invalid_slot() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let price = 60000;
+        let price = Price {
+            value: 60000,
+            exp: 2,
+        };
         let current_timestamp = 1; // Simulate an invalid timestamp
         let invalid_slot = 0;
 
@@ -1156,7 +1206,10 @@ mod error_handling_tests {
     fn returns_error_for_nonexistent_buffer_index() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let nonexistent_buffer_index = MAX_ENTRIES + 10; // Simulate an index that is out of bounds
-        let price = 70000;
+        let price = Price {
+            value: 70000,
+            exp: 2,
+        };
         let current_ts = 1;
         let current_slot = 1;
 
@@ -1180,8 +1233,8 @@ mod successive_addition_tests {
     fn test_successive_adds_within_interval() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let initial_price = 100;
-        let additional_price = 10;
+        let initial_price = Price { value: 100, exp: 0 };
+        let additional_price = Price { value: 10, exp: 0 };
         let initial_ts = 1000;
         let initial_slot = 1;
 
@@ -1212,7 +1265,7 @@ mod successive_addition_tests {
             // The initial observation should remain unchanged
             assert_eq!(
                 oracle_twaps.twap_buffers[buffer_index].observations[0].observation,
-                initial_price
+                Decimal::from(initial_price).to_scaled_val().unwrap()
             );
         }
     }
@@ -1221,8 +1274,8 @@ mod successive_addition_tests {
     fn test_successive_adds_across_intervals() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let initial_price = 100_u128;
-        let additional_price = 10_u128;
+        let initial_price = Price { value: 100, exp: 0 };
+        let additional_price = Price { value: 10, exp: 0 };
         let initial_ts = 1000;
         let initial_slot = 1;
 
@@ -1254,7 +1307,7 @@ mod successive_addition_tests {
             let expected_index = (i as usize) % TWAP_NUM_OBS;
             assert_eq!(
                 oracle_twaps.twap_buffers[buffer_index].observations[expected_index].observation,
-                additional_price as u128
+                Decimal::from(additional_price).to_scaled_val().unwrap()
             );
             assert_eq!(
                 oracle_twaps.twap_buffers[buffer_index].observations[expected_index].unix_timestamp,
@@ -1271,7 +1324,7 @@ mod slots_update_tests {
     fn test_slots_update_on_new_observation() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let initial_price = 100;
+        let initial_price = Price { value: 100, exp: 0 };
         let initial_ts = 1000;
         let initial_slot = 1;
 
@@ -1316,7 +1369,7 @@ mod slots_update_tests {
     fn test_no_slot_update_within_same_interval() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let initial_price = 100;
+        let initial_price = Price { value: 100, exp: 0 };
         let initial_ts = 1000;
         let initial_slot = 1;
 
@@ -1353,7 +1406,7 @@ mod slots_update_tests {
     fn test_slots_monotonically_increasing_on_new_intervals() {
         let mut oracle_twaps: OracleTwaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let initial_price = 100;
+        let initial_price = Price { value: 100, exp: 0 };
         let initial_ts = 1000;
         let initial_slot: u64 = 1;
 
@@ -1382,7 +1435,10 @@ mod price_value_tests {
     fn test_store_minimal_price_value() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let minimal_price = u128::MIN;
+        let minimal_price = Price {
+            value: u64::MIN,
+            exp: u64::MIN,
+        };
 
         store_and_verify_price_observation(&mut oracle_twaps, buffer_index, minimal_price, 1000, 1);
     }
@@ -1391,40 +1447,46 @@ mod price_value_tests {
     fn test_store_maximal_price_value() {
         let mut oracle_twaps = create_default_oracle_twaps();
         let buffer_index = 0;
-        let maximal_price = u128::MAX;
+        let maximal_price = Price {
+            value: u64::MAX,
+            exp: u64::MAX,
+        };
 
         store_and_verify_price_observation(&mut oracle_twaps, buffer_index, maximal_price, 1000, 1);
     }
 
-    // #[test]
-    // fn test_store_zero_exponent_price() {
-    //     let mut oracle_twaps = create_default_oracle_twaps();
-    //     let buffer_index = 0;
-    //     let zero_exp_price = 100_000;
+    #[test]
+    fn test_store_zero_exponent_price() {
+        let mut oracle_twaps = create_default_oracle_twaps();
+        let buffer_index = 0;
+        let zero_exp_price = Price {
+            value: 100_000,
+            exp: 0,
+        };
 
-    //     store_and_verify_price_observation(
-    //         &mut oracle_twaps,
-    //         buffer_index,
-    //         zero_exp_price,
-    //         1000,
-    //         1,
-    //     );
-    // }
+        store_and_verify_price_observation(
+            &mut oracle_twaps,
+            buffer_index,
+            zero_exp_price,
+            1000,
+            1,
+        );
+    }
 
-    // #[test]
-    // fn test_store_high_exponent_price() {
-    //     let mut oracle_twaps = create_default_oracle_twaps();
-    //     let buffer_index = 0;
-    //     let high_exp_price = 1;
+    #[test]
+    fn test_store_high_exponent_price() {
+        let mut oracle_twaps = create_default_oracle_twaps();
+        let buffer_index = 0;
+        let high_exp_price = Price { value: 1, exp: 18 };
 
-    //     store_and_verify_price_observation(
-    //         &mut oracle_twaps,
-    //         buffer_index,
-    //         high_exp_price,
-    //         1000,
-    //         1,
-    //     );
-    // }
+        store_and_verify_price_observation(
+            &mut oracle_twaps,
+            buffer_index,
+            high_exp_price,
+            1000,
+            1,
+        );
+    }
 
     #[test]
     fn test_store_varied_exponent_prices() {
@@ -1433,7 +1495,10 @@ mod price_value_tests {
         let exp_values = [2, 4, 6, 8, 10, 12, 14, 16];
 
         for &exp in exp_values.iter() {
-            let price = 100_000;
+            let price = Price {
+                value: 100_000,
+                exp,
+            };
             store_and_verify_price_observation(
                 &mut oracle_twaps,
                 buffer_index,
@@ -1447,7 +1512,7 @@ mod price_value_tests {
     fn store_and_verify_price_observation(
         oracle_twaps: &mut OracleTwaps,
         token: usize,
-        price: u128,
+        price: Price,
         current_ts: u64,
         current_slot: u64,
     ) {
@@ -1460,7 +1525,7 @@ mod price_value_tests {
         // Verify the price and slot are stored correctly
         assert_eq!(
             oracle_twaps.twap_buffers[token].observations[curr_index].observation,
-            price
+            Decimal::from(price).to_scaled_val().unwrap()
         );
         // assert_eq!(
         //     oracle_twaps.twap_buffers[token].observations[curr_index],

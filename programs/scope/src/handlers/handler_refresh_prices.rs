@@ -101,7 +101,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
         crate::oracles::twap::store_observation(
             &mut oracle_twaps,
             token,
-            price.price.value as u128,
+            price.price,
             clock.unix_timestamp as u64,
             clock.slot,
         )?;
@@ -197,7 +197,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                 crate::oracles::twap::store_observation(
                     &mut oracle_twaps,
                     token_idx,
-                    price.price.value as u128,
+                    price.price,
                     clock.unix_timestamp as u64,
                     clock.slot,
                 )?;
