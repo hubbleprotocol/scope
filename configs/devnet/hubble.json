@@ -534,5 +534,11 @@
     "label": "MSOL/SOL",
     "oracle_mapping": "8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC",
     "oracle_type": "MsolStake"
+  },
+  "123": {
+    "label": "Fake xSTEP/USD",
+    "oracle_mapping": "UTbf6EKbwgwNmW9SQuJSKLhAn2Fpsn9x1a2taoXicfi",
+    "oracle_type": "SwitchboardV2",
+    "max_age": 200
   }
 }
