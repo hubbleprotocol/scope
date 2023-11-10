@@ -31,15 +31,22 @@ const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
     price_type: TestOracleType::Pyth,
 };
 
+const TEST_JLP_ORACLE: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeJLPPriceAccount111111111111111111111111"),
+    token: 5,
+    price_type: TestOracleType::JupiterLP,
+};
+
 #[cfg(feature = "yvaults")]
-const TEST_ORACLE_CONF: [OracleConf; 4] = [
+const TEST_ORACLE_CONF: [OracleConf; 5] = [
     TEST_PYTH_ORACLE,
     TEST_PYTH2_ORACLE,
     ktoken_tests::TEST_ORCA_KTOKEN_ORACLE,
     ktoken_tests::TEST_RAYDIUM_KTOKEN_ORACLE,
+    TEST_JLP_ORACLE,
 ];
 #[cfg(not(feature = "yvaults"))]
-const TEST_ORACLE_CONF: [OracleConf; 2] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE];
+const TEST_ORACLE_CONF: [OracleConf; 3] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE, TEST_JLP_ORACLE];
 
 // - [x] Wrong oracle mapping
 // - [x] Wrong oracle account (copy)
@@ -54,6 +61,9 @@ const TEST_ORACLE_CONF: [OracleConf; 2] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE];
 // - [x] Wrong kToken additional orca whirlpool account
 // - [x] Wrong kToken additional orca position account
 // - [x] Wrong kToken additional scope prices account
+
+// Jupiter LP:
+// - [x] Wrong Jupiter LP additional mint account
 
 #[tokio::test]
 async fn test_working_refresh_list() {
@@ -1186,4 +1196,52 @@ mod ktoken_tests {
             0
         );
     }
+}
+
+// - [x] Wrong Jupiter LP additional mint account
+#[tokio::test]
+async fn test_refresh_one_jlp_wrong_mint() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
+
+    let price = Price {
+        value: 1000,
+        exp: 1,
+    };
+    // Change price
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_JLP_ORACLE, &price).await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshList {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        clock: Clock::id(),
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+    }
+    .to_account_metas(None);
+    for conf in TEST_ORACLE_CONF.iter() {
+        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        if conf == &TEST_JLP_ORACLE {
+            // Set the wrong mint
+            let mint = &mut refresh_accounts[0];
+            let mint_pk = mint.pubkey;
+            let cloned_mint = Pubkey::new_unique();
+            ctx.clone_account(&mint_pk, &cloned_mint).await;
+            mint.pubkey = cloned_mint;
+        }
+        accounts.append(&mut refresh_accounts);
+    }
+
+    let args = scope::instruction::RefreshPriceList {
+        tokens: TEST_ORACLE_CONF.map(|conf| conf.token as u16).to_vec(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    let res = ctx.send_transaction_with_bot(&[ix]).await;
+
+    assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
 }
