@@ -10,7 +10,7 @@ use solana_program::{
 };
 
 use crate::{
-    oracles::{get_price, twap::get_twap_from_observations, OracleType},
+    oracles::{get_price, OracleType},
     ScopeError,
 };
 

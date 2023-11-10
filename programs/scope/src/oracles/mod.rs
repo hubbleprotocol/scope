@@ -15,7 +15,6 @@ pub mod twap;
 use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
-use yvaults::raydium_amm_v3::states::oracle;
 
 use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError, MIN_ACCEPTABLE_TWAP_NUM_OBS};
 
@@ -162,9 +161,6 @@ where
         ),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
-        }
-        OracleType::ScopeTwap => {
-            panic!("ScopeTwap is not a valid oracle type")
         }
     }
 }

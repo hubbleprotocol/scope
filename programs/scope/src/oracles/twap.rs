@@ -70,7 +70,7 @@ pub fn get_twap_from_observations(
 
     let twap_buffer = oracle_twaps.twap_buffers[twap_buffer_source];
 
-    let (mut running_index, mut twap, mut num_obs, mut max_exp) =
+    let (mut running_index, mut twap, mut num_obs, max_exp) =
         (twap_buffer.curr_index as usize, 0, 0, 0);
     loop {
         let obs = twap_buffer.observations[running_index].observation;

@@ -64,7 +64,7 @@ async fn test_refresh_one_with_twap() {
         TEST_PYTH_ORACLE,
     );
 
-    let px = 1_u128;
+    let px = &Price { value: 1, exp: 6 };
     mock_oracles::set_price(&mut ctx, &feed, &oracle, &px).await;
 
     let ix = client::metadata_enable_store_observations(&mut ctx, &feed, oracle);
@@ -83,7 +83,10 @@ async fn test_refresh_one_with_twap() {
 
     let twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
     assert_eq!(twaps.twap_buffers[idx].observations[0].unix_timestamp, ts);
-    assert_eq!(twaps.twap_buffers[idx].observations[0].observation, px);
+    assert_eq!(
+        twaps.twap_buffers[idx].observations[0].observation,
+        px.value as u128
+    );
     assert_eq!(twaps.twap_buffers[idx].curr_index, 0);
 }
 
@@ -129,8 +132,14 @@ async fn test_refresh_one_with_twap_cranking_big_interval() {
         assert_eq!(data.prices[idx].price.exp, px.exp);
 
         let twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-        assert_eq!(twaps.twap_buffers[idx].unix_timestamps[curr_twpidx], ts);
-        assert_eq!(twaps.twap_buffers[idx].observations[curr_twpidx], px);
+        assert_eq!(
+            twaps.twap_buffers[idx].observations[curr_twpidx].unix_timestamp,
+            ts
+        );
+        assert_eq!(
+            twaps.twap_buffers[idx].observations[curr_twpidx].observation,
+            px.value as u128
+        );
         assert_eq!(twaps.twap_buffers[idx].curr_index, curr_twpidx as u64);
     }
 }
@@ -146,7 +155,7 @@ async fn test_refresh_one_with_twap_cranking_small_interval() {
         TEST_PYTH_ORACLE,
     );
 
-    let mut px = 100;
+    let mut px = Price { value: 100, exp: 6 };
     mock_oracles::set_price(&mut ctx, &feed, &oracle, &px).await;
 
     let ix = client::metadata_enable_store_observations(&mut ctx, &feed, oracle);
@@ -183,7 +192,7 @@ async fn test_refresh_one_with_twap_cranking_small_interval() {
             );
             assert_eq!(
                 twaps.twap_buffers[idx].observations[curr_twpidx].observation,
-                px
+                px.value as u128
             );
             assert_eq!(twaps.twap_buffers[idx].curr_index, curr_twpidx as u64);
         }
