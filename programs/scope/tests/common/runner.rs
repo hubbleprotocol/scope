@@ -174,7 +174,7 @@ impl TestContext {
             ixs,
             Some(&self.admin.pubkey()),
             &[&self.admin],
-            self.context.banks_client.get_latest_blockhash().await?,
+            self.context.get_new_latest_blockhash().await?,
         );
         self.context.banks_client.process_transaction(tx).await
     }
@@ -196,7 +196,7 @@ impl TestContext {
             &instruction_cpi,
             Some(&self.admin.pubkey()),
             &[&self.admin],
-            self.context.banks_client.get_latest_blockhash().await?,
+            self.context.get_new_latest_blockhash().await?,
         );
         self.context.banks_client.process_transaction(tx).await
     }
@@ -209,7 +209,7 @@ impl TestContext {
             ixs,
             Some(&self.bot.pubkey()),
             &[&self.bot],
-            self.context.banks_client.get_latest_blockhash().await?,
+            self.context.get_new_latest_blockhash().await?,
         );
         self.context.banks_client.process_transaction(tx).await
     }
@@ -223,7 +223,7 @@ impl TestContext {
             ixs,
             Some(&payer.pubkey()),
             &[payer],
-            self.context.banks_client.get_latest_blockhash().await?,
+            self.context.get_new_latest_blockhash().await?,
         );
         self.context.banks_client.process_transaction(tx).await
     }
@@ -238,7 +238,7 @@ impl TestContext {
             ixs,
             Some(payer),
             signers,
-            self.context.banks_client.get_latest_blockhash().await?,
+            self.context.get_new_latest_blockhash().await?,
         );
         self.context.banks_client.process_transaction(tx).await
     }

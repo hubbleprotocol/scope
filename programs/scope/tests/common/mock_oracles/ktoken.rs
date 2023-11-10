@@ -20,18 +20,20 @@ use crate::common::{
     types::{OracleConf, ScopeFeedDefinition, TestContext, TestOracleType},
 };
 
+use super::{add_acc, AdditionalAccount};
+
 pub const fn id() -> Pubkey {
     // It does not matter what the pubkey is
     pubkey!("Kamino1111111111111111111111111111111111111")
 }
 
-pub async fn get_ktoken_price_accounts(
+pub(super) async fn get_ktoken_price_accounts(
     ctx: &mut TestContext,
     feed: &ScopeFeedDefinition,
     dex: DEX,
     price: &Price,
     clock: &Clock,
-) -> (Vec<u8>, Pubkey, Vec<(Pubkey, Pubkey, Vec<u8>)>) {
+) -> super::PriceSourceAccounts {
     // Create 2 new scope oracle mappings for token A and token B with price 1 USD
     let oracle_mappings: OracleMappings = ctx.get_zero_copy_account(&feed.mapping).await.unwrap();
     // Find the first 2 empty mappings - in reverse to not interfere with user defined prices
@@ -98,40 +100,40 @@ pub async fn get_ktoken_price_accounts(
             u16::MAX,
         ],
     );
-    let global_config = get_account_data_for_global_config(feed.prices, collateral_infos.0);
+    let global_config = get_account_data_for_global_config(feed.prices, collateral_infos.address);
     let (dex_pool, dex_position) = match dex {
         DEX::Orca => {
             let pool = get_account_data_for_orca_pool();
-            let position = get_account_data_for_orca_position(pool.0);
+            let position = get_account_data_for_orca_position(pool.address);
             (pool, position)
         }
         DEX::Raydium => {
             let pool = get_account_data_for_raydium_pool();
-            let position = get_account_data_for_raydium_position(pool.0);
+            let position = get_account_data_for_raydium_position(pool.address);
             (pool, position)
         }
     };
 
     let strategy = get_account_data_for_strategy(
-        global_config.0,
+        global_config.address,
         feed.prices,
         dex,
-        dex_pool.0,
-        dex_position.0,
+        dex_pool.address,
+        dex_position.address,
         price,
         clock,
     );
-    (
-        strategy,
-        id(),
-        vec![global_config, collateral_infos, dex_pool, dex_position],
-    )
+    super::PriceSourceAccounts {
+        oracle_data: strategy,
+        owner: id(),
+        additional_accs: vec![global_config, collateral_infos, dex_pool, dex_position],
+    }
 }
 
-pub fn get_account_data_for_global_config(
+fn get_account_data_for_global_config(
     scope_prices: Pubkey,
     token_infos: Pubkey,
-) -> (Pubkey, Pubkey, Vec<u8>) {
+) -> AdditionalAccount {
     let global_config = GlobalConfig {
         scope_price_id: scope_prices,
         token_infos,
@@ -140,26 +142,26 @@ pub fn get_account_data_for_global_config(
     let mut data = [0u8; 8 + std::mem::size_of::<GlobalConfig>()];
     data[0..8].copy_from_slice(&GlobalConfig::discriminator());
     data[8..].copy_from_slice(bytemuck::bytes_of(&global_config));
-    (
+    add_acc(
         pubkey!("KaminoGC11111111111111111111111111111111111"),
         id(),
         data.to_vec(),
     )
 }
 
-pub fn get_account_data_for_orca_pool() -> (Pubkey, Pubkey, Vec<u8>) {
+fn get_account_data_for_orca_pool() -> AdditionalAccount {
     let mut data = [0u8; Whirlpool::LEN];
     data[0..8].copy_from_slice(&Whirlpool::discriminator());
     let bytes = borsh::to_vec(&Whirlpool::default()).unwrap();
     data[8..].copy_from_slice(&bytes);
-    (
+    add_acc(
         pubkey!("KaminoorcaPoo111111111111111111111111111111"),
         whirlpool::id(),
         data.to_vec(),
     )
 }
 
-pub fn get_account_data_for_orca_position(whirlpool: Pubkey) -> (Pubkey, Pubkey, Vec<u8>) {
+fn get_account_data_for_orca_position(whirlpool: Pubkey) -> AdditionalAccount {
     let mut data = [0u8; Position::LEN];
     data[0..8].copy_from_slice(&Position::discriminator());
     let position = Position {
@@ -168,26 +170,26 @@ pub fn get_account_data_for_orca_position(whirlpool: Pubkey) -> (Pubkey, Pubkey,
     };
     let bytes = borsh::to_vec(&position).unwrap();
     data[8..].copy_from_slice(&bytes);
-    (
+    add_acc(
         pubkey!("KaminoorcaPos111111111111111111111111111111"),
         whirlpool::id(),
         data.to_vec(),
     )
 }
 
-pub fn get_account_data_for_raydium_pool() -> (Pubkey, Pubkey, Vec<u8>) {
+fn get_account_data_for_raydium_pool() -> AdditionalAccount {
     let mut data = [0u8; PoolState::LEN];
     data[0..8].copy_from_slice(&PoolState::discriminator());
     let state = PoolState::default();
     data[8..].copy_from_slice(bytemuck::bytes_of(&state));
-    (
+    add_acc(
         pubkey!("KaminoRaydiumPoo111111111111111111111111111"),
         whirlpool::id(),
         data.to_vec(),
     )
 }
 
-pub fn get_account_data_for_raydium_position(raydium_pool: Pubkey) -> (Pubkey, Pubkey, Vec<u8>) {
+fn get_account_data_for_raydium_position(raydium_pool: Pubkey) -> AdditionalAccount {
     let mut data = [0u8; PersonalPositionState::LEN];
     data[0..8].copy_from_slice(&PersonalPositionState::discriminator());
     let position = PersonalPositionState {
@@ -196,17 +198,17 @@ pub fn get_account_data_for_raydium_position(raydium_pool: Pubkey) -> (Pubkey, P
     };
     let bytes = borsh::to_vec(&position).unwrap();
     data[8..].copy_from_slice(&bytes);
-    (
+    add_acc(
         pubkey!("KaminoRaydiumPos111111111111111111111111111"),
         whirlpool::id(),
         data.to_vec(),
     )
 }
 
-pub fn get_account_data_for_collateral_infos(
+fn get_account_data_for_collateral_infos(
     a_scope_chain: &[u16; MAX_CHAIN_LENGTH],
     b_scope_chain: &[u16; MAX_CHAIN_LENGTH],
-) -> (Pubkey, Pubkey, Vec<u8>) {
+) -> AdditionalAccount {
     let token_a_info = CollateralInfo {
         scope_price_chain: *a_scope_chain,
         ..Default::default()
@@ -221,14 +223,14 @@ pub fn get_account_data_for_collateral_infos(
     let mut data = [0u8; 8 + std::mem::size_of::<CollateralInfos>()];
     data[0..8].copy_from_slice(&CollateralInfos::discriminator());
     data[8..].copy_from_slice(bytemuck::bytes_of(&collateral_infos));
-    (
+    add_acc(
         pubkey!("KaminoCi11111111111111111111111111111111111"),
         id(),
         data.to_vec(),
     )
 }
 
-pub fn get_account_data_for_strategy(
+fn get_account_data_for_strategy(
     global_config: Pubkey,
     scope_prices: Pubkey,
     dex: DEX,
@@ -263,13 +265,13 @@ pub fn get_account_data_for_strategy(
     data.to_vec()
 }
 
-pub fn new_collateral_infos() -> CollateralInfos {
+fn new_collateral_infos() -> CollateralInfos {
     CollateralInfos {
         infos: [CollateralInfo::default(); 256],
     }
 }
 
-pub fn new_global_config() -> GlobalConfig {
+fn new_global_config() -> GlobalConfig {
     let vaults: [Pubkey; 256] = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
 
     GlobalConfig {

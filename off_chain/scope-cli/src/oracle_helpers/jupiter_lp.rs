@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display};
 use anchor_client::solana_sdk::clock;
 use anyhow::Result;
 use orbit_link::async_client::AsyncClient;
-use scope::oracles::jupiter_lp::{JLP_ID, MINT_SEED};
+use scope::oracles::jupiter_lp::get_mint_pk;
 use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
 use super::{OracleHelper, TokenEntry};
@@ -28,7 +28,7 @@ pub struct JupiterLPOracle {
 impl JupiterLPOracle {
     pub async fn new(conf: &TokenConfig, default_max_age: clock::Slot) -> Result<Self> {
         let mapping = conf.oracle_mapping;
-        let (lp_mint, _) = Pubkey::find_program_address(&[MINT_SEED, &mapping.to_bytes()], &JLP_ID);
+        let (lp_mint, _) = get_mint_pk(&mapping);
 
         Ok(Self {
             label: conf.label.clone(),
