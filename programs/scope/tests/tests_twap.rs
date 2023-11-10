@@ -25,7 +25,6 @@ async fn test_refresh_one_no_twap() {
         fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_PYTH_ORACLE, TEST_TWAP_ORACLE]).await;
 
     let idx = TEST_PYTH_ORACLE.token;
-    let zero = Price::default();
 
     // Change price
     mock_oracles::set_price(

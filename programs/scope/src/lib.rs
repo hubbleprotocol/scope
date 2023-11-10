@@ -146,7 +146,7 @@ pub struct TwapBuffer {
     pub last_update_slot: u64, // the slot when the last observation was added
     pub last_update_unix_timestamp: u64,
     pub observations: [TwapEntry; TWAP_NUM_OBS],
-    pub padding: [u128; 65536],
+    // pub padding: [u128; 65536],
 }
 
 impl Default for TwapBuffer {
@@ -156,7 +156,7 @@ impl Default for TwapBuffer {
             last_update_slot: 0,
             last_update_unix_timestamp: 0,
             observations: [TwapEntry::default(); TWAP_NUM_OBS],
-            padding: [0; 65536],
+            // padding: [0; 65536],
         }
     }
 }
