@@ -138,11 +138,13 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     .ok_or(ScopeError::BadTokenNb)?;
 
                 msg!(
-                    "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
+                    "tk {}, {:?}: {}:{} to {}:{} | prev_slot: {}, new_slot: {}, crt_slot: {}",
                     token_idx,
                     price_type,
                     to_update.price.value,
+                    to_update.price.exp,
                     price.price.value,
+                    price.price.exp,
                     to_update.last_updated_slot,
                     price.last_updated_slot,
                     clock.slot,
