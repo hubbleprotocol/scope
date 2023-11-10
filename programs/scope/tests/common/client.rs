@@ -69,7 +69,6 @@ pub fn refresh_one_ix(feed: &ScopeFeedDefinition, oracle: OracleConf) -> Instruc
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: oracle.pubkey,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
     };
 
     let args = scope::instruction::RefreshOnePrice {

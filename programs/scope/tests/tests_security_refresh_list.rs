@@ -77,7 +77,6 @@ async fn test_working_refresh_list() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -138,7 +137,6 @@ async fn test_wrong_oracle_mapping() {
         oracle_prices: feed.prices,
         oracle_mappings: fake_mapping_pk,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -192,7 +190,6 @@ async fn test_wrong_oracle_account_with_copy() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -247,7 +244,6 @@ async fn test_wrong_index_oracle_account() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -304,7 +300,6 @@ async fn test_wrong_sysvar_instructions() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: wrong_sysvar_account,
     }
     .to_account_metas(None);
@@ -351,7 +346,6 @@ async fn test_refresh_through_cpi() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -418,7 +412,6 @@ async fn test_refresh_with_unexpected_ix() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -496,7 +489,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -568,7 +560,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -647,7 +638,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -723,7 +713,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -798,7 +787,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -869,7 +857,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -944,7 +931,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -1016,7 +1002,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -1091,7 +1076,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -1163,7 +1147,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);

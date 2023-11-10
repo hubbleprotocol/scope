@@ -17,7 +17,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use yvaults::raydium_amm_v3::states::oracle;
 
-use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError};
+use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError, MIN_ACCEPTABLE_TWAP_NUM_OBS};
 
 use self::ktokens_token_x::TokenTypes;
 
@@ -158,6 +158,7 @@ where
             index,
             price_type.twap_duration_seconds(),
             u64::try_from(clock.unix_timestamp).unwrap(),
+            MIN_ACCEPTABLE_TWAP_NUM_OBS,
         ),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")

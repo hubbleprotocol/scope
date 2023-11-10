@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use scope::{OraclePrices, OracleTwaps, Price, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS};
+use scope::{OraclePrices, OracleTwaps, Price, TwapEntry, TWAP_INTERVAL_SECONDS, TWAP_NUM_OBS};
 
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signature::Keypair};
@@ -47,8 +47,10 @@ async fn test_refresh_one_no_twap() {
 
     let twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
     assert_eq!(twaps.twap_buffers[idx].curr_index, 0);
-    assert_eq!(twaps.twap_buffers[idx].unix_timestamps, [0; TWAP_NUM_OBS]);
-    assert_eq!(twaps.twap_buffers[idx].observations, [zero; TWAP_NUM_OBS]);
+    assert_eq!(
+        twaps.twap_buffers[idx].observations,
+        [TwapEntry::default(); TWAP_NUM_OBS]
+    );
 }
 
 #[tokio::test]
@@ -62,7 +64,7 @@ async fn test_refresh_one_with_twap() {
         TEST_PYTH_ORACLE,
     );
 
-    let px = Price { value: 1, exp: 6 };
+    let px = 1_u128;
     mock_oracles::set_price(&mut ctx, &feed, &oracle, &px).await;
 
     let ix = client::metadata_enable_store_observations(&mut ctx, &feed, oracle);
@@ -80,8 +82,8 @@ async fn test_refresh_one_with_twap() {
     assert_eq!(data.prices[idx].price.exp, 6);
 
     let twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-    assert_eq!(twaps.twap_buffers[idx].unix_timestamps[0], ts);
-    assert_eq!(twaps.twap_buffers[idx].observations[0], px);
+    assert_eq!(twaps.twap_buffers[idx].observations[0].unix_timestamp, ts);
+    assert_eq!(twaps.twap_buffers[idx].observations[0].observation, px);
     assert_eq!(twaps.twap_buffers[idx].curr_index, 0);
 }
 
@@ -144,7 +146,7 @@ async fn test_refresh_one_with_twap_cranking_small_interval() {
         TEST_PYTH_ORACLE,
     );
 
-    let mut px = Price { value: 100, exp: 8 };
+    let mut px = 100;
     mock_oracles::set_price(&mut ctx, &feed, &oracle, &px).await;
 
     let ix = client::metadata_enable_store_observations(&mut ctx, &feed, oracle);
@@ -175,8 +177,14 @@ async fn test_refresh_one_with_twap_cranking_small_interval() {
         if i % 2 == 0 {
             curr_twpidx = (curr_twpidx + 1) % TWAP_NUM_OBS;
             let twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-            assert_eq!(twaps.twap_buffers[idx].unix_timestamps[curr_twpidx], ts);
-            assert_eq!(twaps.twap_buffers[idx].observations[curr_twpidx], px);
+            assert_eq!(
+                twaps.twap_buffers[idx].observations[curr_twpidx].unix_timestamp,
+                ts
+            );
+            assert_eq!(
+                twaps.twap_buffers[idx].observations[curr_twpidx].observation,
+                px
+            );
             assert_eq!(twaps.twap_buffers[idx].curr_index, curr_twpidx as u64);
         }
     }

@@ -45,7 +45,6 @@ pub async fn refresh_price(
         price_info: conf.pubkey,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
     }
     .to_account_metas(None);
     let mut refresh_accounts = utils::get_remaining_accounts(ctx, conf).await;

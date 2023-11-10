@@ -60,7 +60,6 @@ async fn test_working_refresh_one() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
@@ -106,7 +105,6 @@ async fn test_wrong_oracle_mapping() {
         oracle_prices: feed.prices,
         oracle_mappings: fake_mapping_pk,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
@@ -151,7 +149,6 @@ async fn test_wrong_oracle_account_with_copy() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: fake_price_account,
     };
@@ -192,7 +189,6 @@ async fn test_wrong_index_oracle_account() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
@@ -236,7 +232,6 @@ async fn test_wrong_sysvar_instructions() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: wrong_sysvar_account,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
@@ -275,7 +270,6 @@ async fn test_refresh_through_cpi() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
@@ -333,7 +327,6 @@ async fn test_refresh_with_unexpected_ix() {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
-        tokens_metadata: feed.metadatas,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         price_info: TEST_PYTH_ORACLE.pubkey,
     };
@@ -392,7 +385,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_ORCA_KTOKEN_ORACLE.pubkey,
         }
@@ -441,7 +433,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
         }
@@ -501,7 +492,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_ORCA_KTOKEN_ORACLE.pubkey,
         }
@@ -560,7 +550,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
         }
@@ -623,7 +612,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_ORCA_KTOKEN_ORACLE.pubkey,
         }
@@ -686,7 +674,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
         }
@@ -745,7 +732,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_ORCA_KTOKEN_ORACLE.pubkey,
         }
@@ -803,7 +789,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
         }
@@ -862,7 +847,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_ORCA_KTOKEN_ORACLE.pubkey,
         }
@@ -921,7 +905,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
         }
@@ -985,7 +968,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_ORCA_KTOKEN_ORACLE.pubkey,
         }
@@ -1048,7 +1030,6 @@ mod ktoken_tests {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
             oracle_twaps: feed.twaps,
-            tokens_metadata: feed.metadatas,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
             price_info: TEST_RAYDIUM_KTOKEN_ORACLE.pubkey,
         }
