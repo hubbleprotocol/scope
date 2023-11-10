@@ -1,9 +1,10 @@
 pub mod ctokens;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
-
 #[cfg(feature = "yvaults")]
 pub mod ktokens_token_x;
+
+pub mod jupiter_lp;
 pub mod msol_stake;
 pub mod pyth;
 pub mod pyth_ema;
@@ -53,6 +54,8 @@ pub enum OracleType {
     KTokenToTokenA = 9,
     /// Number of lamports of token B for 1 lamport of kToken
     KTokenToTokenB = 10,
+    /// Jupiter's perpetual LP tokens
+    JupiterLP = 11,
 }
 
 impl OracleType {
@@ -69,6 +72,7 @@ impl OracleType {
             OracleType::KTokenToTokenA => 100000,
             OracleType::KTokenToTokenB => 100000,
             OracleType::MsolStake => 20000,
+            OracleType::JupiterLP => 40000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -126,6 +130,7 @@ where
             panic!("yvaults feature is not enabled, KToken oracle type is not available")
         }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
+        OracleType::JupiterLP => jupiter_lp::get_price(base_account, clock, extra_accounts),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
@@ -151,6 +156,7 @@ pub fn validate_oracle_account(
         OracleType::KTokenToTokenB => Ok(()), // TODO, should validate ownership of the ktoken account
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::MsolStake => Ok(()),
+        OracleType::JupiterLP => jupiter_lp::validate_jlp_pool(price_account),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

@@ -42,6 +42,8 @@ pub enum TestOracleType {
     KToken(DEX),
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA,
+    /// Jupiter's perpetual LP tokens
+    JupiterLP,
 }
 
 impl TestOracleType {
@@ -61,6 +63,7 @@ impl From<TestOracleType> for OracleType {
             TestOracleType::SplStake => OracleType::SplStake,
             TestOracleType::KToken(_) => OracleType::KToken,
             TestOracleType::PythEMA => OracleType::PythEMA,
+            TestOracleType::JupiterLP => OracleType::JupiterLP,
             TestOracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }

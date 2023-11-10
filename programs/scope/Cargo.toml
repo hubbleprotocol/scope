@@ -25,6 +25,7 @@ mainnet = []
 
 [dependencies]
 anchor-lang = "0.28.0"
+anchor-spl = "0.28.0"
 solana-program = "~1.16.18"
 num_enum = "0.7.0"
 num = "0.4"

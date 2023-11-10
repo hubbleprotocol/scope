@@ -20,21 +20,39 @@ pub async fn get_refresh_list_accounts(
     accounts
 }
 
-pub async fn get_remaining_accounts(_ctx: &mut TestContext, conf: &OracleConf) -> Vec<AccountMeta> {
+pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) -> Vec<AccountMeta> {
     #[allow(unused_mut)]
     let mut accounts: Vec<AccountMeta> = vec![];
     match conf.price_type.into() {
         #[cfg(feature = "yvaults")]
-        OracleType::KToken => {
-            accounts.append(&mut ktokens::get_ktoken_remaining_accounts(_ctx, conf).await);
+        OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
+            accounts.append(&mut ktokens::get_ktoken_remaining_accounts(ctx, conf).await);
         }
         #[cfg(not(feature = "yvaults"))]
-        OracleType::KToken => {
+        OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
+            let _ = ctx;
             panic!("KToken oracle type is not supported")
         }
-        _ => {} // No remaining accounts to add
+        // Single account oracles
+        OracleType::Pyth
+        | OracleType::SwitchboardV1
+        | OracleType::SwitchboardV2
+        | OracleType::SplStake
+        | OracleType::PythEMA
+        | OracleType::MsolStake => {}
+        OracleType::JupiterLP => accounts.extend_from_slice(&get_jlp_remaining_accounts(conf)),
+        OracleType::CToken => panic!("CToken is not supported in tests"),
+        OracleType::DeprecatedPlaceholder => {
+            panic!("DeprecatedPlaceholder is not a valid oracle type")
+        }
     }
     accounts
+}
+
+pub fn get_jlp_remaining_accounts(conf: &OracleConf) -> [AccountMeta; 1] {
+    use scope::oracles::jupiter_lp as jlp;
+    let (mint_pk, _) = jlp::get_mint_pk(&conf.pubkey);
+    [AccountMeta::new_readonly(mint_pk, false)]
 }
 
 #[cfg(feature = "yvaults")]

@@ -13,6 +13,7 @@ use anyhow::Result;
 use orbit_link::async_client::AsyncClient;
 use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
+pub mod jupiter_lp;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod single_account_oracle;
@@ -86,6 +87,9 @@ pub async fn entry_from_config(
         #[cfg(not(feature = "yvaults"))]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             panic!("yvaults feature is not enabled, KTokenOracle is not available")
+        }
+        OracleType::JupiterLP => {
+            Box::new(jupiter_lp::JupiterLPOracle::new(token_conf, default_max_age).await?)
         }
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
