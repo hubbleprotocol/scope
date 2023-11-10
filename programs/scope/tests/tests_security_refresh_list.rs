@@ -1200,7 +1200,7 @@ mod ktoken_tests {
 
 // - [x] Wrong Jupiter LP additional mint account
 #[tokio::test]
-async fn test_refresh_one_jlp_wrong_mint() {
+async fn test_refresh_list_jlp_wrong_mint() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
 
     let price = Price {
