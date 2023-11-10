@@ -564,6 +564,6 @@
     "label": "xSTEP/USD",
     "oracle_mapping": "2fnxDPcLAZzYy1pJTMFNUo2mxWHD4ggrEgTu6my54Npm",
     "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "max_age": 750
   }
 }
