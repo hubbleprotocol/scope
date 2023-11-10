@@ -9,7 +9,7 @@ use crate::{DatedPrice, Result, ScopeError};
 pub use perpetuals::get_mint_pk;
 pub use perpetuals::ID as JLP_ID;
 
-// Gives the price of 1 staked SOL in SOL
+// Gives the price of 1 JLP token in USD
 pub fn get_price<'a, 'b>(
     jup_pool_acc: &AccountInfo,
     clock: &Clock,
