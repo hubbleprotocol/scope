@@ -1,5 +1,3 @@
-use decimal_wad::decimal::Decimal;
-
 use crate::{DatedPrice, OracleMappings, OracleTwaps, Price};
 
 use self::utils::{reset_ema_twap, update_ema_twap};
@@ -322,7 +320,7 @@ mod tests_update_ema_twap {
 
         let test_price: Price = Decimal::from(120_000).into();
 
-        let current_ts = 100;
+        let current_ts = 400;
         let current_slot = 8;
 
         update_ema_twap(&mut twap, test_price, current_ts, current_slot);
@@ -330,5 +328,162 @@ mod tests_update_ema_twap {
         assert!(Decimal::from_scaled_val(twap.current_ema_1h) < initial_ema);
         assert_eq!(twap.last_update_slot, current_slot);
         assert_eq!(twap.last_update_unix_timestamp, current_ts);
+    }
+
+    #[test]
+    fn test_price_update_with_smaller_value_as_ema_coming_later_than_sampling_rate_is_smaller_than_with_value_coming_earlier(
+    ) {
+        // vefiry that if there is a gap in time and a new sample comes later that sample has a bigger weight
+        let initial_ema = Decimal::from(125_000);
+        let mut twap_with_early_sample = EmaTwap {
+            current_ema_1h: initial_ema.to_scaled_val().unwrap(),
+            last_update_slot: 3,
+            last_update_unix_timestamp: 50,
+            padding: [0_u128; 40],
+        };
+
+        let mut twap_with_late_sample = twap_with_early_sample.clone();
+
+        let test_price: Price = Decimal::from(120_000).into();
+        let early_ts = 150;
+        let early_slot = 8;
+
+        let late_ts = 500;
+        let late_slot = 12;
+
+        update_ema_twap(
+            &mut twap_with_early_sample,
+            test_price,
+            early_ts,
+            early_slot,
+        );
+        update_ema_twap(&mut twap_with_late_sample, test_price, late_ts, late_slot);
+
+        assert!(Decimal::from_scaled_val(twap_with_early_sample.current_ema_1h) < initial_ema);
+        assert_eq!(twap_with_early_sample.last_update_slot, early_slot);
+        assert_eq!(twap_with_early_sample.last_update_unix_timestamp, early_ts);
+
+        assert!(Decimal::from_scaled_val(twap_with_late_sample.current_ema_1h) < initial_ema);
+        assert_eq!(twap_with_late_sample.last_update_slot, late_slot);
+        assert_eq!(twap_with_late_sample.last_update_unix_timestamp, late_ts);
+
+        assert!(
+            Decimal::from_scaled_val(twap_with_late_sample.current_ema_1h)
+                < Decimal::from_scaled_val(twap_with_early_sample.current_ema_1h)
+        );
+    }
+
+    #[test]
+    fn test_decreasing_samples_keep_decreasing_twap() {
+        // vefiry that if there is a gap in time and a new sample comes later that sample has a bigger weight
+        let initial_ema = Decimal::from(5_000);
+        let mut twap = EmaTwap {
+            current_ema_1h: initial_ema.to_scaled_val().unwrap(),
+            last_update_slot: 3,
+            last_update_unix_timestamp: 50,
+            padding: [0_u128; 40],
+        };
+
+        let mut price_value = 10_000;
+        let mut current_ts = 150;
+        let mut current_slot = 8;
+
+        let mut previous_twap = twap.clone();
+        for _ in 1..10 {
+            price_value += 50;
+            let test_price = Decimal::from(price_value).into();
+            current_ts += 50;
+            current_slot += 4;
+
+            update_ema_twap(&mut twap, test_price, current_ts, current_slot);
+
+            assert!(
+                Decimal::from_scaled_val(twap.current_ema_1h)
+                    > Decimal::from_scaled_val(previous_twap.current_ema_1h)
+            );
+            assert_eq!(twap.last_update_slot, current_slot);
+            assert_eq!(twap.last_update_unix_timestamp, current_ts);
+
+            previous_twap = twap;
+        }
+    }
+
+    #[test]
+    fn test_price_update_with_bigger_value_as_ema_coming_earlier_than_sampling_rate() {
+        let initial_ema = Decimal::from(5_000);
+        let mut twap = EmaTwap {
+            current_ema_1h: initial_ema.to_scaled_val().unwrap(),
+            last_update_slot: 3,
+            last_update_unix_timestamp: 50,
+            padding: [0_u128; 40],
+        };
+
+        let test_price: Price = Decimal::from(20_000).into();
+
+        let current_ts = 100;
+        let current_slot = 8;
+
+        update_ema_twap(&mut twap, test_price, current_ts, current_slot);
+
+        assert!(Decimal::from_scaled_val(twap.current_ema_1h) > initial_ema);
+        assert_eq!(twap.last_update_slot, current_slot);
+        assert_eq!(twap.last_update_unix_timestamp, current_ts);
+    }
+
+    #[test]
+    fn test_price_update_with_bigger_value_as_ema_coming_later_than_sampling_rate() {
+        let initial_ema = Decimal::from(12_000);
+        let mut twap = EmaTwap {
+            current_ema_1h: initial_ema.to_scaled_val().unwrap(),
+            last_update_slot: 3,
+            last_update_unix_timestamp: 50,
+            padding: [0_u128; 40],
+        };
+
+        let test_price: Price = Decimal::from(120_000).into();
+
+        let current_ts = 400;
+        let current_slot = 8;
+
+        update_ema_twap(&mut twap, test_price, current_ts, current_slot);
+
+        assert!(Decimal::from_scaled_val(twap.current_ema_1h) > initial_ema);
+        assert_eq!(twap.last_update_slot, current_slot);
+        assert_eq!(twap.last_update_unix_timestamp, current_ts);
+    }
+
+    #[test]
+    fn test_increasing_samples_keep_increasing_twap() {
+        // vefiry that if there is a gap in time and a new sample comes later that sample has a bigger weight
+        let initial_ema = Decimal::from(1_000);
+        let mut twap = EmaTwap {
+            current_ema_1h: initial_ema.to_scaled_val().unwrap(),
+            last_update_slot: 3,
+            last_update_unix_timestamp: 50,
+            padding: [0_u128; 40],
+        };
+
+        let mut price_value = 3_000;
+        let mut current_ts = 150;
+        let mut current_slot = 8;
+
+        let mut previous_twap = twap.clone();
+        for _ in 1..10 {
+            price_value -= 5;
+            let test_price = Decimal::from(price_value).into();
+            current_ts += 10;
+            current_slot += 2;
+
+            update_ema_twap(&mut twap, test_price, current_ts, current_slot);
+
+            assert!(
+                Decimal::from_scaled_val(twap.current_ema_1h)
+                    < Decimal::from_scaled_val(previous_twap.current_ema_1h)
+            );
+            assert_eq!(twap.last_update_slot, current_slot);
+            assert_eq!(twap.last_update_unix_timestamp, current_ts);
+
+            previous_twap = twap;
+        }
     }
 }
