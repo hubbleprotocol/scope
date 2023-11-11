@@ -1,5 +1,5 @@
 use anchor_lang::prelude::Pubkey;
-use scope::{OracleMappings, OraclePrices, TokenMetadatas};
+use scope::{OracleMappings, OraclePrices, OracleTwaps, TokenMetadatas};
 use solana_program_test::ProgramTest;
 use solana_sdk::{
     account::Account, commitment_config::CommitmentLevel, signature::Keypair, signer::Signer,
@@ -59,6 +59,7 @@ impl ScopeZeroCopyAccounts {
             mapping: Keypair::new(),
             prices: Keypair::new(),
             token_metadatas: Keypair::new(),
+            oracle_twaps: Keypair::new(),
         }
     }
 
@@ -84,6 +85,14 @@ impl ScopeZeroCopyAccounts {
             Account::new(
                 u32::MAX as u64,
                 std::mem::size_of::<TokenMetadatas>() + 8,
+                &scope::ID,
+            ),
+        );
+        test.add_account(
+            self.oracle_twaps.pubkey(),
+            Account::new(
+                u32::MAX as u64,
+                std::mem::size_of::<OracleTwaps>() + 8,
                 &scope::ID,
             ),
         )

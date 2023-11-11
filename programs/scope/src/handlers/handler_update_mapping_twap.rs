@@ -1,9 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{
-    oracles::{check_context, validate_oracle_account, OracleType},
-    OracleMappings, ScopeError, UpdateOracleMappingMode,
-};
+use crate::UpdateOracleMappingMode;
 
 use super::handler_update_mapping::UpdateOracleMapping;
 

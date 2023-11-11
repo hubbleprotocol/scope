@@ -80,6 +80,7 @@ pub struct ScopeFeedDefinition {
     pub conf: Pubkey,
     pub mapping: Pubkey,
     pub prices: Pubkey,
+    pub twaps: Pubkey,
 }
 
 pub struct TestContext {

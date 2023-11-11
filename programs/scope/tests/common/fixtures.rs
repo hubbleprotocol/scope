@@ -25,7 +25,7 @@ pub async fn setup_scope(
         oracle_prices: zero_copy_accounts.prices.pubkey(),
         oracle_mappings: zero_copy_accounts.mapping.pubkey(),
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
-        twap_buffers: zero_copy_accounts.twap_buffers.pubkey(),
+        oracle_twaps: zero_copy_accounts.oracle_twaps.pubkey(),
     };
     let args = scope::instruction::Initialize {
         feed_name: feed_name.to_string(),
@@ -44,8 +44,7 @@ pub async fn setup_scope(
         conf: configuration_acc,
         mapping: zero_copy_accounts.mapping.pubkey(),
         prices: zero_copy_accounts.prices.pubkey(),
-        twaps: zero_copy_accounts.twap_buffers.pubkey(),
-        metadatas: zero_copy_accounts.token_metadatas.pubkey(),
+        twaps: zero_copy_accounts.oracle_twaps.pubkey(),
     };
 
     // Set up the mapping and oracles

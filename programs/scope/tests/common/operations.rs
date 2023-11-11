@@ -1,8 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use solana_program::{
-    clock::Clock,
-    instruction::Instruction,
-    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
 use solana_sdk::signature::Signer;
 
@@ -45,7 +43,7 @@ pub async fn refresh_price(
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         price_info: conf.pubkey,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);

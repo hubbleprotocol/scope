@@ -4,13 +4,13 @@ use std::{collections::HashSet, num::NonZeroU64};
 use anchor_client::{
     anchor_lang::ToAccountMetas,
     solana_sdk::{
-        clock::{self, Clock},
+        clock::{self},
         instruction::AccountMeta,
         pubkey::Pubkey,
         signature::{Keypair, Signature},
         signer::Signer,
         system_program,
-        sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+        sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
     },
 };
 use anyhow::{anyhow, bail, Context, Result};
@@ -533,7 +533,7 @@ where
             oracle_prices: oracle_prices_acc.pubkey(),
             oracle_mappings: oracle_mappings_acc.pubkey(),
             token_metadatas: token_metadatas_acc.pubkey(),
-            twap_buffers: twap_buffers_acc.pubkey(),
+            oracle_twaps: twap_buffers_acc.pubkey(),
         };
 
         let init_tx = client

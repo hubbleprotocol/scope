@@ -238,6 +238,7 @@ pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
+    pub oracle_twaps: Pubkey,
     pub tokens_metadata: Pubkey,
     _padding: [u64; 1259],
 }
@@ -251,6 +252,10 @@ pub enum UpdateTokenMetadataMode {
 
 impl UpdateTokenMetadataMode {
     pub fn to_u64(self) -> u64 {
+        self.to_u16().into()
+    }
+
+    pub fn to_u16(self) -> u16 {
         match self {
             UpdateTokenMetadataMode::Name => 0,
             UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,

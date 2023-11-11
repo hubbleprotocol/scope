@@ -35,7 +35,6 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
 
     // Initialize oracle price account
     let oracle_pbk = ctx.accounts.oracle_mappings.key();
-    let prices_pbk = ctx.accounts.oracle_prices.key();
     let twaps_pbk = ctx.accounts.oracle_twaps.key();
     let metadata_pbk = ctx.accounts.token_metadatas.key();
 

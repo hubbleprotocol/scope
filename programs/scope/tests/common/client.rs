@@ -22,9 +22,9 @@ pub fn update_mapping_twap(
 
     let args = scope::instruction::UpdateMappingTwap {
         token: oracle.token.try_into().unwrap(),
-        mode: mode.to_u64(),
+        mode: mode.to_u16(),
         value,
-        feed_name: todo!(),
+        feed_name: feed.feed_name.clone(),
         // token_index: oracle.token.try_into().unwrap(),
         // mode: mode.to_u64(),
         // feed_name: feed.feed_name.clone(),
