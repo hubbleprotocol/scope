@@ -6,7 +6,7 @@ use solana_sdk::signer::Signer;
 use super::types::{OracleConf, ScopeFeedDefinition, TestContext};
 use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
 
-pub fn update_mapping(
+pub fn update_mapping_twap(
     ctx: &mut TestContext,
     feed: &ScopeFeedDefinition,
     oracle: OracleConf,

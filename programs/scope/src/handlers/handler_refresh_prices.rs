@@ -76,8 +76,14 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     price.index = token.try_into().unwrap();
 
     if oracle_mappings.should_use_twap(token) {
-        crate::oracles::twap::update_twap(oracle_twaps, token, price, current_ts, current_slot)
-    }
+        crate::oracles::twap::update_twap(
+            &mut oracle_twaps,
+            token,
+            price.price,
+            clock.unix_timestamp as u64,
+            clock.slot,
+        )?;
+    };
 
     // Only load when needed, allows prices computation to use scope chain
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
@@ -143,7 +149,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
             return err!(ScopeError::UnexpectedAccount);
         }
         let clock = Clock::get()?;
-        match get_price(
+        let price = get_price(
             price_type,
             received_account,
             &mut accounts_iter,
@@ -151,41 +157,52 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
             &oracle_twaps,
             &oracle_mappings,
             token_nb.into(),
-        ) {
-            Ok(price) => {
-                // Only temporary load as mut to allow prices to be computed based on a scope chain
-                // from the price feed that is currently updated
-                let mut oracle_prices = ctx.accounts.oracle_prices.load_mut()?;
-                let to_update = oracle_prices
-                    .prices
-                    .get_mut(token_idx)
-                    .ok_or(ScopeError::BadTokenNb)?;
-
-                msg!(
-                    "tk {}, {:?}: {}:{} to {}:{} | prev_slot: {}, new_slot: {}, crt_slot: {}",
+        )
+        .and_then(|price| {
+            if oracle_mappings.should_use_twap(token_idx) {
+                crate::oracles::twap::update_twap(
+                    &mut oracle_twaps,
                     token_idx,
-                    price_type,
-                    to_update.price.value,
-                    to_update.price.exp,
-                    price.price.value,
-                    price.price.exp,
-                    to_update.last_updated_slot,
-                    price.last_updated_slot,
+                    price.price,
+                    clock.unix_timestamp as u64,
                     clock.slot,
-                );
+                )?;
+            }
+            Ok(Some(price))
+        })
+        .unwrap_or_else(|_| {
+            msg!(
+                "Price skipped as validation failed (token {}, type {:?})",
+                token_idx,
+                price_type
+            );
+            None
+        });
 
-                *to_update = price;
-                to_update.index = token_nb;
-            }
-            Err(_) => {
-                // Skip the error, details is already logged in get_price and formatting here cost a lot of CU
-                msg!(
-                    "Price skipped as validation failed (token {}, type {:?})",
-                    token_idx,
-                    price_type
-                );
-            }
-        };
+        if let Some(price) = price {
+            // Only temporary load as mut to allow prices to be computed based on a scope chain
+            // from the price feed that is currently updated
+
+            let mut oracle_prices = ctx.accounts.oracle_prices.load_mut()?;
+            let to_update = oracle_prices
+                .prices
+                .get_mut(token_idx)
+                .ok_or(ScopeError::BadTokenNb)?;
+
+            msg!(
+                "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
+                token_idx,
+                price_type,
+                to_update.price.value,
+                price.price.value,
+                to_update.last_updated_slot,
+                price.last_updated_slot,
+                clock.slot,
+            );
+
+            *to_update = price;
+            to_update.index = token_nb;
+        }
     }
 
     Ok(())
