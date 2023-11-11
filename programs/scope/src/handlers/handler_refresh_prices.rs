@@ -22,9 +22,10 @@ pub struct RefreshOne<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
+    #[account(mut, has_one = oracle_prices)]
+    pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
     /// CHECK: In ix, check the account is in `oracle_mappings`
     pub price_info: AccountInfo<'info>,
-    pub clock: Sysvar<'info, Clock>,
     /// CHECK: Sysvar fixed address
     #[account(address = SYSVAR_INSTRUCTIONS_ID)]
     pub instruction_sysvar_account_info: AccountInfo<'info>,
@@ -37,7 +38,8 @@ pub struct RefreshList<'info> {
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
 
-    pub clock: Sysvar<'info, Clock>,
+    #[account(mut, has_one = oracle_prices)]
+    pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
     /// CHECK: Sysvar fixed address
     #[account(address = SYSVAR_INSTRUCTIONS_ID)]
     pub instruction_sysvar_account_info: AccountInfo<'info>,
@@ -49,6 +51,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
     let price_info = &ctx.accounts.price_info;
+    let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
 
     // Check that the provided account is the one referenced in oracleMapping
     if oracle_mappings.price_info_accounts[token] != price_info.key() {
@@ -61,8 +64,20 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     let mut remaining_iter = ctx.remaining_accounts.iter();
     let clock = Clock::get()?;
-    let mut price = get_price(price_type, price_info, &mut remaining_iter, &clock)?;
+    let mut price = get_price(
+        price_type,
+        price_info,
+        &mut remaining_iter,
+        &clock,
+        &oracle_twaps,
+        &oracle_mappings,
+        token,
+    )?;
     price.index = token.try_into().unwrap();
+
+    if oracle_mappings.should_use_twap(token) {
+        crate::oracles::twap::update_twap(oracle_twaps, token, price, current_ts, current_slot)
+    }
 
     // Only load when needed, allows prices computation to use scope chain
     let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
@@ -87,6 +102,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
     check_execution_ctx(&ctx.accounts.instruction_sysvar_account_info)?;
 
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
+    let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
 
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
@@ -127,7 +143,15 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
             return err!(ScopeError::UnexpectedAccount);
         }
         let clock = Clock::get()?;
-        match get_price(price_type, received_account, &mut accounts_iter, &clock) {
+        match get_price(
+            price_type,
+            received_account,
+            &mut accounts_iter,
+            &clock,
+            &oracle_twaps,
+            &oracle_mappings,
+            token_nb.into(),
+        ) {
             Ok(price) => {
                 // Only temporary load as mut to allow prices to be computed based on a scope chain
                 // from the price feed that is currently updated

@@ -16,6 +16,7 @@ use num_derive::FromPrimitive;
 pub use num_enum;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
+use pyth_sdk_solana::state::Ema;
 #[cfg(feature = "yvaults")]
 pub use yvaults;
 
@@ -69,6 +70,15 @@ pub mod scope {
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_update_mapping::process(ctx, token, price_type, feed_name)
+    }
+
+    pub fn update_mapping_twap(
+        ctx: Context<UpdateOracleMapping>,
+        token_index: u16,
+        mode: u16,
+        value: u16,
+    ) -> Result<()> {
+        handler_update_mapping_twap::process(ctx, token_index, mode, value)
     }
 
     pub fn update_token_metadata(
@@ -133,6 +143,37 @@ impl Default for DatedPrice {
     }
 }
 
+#[zero_copy]
+#[derive(Debug, Eq, PartialEq)]
+pub struct EmaTwap {
+    pub current_ema_1h: u128,
+
+    pub last_update_slot: u64, // the slot when the last observation was added
+    pub last_update_unix_timestamp: u64,
+
+    pub padding: [u128; 4000],
+}
+
+impl Default for EmaTwap {
+    fn default() -> Self {
+        Self {
+            current_ema_1h: 0,
+            last_update_slot: 0,
+            last_update_unix_timestamp: 0,
+            padding: [0_u128; 4000],
+        }
+    }
+}
+
+// Account to store dated TWAP prices
+#[account(zero_copy)]
+pub struct OracleTwaps {
+    pub oracle_prices: Pubkey,
+    pub tokens_metadata: Pubkey,
+    pub twaps: [EmaTwap; MAX_ENTRIES],
+    // todo: add padding and maybe increase twap_buffers size
+}
+
 // Account to store dated prices
 #[account(zero_copy)]
 pub struct OraclePrices {
@@ -145,7 +186,20 @@ pub struct OraclePrices {
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
-    pub _reserved2: [u64; MAX_ENTRIES],
+    pub twap_source: [u16; MAX_ENTRIES], // meaningful only if type == TWAP; the index of where we find the TWAP
+    pub use_twap: [u8; MAX_ENTRIES],     // true or false
+    pub _reserved1: [u8; MAX_ENTRIES],
+    pub _reserved2: [u32; MAX_ENTRIES],
+}
+
+impl OracleMappings {
+    pub fn should_use_twap(&self, token: usize) -> bool {
+        self.use_twap[token] > 0
+    }
+
+    pub fn get_twap_source(&self, token: usize) -> usize {
+        usize::from(self.twap_source[token])
+    }
 }
 
 #[account(zero_copy)]
@@ -168,7 +222,7 @@ pub struct Configuration {
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
     pub tokens_metadata: Pubkey,
-    _padding: [u64; 1263],
+    _padding: [u64; 1259],
 }
 
 #[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
@@ -183,6 +237,22 @@ impl UpdateTokenMetadataMode {
         match self {
             UpdateTokenMetadataMode::Name => 0,
             UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
+        }
+    }
+}
+
+#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
+#[repr(u16)]
+pub enum UpdateOracleMappingMode {
+    TwapSource = 0,
+    UseTwap = 1,
+}
+
+impl UpdateOracleMappingMode {
+    pub fn to_u64(self) -> u64 {
+        match self {
+            UpdateOracleMappingMode::TwapSource => 0,
+            UpdateOracleMappingMode::UseTwap => 1,
         }
     }
 }
@@ -240,6 +310,15 @@ pub enum ScopeError {
 
     #[msg("Unable to derive PDA address")]
     UnableToDerivePDA,
+
+    #[msg("Too few observations for twap")]
+    NotEnoughTwapObservations,
+
+    #[msg("Invalid timestamp")]
+    BadTimestamp,
+
+    #[msg("Invalid slot")]
+    BadSlot,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

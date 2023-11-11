@@ -1,4 +1,5 @@
 use anchor_lang::prelude::{Pubkey, Rent};
+use mpl_token_metadata::state::Key;
 use scope::oracles::OracleType;
 use solana_program_test::{BanksClientError, ProgramTestContext};
 use solana_sdk::signature::Keypair;
@@ -44,6 +45,8 @@ pub enum TestOracleType {
     PythEMA,
     /// Jupiter's perpetual LP tokens
     JupiterLP,
+    // Scope's TWAP
+    ScopeTwap(usize),
 }
 
 impl TestOracleType {
@@ -64,6 +67,7 @@ impl From<TestOracleType> for OracleType {
             TestOracleType::KToken(_) => OracleType::KToken,
             TestOracleType::PythEMA => OracleType::PythEMA,
             TestOracleType::JupiterLP => OracleType::JupiterLP,
+            TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap,
             TestOracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -90,4 +94,5 @@ pub struct ScopeZeroCopyAccounts {
     pub mapping: Keypair,
     pub prices: Keypair,
     pub token_metadatas: Keypair,
+    pub oracle_twaps: Keypair,
 }

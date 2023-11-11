@@ -79,7 +79,8 @@ pub async fn entry_from_config(
         | OracleType::CToken
         | OracleType::SplStake
         | OracleType::MsolStake
-        | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
+        | OracleType::PythEMA
+        | OracleType::ScopeTwap => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
         #[cfg(feature = "yvaults")]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, rpc).await?)
