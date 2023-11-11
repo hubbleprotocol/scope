@@ -19,36 +19,38 @@ pub async fn set_price(
     price: &Price,
 ) {
     let clock = ctx.get_clock().await;
-    let PriceSourceAccounts {
-        oracle_data,
-        owner,
-        additional_accs,
-    } = match conf.price_type {
-        TestOracleType::Pyth => sp(pyth::get_account_data_for_price(price, &clock), pyth::id()),
+    let res: Option<PriceSourceAccounts> = match conf.price_type {
+        TestOracleType::Pyth => Some(sp(
+            pyth::get_account_data_for_price(price, &clock),
+            pyth::id(),
+        )),
         TestOracleType::SwitchboardV1 => {
             panic!("SwitchboardV1 oracle type is not available in tests")
         }
-        TestOracleType::SwitchboardV2 => sp(
+        TestOracleType::SwitchboardV2 => Some(sp(
             switchboard_v2::get_account_data_for_price(price, &clock),
             switchboard_v2::id(),
-        ),
+        )),
         #[cfg(feature = "yvaults")]
-        TestOracleType::KToken(dex) => {
+        TestOracleType::KToken(dex) => Some({
             use crate::common::mock_oracles::ktoken;
             ktoken::get_ktoken_price_accounts(ctx, feed, dex, price, &clock).await
-        }
+        }),
         #[cfg(not(feature = "yvaults"))]
         TestOracleType::KToken(_) => {
             panic!("yvaults feature is not enabled, KToken oracle type is not available")
         }
-        TestOracleType::PythEMA => sp(pyth::get_account_data_for_price(price, &clock), pyth::id()),
+        TestOracleType::PythEMA => Some(sp(
+            pyth::get_account_data_for_price(price, &clock),
+            pyth::id(),
+        )),
         TestOracleType::CToken => {
             panic!("CToken oracle type is not available in tests")
         }
         TestOracleType::SplStake => {
             panic!("SplStake oracle type is not available in tests")
         }
-        TestOracleType::JupiterLP => jupiter_lp::get_jlp_price_accounts(&conf.pubkey, price),
+        TestOracleType::JupiterLP => Some(jupiter_lp::get_jlp_price_accounts(&conf.pubkey, price)),
         TestOracleType::ScopeTwap(_) => {
             // This is a derived oracle, we don't override it
             None
@@ -57,15 +59,22 @@ pub async fn set_price(
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
     };
-    additional_accs.into_iter().for_each(|a| {
-        let AdditionalAccount {
-            address,
-            owner,
-            data,
-        } = a;
-        ctx.set_account(&address, data, &owner)
-    });
-    ctx.set_account(&conf.pubkey, oracle_data, &owner)
+    if let Some(PriceSourceAccounts {
+        oracle_data,
+        owner,
+        additional_accs,
+    }) = res
+    {
+        additional_accs.into_iter().for_each(|a| {
+            let AdditionalAccount {
+                address,
+                owner,
+                data,
+            } = a;
+            ctx.set_account(&address, data, &owner)
+        });
+        ctx.set_account(&conf.pubkey, oracle_data, &owner)
+    }
 }
 
 struct PriceSourceAccounts {

@@ -77,6 +77,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
 
     if oracle_mappings.should_use_twap(token) {
         crate::oracles::twap::update_twap(
+            &oracle_mappings,
             &mut oracle_twaps,
             token,
             price.price,
@@ -161,6 +162,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
         .and_then(|price| {
             if oracle_mappings.should_use_twap(token_idx) {
                 crate::oracles::twap::update_twap(
+                    &oracle_mappings,
                     &mut oracle_twaps,
                     token_idx,
                     price.price,
