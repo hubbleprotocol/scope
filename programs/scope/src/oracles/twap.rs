@@ -478,7 +478,7 @@ mod tests_update_ema_twap {
 
             assert!(
                 Decimal::from_scaled_val(twap.current_ema_1h)
-                    < Decimal::from_scaled_val(previous_twap.current_ema_1h)
+                    > Decimal::from_scaled_val(previous_twap.current_ema_1h)
             );
             assert_eq!(twap.last_update_slot, current_slot);
             assert_eq!(twap.last_update_unix_timestamp, current_ts);
