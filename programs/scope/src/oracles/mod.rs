@@ -17,7 +17,7 @@ use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
-use crate::{DatedPrice, ScopeError};
+use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError};
 
 use self::ktokens_token_x::TokenTypes;
 
@@ -150,11 +150,7 @@ where
         }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
         OracleType::JupiterLP => jupiter_lp::get_price(base_account, clock, extra_accounts),
-        OracleType::ScopeTwap => twap::get_price(oracle_mappings,
-            oracle_twaps,
-            index,
-            price_type.twap_duration_seconds(),
-            u64::try_from(clock.unix_timestamp).unwrap(),)
+        OracleType::ScopeTwap => Ok(twap::get_price(oracle_mappings, oracle_twaps, index)),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

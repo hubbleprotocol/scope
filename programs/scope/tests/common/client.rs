@@ -11,19 +11,24 @@ pub fn update_mapping_twap(
     feed: &ScopeFeedDefinition,
     oracle: OracleConf,
     mode: UpdateTokenMetadataMode,
-    value: Vec<u8>,
+    value: u16,
 ) -> Instruction {
     let accounts = scope::accounts::UpdateOracleMapping {
         admin: ctx.admin.pubkey(),
         configuration: feed.conf,
-        tokens_metadata: feed.metadatas,
+        oracle_mappings: feed.mapping,
+        price_info: None,
     };
 
-    let args = scope::instruction::UpdateTokenMetadata {
-        index: oracle.token.try_into().unwrap(),
+    let args = scope::instruction::UpdateMappingTwap {
+        token: oracle.token.try_into().unwrap(),
         mode: mode.to_u64(),
-        feed_name: feed.feed_name.clone(),
         value,
+        feed_name: todo!(),
+        // token_index: oracle.token.try_into().unwrap(),
+        // mode: mode.to_u64(),
+        // feed_name: feed.feed_name.clone(),
+        // value,
     };
 
     Instruction {

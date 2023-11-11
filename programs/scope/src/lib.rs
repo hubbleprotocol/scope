@@ -10,7 +10,7 @@ use std::{convert::TryInto, num::TryFromIntError};
 
 pub use anchor_lang;
 use anchor_lang::prelude::*;
-use decimal_wad::error::DecimalError;
+use decimal_wad::{decimal::Decimal, error::DecimalError};
 use handlers::*;
 use num_derive::FromPrimitive;
 pub use num_enum;
@@ -74,11 +74,15 @@ pub mod scope {
 
     pub fn update_mapping_twap(
         ctx: Context<UpdateOracleMapping>,
-        token_index: u16,
+        token: u64,
         mode: u16,
         value: u16,
+        feed_name: String,
     ) -> Result<()> {
-        handler_update_mapping_twap::process(ctx, token_index, mode, value)
+        let token: usize = token
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
+        handler_update_mapping_twap::process(ctx, token, mode, value, feed_name)
     }
 
     pub fn update_token_metadata(
@@ -161,6 +165,19 @@ impl Default for EmaTwap {
             last_update_slot: 0,
             last_update_unix_timestamp: 0,
             padding: [0_u128; 4000],
+        }
+    }
+}
+
+impl EmaTwap {
+    fn to_dated_price(&self) -> DatedPrice {
+        DatedPrice {
+            price: Decimal::from(self.current_ema_1h).into(),
+            last_updated_slot: self.last_update_slot,
+            unix_timestamp: self.last_update_unix_timestamp,
+            _reserved: [0; 2],
+            _reserved2: [0; 3],
+            index: 0,
         }
     }
 }
