@@ -159,7 +159,7 @@ pub struct EmaTwap {
     pub last_update_slot: u64, // the slot when the last observation was added
     pub last_update_unix_timestamp: u64,
 
-    pub padding: [u128; 4000],
+    pub padding: [u128; 40],
 }
 
 impl Default for EmaTwap {
@@ -168,7 +168,7 @@ impl Default for EmaTwap {
             current_ema_1h: 0,
             last_update_slot: 0,
             last_update_unix_timestamp: 0,
-            padding: [0_u128; 4000],
+            padding: [0_u128; 40],
         }
     }
 }

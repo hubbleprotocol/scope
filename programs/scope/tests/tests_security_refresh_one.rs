@@ -975,13 +975,13 @@ mod ktoken_tests {
         .to_account_metas(None);
         let mut refresh_accounts =
             utils::get_remaining_accounts(&mut ctx, &TEST_ORCA_KTOKEN_ORACLE).await;
-        accounts.append(&mut refresh_accounts);
         // Set the wrong scope prices
-        accounts.iter_mut().for_each(|account| {
+        refresh_accounts.iter_mut().for_each(|account| {
             if account.pubkey == strategy.scope_prices {
                 account.pubkey = wrong_scope_prices;
             }
         });
+        accounts.append(&mut refresh_accounts);
 
         let args = scope::instruction::RefreshOnePrice {
             token: TEST_ORCA_KTOKEN_ORACLE.token.try_into().unwrap(),
@@ -1033,13 +1033,12 @@ mod ktoken_tests {
         .to_account_metas(None);
         let mut refresh_accounts =
             utils::get_remaining_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
-        accounts.append(&mut refresh_accounts);
-        // Set the wrong scope prices
-        accounts.iter_mut().for_each(|account| {
+        refresh_accounts.iter_mut().for_each(|account| {
             if account.pubkey == strategy.scope_prices {
                 account.pubkey = wrong_scope_prices;
             }
         });
+        accounts.append(&mut refresh_accounts);
 
         let args = scope::instruction::RefreshOnePrice {
             token: TEST_RAYDIUM_KTOKEN_ORACLE.token.try_into().unwrap(),

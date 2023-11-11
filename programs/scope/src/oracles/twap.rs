@@ -148,7 +148,7 @@ mod tests_reset_twap {
             current_ema_1h: 1234_u128,
             last_update_slot: 3,
             last_update_unix_timestamp: 50,
-            padding: [0_u128; 4000],
+            padding: [0_u128; 40],
         };
 
         let test_price = Price {
@@ -222,7 +222,7 @@ mod tests_update_ema_twap {
             current_ema_1h: Decimal::from(100_000).to_scaled_val().unwrap(),
             last_update_slot: 3,
             last_update_unix_timestamp: 50,
-            padding: [0_u128; 4000],
+            padding: [0_u128; 40],
         };
 
         let test_price = Price {
@@ -248,7 +248,7 @@ mod tests_update_ema_twap {
             current_ema_1h: Decimal::from(1).to_scaled_val().unwrap(),
             last_update_slot: 3,
             last_update_unix_timestamp: 50,
-            padding: [0_u128; 4000],
+            padding: [0_u128; 40],
         };
 
         let test_price: Price = Decimal::from(1).into();
@@ -271,7 +271,7 @@ mod tests_update_ema_twap {
             current_ema_1h: Decimal::from(125_000_000).to_scaled_val().unwrap(),
             last_update_slot: 3,
             last_update_unix_timestamp: 50,
-            padding: [0_u128; 4000],
+            padding: [0_u128; 40],
         };
 
         let test_price: Price = Decimal::from(125_000_000).into();
@@ -295,7 +295,7 @@ mod tests_update_ema_twap {
             current_ema_1h: initial_ema.to_scaled_val().unwrap(),
             last_update_slot: 3,
             last_update_unix_timestamp: 50,
-            padding: [0_u128; 4000],
+            padding: [0_u128; 40],
         };
 
         let test_price: Price = Decimal::from(120_000).into();
@@ -305,8 +305,27 @@ mod tests_update_ema_twap {
 
         update_ema_twap(&mut twap, test_price, current_ts, current_slot);
 
-        println!("twap.current_ema_1h {}", twap.current_ema_1h);
-        println!("initial_ema {}", initial_ema);
+        assert!(Decimal::from_scaled_val(twap.current_ema_1h) < initial_ema);
+        assert_eq!(twap.last_update_slot, current_slot);
+        assert_eq!(twap.last_update_unix_timestamp, current_ts);
+    }
+
+    #[test]
+    fn test_price_update_with_smaller_value_as_ema_coming_later_than_sampling_rate() {
+        let initial_ema = Decimal::from(125_000);
+        let mut twap = EmaTwap {
+            current_ema_1h: initial_ema.to_scaled_val().unwrap(),
+            last_update_slot: 3,
+            last_update_unix_timestamp: 50,
+            padding: [0_u128; 40],
+        };
+
+        let test_price: Price = Decimal::from(120_000).into();
+
+        let current_ts = 100;
+        let current_slot = 8;
+
+        update_ema_twap(&mut twap, test_price, current_ts, current_slot);
 
         assert!(Decimal::from_scaled_val(twap.current_ema_1h) < initial_ema);
         assert_eq!(twap.last_update_slot, current_slot);

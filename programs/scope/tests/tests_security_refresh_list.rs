@@ -384,9 +384,11 @@ async fn test_refresh_through_cpi() {
 #[tokio::test]
 async fn test_refresh_with_unexpected_ix() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
+    println!("AAAAA");
 
     // Change prices
     for (i, conf) in TEST_ORACLE_CONF.iter().enumerate() {
+        println!("set price");
         mock_oracles::set_price(
             &mut ctx,
             &feed,
@@ -398,6 +400,9 @@ async fn test_refresh_with_unexpected_ix() {
         )
         .await;
     }
+
+    println!("SILVIUUU");
+    println!("feed.twaps {}", feed.twaps);
 
     // Random update mapping as extra ix
     let accounts = scope::accounts::UpdateOracleMapping {
@@ -426,6 +431,7 @@ async fn test_refresh_with_unexpected_ix() {
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
+
     for conf in TEST_ORACLE_CONF.iter() {
         let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
         accounts.append(&mut refresh_accounts);

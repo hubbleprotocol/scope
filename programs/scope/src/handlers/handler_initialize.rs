@@ -48,6 +48,7 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     configuration.admin = admin;
     configuration.oracle_mappings = oracle_pbk;
     configuration.oracle_prices = prices_pbk;
+    configuration.oracle_twaps = twaps_pbk;
 
     // Initialize oracle twap account
     let mut oracle_twaps = ctx.accounts.oracle_twaps.load_init()?;
