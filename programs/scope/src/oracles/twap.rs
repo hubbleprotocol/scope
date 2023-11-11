@@ -2,7 +2,7 @@ use decimal_wad::decimal::Decimal;
 
 use crate::{DatedPrice, OracleMappings, OracleTwaps, Price};
 
-use self::utils::update_ema_twap;
+use self::utils::{reset_ema_twap, update_ema_twap};
 
 const EMA_1H_SAMPLES_NUMBER: u64 = 30;
 const EMA_1H_SAMPLING_RATE_SECONDS: u64 = 60 * 2;
@@ -23,6 +23,20 @@ pub fn update_twap(
     // if there is no previous twap, store the existent
     update_ema_twap(&mut twap, price, current_ts, current_slot);
     return Ok(get_price(oracle_mappings, &oracle_twaps, token));
+}
+
+pub fn reset_twap(
+    oracle_mappings: &OracleMappings,
+    oracle_twaps: &mut OracleTwaps,
+    token: usize,
+    price: Price,
+    current_ts: u64,
+    current_slot: u64,
+) {
+    let source_index = usize::from(oracle_mappings.twap_source[token]);
+
+    let mut twap = oracle_twaps.twaps[source_index];
+    reset_ema_twap(&mut twap, price, current_ts, current_slot)
 }
 
 pub fn get_price(
@@ -66,5 +80,16 @@ mod utils {
 
             twap.current_ema_1h = new_ema.to_scaled_val().unwrap();
         }
+    }
+
+    pub(crate) fn reset_ema_twap(
+        twap: &mut EmaTwap,
+        price: Price,
+        current_ts: u64,
+        current_slot: u64,
+    ) {
+        twap.current_ema_1h = Decimal::from(price).to_scaled_val().unwrap();
+        twap.last_update_slot = current_slot;
+        twap.last_update_unix_timestamp = current_ts;
     }
 }

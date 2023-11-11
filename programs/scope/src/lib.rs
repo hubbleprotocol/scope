@@ -16,7 +16,6 @@ use num_derive::FromPrimitive;
 pub use num_enum;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
-use pyth_sdk_solana::state::Ema;
 #[cfg(feature = "yvaults")]
 pub use yvaults;
 
@@ -32,8 +31,6 @@ pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
 
 #[program]
 pub mod scope {
-
-    use handlers::handler_update_token_metadata::UpdateTokensMetadata;
 
     use super::*;
 
@@ -83,6 +80,13 @@ pub mod scope {
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_update_mapping_twap::process(ctx, token, mode, value, feed_name)
+    }
+
+    pub fn reset_twap(ctx: Context<ResetTwap>, token: u64, feed_name: String) -> Result<()> {
+        let token: usize = token
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
+        handler_reset_twap::process(ctx, token, feed_name)
     }
 
     pub fn update_token_metadata(

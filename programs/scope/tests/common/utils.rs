@@ -39,7 +39,8 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         | OracleType::SwitchboardV2
         | OracleType::SplStake
         | OracleType::PythEMA
-        | OracleType::MsolStake => {}
+        | OracleType::MsolStake
+        | OracleType::ScopeTwap => {}
         OracleType::JupiterLP => accounts.extend_from_slice(&get_jlp_remaining_accounts(conf)),
         OracleType::CToken => panic!("CToken is not supported in tests"),
         OracleType::DeprecatedPlaceholder => {
