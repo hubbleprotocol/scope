@@ -1,11 +1,13 @@
 use crate::ScopeError::PriceAccountNotExpected;
 use crate::{DatedPrice, OracleMappings, OracleTwaps, Price};
 use anchor_lang::prelude::*;
+use decimal_wad::common::WAD;
 
 use self::utils::{reset_ema_twap, update_ema_twap};
 
-const EMA_1H_SAMPLES_NUMBER: u64 = 30;
+const EMA_1H_SAMPLES_NUMBER: u128 = 30;
 const EMA_1H_SAMPLING_RATE_SECONDS: u64 = 60 * 2;
+const SMOOTHING_FACTOR: u128 = 2 * (WAD as u128) / EMA_1H_SAMPLES_NUMBER;
 
 pub fn validate_price_account(account: &AccountInfo) -> Result<()> {
     if account.key().eq(&crate::id()) {
@@ -22,7 +24,7 @@ pub fn update_twap(
     price: Price,
     price_ts: u64,
     price_slot: u64,
-) -> crate::Result<DatedPrice> {
+) {
     // todo: impl this to calculate and update the new twap value
 
     let source_index = usize::from(oracle_mappings.twap_source[token]);
@@ -30,7 +32,6 @@ pub fn update_twap(
     let mut twap = oracle_twaps.twaps[source_index];
     // if there is no previous twap, store the existent
     update_ema_twap(&mut twap, price, price_ts, price_slot);
-    return Ok(get_price(oracle_mappings, &oracle_twaps, token));
 }
 
 pub fn reset_twap(
@@ -55,7 +56,7 @@ pub fn get_price(
     let source_index = usize::from(oracle_mappings.twap_source[token]);
 
     let twap = oracle_twaps.twaps[source_index];
-    return twap.to_dated_price();
+    return twap.to_dated_price(source_index.try_into().unwrap());
 }
 
 mod utils {
@@ -63,7 +64,7 @@ mod utils {
 
     use crate::{EmaTwap, Price};
 
-    use super::{EMA_1H_SAMPLES_NUMBER, EMA_1H_SAMPLING_RATE_SECONDS};
+    use super::{EMA_1H_SAMPLING_RATE_SECONDS, SMOOTHING_FACTOR};
 
     pub(crate) fn update_ema_twap(
         twap: &mut EmaTwap,
@@ -77,7 +78,7 @@ mod utils {
             let ema_decimal = Decimal::from_scaled_val(twap.current_ema_1h);
             let price_decimal = Decimal::from(price);
 
-            let smoothing_factor = Decimal::from(2) / EMA_1H_SAMPLES_NUMBER;
+            let smoothing_factor = Decimal::from_scaled_val(SMOOTHING_FACTOR);
             let weighted_smoothing_factor = (smoothing_factor)
                 * (price_ts.saturating_sub(twap.last_update_unix_timestamp))
                 / (EMA_1H_SAMPLING_RATE_SECONDS);

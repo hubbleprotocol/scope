@@ -181,14 +181,14 @@ impl Default for EmaTwap {
 }
 
 impl EmaTwap {
-    fn to_dated_price(&self) -> DatedPrice {
+    fn to_dated_price(&self, index: u16) -> DatedPrice {
         DatedPrice {
             price: Decimal::from_scaled_val(self.current_ema_1h).into(),
             last_updated_slot: self.last_update_slot,
             unix_timestamp: self.last_update_unix_timestamp,
             _reserved: [0; 2],
             _reserved2: [0; 3],
-            index: 0,
+            index,
         }
     }
 }

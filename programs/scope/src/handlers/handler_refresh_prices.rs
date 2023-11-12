@@ -37,7 +37,6 @@ pub struct RefreshList<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
-
     #[account(mut, has_one = oracle_prices)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
     /// CHECK: Sysvar fixed address
@@ -83,7 +82,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
             price.price,
             clock.unix_timestamp as u64,
             clock.slot,
-        )?;
+        );
     };
 
     // Only load when needed, allows prices computation to use scope chain
@@ -168,7 +167,7 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
                     price.price,
                     clock.unix_timestamp as u64,
                     clock.slot,
-                )?;
+                );
             }
             Ok(Some(price))
         })

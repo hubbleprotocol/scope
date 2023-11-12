@@ -162,12 +162,17 @@ where
                 &self.configuration_acc,
                 &self.tokens_metadata_acc,
                 &self.oracle_prices_acc,
-                &self.oracle_mappings_acc,
                 &oracle_twaps_acc,
                 price_feed,
             )
             .await?;
         }
+
+        Ok(())
+    }
+
+    pub async fn reset_twap_price(&self, token: u16) -> Result<()> {
+        Self::ix_reset_twap(&self, token).await?;
 
         Ok(())
     }
@@ -679,7 +684,6 @@ where
         client: &OrbitLink<T, S>,
         program_id: &Pubkey,
         configuration_acc: &Pubkey,
-        token_metadatas_acc: &Pubkey,
         oracle_prices_acc: &Pubkey,
         oracle_mappings_acc: &Pubkey,
         oracle_twaps_acc: &Keypair,
@@ -690,7 +694,6 @@ where
             configuration: *configuration_acc,
             oracle_prices: *oracle_prices_acc,
             oracle_mappings: *oracle_mappings_acc,
-            token_metadatas: *token_metadatas_acc,
             oracle_twaps: oracle_twaps_acc.pubkey(),
             system_program: system_program::ID,
         };
@@ -812,6 +815,48 @@ where
             None => {
                 error!(%signature, "Could not confirm token metadata update transaction");
                 bail!("Could not confirm mapping update transaction");
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn ix_reset_twap(&self, token: u16) -> Result<()> {
+        let reset_twap_price_accounts = accounts::ResetTwap {
+            admin: self.client.payer(),
+            oracle_prices: self.oracle_prices_acc,
+            configuration: self.configuration_acc,
+            oracle_mappings: self.oracle_mappings_acc,
+            oracle_twaps: self.oracle_twaps_acc,
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        };
+
+        let request = self.client.tx_builder();
+
+        let tx = request
+            .add_anchor_ix(
+                &self.program_id,
+                reset_twap_price_accounts,
+                instruction::ResetTwap {
+                    token: token.into(),
+                    feed_name: self.feed_name.clone(),
+                },
+            )
+            .build_with_budget_and_fee(&[])
+            .await?;
+
+        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
+
+        match res {
+            Some(Ok(())) => info!(%signature, "TWAP reset successfully"),
+            Some(Err(err)) => {
+                error!(%signature, err = ?err, "TWAP reset failed");
+                bail!(err);
+            }
+            None => {
+                error!(%signature, "Could not confirm TWAP reset transaction");
+                bail!("Could not confirm TWAP reset transaction");
             }
         }
 
