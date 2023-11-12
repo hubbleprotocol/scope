@@ -160,8 +160,6 @@ where
                 &self.client,
                 &self.program_id,
                 &self.configuration_acc,
-                &self.tokens_metadata_acc,
-                &self.oracle_prices_acc,
                 &oracle_twaps_acc,
                 price_feed,
             )
@@ -684,16 +682,12 @@ where
         client: &OrbitLink<T, S>,
         program_id: &Pubkey,
         configuration_acc: &Pubkey,
-        oracle_prices_acc: &Pubkey,
-        oracle_mappings_acc: &Pubkey,
         oracle_twaps_acc: &Keypair,
         price_feed: &str,
     ) -> Result<()> {
         let init_accounts = accounts::InitializeOracleTwaps {
             admin: client.payer(),
             configuration: *configuration_acc,
-            oracle_prices: *oracle_prices_acc,
-            oracle_mappings: *oracle_mappings_acc,
             oracle_twaps: oracle_twaps_acc.pubkey(),
             system_program: system_program::ID,
         };

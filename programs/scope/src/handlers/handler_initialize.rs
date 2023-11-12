@@ -36,7 +36,6 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     // Initialize oracle price account
     let oracle_pbk = ctx.accounts.oracle_mappings.key();
     let twaps_pbk = ctx.accounts.oracle_twaps.key();
-    let metadata_pbk = ctx.accounts.token_metadatas.key();
 
     let mut oracle_prices = ctx.accounts.oracle_prices.load_init()?;
     oracle_prices.oracle_mappings = oracle_pbk;
@@ -54,7 +53,7 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     // Initialize oracle twap account
     let mut oracle_twaps = ctx.accounts.oracle_twaps.load_init()?;
     oracle_twaps.oracle_prices = prices_pbk;
-    oracle_twaps.tokens_metadata = metadata_pbk;
+    oracle_twaps.oracle_mappings = oracle_pbk;
 
     let _ = ctx.accounts.token_metadatas.load_init()?;
     configuration.tokens_metadata = ctx.accounts.token_metadatas.key();

@@ -197,7 +197,7 @@ impl EmaTwap {
 #[account(zero_copy)]
 pub struct OracleTwaps {
     pub oracle_prices: Pubkey,
-    pub tokens_metadata: Pubkey,
+    pub oracle_mappings: Pubkey,
     pub twaps: [EmaTwap; MAX_ENTRIES],
     // todo: add padding and maybe increase twap_buffers size
 }
