@@ -44,7 +44,8 @@ pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     // Initialize configuration account
     let prices_pbk = ctx.accounts.oracle_prices.key();
     let admin = ctx.accounts.admin.key();
-    let mut configuration: std::cell::RefMut<'_, crate::Configuration> = ctx.accounts.configuration.load_init()?;
+    let mut configuration: std::cell::RefMut<'_, crate::Configuration> =
+        ctx.accounts.configuration.load_init()?;
     configuration.admin = admin;
     configuration.oracle_mappings = oracle_pbk;
     configuration.oracle_prices = prices_pbk;
