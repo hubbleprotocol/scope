@@ -1,12 +1,11 @@
 use anchor_lang::{
-    prelude::{AccountMeta, Clock, Pubkey},
+    prelude::{AccountMeta, Pubkey},
     InstructionData, ToAccountMetas,
 };
 use common::*;
 use scope::{OraclePrices, Price, ScopeError};
 use solana_program::{
-    instruction::Instruction,
-    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signer::Signer};

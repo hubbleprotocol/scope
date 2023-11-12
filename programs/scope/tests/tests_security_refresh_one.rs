@@ -1,14 +1,10 @@
 mod common;
 
-use anchor_lang::{
-    prelude::{Clock, Pubkey},
-    InstructionData, ToAccountMetas,
-};
+use anchor_lang::{prelude::Pubkey, InstructionData, ToAccountMetas};
 use common::*;
 use scope::{OraclePrices, Price, ScopeError};
 use solana_program::{
-    instruction::Instruction,
-    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signer::Signer};

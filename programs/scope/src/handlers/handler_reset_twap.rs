@@ -51,7 +51,7 @@ pub fn process(ctx: Context<ResetTwap>, token: usize, _: String) -> Result<()> {
         token,
     )?;
 
-    if oracle_mappings.should_use_twap(token) {
+    if oracle_mappings.is_twap_enabled(token) {
         crate::oracles::twap::reset_twap(
             &oracle_mappings,
             &mut oracle_twaps,

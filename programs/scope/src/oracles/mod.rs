@@ -66,14 +66,6 @@ impl OracleType {
         matches!(self, OracleType::ScopeTwap)
     }
 
-    // todo(silviu): not sure if needed
-    pub fn twap_duration_seconds(&self) -> u64 {
-        match self {
-            OracleType::ScopeTwap => 60 * 60, // 1H
-            _ => unimplemented!(),
-        }
-    }
-
     /// Get the number of compute unit needed to refresh the price of a token
     pub fn get_update_cu_budget(&self) -> u32 {
         match self {
@@ -177,7 +169,7 @@ pub fn validate_oracle_account(
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::MsolStake => Ok(()),
         OracleType::JupiterLP => jupiter_lp::validate_jlp_pool(price_account),
-        OracleType::ScopeTwap => Ok(()),
+        OracleType::ScopeTwap => twap::validate_price_account(price_account),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

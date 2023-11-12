@@ -19,7 +19,7 @@ pub fn process(
             oracle_mappings.twap_source[usize::from(token)] = value
         }
         UpdateOracleMappingMode::UseTwap => {
-            oracle_mappings.use_twap[usize::from(token)] = value.try_into().unwrap()
+            oracle_mappings.twap_enabled[usize::from(token)] = value.try_into().unwrap()
         }
     }
 

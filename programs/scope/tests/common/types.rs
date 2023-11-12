@@ -1,5 +1,4 @@
 use anchor_lang::prelude::{Pubkey, Rent};
-use mpl_token_metadata::state::Key;
 use scope::oracles::OracleType;
 use solana_program_test::{BanksClientError, ProgramTestContext};
 use solana_sdk::signature::Keypair;

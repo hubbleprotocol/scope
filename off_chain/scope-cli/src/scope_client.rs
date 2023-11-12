@@ -18,8 +18,8 @@ use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope::{
-    accounts, instruction, Configuration, OracleMappings, OraclePrices, TokenMetadatas,
-    UpdateTokenMetadataMode,
+    accounts, instruction, Configuration, OracleMappings, OraclePrices, OracleTwaps,
+    TokenMetadatas, UpdateTokenMetadataMode,
 };
 use tracing::{debug, error, info, trace, warn};
 
@@ -566,6 +566,16 @@ where
                     .create_account_ix(
                         &token_metadatas_acc.pubkey(),
                         size_of::<TokenMetadatas>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
+            .add_ix_with_budget(
+                client
+                    .create_account_ix(
+                        &token_metadatas_acc.pubkey(),
+                        size_of::<OracleTwaps>() + 8,
                         program_id,
                     )
                     .await?,

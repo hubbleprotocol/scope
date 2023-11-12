@@ -45,6 +45,13 @@ pub mod scope {
         handler_initialize_tokens_metadata::process(ctx, feed_name)
     }
 
+    pub fn initialize_oracle_twaps(
+        ctx: Context<InitializeOracleTwaps>,
+        feed_name: String,
+    ) -> Result<()> {
+        handler_initialize_oracle_twaps::process(ctx, feed_name)
+    }
+
     //This handler only works for Pyth type tokens
     pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> Result<()> {
         let token: usize = token
@@ -154,10 +161,10 @@ impl Default for DatedPrice {
 #[zero_copy]
 #[derive(Debug, Eq, PartialEq)]
 pub struct EmaTwap {
-    pub current_ema_1h: u128,
-
     pub last_update_slot: u64, // the slot when the last observation was added
     pub last_update_unix_timestamp: u64,
+
+    pub current_ema_1h: u128,
 
     pub padding: [u128; 40],
 }
@@ -176,7 +183,7 @@ impl Default for EmaTwap {
 impl EmaTwap {
     fn to_dated_price(&self) -> DatedPrice {
         DatedPrice {
-            price: Decimal::from(self.current_ema_1h).into(),
+            price: Decimal::from_scaled_val(self.current_ema_1h).into(),
             last_updated_slot: self.last_update_slot,
             unix_timestamp: self.last_update_unix_timestamp,
             _reserved: [0; 2],
@@ -208,14 +215,14 @@ pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
     pub twap_source: [u16; MAX_ENTRIES], // meaningful only if type == TWAP; the index of where we find the TWAP
-    pub use_twap: [u8; MAX_ENTRIES],     // true or false
+    pub twap_enabled: [u8; MAX_ENTRIES], // true or false
     pub _reserved1: [u8; MAX_ENTRIES],
     pub _reserved2: [u32; MAX_ENTRIES],
 }
 
 impl OracleMappings {
-    pub fn should_use_twap(&self, token: usize) -> bool {
-        self.use_twap[token] > 0
+    pub fn is_twap_enabled(&self, token: usize) -> bool {
+        self.twap_enabled[token] > 0
     }
 
     pub fn get_twap_source(&self, token: usize) -> usize {
@@ -337,14 +344,14 @@ pub enum ScopeError {
     #[msg("Unable to derive PDA address")]
     UnableToDerivePDA,
 
-    #[msg("Too few observations for twap")]
-    NotEnoughTwapObservations,
-
     #[msg("Invalid timestamp")]
     BadTimestamp,
 
     #[msg("Invalid slot")]
     BadSlot,
+
+    #[msg("TWAP price account is different than Scope ID")]
+    PriceAccountNotExpected,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
