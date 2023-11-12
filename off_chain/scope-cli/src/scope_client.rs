@@ -81,6 +81,7 @@ where
 
         // if the token_metadatas is not initialized, initialize it here
         Self::init_token_metadatas_if_needed(&mut client, price_feed).await?;
+        Self::init_oracle_twaps_if_needed(&mut client, price_feed).await?;
 
         debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %tokens_metadata, %price_feed);
 
@@ -146,6 +147,26 @@ where
             .await?;
 
             self.tokens_metadata_acc = token_metadatas_acc.pubkey();
+        }
+
+        Ok(())
+    }
+
+    pub async fn init_oracle_twaps_if_needed(&mut self, price_feed: &str) -> Result<()> {
+        if self.oracle_twaps_acc.eq(&Pubkey::default()) {
+            let oracle_twaps_acc = Keypair::new();
+
+            Self::ix_initialize_oracle_twaps(
+                &self.client,
+                &self.program_id,
+                &self.configuration_acc,
+                &self.tokens_metadata_acc,
+                &self.oracle_prices_acc,
+                &self.oracle_mappings_acc,
+                &oracle_twaps_acc,
+                price_feed,
+            )
+            .await?;
         }
 
         Ok(())
@@ -643,6 +664,57 @@ where
                 },
             )
             .build_with_budget_and_fee(&[token_metadatas_acc])
+            .await?;
+
+        let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
+
+        info!(%signature, "Init metadatas tx");
+        match init_res {
+            Some(r) => r.context(format!("Init tokens_metadata transaction: {signature}")),
+            None => bail!("Init tokens_metadata transaction failed to confirm: {signature}"),
+        }
+    }
+
+    async fn ix_initialize_oracle_twaps(
+        client: &OrbitLink<T, S>,
+        program_id: &Pubkey,
+        configuration_acc: &Pubkey,
+        token_metadatas_acc: &Pubkey,
+        oracle_prices_acc: &Pubkey,
+        oracle_mappings_acc: &Pubkey,
+        oracle_twaps_acc: &Keypair,
+        price_feed: &str,
+    ) -> Result<()> {
+        let init_accounts = accounts::InitializeOracleTwaps {
+            admin: client.payer(),
+            configuration: *configuration_acc,
+            oracle_prices: *oracle_prices_acc,
+            oracle_mappings: *oracle_mappings_acc,
+            token_metadatas: *token_metadatas_acc,
+            oracle_twaps: oracle_twaps_acc.pubkey(),
+            system_program: system_program::ID,
+        };
+
+        let init_tx = client
+            .tx_builder()
+            .add_ix_with_budget(
+                client
+                    .create_account_ix(
+                        &oracle_twaps_acc.pubkey(),
+                        size_of::<OracleTwaps>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
+            .add_anchor_ix(
+                program_id,
+                init_accounts,
+                instruction::InitializeOracleTwaps {
+                    feed_name: price_feed.to_string(),
+                },
+            )
+            .build_with_budget_and_fee(&[oracle_twaps_acc])
             .await?;
 
         let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
