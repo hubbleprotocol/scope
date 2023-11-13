@@ -47,8 +47,9 @@ pub fn reset_twap(
     price_slot: u64,
 ) {
     let source_index = usize::from(oracle_mappings.twap_source[token]);
+    msg!("source_index: {}", source_index);
 
-    let mut twap = oracle_twaps.twaps[source_index];
+    let mut twap = oracle_twaps.twaps.get_mut(source_index).unwrap();
     reset_ema_twap(&mut twap, price, price_ts, price_slot)
 }
 
@@ -476,7 +477,7 @@ mod tests_update_ema_twap {
         let mut price_slot = 8;
 
         let mut previous_twap = twap.clone();
-        for index in 1..10 {
+        for _ in 1..10 {
             price_value += 5;
             let test_price = Decimal::from(price_value).into();
             price_ts += 10;

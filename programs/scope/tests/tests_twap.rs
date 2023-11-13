@@ -1,5 +1,6 @@
 mod common;
 
+use crate::client::reset_twap;
 use crate::{common::client::refresh_one_ix, utils::setup_mapping_for_token_with_twap};
 use anchor_lang::{prelude::Pubkey, InstructionData, ToAccountMetas};
 use common::*;
@@ -129,25 +130,8 @@ async fn test_set_price_sets_initial_twap() {
     setup_mapping_for_token_with_twap(&mut ctx, &feed, TEST_PYTH_ORACLE, TEST_TWAP).await;
 
     // Refresh
-    let accounts = scope::accounts::RefreshOne {
-        oracle_prices: feed.prices,
-        oracle_mappings: feed.mapping,
-        oracle_twaps: feed.twaps,
-        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
-        price_info: TEST_PYTH_ORACLE.pubkey,
-    };
-
-    let args = scope::instruction::RefreshOnePrice {
-        token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
-    };
-
-    let ix = Instruction {
-        program_id: scope::id(),
-        accounts: accounts.to_account_metas(None),
-        data: args.data(),
-    };
-
-    ctx.send_transaction_with_bot(&[ix]).await.unwrap();
+    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
     let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
     assert_eq!(oracle_twaps.twaps[0], EmaTwap::default());
@@ -313,7 +297,7 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
 }
 
 #[tokio::test]
-async fn test_multiple_prices_with_same_decreasing_value_twap_decreases() {
+async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
     let mut price_value = 500;
@@ -371,6 +355,57 @@ async fn test_multiple_prices_with_same_decreasing_value_twap_decreases() {
 
         prev_oracle_twaps = oracle_twaps_updated;
     }
+}
+
+#[tokio::test]
+async fn test_reset_twap() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
+
+    // Initialize oracle account and set price
+    let token_price = Price { value: 100, exp: 6 };
+    // Change price
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+
+    setup_mapping_for_token_with_twap(&mut ctx, &feed, TEST_PYTH_ORACLE, TEST_TWAP).await;
+
+    // Refresh
+    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+    let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+    assert_eq!(oracle_twaps.twaps[1].last_update_slot, 1);
+    assert_eq!(
+        oracle_twaps.twaps[1].current_ema_1h,
+        Decimal::from(token_price).to_scaled_val().unwrap()
+    );
+
+    // update the price of the token and reset the TWAP to the current value of the token
+    ctx.fast_forward_seconds(10).await;
+    let token_price = Price { value: 200, exp: 6 };
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+
+    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+    // reset the TWAP
+    let reset_twap_ix = reset_twap(&ctx.admin.pubkey(), &feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction(&[reset_twap_ix]).await.unwrap();
+
+    let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+    assert_eq!(
+        oracle_twaps.twaps[1].current_ema_1h,
+        Decimal::from(token_price).to_scaled_val().unwrap()
+    );
+
+    // verify that reset is idempotent
+    let reset_twap_ix = reset_twap(&ctx.admin.pubkey(), &feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction(&[reset_twap_ix]).await.unwrap();
+
+    let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+    assert_eq!(
+        oracle_twaps.twaps[1].current_ema_1h,
+        Decimal::from(token_price).to_scaled_val().unwrap()
+    );
 }
 
 pub mod utils {

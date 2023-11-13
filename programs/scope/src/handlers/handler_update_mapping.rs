@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::scope;
 use crate::{
     oracles::{check_context, validate_oracle_account, OracleType},
     OracleMappings, ScopeError,
@@ -44,6 +45,9 @@ pub fn process(
             *ref_price_pubkey = new_price_pubkey;
         }
         None => {
+            if price_type == OracleType::ScopeTwap {
+                *ref_price_pubkey = crate::id();
+            }
             // if no price_info account is passed, it means that the mapping has to be removed so it is set to Pubkey::default
             *ref_price_pubkey = Pubkey::default();
         }
