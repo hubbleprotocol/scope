@@ -25,6 +25,8 @@ pub async fn update_oracle_mapping(
         feed_name: feed.feed_name.clone(),
         token: conf.token.try_into().unwrap(),
         price_type: conf.price_type.to_u8(),
+        twap_enabled: conf.twap_enabled,
+        twap_source: conf.twap_source.unwrap_or(u16::MAX),
     };
     let ix = Instruction {
         program_id: scope::id(),

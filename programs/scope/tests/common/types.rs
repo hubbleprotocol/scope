@@ -24,6 +24,8 @@ pub struct OracleConf {
     pub token: usize,
     pub price_type: TestOracleType,
     pub pubkey: Pubkey,
+    pub twap_enabled: bool,
+    pub twap_source: Option<u16>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

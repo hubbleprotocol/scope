@@ -14,6 +14,8 @@ const TEST_PYTH_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePythPriceAccount11111111111111111111111"),
     token: 0,
     price_type: TestOracleType::Pyth,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 // - [x] Wrong feed name
@@ -39,6 +41,8 @@ async fn test_working_update_mapping() {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let ix = Instruction {
@@ -68,6 +72,8 @@ async fn test_wrong_feed_name() {
         feed_name: "randomFeed".to_string(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let ix = Instruction {
@@ -105,6 +111,8 @@ async fn test_wrong_config_account() {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let ix = Instruction {
@@ -142,6 +150,8 @@ async fn test_wrong_mapping_account() {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let ix = Instruction {
@@ -180,6 +190,8 @@ async fn test_wrong_admin() {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let ix = Instruction {

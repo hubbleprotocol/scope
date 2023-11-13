@@ -68,25 +68,21 @@ pub mod scope {
         ctx: Context<UpdateOracleMapping>,
         token: u64,
         price_type: u8,
+        twap_enabled: bool,
+        twap_source: u16,
         feed_name: String,
     ) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
-        handler_update_mapping::process(ctx, token, price_type, feed_name)
-    }
-
-    pub fn update_mapping_twap(
-        ctx: Context<UpdateOracleMapping>,
-        token: u64,
-        mode: u16,
-        value: u16,
-        feed_name: String,
-    ) -> Result<()> {
-        let token: usize = token
-            .try_into()
-            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
-        handler_update_mapping_twap::process(ctx, token, mode, value, feed_name)
+        handler_update_mapping::process(
+            ctx,
+            token,
+            price_type,
+            twap_enabled,
+            twap_source,
+            feed_name,
+        )
     }
 
     pub fn reset_twap(ctx: Context<ResetTwap>, token: u64, feed_name: String) -> Result<()> {

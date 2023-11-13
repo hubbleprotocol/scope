@@ -231,8 +231,14 @@ where
                 || rem_twap_source != loc_twap_source
             {
                 // TODO: update mapping need to update twap enabled and twap source
-                self.ix_update_mapping(local_mapping_pk, token_idx.into(), loc_price_type_u8)
-                    .await?;
+                self.ix_update_mapping(
+                    local_mapping_pk,
+                    token_idx.into(),
+                    loc_price_type_u8,
+                    loc_twap_enabled,
+                    loc_twap_source,
+                )
+                .await?;
             }
             let token_metadata = token_metadatas.metadatas_array[idx];
             if token_metadata.max_age_price_seconds != local_entry.get_max_age() {
@@ -262,7 +268,7 @@ where
                     .iter()
                     .any(|(local_id, _)| idx == usize::from(*local_id))
             {
-                self.ix_update_mapping(None, idx.try_into().unwrap(), 0)
+                self.ix_update_mapping(None, idx.try_into().unwrap(), 0, false, None)
                     .await?;
             }
         }
@@ -769,6 +775,8 @@ where
         oracle_account: Option<Pubkey>,
         token: u64,
         price_type: u8,
+        twap_enabled: bool,
+        twap_source: Option<u16>,
     ) -> Result<()> {
         let update_accounts = accounts::UpdateOracleMapping {
             admin: self.client.payer(),
@@ -786,6 +794,8 @@ where
                 instruction::UpdateMapping {
                     token,
                     price_type,
+                    twap_enabled,
+                    twap_source: twap_source.unwrap_or(u16::MAX),
                     feed_name: self.feed_name.clone(),
                 },
             )

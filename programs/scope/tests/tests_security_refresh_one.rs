@@ -19,12 +19,16 @@ const TEST_PYTH_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePythPriceAccount11111111111111111111111"),
     token: 0,
     price_type: TestOracleType::Pyth,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePyth2PriceAccount1111111111111111111111"),
     token: 1,
     price_type: TestOracleType::Pyth,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 // - [x] Wrong oracle mapping
@@ -317,6 +321,8 @@ async fn test_refresh_with_unexpected_ix() {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let extra_ix = Instruction {
@@ -360,12 +366,16 @@ mod ktoken_tests {
         pubkey: pubkey!("SomeKaminoorcaStrategyAccount11111111111111"),
         token: 2,
         price_type: TestOracleType::KToken(DEX::Orca),
+        twap_enabled: false,
+        twap_source: None,
     };
 
     const TEST_RAYDIUM_KTOKEN_ORACLE: OracleConf = OracleConf {
         pubkey: pubkey!("SomeKaminoRaydiumStrategyAccount11111111111"),
         token: 2,
         price_type: TestOracleType::KToken(DEX::Raydium),
+        twap_enabled: false,
+        twap_source: None,
     };
 
     #[tokio::test]
@@ -1058,6 +1068,8 @@ mod test_jlp {
         pubkey: pubkey!("SomeJLPPriceAccount111111111111111111111111"),
         token: 0,
         price_type: TestOracleType::JupiterLP,
+        twap_enabled: false,
+        twap_source: None,
     };
 
     #[tokio::test]

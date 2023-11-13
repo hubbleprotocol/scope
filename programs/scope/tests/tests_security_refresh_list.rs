@@ -22,18 +22,24 @@ const TEST_PYTH_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePythPriceAccount11111111111111111111111"),
     token: 0,
     price_type: TestOracleType::Pyth,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePyth2PriceAccount1111111111111111111111"),
     token: 1,
     price_type: TestOracleType::Pyth,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 const TEST_JLP_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomeJLPPriceAccount111111111111111111111111"),
     token: 5,
     price_type: TestOracleType::JupiterLP,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 #[cfg(feature = "yvaults")]
@@ -383,11 +389,9 @@ async fn test_refresh_through_cpi() {
 #[tokio::test]
 async fn test_refresh_with_unexpected_ix() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
-    println!("AAAAA");
 
     // Change prices
     for (i, conf) in TEST_ORACLE_CONF.iter().enumerate() {
-        println!("set price");
         mock_oracles::set_price(
             &mut ctx,
             &feed,
@@ -400,9 +404,6 @@ async fn test_refresh_with_unexpected_ix() {
         .await;
     }
 
-    println!("SILVIUUU");
-    println!("feed.twaps {}", feed.twaps);
-
     // Random update mapping as extra ix
     let accounts = scope::accounts::UpdateOracleMapping {
         admin: ctx.admin.pubkey(),
@@ -414,6 +415,8 @@ async fn test_refresh_with_unexpected_ix() {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let extra_ix = Instruction {
@@ -462,12 +465,16 @@ mod ktoken_tests {
         pubkey: pubkey!("SomeKaminoorcaStrategyAccount11111111111111"),
         token: 2,
         price_type: TestOracleType::KToken(DEX::Orca),
+        twap_enabled: false,
+        twap_source: None,
     };
 
     pub const TEST_RAYDIUM_KTOKEN_ORACLE: OracleConf = OracleConf {
         pubkey: pubkey!("SomeKaminoRaydiumStrategyAccount11111111111"),
         token: 3,
         price_type: TestOracleType::KToken(DEX::Raydium),
+        twap_enabled: false,
+        twap_source: None,
     };
 
     // - [ ] Wrong kToken additional global config account
