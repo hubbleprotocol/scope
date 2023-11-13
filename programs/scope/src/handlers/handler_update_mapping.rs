@@ -51,7 +51,10 @@ pub fn process(
 
     oracle_mappings.price_types[token] = price_type.into();
     oracle_mappings.twap_enabled[token] = u8::from(twap_enabled);
-    oracle_mappings.twap_source[token] = twap_source;
+    if twap_source != u16::MAX {
+        oracle_mappings.twap_source[usize::from(twap_source)] = token.try_into().unwrap();
+    }
+   
 
     Ok(())
 }

@@ -75,6 +75,7 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     price.index = token.try_into().unwrap();
 
     if oracle_mappings.is_twap_enabled(token) {
+        msg!("Updating twap for token {}", token);
         crate::oracles::twap::update_twap(
             &oracle_mappings,
             &mut oracle_twaps,

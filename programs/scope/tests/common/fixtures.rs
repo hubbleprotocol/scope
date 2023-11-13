@@ -27,10 +27,7 @@ pub async fn setup_scope(
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
         oracle_twaps: zero_copy_accounts.oracle_twaps.pubkey(),
     };
-    println!(
-        "init zero_copy_accounts.oracle_twaps.pubkey(), {}",
-        zero_copy_accounts.oracle_twaps.pubkey()
-    );
+   
     let args = scope::instruction::Initialize {
         feed_name: feed_name.to_string(),
     };
@@ -41,9 +38,7 @@ pub async fn setup_scope(
         data: args.data(),
     };
 
-    println!("setup_scope before send tx");
     ctx.send_transaction(&[ix]).await.unwrap();
-    println!("setup_scope after send tx");
 
     let feed = types::ScopeFeedDefinition {
         feed_name: feed_name.to_string(),

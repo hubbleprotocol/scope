@@ -28,10 +28,12 @@ pub fn update_twap(
     // todo: impl this to calculate and update the new twap value
 
     let source_index = usize::from(oracle_mappings.twap_source[token]);
+    msg!("source_index: {}", source_index);
 
-    let mut twap = oracle_twaps.twaps[source_index];
+    let mut twap = oracle_twaps.twaps.get_mut(source_index).unwrap();
     // if there is no previous twap, store the existent
     update_ema_twap(&mut twap, price, price_ts, price_slot);
+    msg!("new twap: {}", twap.current_ema_1h);
 }
 
 pub fn reset_twap(
@@ -61,6 +63,7 @@ pub fn get_price(
 
 mod utils {
     use decimal_wad::decimal::Decimal;
+    use solana_program::msg;
 
     use crate::{EmaTwap, Price};
 
@@ -72,8 +75,10 @@ mod utils {
         price_ts: u64,
         price_slot: u64,
     ) {
+        msg!("update_ema_twap");
         if twap.last_update_slot == 0 {
             twap.current_ema_1h = Decimal::from(price).to_scaled_val().unwrap();
+            msg!("initial twap: {}", twap.current_ema_1h);
         } else {
             let ema_decimal = Decimal::from_scaled_val(twap.current_ema_1h);
             let price_decimal = Decimal::from(price);
