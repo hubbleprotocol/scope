@@ -54,7 +54,6 @@ pub fn process(
     if twap_source != u16::MAX {
         oracle_mappings.twap_source[usize::from(twap_source)] = token.try_into().unwrap();
     }
-   
 
     Ok(())
 }
