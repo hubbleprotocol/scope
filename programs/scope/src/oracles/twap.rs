@@ -476,8 +476,8 @@ mod tests_update_ema_twap {
         let mut price_slot = 8;
 
         let mut previous_twap = twap.clone();
-        for _ in 1..10 {
-            price_value -= 5;
+        for index in 1..10 {
+            price_value += 5;
             let test_price = Decimal::from(price_value).into();
             price_ts += 10;
             price_slot += 2;
