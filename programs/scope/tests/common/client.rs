@@ -6,38 +6,6 @@ use solana_sdk::signer::Signer;
 use super::types::{OracleConf, ScopeFeedDefinition, TestContext};
 use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
 
-pub fn update_mapping_twap(
-    ctx: &mut TestContext,
-    feed: &ScopeFeedDefinition,
-    oracle: OracleConf,
-    mode: UpdateTokenMetadataMode,
-    value: u16,
-) -> Instruction {
-    let accounts = scope::accounts::UpdateOracleMapping {
-        admin: ctx.admin.pubkey(),
-        configuration: feed.conf,
-        oracle_mappings: feed.mapping,
-        price_info: None,
-    };
-
-    let args = scope::instruction::UpdateMappingTwap {
-        token: oracle.token.try_into().unwrap(),
-        mode: mode.to_u16(),
-        value,
-        feed_name: feed.feed_name.clone(),
-        // token_index: oracle.token.try_into().unwrap(),
-        // mode: mode.to_u64(),
-        // feed_name: feed.feed_name.clone(),
-        // value,
-    };
-
-    Instruction {
-        program_id: scope::id(),
-        accounts: accounts.to_account_metas(None),
-        data: args.data(),
-    }
-}
-
 pub fn refresh_one_ix(feed: &ScopeFeedDefinition, oracle: OracleConf) -> Instruction {
     let accounts = scope::accounts::RefreshOne {
         oracle_prices: feed.prices,
