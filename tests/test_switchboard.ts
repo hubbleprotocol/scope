@@ -48,6 +48,7 @@ describe('Switchboard Scope tests', () => {
   let oracleAccount: PublicKey;
   let oracleMappingAccount: PublicKey;
   let tokenMetadatasAccount: PublicKey;
+  let oracleTwapsAccount: PublicKey;
 
   let testTokens: ITokenEntry[];
 
@@ -63,10 +64,12 @@ describe('Switchboard Scope tests', () => {
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();
+    let oracleTwapsAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
     tokenMetadatasAccount = tokenMetadatasAccount_kp.publicKey;
+    oracleTwapsAccount = oracleTwapsAccount_kp.publicKey;
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
 
@@ -78,6 +81,7 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         tokenMetadatas: tokenMetadatasAccount,
+        oracleTwaps: oracleTwapsAccount,
         rent: SYSVAR_RENT_PUBKEY,
       },
       signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp],
@@ -85,6 +89,7 @@ describe('Switchboard Scope tests', () => {
         await program.account.oraclePrices.createInstruction(oracleAccount_kp),
         await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
         await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
+        await program.account.oracleTwaps.createInstruction(oracleTwapsAccount_kp),
       ],
     });
 
