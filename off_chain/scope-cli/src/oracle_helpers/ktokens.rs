@@ -36,6 +36,8 @@ pub struct KTokenOracle {
 
     /// Configured max age
     max_age: clock::Slot,
+
+    twap_enabled: bool,
 }
 
 impl KTokenOracle {
@@ -71,6 +73,7 @@ impl KTokenOracle {
             mapping,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
             extra_accounts: [global_config, collateral_infos, pool, position, prices],
+            twap_enabled: conf.twap_enabled,
         })
     }
 }
@@ -85,8 +88,8 @@ impl OracleHelper for KTokenOracle {
         NB_EXTRA_ACCOUNT
     }
 
-    fn get_mapping_account(&self) -> &Pubkey {
-        &self.mapping
+    fn get_mapping_account(&self) -> Option<Pubkey> {
+        Some(self.mapping)
     }
 
     async fn get_extra_accounts(&self, rpc: Option<&dyn AsyncClient>) -> Result<Vec<Pubkey>> {
@@ -118,6 +121,10 @@ impl OracleHelper for KTokenOracle {
         _rpc: &dyn AsyncClient,
     ) -> Result<bool> {
         Ok(false)
+    }
+
+    fn is_twap_enabled(&self) -> bool {
+        self.twap_enabled
     }
 }
 
