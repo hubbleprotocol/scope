@@ -209,7 +209,7 @@ async fn main() -> Result<()> {
                 .await
             }
             Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping).await,
-            Actions::ResetTwap { token } => reset_twap(&mut scope, token).await,
+            Actions::ResetTwap { token } => reset_twap(&scope, token).await,
         }
     }
 }

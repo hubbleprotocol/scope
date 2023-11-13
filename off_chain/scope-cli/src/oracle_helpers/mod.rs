@@ -17,6 +17,7 @@ pub mod jupiter_lp;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod single_account_oracle;
+pub mod twap;
 
 pub use single_account_oracle::SingleAccountOracle;
 
@@ -39,7 +40,7 @@ pub trait OracleHelper: Sync {
     /// The referenced account should contain any information needed to refresh
     /// the price or at least reference the extra account needed to do so (indirect
     /// mapping).
-    fn get_mapping_account(&self) -> &Pubkey;
+    fn get_mapping_account(&self) -> Option<Pubkey>;
 
     /// Get the extra accounts needed for the refresh price ix
     async fn get_extra_accounts(&self, rpc: Option<&dyn AsyncClient>) -> Result<Vec<Pubkey>>;
@@ -65,6 +66,15 @@ pub trait OracleHelper: Sync {
     fn get_update_cu_budget(&self) -> u32 {
         self.get_type().get_update_cu_budget()
     }
+
+    /// If the entry is a twap, give the id of the token used as source for this twap
+    /// Else return None
+    fn get_twap_source(&self) -> Option<u16> {
+        None
+    }
+
+    /// Tell if this token should have a twap computed
+    fn is_twap_enabled(&self) -> bool;
 }
 
 pub async fn entry_from_config(
@@ -79,12 +89,12 @@ pub async fn entry_from_config(
         | OracleType::CToken
         | OracleType::SplStake
         | OracleType::MsolStake
-        | OracleType::PythEMA
-        | OracleType::ScopeTwap => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
+        | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
         #[cfg(feature = "yvaults")]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, rpc).await?)
         }
+        OracleType::ScopeTwap => Box::new(twap::TwapOracle::new(token_conf, default_max_age)),
         #[cfg(not(feature = "yvaults"))]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             panic!("yvaults feature is not enabled, KTokenOracle is not available")
