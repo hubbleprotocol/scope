@@ -2,13 +2,11 @@ mod common;
 
 use crate::client::reset_twap;
 use crate::{common::client::refresh_one_ix, utils::setup_mapping_for_token_with_twap};
-use anchor_lang::{prelude::Pubkey, InstructionData, ToAccountMetas};
+use anchor_lang::{InstructionData, ToAccountMetas};
 use common::*;
 use decimal_wad::decimal::Decimal;
 use scope::{assert_fuzzy_eq, EmaTwap, OracleMappings, OracleTwaps, Price};
-use solana_program::{
-    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
-};
+use solana_program::instruction::Instruction;
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signer::Signer};
 use types::*;
@@ -90,7 +88,7 @@ async fn test_update_mapping() {
     );
     assert_eq!(
         oracle_mappings.price_info_accounts[TEST_TWAP.token as usize],
-        Pubkey::default()
+        TEST_TWAP.pubkey
     );
     assert_eq!(
         oracle_mappings.price_types[TEST_PYTH_ORACLE.token as usize],
@@ -112,10 +110,7 @@ async fn test_update_mapping() {
         usize::from(oracle_mappings.twap_source[TEST_PYTH_ORACLE.token as usize]),
         TEST_TWAP.token
     );
-    assert_eq!(
-        oracle_mappings.twap_source[TEST_TWAP.token as usize],
-        u16::MAX
-    );
+    assert_eq!(oracle_mappings.twap_source[TEST_TWAP.token as usize], 0); // the value of this is not relevant, as it is not used if the twap is disabled
 }
 
 #[tokio::test]
@@ -357,55 +352,73 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
     }
 }
 
+// todo: remove the need for extra stack
 #[tokio::test]
 async fn test_reset_twap() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
     // Initialize oracle account and set price
-    let token_price = Price { value: 100, exp: 6 };
-    // Change price
-    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+    let mut token_price = Price { value: 100, exp: 6 };
+    {
+        // Change price
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
 
-    setup_mapping_for_token_with_twap(&mut ctx, &feed, TEST_PYTH_ORACLE, TEST_TWAP).await;
+        setup_mapping_for_token_with_twap(&mut ctx, &feed, TEST_PYTH_ORACLE, TEST_TWAP).await;
+    }
 
-    // Refresh
-    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
-    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+    {
+        // Refresh
+        let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+    }
 
-    let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-    assert_eq!(oracle_twaps.twaps[1].last_update_slot, 1);
-    assert_eq!(
-        oracle_twaps.twaps[1].current_ema_1h,
-        Decimal::from(token_price).to_scaled_val().unwrap()
-    );
+    {
+        let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+        assert_eq!(oracle_twaps.twaps[1].last_update_slot, 1);
+        assert_eq!(
+            oracle_twaps.twaps[1].current_ema_1h,
+            Decimal::from(token_price).to_scaled_val().unwrap()
+        );
+    }
 
-    // update the price of the token and reset the TWAP to the current value of the token
-    ctx.fast_forward_seconds(10).await;
-    let token_price = Price { value: 200, exp: 6 };
-    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+    {
+        // update the price of the token and reset the TWAP to the current value of the token
+        ctx.fast_forward_seconds(10).await;
+        token_price = Price { value: 200, exp: 6 };
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
 
-    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
-    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+        let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+    }
 
-    // reset the TWAP
-    let reset_twap_ix = reset_twap(&ctx.admin.pubkey(), &feed, TEST_PYTH_ORACLE);
-    ctx.send_transaction(&[reset_twap_ix]).await.unwrap();
+    {
+        // reset the TWAP
+        let reset_twap_ix = reset_twap(&ctx.admin.pubkey(), &feed, TEST_PYTH_ORACLE);
+        ctx.send_transaction(&[reset_twap_ix]).await.unwrap();
+    }
 
-    let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-    assert_eq!(
-        oracle_twaps.twaps[1].current_ema_1h,
-        Decimal::from(token_price).to_scaled_val().unwrap()
-    );
+    {
+        ctx.fast_forward_seconds(10).await;
+        let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+        assert_eq!(
+            oracle_twaps.twaps[1].current_ema_1h,
+            Decimal::from(token_price).to_scaled_val().unwrap()
+        );
+    }
 
-    // verify that reset is idempotent
-    let reset_twap_ix = reset_twap(&ctx.admin.pubkey(), &feed, TEST_PYTH_ORACLE);
-    ctx.send_transaction(&[reset_twap_ix]).await.unwrap();
+    {
+        // verify that reset is idempotent
+        let reset_twap_ix = reset_twap(&ctx.admin.pubkey(), &feed, TEST_PYTH_ORACLE);
+        ctx.send_transaction(&[reset_twap_ix]).await.unwrap();
+    }
 
-    let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-    assert_eq!(
-        oracle_twaps.twaps[1].current_ema_1h,
-        Decimal::from(token_price).to_scaled_val().unwrap()
-    );
+    {
+        let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+        assert_eq!(
+            oracle_twaps.twaps[1].current_ema_1h,
+            Decimal::from(token_price).to_scaled_val().unwrap()
+        );
+    }
 }
 
 pub mod utils {

@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+// todo: remove this handler after the setup of the TWAP account
 #[derive(Accounts)]
 #[instruction(feed_name: String)]
 pub struct InitializeOracleTwaps<'info> {

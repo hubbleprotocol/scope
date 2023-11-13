@@ -230,7 +230,6 @@ where
                 || rem_twap_enabled != loc_twap_enabled
                 || rem_twap_source != loc_twap_source
             {
-                // TODO: update mapping need to update twap enabled and twap source
                 self.ix_update_mapping(
                     local_mapping_pk,
                     token_idx.into(),

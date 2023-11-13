@@ -177,7 +177,7 @@ impl Default for EmaTwap {
 }
 
 impl EmaTwap {
-    fn to_dated_price(&self, index: u16) -> DatedPrice {
+    fn as_dated_price(&self, index: u16) -> DatedPrice {
         DatedPrice {
             price: Decimal::from_scaled_val(self.current_ema_1h).into(),
             last_updated_slot: self.last_update_slot,
@@ -195,7 +195,6 @@ pub struct OracleTwaps {
     pub oracle_prices: Pubkey,
     pub oracle_mappings: Pubkey,
     pub twaps: [EmaTwap; MAX_ENTRIES],
-    // todo: add padding and maybe increase twap_buffers size
 }
 
 // Account to store dated prices
@@ -223,10 +222,6 @@ impl OracleMappings {
 
     pub fn get_twap_source(&self, token: usize) -> usize {
         usize::from(self.twap_source[token])
-    }
-
-    pub fn setup_mappings(&mut self) {
-        self.twap_source = [u16::MAX; MAX_ENTRIES];
     }
 }
 
@@ -270,22 +265,6 @@ impl UpdateTokenMetadataMode {
         match self {
             UpdateTokenMetadataMode::Name => 0,
             UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
-        }
-    }
-}
-
-#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
-#[repr(u16)]
-pub enum UpdateOracleMappingMode {
-    TwapSource = 0,
-    UseTwap = 1,
-}
-
-impl UpdateOracleMappingMode {
-    pub fn to_u64(self) -> u64 {
-        match self {
-            UpdateOracleMappingMode::TwapSource => 0,
-            UpdateOracleMappingMode::UseTwap => 1,
         }
     }
 }
@@ -352,6 +331,9 @@ pub enum ScopeError {
 
     #[msg("TWAP price account is different than Scope ID")]
     PriceAccountNotExpected,
+
+    #[msg("TWAP source index out of range")]
+    TwapSourceIndexOutOfRange,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

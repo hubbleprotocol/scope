@@ -31,8 +31,7 @@ pub struct Initialize<'info> {
 
 pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     // Initialize oracle mapping account
-    let mut mappings = ctx.accounts.oracle_mappings.load_init()?;
-    mappings.setup_mappings();
+    let _ = ctx.accounts.oracle_mappings.load_init()?;
 
     // Initialize oracle price account
     let oracle_pbk = ctx.accounts.oracle_mappings.key();

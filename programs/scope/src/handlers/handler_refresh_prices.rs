@@ -22,7 +22,7 @@ pub struct RefreshOne<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
-    #[account(mut, has_one = oracle_prices)]
+    #[account(mut, has_one = oracle_prices, has_one = oracle_mappings)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
     /// CHECK: In ix, check the account is in `oracle_mappings`
     pub price_info: AccountInfo<'info>,
@@ -37,7 +37,7 @@ pub struct RefreshList<'info> {
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
     #[account()]
     pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
-    #[account(mut, has_one = oracle_prices)]
+    #[account(mut, has_one = oracle_prices, has_one = oracle_mappings)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
     /// CHECK: Sysvar fixed address
     #[account(address = SYSVAR_INSTRUCTIONS_ID)]
@@ -75,15 +75,15 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     price.index = token.try_into().unwrap();
 
     if oracle_mappings.is_twap_enabled(token) {
-        msg!("Updating twap for token {}", token);
-        crate::oracles::twap::update_twap(
+        let _ = crate::oracles::twap::update_twap(
             &oracle_mappings,
             &mut oracle_twaps,
             token,
             price.price,
             clock.unix_timestamp as u64,
             clock.slot,
-        );
+        )
+        .map_err(|_| msg!("Twap not found for token {}", token));
     };
 
     // Only load when needed, allows prices computation to use scope chain
@@ -156,32 +156,31 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
             &mut accounts_iter,
             &clock,
             &oracle_twaps,
-            &oracle_mappings,
+            oracle_mappings,
             token_nb.into(),
         )
-        .and_then(|price| {
-            if oracle_mappings.is_twap_enabled(token_idx) {
-                crate::oracles::twap::update_twap(
-                    &oracle_mappings,
-                    &mut oracle_twaps,
-                    token_idx,
-                    price.price,
-                    clock.unix_timestamp as u64,
-                    clock.slot,
-                );
-            }
-            Ok(Some(price))
-        })
-        .unwrap_or_else(|_| {
+        .map_err(|_| {
             msg!(
                 "Price skipped as validation failed (token {}, type {:?})",
                 token_idx,
                 price_type
             );
-            None
-        });
+        })
+        .ok();
 
         if let Some(price) = price {
+            if oracle_mappings.is_twap_enabled(token_idx) {
+                let _ = crate::oracles::twap::update_twap(
+                    oracle_mappings,
+                    &mut oracle_twaps,
+                    token_idx,
+                    price.price,
+                    clock.unix_timestamp as u64,
+                    clock.slot,
+                )
+                .map_err(|_| msg!("Twap not found for token {}", token_idx));
+            };
+
             // Only temporary load as mut to allow prices to be computed based on a scope chain
             // from the price feed that is currently updated
 

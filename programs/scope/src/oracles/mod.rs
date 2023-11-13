@@ -142,7 +142,7 @@ where
         }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
         OracleType::JupiterLP => jupiter_lp::get_price(base_account, clock, extra_accounts),
-        OracleType::ScopeTwap => Ok(twap::get_price(oracle_mappings, oracle_twaps, index)),
+        OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

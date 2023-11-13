@@ -1,3 +1,4 @@
+use crate::ScopeError;
 use crate::ScopeError::PriceAccountNotExpected;
 use crate::{DatedPrice, OracleMappings, OracleTwaps, Price};
 use anchor_lang::prelude::*;
@@ -10,8 +11,8 @@ const HALF_EMA_1H_SAMPLES_NUMBER: u128 = EMA_1H_SAMPLES_NUMBER / 2;
 const EMA_1H_SAMPLING_RATE_SECONDS: u64 = 60 * 2;
 const HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED: u128 =
     (WAD as u128) * EMA_1H_SAMPLING_RATE_SECONDS as u128 / 2;
-const SMOOTHING_FACTOR: u128 =
-    (2 * (WAD as u128) + HALF_EMA_1H_SAMPLES_NUMBER) / EMA_1H_SAMPLES_NUMBER; // we do the addition of HALF_EMA_1H_SAMPLES_NUMBER for rounding purposes, so it rounds to the closest value
+const SMOOTHING_FACTOR_NOMINATOR: u128 = 2 * (WAD as u128) + HALF_EMA_1H_SAMPLES_NUMBER; // we do the addition of HALF_EMA_1H_SAMPLES_NUMBER for rounding purposes, so it rounds to the closest value
+const SMOOTHING_FACTOR: u128 = SMOOTHING_FACTOR_NOMINATOR / EMA_1H_SAMPLES_NUMBER;
 
 pub fn validate_price_account(account: &AccountInfo) -> Result<()> {
     if account.key().eq(&crate::id()) {
@@ -28,14 +29,18 @@ pub fn update_twap(
     price: Price,
     price_ts: u64,
     price_slot: u64,
-) {
+) -> Result<()> {
     // todo: impl this to calculate and update the new twap value
 
     let source_index = usize::from(oracle_mappings.twap_source[token]);
 
-    let mut twap = oracle_twaps.twaps.get_mut(source_index).unwrap();
+    let twap = oracle_twaps
+        .twaps
+        .get_mut(source_index)
+        .ok_or(ScopeError::TwapSourceIndexOutOfRange)?;
     // if there is no previous twap, store the existent
-    update_ema_twap(&mut twap, price, price_ts, price_slot);
+    update_ema_twap(twap, price, price_ts, price_slot);
+    Ok(())
 }
 
 pub fn reset_twap(
@@ -45,23 +50,29 @@ pub fn reset_twap(
     price: Price,
     price_ts: u64,
     price_slot: u64,
-) {
+) -> Result<()> {
     let source_index = usize::from(oracle_mappings.twap_source[token]);
-    msg!("source_index: {}", source_index);
 
-    let mut twap = oracle_twaps.twaps.get_mut(source_index).unwrap();
-    reset_ema_twap(&mut twap, price, price_ts, price_slot)
+    let twap = oracle_twaps
+        .twaps
+        .get_mut(source_index)
+        .ok_or(ScopeError::TwapSourceIndexOutOfRange)?;
+    reset_ema_twap(twap, price, price_ts, price_slot);
+    Ok(())
 }
 
 pub fn get_price(
     oracle_mappings: &OracleMappings,
     oracle_twaps: &OracleTwaps,
     token: usize,
-) -> DatedPrice {
+) -> Result<DatedPrice> {
     let source_index = usize::from(oracle_mappings.twap_source[token]);
 
-    let twap = oracle_twaps.twaps[source_index];
-    return twap.to_dated_price(source_index.try_into().unwrap());
+    let twap = oracle_twaps
+        .twaps
+        .get(source_index)
+        .ok_or(ScopeError::TwapSourceIndexOutOfRange)?;
+    Ok(twap.as_dated_price(source_index.try_into().unwrap()))
 }
 
 mod utils {
@@ -73,6 +84,8 @@ mod utils {
         EMA_1H_SAMPLING_RATE_SECONDS, HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED, SMOOTHING_FACTOR,
     };
 
+    /// update the EMA  time weighted on how recent the last price is. EMA is calculated as:
+    /// EMA = (price * smoothing_factor) + (1 - smoothing_factor) * previous_EMA. The smoothing factor is calculated as: (last_sample_delta / sampling_rate_in_seconds) * (2 / (1 + samples_number_per_period)).
     pub(crate) fn update_ema_twap(
         twap: &mut EmaTwap,
         price: Price,

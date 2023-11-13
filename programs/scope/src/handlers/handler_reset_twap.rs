@@ -39,7 +39,7 @@ pub fn process(ctx: Context<ResetTwap>, token: usize, _: String) -> Result<()> {
         price,
         clock.unix_timestamp as u64,
         clock.slot,
-    );
+    )?;
 
     Ok(())
 }
