@@ -13,15 +13,14 @@ rpc-client = ["solana-client"]
 banks-client = ["solana-banks-client", "solana-banks-interface"]
 
 [dependencies]
-anchor-client = "0.28.0"
-solana-transaction-status = "~1.16.18"
-solana-client = { version = "~1.16.18", optional = true }
-solana-banks-client = { version = "~1.16.18", optional = true }
-solana-banks-interface = { version = "~1.16.18", optional = true }
-solana-address-lookup-table-program = "~1.16.18"
+anchor-client.workspace = true
+solana-transaction-status.workspace = true
+solana-client = { workspace = true, optional = true }
+solana-banks-client = { workspace = true, optional = true }
+solana-banks-interface = { workspace = true, optional = true }
 base64 = "0.21.0"
 bs58 = "0.5.0"
-thiserror = "1.0"
+thiserror.workspace = true
 async-trait = "0.1.61"
 futures = "0.3.25"
 tokio = "1.14.1"

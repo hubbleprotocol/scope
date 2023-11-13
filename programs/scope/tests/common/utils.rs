@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 
 use num_enum::TryFromPrimitive;
-use num_traits::cast::FromPrimitive;
 use scope::oracles::OracleType;
 use solana_program::instruction::{AccountMeta, InstructionError};
 use solana_program_test::BanksClientError;
@@ -88,8 +87,10 @@ pub fn map_scope_error<T: Debug>(res: Result<T, BanksClientError>) -> scope::Sco
         InstructionError::Custom(z),
     ))) = &res
     {
-        let z: scope::ScopeError = scope::ScopeError::from_i64(*z as i64 - 6000).unwrap(); // as borrowing::BorrowError;
-        return z;
+        if *z >= 6000 {
+            let z: scope::ScopeError = scope::ScopeError::try_from_primitive(*z - 6000).unwrap(); // as borrowing::BorrowError;
+            return z;
+        }
     }
     panic!("Result is {:?}", res)
 }

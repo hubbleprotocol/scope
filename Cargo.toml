@@ -3,9 +3,30 @@ members = [
     "programs/*",
     "programs/scope/types",
     "off_chain/scope-cli",
-    "off_chain/orbit-link"
+    "off_chain/orbit-link",
 ]
 resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.28.0"
+anchor-client = "0.28.0"
+anchor-spl = "0.28.0"
+solana-sdk = "~1.16.18"
+solana-program = "~1.16.18"
+solana-logger = "~1.16.18"
+solana-program-test = "~1.16.18"
+solana-transaction-status = "~1.16.18"
+solana-client = "~1.16.18"
+solana-banks-client = "~1.16.18"
+solana-banks-interface = "~1.16.18"
+thiserror = "1.0.38"
+strum = { git = "https://github.com/hubbleprotocol/strum", features = [
+    "derive",
+], branch = "checked_arithmetics" }
+bytemuck = { version = "1.4.0", features = ["min_const_generics", "derive"] }
+cfg-if = "1.0.0"
+serde = "1.0.136"
+num_enum = "0.7.1"
 
 [profile.dev]
 overflow-checks = true
