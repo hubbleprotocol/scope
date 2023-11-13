@@ -108,8 +108,8 @@ async fn test_update_mapping() {
         u8::from(TEST_TWAP.twap_enabled)
     );
     assert_eq!(
-        oracle_mappings.twap_source[TEST_PYTH_ORACLE.token as usize],
-        TEST_TWAP.twap_source.unwrap_or(0)
+        usize::from(oracle_mappings.twap_source[TEST_PYTH_ORACLE.token as usize]),
+        TEST_TWAP.token
     );
     assert_eq!(
         oracle_mappings.twap_source[TEST_TWAP.token as usize],
@@ -228,9 +228,9 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
     );
 
     let token_price_u128: u128 = Decimal::from(token_price).to_scaled_val().unwrap();
-    for index in 1..10 {
+    for index in 1..100 {
         // Fast forward time and refresh price with the same value
-        ctx.fast_forward_seconds(10).await;
+        ctx.fast_forward_seconds(60).await;
         let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
@@ -246,7 +246,7 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
 
         assert_eq!(
             oracle_twaps_updated.twaps[1].last_update_unix_timestamp,
-            oracle_twaps.twaps[1].last_update_unix_timestamp + 10 * index
+            oracle_twaps.twaps[1].last_update_unix_timestamp + 60 * index
         );
     }
 }

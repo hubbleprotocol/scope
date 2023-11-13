@@ -6,8 +6,12 @@ use decimal_wad::common::WAD;
 use self::utils::{reset_ema_twap, update_ema_twap};
 
 const EMA_1H_SAMPLES_NUMBER: u128 = 30;
+const HALF_EMA_1H_SAMPLES_NUMBER: u128 = EMA_1H_SAMPLES_NUMBER / 2;
 const EMA_1H_SAMPLING_RATE_SECONDS: u64 = 60 * 2;
-const SMOOTHING_FACTOR: u128 = 2 * (WAD as u128) / EMA_1H_SAMPLES_NUMBER;
+const HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED: u128 =
+    (WAD as u128) * EMA_1H_SAMPLING_RATE_SECONDS as u128 / 2;
+const SMOOTHING_FACTOR: u128 =
+    (2 * (WAD as u128) + HALF_EMA_1H_SAMPLES_NUMBER) / EMA_1H_SAMPLES_NUMBER; // we do the addition of HALF_EMA_1H_SAMPLES_NUMBER for rounding purposes, so it rounds to the closest value
 
 pub fn validate_price_account(account: &AccountInfo) -> Result<()> {
     if account.key().eq(&crate::id()) {
@@ -67,7 +71,9 @@ mod utils {
 
     use crate::{EmaTwap, Price};
 
-    use super::{EMA_1H_SAMPLING_RATE_SECONDS, SMOOTHING_FACTOR};
+    use super::{
+        EMA_1H_SAMPLING_RATE_SECONDS, HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED, SMOOTHING_FACTOR,
+    };
 
     pub(crate) fn update_ema_twap(
         twap: &mut EmaTwap,
@@ -75,7 +81,6 @@ mod utils {
         price_ts: u64,
         price_slot: u64,
     ) {
-        msg!("update_ema_twap");
         if twap.last_update_slot == 0 {
             twap.current_ema_1h = Decimal::from(price).to_scaled_val().unwrap();
             msg!("initial twap: {}", twap.current_ema_1h);
@@ -84,8 +89,9 @@ mod utils {
             let price_decimal = Decimal::from(price);
 
             let smoothing_factor = Decimal::from_scaled_val(SMOOTHING_FACTOR);
-            let weighted_smoothing_factor = (smoothing_factor)
+            let weighted_smoothing_factor = ((smoothing_factor)
                 * (price_ts.saturating_sub(twap.last_update_unix_timestamp))
+                + Decimal::from_scaled_val(HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED)) // the addition is for rounding purposes
                 / (EMA_1H_SAMPLING_RATE_SECONDS);
             let new_ema = price_decimal * weighted_smoothing_factor
                 + (Decimal::from(1) - weighted_smoothing_factor) * ema_decimal;

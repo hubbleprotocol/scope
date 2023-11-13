@@ -224,6 +224,10 @@ impl OracleMappings {
     pub fn get_twap_source(&self, token: usize) -> usize {
         usize::from(self.twap_source[token])
     }
+
+    pub fn setup_mappings(&mut self) {
+        self.twap_source = [u16::MAX; MAX_ENTRIES];
+    }
 }
 
 #[account(zero_copy)]
