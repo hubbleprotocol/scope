@@ -109,7 +109,7 @@ describe('Scope tests', () => {
       testTokens.map(async (fakeOracleAccount, idx): Promise<any> => {
         // console.log(`Set mapping of ${fakeOracleAccount.ticker} ${fakeOracleAccount.getType()}`);
 
-        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), PRICE_FEED, {
+        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), false, new BN(65_535), PRICE_FEED, {
           accounts: {
             admin: admin.publicKey,
             configuration: confAccount,
@@ -128,8 +128,8 @@ describe('Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.MSOL].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
       },
       signers: [],
     });
@@ -145,8 +145,8 @@ describe('Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.SRM].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
       },
       signers: [],
     });
@@ -171,8 +171,8 @@ describe('Scope tests', () => {
         accounts: {
           oraclePrices: oracleAccount,
           oracleMappings: oracleMappingAccount,
-          clock: SYSVAR_CLOCK_PUBKEY,
           instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
+          oracleTwaps: oracleTwapsAccount,
         },
         remainingAccounts: [
           { pubkey: testTokens[HubbleTokens.ETH].account, isWritable: false, isSigner: false },
@@ -203,15 +203,22 @@ describe('Scope tests', () => {
     // In this test set the tokens from the end of the mapping for limit testing
     await Promise.all(
       testTokensExtra.map(async (fakeOracleAccount, idx): Promise<any> => {
-        await program.rpc.updateMapping(new BN(global.MAX_NB_TOKENS - idx - 1), OracleType.Pyth, PRICE_FEED, {
-          accounts: {
-            admin: admin.publicKey,
-            configuration: confAccount,
-            oracleMappings: oracleMappingAccount,
-            priceInfo: fakeOracleAccount.account,
-          },
-          signers: [admin],
-        });
+        await program.rpc.updateMapping(
+          new BN(global.MAX_NB_TOKENS - idx - 1),
+          OracleType.Pyth,
+          false,
+          new BN(65_535),
+          PRICE_FEED,
+          {
+            accounts: {
+              admin: admin.publicKey,
+              configuration: confAccount,
+              oracleMappings: oracleMappingAccount,
+              priceInfo: fakeOracleAccount.account,
+            },
+            signers: [admin],
+          }
+        );
       })
     );
   });
@@ -228,8 +235,8 @@ describe('Scope tests', () => {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        clock: SYSVAR_CLOCK_PUBKEY,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
       },
       remainingAccounts: accounts,
       signers: [],

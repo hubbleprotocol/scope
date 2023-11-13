@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::scope;
 use crate::{
     oracles::{check_context, validate_oracle_account, OracleType},
     OracleMappings, ScopeError,

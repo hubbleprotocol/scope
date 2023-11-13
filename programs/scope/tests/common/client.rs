@@ -1,9 +1,7 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use scope::UpdateTokenMetadataMode;
 use solana_program::{instruction::Instruction, pubkey::Pubkey};
-use solana_sdk::signer::Signer;
 
-use super::types::{OracleConf, ScopeFeedDefinition, TestContext};
+use super::types::{OracleConf, ScopeFeedDefinition};
 use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
 
 pub fn refresh_one_ix(feed: &ScopeFeedDefinition, oracle: OracleConf) -> Instruction {
