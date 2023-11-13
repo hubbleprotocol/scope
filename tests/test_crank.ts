@@ -96,6 +96,8 @@ describe('Scope crank bot tests', () => {
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
 
+    console.log('oracleTwapsAccount_kp.publicKey', oracleTwapsAccount.toString());
+
     await program.rpc.initialize(PRICE_FEED, {
       accounts: {
         admin: admin.publicKey,

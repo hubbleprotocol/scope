@@ -955,10 +955,11 @@ where
     }
 
     async fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<Signature> {
+        warn!("oracle_twaps {}", self.oracle_twaps_acc);
         let mut refresh_accounts = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            oracle_twaps: self.oracle_prices_acc,
+            oracle_twaps: self.oracle_twaps_acc,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
