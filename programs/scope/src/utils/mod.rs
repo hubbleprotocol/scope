@@ -1,8 +1,7 @@
+pub mod macros;
 pub mod math;
 pub mod price_impl;
 pub mod scope_chain;
-pub mod macros;
-
 
 use std::cell::Ref;
 

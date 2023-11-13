@@ -27,7 +27,7 @@ pub async fn setup_scope(
         token_metadatas: zero_copy_accounts.token_metadatas.pubkey(),
         oracle_twaps: zero_copy_accounts.oracle_twaps.pubkey(),
     };
-   
+
     let args = scope::instruction::Initialize {
         feed_name: feed_name.to_string(),
     };

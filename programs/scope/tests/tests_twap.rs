@@ -241,7 +241,7 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
         assert_fuzzy_eq!(
             oracle_twaps_updated.twaps[1].current_ema_1h,
             token_price_u128,
-            8
+            2
         );
 
         assert_eq!(
