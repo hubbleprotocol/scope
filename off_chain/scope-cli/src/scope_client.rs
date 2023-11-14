@@ -143,6 +143,8 @@ where
                 price_feed,
             )
             .await?;
+
+            self.oracle_twaps_acc = oracle_twaps_acc.pubkey();
         }
 
         Ok(())
