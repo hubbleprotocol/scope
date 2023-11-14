@@ -27,6 +27,14 @@ pub fn process(
 ) -> Result<()> {
     check_context(&ctx)?;
 
+    msg!(
+        "UpdateOracleMapping, token: {}, price_type: {}, twap_enabled: {}, twap_source: {}",
+        token,
+        price_type,
+        twap_enabled,
+        twap_source
+    );
+
     let mut oracle_mappings = ctx.accounts.oracle_mappings.load_mut()?;
     let ref_price_pubkey = oracle_mappings
         .price_info_accounts
@@ -55,9 +63,7 @@ pub fn process(
 
     oracle_mappings.price_types[token] = price_type.into();
     oracle_mappings.twap_enabled[token] = u8::from(twap_enabled);
-    if twap_source != u16::MAX {
-        oracle_mappings.twap_source[usize::from(twap_source)] = token.try_into().unwrap();
-    }
+    oracle_mappings.twap_source[token] = twap_source;
 
     Ok(())
 }
