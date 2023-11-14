@@ -23,21 +23,17 @@ pub fn validate_price_account(account: &AccountInfo) -> Result<()> {
 }
 
 pub fn update_twap(
-    oracle_mappings: &OracleMappings,
     oracle_twaps: &mut OracleTwaps,
     token: usize,
     price: Price,
     price_ts: u64,
     price_slot: u64,
 ) -> Result<()> {
-    // todo: impl this to calculate and update the new twap value
-
-    let source_index = usize::from(oracle_mappings.twap_source[token]);
-
     let twap = oracle_twaps
         .twaps
-        .get_mut(source_index)
+        .get_mut(token)
         .ok_or(ScopeError::TwapSourceIndexOutOfRange)?;
+
     // if there is no previous twap, store the existent
     update_ema_twap(twap, price, price_ts, price_slot);
     Ok(())
@@ -67,6 +63,7 @@ pub fn get_price(
     token: usize,
 ) -> Result<DatedPrice> {
     let source_index = usize::from(oracle_mappings.twap_source[token]);
+    msg!("Get twap price at index {source_index} for tk {token}",);
 
     let twap = oracle_twaps
         .twaps
@@ -364,7 +361,7 @@ mod tests_update_ema_twap {
             padding: [0_u128; 40],
         };
 
-        let mut twap_with_late_sample = twap_with_early_sample.clone();
+        let mut twap_with_late_sample = twap_with_early_sample;
 
         let test_price: Price = Decimal::from(120_000).into();
         let early_ts = 150;
