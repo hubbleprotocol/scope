@@ -6,8 +6,10 @@ pub mod ktokens_token_x;
 
 pub mod jupiter_lp;
 pub mod msol_stake;
+pub mod orca_whirlpool;
 pub mod pyth;
 pub mod pyth_ema;
+pub mod raydium_ammv3;
 pub mod spl_stake;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
@@ -56,6 +58,10 @@ pub enum OracleType {
     KTokenToTokenB = 10,
     /// Jupiter's perpetual LP tokens
     JupiterLP = 11,
+    /// Orca's whirlpool price (CLMM)
+    OrcaWhirlpool = 12,
+    /// Raydium's AMM v3 price (CLMM)
+    RaydiumAmmV3 = 13,
 }
 
 impl OracleType {
@@ -73,6 +79,8 @@ impl OracleType {
             OracleType::KTokenToTokenB => 100000,
             OracleType::MsolStake => 20000,
             OracleType::JupiterLP => 40000,
+            OracleType::OrcaWhirlpool => 10000,
+            OracleType::RaydiumAmmV3 => 10000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
