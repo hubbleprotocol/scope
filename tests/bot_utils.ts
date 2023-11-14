@@ -131,7 +131,6 @@ export class ScopeBot {
       // TODO: allow to test with local mapping
     ];
 
-    console.log('Cranking bot with args:', args);
 
     let env = this.env();
 
