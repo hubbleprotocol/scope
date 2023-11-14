@@ -67,7 +67,7 @@ where
             .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
-        let mut client = Self {
+        let client = Self {
             client,
             program_id,
             feed_name: price_feed.to_string(),
@@ -78,9 +78,6 @@ where
             tokens_metadata_acc: tokens_metadata,
             tokens: IntMap::default(),
         };
-
-        // if the token_metadatas is not initialized, initialize it here
-        Self::init_oracle_twaps_if_needed(&mut client, price_feed).await?;
 
         debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %tokens_metadata, %price_feed);
 
@@ -129,25 +126,6 @@ where
             tokens_metadata_acc: token_metadatas_acc.pubkey(),
             tokens: IntMap::default(),
         })
-    }
-
-    pub async fn init_oracle_twaps_if_needed(&mut self, price_feed: &str) -> Result<()> {
-        if self.oracle_twaps_acc.eq(&Pubkey::default()) {
-            let oracle_twaps_acc = Keypair::new();
-
-            Self::ix_initialize_oracle_twaps(
-                &self.client,
-                &self.program_id,
-                &self.configuration_acc,
-                &oracle_twaps_acc,
-                price_feed,
-            )
-            .await?;
-
-            self.oracle_twaps_acc = oracle_twaps_acc.pubkey();
-        }
-
-        Ok(())
     }
 
     pub async fn reset_twap_price(&self, token: u16) -> Result<()> {
@@ -652,51 +630,6 @@ where
         match init_res {
             Some(r) => r.context(format!("Init transaction: {signature}")),
             None => bail!("Init transaction failed to confirm: {signature}"),
-        }
-    }
-
-    async fn ix_initialize_oracle_twaps(
-        client: &OrbitLink<T, S>,
-        program_id: &Pubkey,
-        configuration_acc: &Pubkey,
-        oracle_twaps_acc: &Keypair,
-        price_feed: &str,
-    ) -> Result<()> {
-        let init_accounts = accounts::InitializeOracleTwaps {
-            admin: client.payer(),
-            configuration: *configuration_acc,
-            oracle_twaps: oracle_twaps_acc.pubkey(),
-            system_program: system_program::ID,
-        };
-
-        let init_tx = client
-            .tx_builder()
-            .add_ix_with_budget(
-                client
-                    .create_account_ix(
-                        &oracle_twaps_acc.pubkey(),
-                        size_of::<OracleTwaps>() + 8,
-                        program_id,
-                    )
-                    .await?,
-                50_000,
-            )
-            .add_anchor_ix(
-                program_id,
-                init_accounts,
-                instruction::InitializeOracleTwaps {
-                    feed_name: price_feed.to_string(),
-                },
-            )
-            .build_with_budget_and_fee(&[oracle_twaps_acc])
-            .await?;
-
-        let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
-
-        info!(%signature, "Init metadatas tx");
-        match init_res {
-            Some(r) => r.context(format!("Init tokens_metadata transaction: {signature}")),
-            None => bail!("Init tokens_metadata transaction failed to confirm: {signature}"),
         }
     }
 
