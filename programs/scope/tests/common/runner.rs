@@ -84,6 +84,23 @@ impl TestContext {
             .copied()
     }
 
+    pub async fn get_zero_copy_account_boxed<T: anchor_lang::ZeroCopy>(
+        &mut self,
+        pubkey: &Pubkey,
+    ) -> Result<Box<T>, TestError> {
+        let account_data = self.get_account_data(pubkey).await?;
+        if account_data.len() < 8 {
+            return Err(TestError::BadDiscriminator);
+        }
+        if account_data[0..8] != T::DISCRIMINATOR {
+            return Err(TestError::BadDiscriminator);
+        }
+        let data_ref = &account_data[8..];
+        Ok(Box::new(
+            *bytemuck::try_from_bytes(data_ref).map_err(|_| TestError::CannotDeserialize)?,
+        ))
+    }
+
     /// Set an account data to the given values.
     ///
     /// Warning: this function will overwrite the account data if it already exists.
@@ -252,7 +269,7 @@ impl TestContext {
     async fn fast_forward(&mut self, duration: Duration) {
         let mut clock = self.get_clock().await;
         clock.unix_timestamp += duration.as_secs() as i64;
-        clock.slot += duration.as_secs() as u64 * 2;
+        clock.slot += duration.as_secs() * 2;
         self.context.set_sysvar(&clock);
     }
 }
