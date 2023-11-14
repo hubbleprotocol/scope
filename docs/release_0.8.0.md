@@ -21,7 +21,7 @@
 5. [x] `make build` and check that it actually builds
 6. [x] `make deploy`
 7. [x] Launch the bot (possible with `make crank`)
-8. [ ] Update the IDL `anchor idl upgrade --provider.cluster devnet --provider.wallet ./keys/devnet/owner.json --filepath target/idl/scope.json 3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX`
+8. [x] Update the IDL `anchor idl upgrade --provider.cluster devnet --provider.wallet ./keys/devnet/owner.json --filepath target/idl/scope.json 3Vw8Ngkh1MVJTPHthmUbmU2XKtFEkjYvJzMqrv2rh9yX`
 9. [x] Merge hubble infra PR to release the bot
 
 ## Mainnet Commands
@@ -35,6 +35,6 @@
 7. [x] Put owner keypair in `./keys/$CLUSTER/owner.json` and ensure you have enough funds: `solana balance keys/mainnet/owner.json -u m`
 8. [x] Write buffer `solana program write-buffer target/deploy/scope.so -u <mainnet_rpc> -k ./keys/$CLUSTER/owner.json`
 9. [x] Make proposal on squads
-10. [ ] Update the IDL `anchor idl upgrade --provider.cluster mainnet --provider.wallet ./keys/mainnet/owner.json --filepath target/idl/scope.json HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ`
+10. [x] Update the IDL `anchor idl upgrade --provider.cluster mainnet --provider.wallet ./keys/mainnet/owner.json --filepath target/idl/scope.json HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ`
 11. [x] Launch the bot (possible with `make crank`)
 12. [x] Merge hubble infra PR to release the bot
