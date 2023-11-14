@@ -29,7 +29,6 @@ pub fn reset_twap(admin: &Pubkey, feed: &ScopeFeedDefinition, oracle: OracleConf
         admin: *admin,
         oracle_prices: feed.prices,
         configuration: feed.conf,
-        oracle_mappings: feed.mapping,
         oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     };

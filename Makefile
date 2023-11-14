@@ -156,7 +156,7 @@ clone-devnet-to-local-validator:
 test: test-rust test-ts
 
 test-rust:
-> RUST_MIN_STACK=1048576000 cargo test
+> cargo test
 
 test-ts: $(SCOPE_CLI)
 > yarn run ts-mocha -t 1000000 tests/test_*.ts

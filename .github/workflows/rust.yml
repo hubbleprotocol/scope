@@ -48,4 +48,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cargo test
         run: |
-          RUST_MIN_STACK=1048576000 cargo test
+          cargo test

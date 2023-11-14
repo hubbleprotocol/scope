@@ -40,18 +40,15 @@ pub fn update_twap(
 }
 
 pub fn reset_twap(
-    oracle_mappings: &OracleMappings,
     oracle_twaps: &mut OracleTwaps,
     token: usize,
     price: Price,
     price_ts: u64,
     price_slot: u64,
 ) -> Result<()> {
-    let source_index = usize::from(oracle_mappings.twap_source[token]);
-
     let twap = oracle_twaps
         .twaps
-        .get_mut(source_index)
+        .get_mut(token)
         .ok_or(ScopeError::TwapSourceIndexOutOfRange)?;
     reset_ema_twap(twap, price, price_ts, price_slot);
     Ok(())

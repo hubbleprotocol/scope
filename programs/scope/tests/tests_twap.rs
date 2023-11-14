@@ -221,11 +221,11 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
     ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
     // Verify that TWAP is the same as the price as it is the first sample
-    let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-    assert_eq!(oracle_twaps.twaps[0], EmaTwap::default());
-    assert_eq!(oracle_twaps.twaps[1].last_update_slot, 1);
+    let oracle_twaps: Box<OracleTwaps> =
+        ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
+    assert_eq!(oracle_twaps.twaps[0].last_update_slot, 1);
     assert_eq!(
-        oracle_twaps.twaps[1].current_ema_1h,
+        oracle_twaps.twaps[0].current_ema_1h,
         Decimal::from(token_price).to_scaled_val().unwrap()
     );
 
@@ -241,14 +241,28 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
             ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
 
         assert_fuzzy_eq!(
-            oracle_twaps_updated.twaps[1].current_ema_1h,
+            oracle_twaps_updated.twaps[0].current_ema_1h,
             token_price_u128,
             2
         );
 
         assert_eq!(
-            oracle_twaps_updated.twaps[1].last_update_unix_timestamp,
-            oracle_twaps.twaps[1].last_update_unix_timestamp + 60 * index
+            oracle_twaps_updated.twaps[0].last_update_unix_timestamp,
+            oracle_twaps.twaps[0].last_update_unix_timestamp + 60 * index
+        );
+    }
+
+    {
+        let refresh_ix = refresh_one_ix(&feed, TEST_TWAP);
+        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+        let oracle_prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+        let price: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
+        let expected: Decimal = token_price.into();
+        assert_fuzzy_eq!(
+            price.to_scaled_val::<u128>().unwrap(),
+            expected.to_scaled_val::<u128>().unwrap(),
+            2
         );
     }
 }
@@ -272,11 +286,11 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
     ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
     // Verify that TWAP is the same as the price as it is the first sample
-    let mut prev_oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-    assert_eq!(prev_oracle_twaps.twaps[0], EmaTwap::default());
-    assert_eq!(prev_oracle_twaps.twaps[1].last_update_slot, 1);
+    let mut prev_oracle_twaps: Box<OracleTwaps> =
+        ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
+    assert_eq!(prev_oracle_twaps.twaps[0].last_update_slot, 1);
     assert_eq!(
-        prev_oracle_twaps.twaps[1].current_ema_1h,
+        prev_oracle_twaps.twaps[0].current_ema_1h,
         Decimal::from(token_price).to_scaled_val().unwrap()
     );
 
@@ -297,17 +311,17 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
         // verify that the twap value didn't change but the twap date increased
-        let oracle_twaps_updated: OracleTwaps =
-            ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+        let oracle_twaps_updated: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
 
         assert!(
-            oracle_twaps_updated.twaps[1].current_ema_1h
-                > prev_oracle_twaps.twaps[1].current_ema_1h
+            oracle_twaps_updated.twaps[0].current_ema_1h
+                > prev_oracle_twaps.twaps[0].current_ema_1h
         );
 
         assert_eq!(
-            oracle_twaps_updated.twaps[1].last_update_unix_timestamp,
-            prev_oracle_twaps.twaps[1].last_update_unix_timestamp + 60
+            oracle_twaps_updated.twaps[0].last_update_unix_timestamp,
+            prev_oracle_twaps.twaps[0].last_update_unix_timestamp + 60
         );
 
         prev_oracle_twaps = oracle_twaps_updated;
@@ -333,11 +347,11 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
     ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
     // Verify that TWAP is the same as the price as it is the first sample
-    let mut prev_oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-    assert_eq!(prev_oracle_twaps.twaps[0], EmaTwap::default());
-    assert_eq!(prev_oracle_twaps.twaps[1].last_update_slot, 1);
+    let mut prev_oracle_twaps: Box<OracleTwaps> =
+        ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
+    assert_eq!(prev_oracle_twaps.twaps[0].last_update_slot, 1);
     assert_eq!(
-        prev_oracle_twaps.twaps[1].current_ema_1h,
+        prev_oracle_twaps.twaps[0].current_ema_1h,
         Decimal::from(token_price).to_scaled_val().unwrap()
     );
 
@@ -358,17 +372,17 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
         // verify that the twap value didn't change but the twap date increased
-        let oracle_twaps_updated: OracleTwaps =
-            ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+        let oracle_twaps_updated: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
 
         assert!(
-            oracle_twaps_updated.twaps[1].current_ema_1h
-                < prev_oracle_twaps.twaps[1].current_ema_1h
+            oracle_twaps_updated.twaps[0].current_ema_1h
+                < prev_oracle_twaps.twaps[0].current_ema_1h
         );
 
         assert_eq!(
-            oracle_twaps_updated.twaps[1].last_update_unix_timestamp,
-            prev_oracle_twaps.twaps[1].last_update_unix_timestamp + 70
+            oracle_twaps_updated.twaps[0].last_update_unix_timestamp,
+            prev_oracle_twaps.twaps[0].last_update_unix_timestamp + 70
         );
 
         prev_oracle_twaps = oracle_twaps_updated;
@@ -396,10 +410,11 @@ async fn test_reset_twap() {
     }
 
     {
-        let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
-        assert_eq!(oracle_twaps.twaps[1].last_update_slot, 1);
+        let oracle_twaps: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
+        assert_eq!(oracle_twaps.twaps[0].last_update_slot, 1);
         assert_eq!(
-            oracle_twaps.twaps[1].current_ema_1h,
+            oracle_twaps.twaps[0].current_ema_1h,
             Decimal::from(token_price).to_scaled_val().unwrap()
         );
     }
@@ -422,9 +437,10 @@ async fn test_reset_twap() {
 
     {
         ctx.fast_forward_seconds(10).await;
-        let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+        let oracle_twaps: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
         assert_eq!(
-            oracle_twaps.twaps[1].current_ema_1h,
+            oracle_twaps.twaps[0].current_ema_1h,
             Decimal::from(token_price).to_scaled_val().unwrap()
         );
     }
@@ -436,9 +452,10 @@ async fn test_reset_twap() {
     }
 
     {
-        let oracle_twaps: OracleTwaps = ctx.get_zero_copy_account(&feed.twaps).await.unwrap();
+        let oracle_twaps: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
         assert_eq!(
-            oracle_twaps.twaps[1].current_ema_1h,
+            oracle_twaps.twaps[0].current_ema_1h,
             Decimal::from(token_price).to_scaled_val().unwrap()
         );
     }

@@ -803,7 +803,6 @@ where
             admin: self.client.payer(),
             oracle_prices: self.oracle_prices_acc,
             configuration: self.configuration_acc,
-            oracle_mappings: self.oracle_mappings_acc,
             oracle_twaps: self.oracle_twaps_acc,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         };
