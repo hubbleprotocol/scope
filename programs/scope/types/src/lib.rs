@@ -61,6 +61,14 @@ impl Default for DatedPrice {
     }
 }
 
+// Account to store dated TWAP prices
+#[account(zero_copy)]
+pub struct OracleTwaps {
+    pub oracle_prices: Pubkey,
+    pub oracle_mappings: Pubkey,
+    pub twaps: [EmaTwap; MAX_ENTRIES],
+}
+
 // Account to store dated prices
 #[account(zero_copy)]
 pub struct OraclePrices {
@@ -68,12 +76,47 @@ pub struct OraclePrices {
     pub prices: [DatedPrice; MAX_ENTRIES],
 }
 
+#[zero_copy]
+#[derive(Debug, Eq, PartialEq)]
+pub struct EmaTwap {
+    pub last_update_slot: u64, // the slot when the last observation was added
+    pub last_update_unix_timestamp: u64,
+
+    pub current_ema_1h: u128,
+
+    pub padding: [u128; 40],
+}
+
+impl Default for EmaTwap {
+    fn default() -> Self {
+        Self {
+            current_ema_1h: 0,
+            last_update_slot: 0,
+            last_update_unix_timestamp: 0,
+            padding: [0_u128; 40],
+        }
+    }
+}
+
 // Accounts holding source of prices
 #[account(zero_copy)]
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
-    pub _reserved2: [u64; MAX_ENTRIES],
+    pub twap_source: [u16; MAX_ENTRIES], // meaningful only if type == TWAP; the index of where we find the TWAP
+    pub twap_enabled: [u8; MAX_ENTRIES], // true or false
+    pub _reserved1: [u8; MAX_ENTRIES],
+    pub _reserved2: [u32; MAX_ENTRIES],
+}
+
+impl OracleMappings {
+    pub fn is_twap_enabled(&self, token: usize) -> bool {
+        self.twap_enabled[token] > 0
+    }
+
+    pub fn get_twap_source(&self, token: usize) -> usize {
+        usize::from(self.twap_source[token])
+    }
 }
 
 // Configuration account of the program
@@ -82,7 +125,9 @@ pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
-    _padding: [u64; 1267],
+    pub tokens_metadata: Pubkey,
+    pub oracle_twaps: Pubkey,
+    _padding: [u64; 1259],
 }
 
 #[account(zero_copy)]

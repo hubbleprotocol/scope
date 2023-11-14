@@ -131,6 +131,7 @@ export class ScopeBot {
       // TODO: allow to test with local mapping
     ];
 
+
     let env = this.env();
 
     this.childProcess = execFile(exe_file, args, { env: env }, (err) => {
@@ -146,7 +147,7 @@ export class ScopeBot {
       this.childProcess.stdout.on('data', (data) => {
         const chunks = data.trim().split(/\r?\n/);
         for (let chunk of chunks) {
-          //this.log(`Chunk: ${chunk}`);
+          // this.log(`Chunk: ${chunk}`);
           this.logChunks.push(chunk);
           //TODO: Json logs
           /*try {

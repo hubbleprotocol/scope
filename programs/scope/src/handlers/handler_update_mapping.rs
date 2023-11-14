@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(token:u64, price_type: u8, feed_name: String)]
+#[instruction(token:u64, price_type: u8, twap_enabled: bool, twap_source: u16, feed_name: String)]
 pub struct UpdateOracleMapping<'info> {
     pub admin: Signer<'info>,
     #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin, has_one = oracle_mappings)]
@@ -21,9 +21,19 @@ pub fn process(
     ctx: Context<UpdateOracleMapping>,
     token: usize,
     price_type: u8,
+    twap_enabled: bool,
+    twap_source: u16,
     _: String,
 ) -> Result<()> {
     check_context(&ctx)?;
+
+    msg!(
+        "UpdateOracleMapping, token: {}, price_type: {}, twap_enabled: {}, twap_source: {}",
+        token,
+        price_type,
+        twap_enabled,
+        twap_source
+    );
 
     let mut oracle_mappings = ctx.accounts.oracle_mappings.load_mut()?;
     let ref_price_pubkey = oracle_mappings
@@ -42,12 +52,18 @@ pub fn process(
             *ref_price_pubkey = new_price_pubkey;
         }
         None => {
-            // if no price_info account is passed, it means that the mapping has to be removed so it is set to Pubkey::default
-            *ref_price_pubkey = Pubkey::default();
+            if price_type == OracleType::ScopeTwap {
+                *ref_price_pubkey = crate::id();
+            } else {
+                // if no price_info account is passed, it means that the mapping has to be removed so it is set to Pubkey::default
+                *ref_price_pubkey = Pubkey::default();
+            }
         }
     }
 
     oracle_mappings.price_types[token] = price_type.into();
+    oracle_mappings.twap_enabled[token] = u8::from(twap_enabled);
+    oracle_mappings.twap_source[token] = twap_source;
 
     Ok(())
 }

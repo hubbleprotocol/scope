@@ -1,63 +1,52 @@
-//! Implementation of helper for Jupiter's LP Tokens
+//! Provides a generic implementation for all oracle prices that only requires
+//! one oracle account to perform a price refresh (such as pyth and switchboard)
 
 use std::fmt::{Debug, Display};
 
 use anchor_client::solana_sdk::clock;
 use anyhow::Result;
 use orbit_link::async_client::AsyncClient;
-use scope::oracles::jupiter_lp::get_mint_pk;
 use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
 use super::{OracleHelper, TokenEntry};
 use crate::config::TokenConfig;
 
-#[derive(Debug)]
-pub struct JupiterLPOracle {
-    label: String,
-    /// Pubkey to the Pool account account
-    mapping: Pubkey,
-
-    /// Mint of the LP token
-    /// (PDA derived from the pool account)
-    lp_mint: Pubkey,
-
-    /// Configured max age
-    max_age: clock::Slot,
-
-    twap_enabled: bool,
+pub struct TwapOracle {
+    pub label: String,
+    pub max_age: clock::Slot,
+    pub twap_source: u16,
+    pub twap_enabled: bool,
 }
 
-impl JupiterLPOracle {
-    pub async fn new(conf: &TokenConfig, default_max_age: clock::Slot) -> Result<Self> {
-        let mapping = conf.oracle_mapping;
-        let (lp_mint, _) = get_mint_pk(&mapping);
-
-        Ok(Self {
+impl TwapOracle {
+    pub fn new(conf: &TokenConfig, default_max_age: clock::Slot) -> Self {
+        Self {
             label: conf.label.clone(),
-            mapping,
-            lp_mint,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
+            twap_source: conf
+                .twap_source
+                .expect("TwapOracle should only be used for tokens with a twap_source configured"),
             twap_enabled: conf.twap_enabled,
-        })
+        }
     }
 }
 
 #[async_trait::async_trait]
-impl OracleHelper for JupiterLPOracle {
+impl OracleHelper for TwapOracle {
     fn get_type(&self) -> OracleType {
-        OracleType::JupiterLP
+        OracleType::ScopeTwap
     }
 
     fn get_number_of_extra_accounts(&self) -> usize {
-        1
+        0_usize
     }
 
     fn get_mapping_account(&self) -> Option<Pubkey> {
-        Some(self.mapping)
+        None
     }
 
     async fn get_extra_accounts(&self, _rpc: Option<&dyn AsyncClient>) -> Result<Vec<Pubkey>> {
-        Ok(vec![self.lp_mint])
+        Ok(Vec::with_capacity(0))
     }
 
     fn get_max_age(&self) -> clock::Slot {
@@ -76,15 +65,29 @@ impl OracleHelper for JupiterLPOracle {
         Ok(false)
     }
 
+    fn get_twap_source(&self) -> Option<u16> {
+        Some(self.twap_source)
+    }
+
     fn is_twap_enabled(&self) -> bool {
         self.twap_enabled
     }
 }
 
-impl Display for JupiterLPOracle {
+impl Display for TwapOracle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.label)
     }
 }
 
-impl TokenEntry for JupiterLPOracle {}
+impl Debug for TwapOracle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SingleAccountOracle")
+            .field("label", &self.label)
+            .field("oracle_type", &"ScopeTwap")
+            .field("twap_source", &self.twap_source)
+            .finish()
+    }
+}
+
+impl TokenEntry for TwapOracle {}

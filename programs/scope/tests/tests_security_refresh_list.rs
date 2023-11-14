@@ -1,12 +1,11 @@
 use anchor_lang::{
-    prelude::{AccountMeta, Clock, Pubkey},
+    prelude::{AccountMeta, Pubkey},
     InstructionData, ToAccountMetas,
 };
 use common::*;
 use scope::{OraclePrices, Price, ScopeError};
 use solana_program::{
-    instruction::Instruction,
-    sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signer::Signer};
@@ -23,18 +22,24 @@ const TEST_PYTH_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePythPriceAccount11111111111111111111111"),
     token: 0,
     price_type: TestOracleType::Pyth,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePyth2PriceAccount1111111111111111111111"),
     token: 1,
     price_type: TestOracleType::Pyth,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 const TEST_JLP_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomeJLPPriceAccount111111111111111111111111"),
     token: 5,
     price_type: TestOracleType::JupiterLP,
+    twap_enabled: false,
+    twap_source: None,
 };
 
 #[cfg(feature = "yvaults")]
@@ -87,7 +92,7 @@ async fn test_working_refresh_list() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -147,7 +152,7 @@ async fn test_wrong_oracle_mapping() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: fake_mapping_pk,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -200,7 +205,7 @@ async fn test_wrong_oracle_account_with_copy() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -254,7 +259,7 @@ async fn test_wrong_index_oracle_account() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -310,7 +315,7 @@ async fn test_wrong_sysvar_instructions() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: wrong_sysvar_account,
     }
     .to_account_metas(None);
@@ -356,7 +361,7 @@ async fn test_refresh_through_cpi() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
@@ -410,6 +415,8 @@ async fn test_refresh_with_unexpected_ix() {
         feed_name: feed.feed_name.clone(),
         token: TEST_PYTH_ORACLE.token.try_into().unwrap(),
         price_type: TEST_PYTH_ORACLE.price_type.to_u8(),
+        twap_enabled: false,
+        twap_source: u16::MAX,
     };
 
     let extra_ix = Instruction {
@@ -422,10 +429,11 @@ async fn test_refresh_with_unexpected_ix() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
+
     for conf in TEST_ORACLE_CONF.iter() {
         let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
         accounts.append(&mut refresh_accounts);
@@ -457,12 +465,16 @@ mod ktoken_tests {
         pubkey: pubkey!("SomeKaminoorcaStrategyAccount11111111111111"),
         token: 2,
         price_type: TestOracleType::KToken(DEX::Orca),
+        twap_enabled: false,
+        twap_source: None,
     };
 
     pub const TEST_RAYDIUM_KTOKEN_ORACLE: OracleConf = OracleConf {
         pubkey: pubkey!("SomeKaminoRaydiumStrategyAccount11111111111"),
         token: 3,
         price_type: TestOracleType::KToken(DEX::Raydium),
+        twap_enabled: false,
+        twap_source: None,
     };
 
     // - [ ] Wrong kToken additional global config account
@@ -499,7 +511,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -570,7 +582,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -648,7 +660,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -723,7 +735,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -797,7 +809,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -867,7 +879,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -941,7 +953,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -1012,7 +1024,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -1086,7 +1098,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -1157,7 +1169,7 @@ mod ktoken_tests {
         let mut accounts = scope::accounts::RefreshList {
             oracle_prices: feed.prices,
             oracle_mappings: feed.mapping,
-            clock: Clock::id(),
+            oracle_twaps: feed.twaps,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -1214,7 +1226,7 @@ async fn test_refresh_list_jlp_wrong_mint() {
     let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        clock: Clock::id(),
+        oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);

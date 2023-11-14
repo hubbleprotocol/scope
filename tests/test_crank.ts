@@ -58,6 +58,7 @@ describe('Scope crank bot tests', () => {
   let oracleAccount: PublicKey;
   let oracleMappingAccount: PublicKey;
   let tokenMetadatasAccount: PublicKey;
+  let oracleTwapsAccount: PublicKey;
 
   // NOTE: this only works when the test cases within this describe are
   // executed sequentially
@@ -86,10 +87,12 @@ describe('Scope crank bot tests', () => {
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();
+    let oracleTwaps_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
     tokenMetadatasAccount = tokenMetadatasAccount_kp.publicKey;
+    oracleTwapsAccount = oracleTwaps_kp.publicKey;
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
 
@@ -101,13 +104,15 @@ describe('Scope crank bot tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         tokenMetadatas: tokenMetadatasAccount,
+        oracleTwaps: oracleTwapsAccount,
         rent: SYSVAR_RENT_PUBKEY,
       },
-      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp],
+      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp, oracleTwaps_kp],
       instructions: [
         await program.account.oraclePrices.createInstruction(oracleAccount_kp),
         await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
         await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
+        await program.account.oracleTwaps.createInstruction(oracleTwaps_kp),
       ],
     });
 
@@ -117,15 +122,22 @@ describe('Scope crank bot tests', () => {
 
     await Promise.all(
       fakeAccounts.map(async (fakeOracleAccount, idx): Promise<any> => {
-        await program.rpc.updateMapping(new BN(getRevisedIndex(idx)), fakeOracleAccount.getType(), PRICE_FEED, {
-          accounts: {
-            admin: admin.publicKey,
-            configuration: confAccount,
-            oracleMappings: oracleMappingAccount,
-            priceInfo: fakeOracleAccount.account,
-          },
-          signers: [admin],
-        });
+        await program.rpc.updateMapping(
+          new BN(getRevisedIndex(idx)),
+          fakeOracleAccount.getType(),
+          false,
+          new BN(65_535),
+          PRICE_FEED,
+          {
+            accounts: {
+              admin: admin.publicKey,
+              configuration: confAccount,
+              oracleMappings: oracleMappingAccount,
+              priceInfo: fakeOracleAccount.account,
+            },
+            signers: [admin],
+          }
+        );
         // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
       })
     );

@@ -49,6 +49,10 @@ pub async fn set_price(
             panic!("SplStake oracle type is not available in tests")
         }
         TestOracleType::JupiterLP => jupiter_lp::get_jlp_price_accounts(&conf.pubkey, price),
+        TestOracleType::ScopeTwap(_) => {
+            // This is a derived oracle, we don't override it
+            panic!("Twap oracle is not overridable")
+        }
         TestOracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

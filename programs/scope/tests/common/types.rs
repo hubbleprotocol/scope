@@ -24,6 +24,8 @@ pub struct OracleConf {
     pub token: usize,
     pub price_type: TestOracleType,
     pub pubkey: Pubkey,
+    pub twap_enabled: bool,
+    pub twap_source: Option<u16>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -44,6 +46,8 @@ pub enum TestOracleType {
     PythEMA,
     /// Jupiter's perpetual LP tokens
     JupiterLP,
+    // Scope's TWAP
+    ScopeTwap(usize),
 }
 
 impl TestOracleType {
@@ -64,6 +68,7 @@ impl From<TestOracleType> for OracleType {
             TestOracleType::KToken(_) => OracleType::KToken,
             TestOracleType::PythEMA => OracleType::PythEMA,
             TestOracleType::JupiterLP => OracleType::JupiterLP,
+            TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap,
             TestOracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -76,6 +81,7 @@ pub struct ScopeFeedDefinition {
     pub conf: Pubkey,
     pub mapping: Pubkey,
     pub prices: Pubkey,
+    pub twaps: Pubkey,
 }
 
 pub struct TestContext {
@@ -90,4 +96,5 @@ pub struct ScopeZeroCopyAccounts {
     pub mapping: Keypair,
     pub prices: Keypair,
     pub token_metadatas: Keypair,
+    pub oracle_twaps: Keypair,
 }

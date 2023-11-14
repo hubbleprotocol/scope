@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anchor_lang::prelude::AccountMeta;
 use anchor_lang::{
     prelude::{Clock, Pubkey},
@@ -80,6 +82,23 @@ impl TestContext {
         bytemuck::try_from_bytes(data_ref)
             .map_err(|_| TestError::CannotDeserialize)
             .copied()
+    }
+
+    pub async fn get_zero_copy_account_boxed<T: anchor_lang::ZeroCopy>(
+        &mut self,
+        pubkey: &Pubkey,
+    ) -> Result<Box<T>, TestError> {
+        let account_data = self.get_account_data(pubkey).await?;
+        if account_data.len() < 8 {
+            return Err(TestError::BadDiscriminator);
+        }
+        if account_data[0..8] != T::DISCRIMINATOR {
+            return Err(TestError::BadDiscriminator);
+        }
+        let data_ref = &account_data[8..];
+        Ok(Box::new(
+            *bytemuck::try_from_bytes(data_ref).map_err(|_| TestError::CannotDeserialize)?,
+        ))
     }
 
     /// Set an account data to the given values.
@@ -241,5 +260,16 @@ impl TestContext {
             self.context.get_new_latest_blockhash().await?,
         );
         self.context.banks_client.process_transaction(tx).await
+    }
+
+    pub async fn fast_forward_seconds(&mut self, seconds: u64) {
+        self.fast_forward(Duration::from_secs(seconds)).await
+    }
+
+    async fn fast_forward(&mut self, duration: Duration) {
+        let mut clock = self.get_clock().await;
+        clock.unix_timestamp += duration.as_secs() as i64;
+        clock.slot += duration.as_secs() * 2;
+        self.context.set_sysvar(&clock);
     }
 }

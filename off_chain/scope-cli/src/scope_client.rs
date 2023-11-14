@@ -4,13 +4,13 @@ use std::{collections::HashSet, num::NonZeroU64};
 use anchor_client::{
     anchor_lang::ToAccountMetas,
     solana_sdk::{
-        clock::{self, Clock},
+        clock::{self},
         instruction::AccountMeta,
         pubkey::Pubkey,
         signature::{Keypair, Signature},
         signer::Signer,
         system_program,
-        sysvar::{instructions::ID as SYSVAR_INSTRUCTIONS_ID, SysvarId},
+        sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
     },
 };
 use anyhow::{anyhow, bail, Context, Result};
@@ -18,8 +18,8 @@ use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope::{
-    accounts, instruction, Configuration, OracleMappings, OraclePrices, TokenMetadatas,
-    UpdateTokenMetadataMode,
+    accounts, instruction, Configuration, OracleMappings, OraclePrices, OracleTwaps,
+    TokenMetadatas, UpdateTokenMetadataMode,
 };
 use tracing::{debug, error, info, trace, warn};
 
@@ -42,6 +42,7 @@ pub struct ScopeClient<T: AsyncClient, S: Signer> {
     feed_name: String,
     configuration_acc: Pubkey,
     oracle_prices_acc: Pubkey,
+    oracle_twaps_acc: Pubkey,
     oracle_mappings_acc: Pubkey,
     tokens_metadata_acc: Pubkey,
     tokens: TokenEntryList,
@@ -62,7 +63,7 @@ where
         let (configuration_acc, _) =
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], &program_id);
 
-        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, .. } = client
+        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, oracle_twaps, .. } = client
             .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
@@ -71,6 +72,7 @@ where
             program_id,
             feed_name: price_feed.to_string(),
             configuration_acc,
+            oracle_twaps_acc: oracle_twaps,
             oracle_prices_acc: oracle_prices,
             oracle_mappings_acc: oracle_mappings,
             tokens_metadata_acc: tokens_metadata,
@@ -78,7 +80,7 @@ where
         };
 
         // if the token_metadatas is not initialized, initialize it here
-        Self::init_token_metadatas_if_needed(&mut client, price_feed).await?;
+        Self::init_oracle_twaps_if_needed(&mut client, price_feed).await?;
 
         debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %tokens_metadata, %price_feed);
 
@@ -96,6 +98,7 @@ where
         let oracle_prices_acc = Keypair::new();
         let oracle_mappings_acc = Keypair::new();
         let token_metadatas_acc = Keypair::new();
+        let twap_buffers_acc = Keypair::new();
 
         // Compute configuration PDA pbk
         let (configuration_acc, _) =
@@ -108,6 +111,7 @@ where
             &oracle_prices_acc,
             &oracle_mappings_acc,
             &token_metadatas_acc,
+            &twap_buffers_acc,
             price_feed,
         )
         .await?;
@@ -120,28 +124,34 @@ where
             feed_name: price_feed.to_string(),
             configuration_acc,
             oracle_prices_acc: oracle_prices_acc.pubkey(),
+            oracle_twaps_acc: twap_buffers_acc.pubkey(),
             oracle_mappings_acc: oracle_mappings_acc.pubkey(),
             tokens_metadata_acc: token_metadatas_acc.pubkey(),
             tokens: IntMap::default(),
         })
     }
 
-    pub async fn init_token_metadatas_if_needed(&mut self, price_feed: &str) -> Result<()> {
-        if self.tokens_metadata_acc.eq(&Pubkey::default()) {
-            // Generate accounts keypairs.
-            let token_metadatas_acc = Keypair::new();
+    pub async fn init_oracle_twaps_if_needed(&mut self, price_feed: &str) -> Result<()> {
+        if self.oracle_twaps_acc.eq(&Pubkey::default()) {
+            let oracle_twaps_acc = Keypair::new();
 
-            Self::ix_initialize_token_metadatas(
+            Self::ix_initialize_oracle_twaps(
                 &self.client,
                 &self.program_id,
                 &self.configuration_acc,
-                &token_metadatas_acc,
+                &oracle_twaps_acc,
                 price_feed,
             )
             .await?;
 
-            self.tokens_metadata_acc = token_metadatas_acc.pubkey();
+            self.oracle_twaps_acc = oracle_twaps_acc.pubkey();
         }
+
+        Ok(())
+    }
+
+    pub async fn reset_twap_price(&self, token: u16) -> Result<()> {
+        Self::ix_reset_twap(self, token).await?;
 
         Ok(())
     }
@@ -170,19 +180,45 @@ where
         let program_mapping = self.get_program_mapping().await?;
         let onchain_accounts_mapping = program_mapping.price_info_accounts;
         let onchain_price_type_mapping = program_mapping.price_types;
+        let onchain_twap_enabled = program_mapping.twap_enabled;
+        let onchain_twap_source = program_mapping.twap_source;
         let token_metadatas = self.get_token_metadatas().await?;
 
         // For all "token" local and remote
         for (&token_idx, local_entry) in &self.tokens {
             let idx: usize = token_idx.try_into().unwrap();
-            let rem_mapping = &onchain_accounts_mapping[idx];
+            let rem_mapping = if onchain_accounts_mapping[idx] == Pubkey::default()
+                || onchain_accounts_mapping[idx] == self.program_id
+            {
+                None
+            } else {
+                Some(onchain_accounts_mapping[idx])
+            };
             let rem_price_type = onchain_price_type_mapping[idx];
+            let rem_twap_enabled = onchain_twap_enabled[idx] != 0;
+            let rem_twap_source = if onchain_twap_source[idx] != u16::MAX {
+                Some(onchain_twap_source[idx])
+            } else {
+                None
+            };
             // Update remote in case of difference
             let local_mapping_pk = local_entry.get_mapping_account();
             let loc_price_type_u8: u8 = local_entry.get_type().into();
-            if rem_mapping != local_mapping_pk || rem_price_type != loc_price_type_u8 {
-                self.ix_update_mapping(Some(local_mapping_pk), token_idx.into(), loc_price_type_u8)
-                    .await?;
+            let loc_twap_enabled = local_entry.is_twap_enabled();
+            let loc_twap_source = local_entry.get_twap_source();
+            if rem_mapping != local_mapping_pk
+                || rem_price_type != loc_price_type_u8
+                || rem_twap_enabled != loc_twap_enabled
+                || rem_twap_source != loc_twap_source
+            {
+                self.ix_update_mapping(
+                    local_mapping_pk,
+                    token_idx.into(),
+                    loc_price_type_u8,
+                    loc_twap_enabled,
+                    loc_twap_source,
+                )
+                .await?;
             }
             let token_metadata = token_metadatas.metadatas_array[idx];
             if token_metadata.max_age_price_seconds != local_entry.get_max_age() {
@@ -212,7 +248,7 @@ where
                     .iter()
                     .any(|(local_id, _)| idx == usize::from(*local_id))
             {
-                self.ix_update_mapping(None, idx.try_into().unwrap(), 0)
+                self.ix_update_mapping(None, idx.try_into().unwrap(), 0, false, None)
                     .await?;
             }
         }
@@ -225,6 +261,8 @@ where
         let token_metadatas = self.get_token_metadatas().await?;
         let onchain_mapping = onchain_oracle_mapping.price_info_accounts;
         let onchain_types = onchain_oracle_mapping.price_types;
+        let twaps_enabled = &onchain_oracle_mapping.twap_enabled;
+        let twap_sources = &onchain_oracle_mapping.twap_source;
 
         let zero_pk = Pubkey::default();
         let rpc = self.get_rpc();
@@ -233,11 +271,22 @@ where
             .iter()
             .enumerate()
             .zip(onchain_types)
+            .zip(twaps_enabled.iter())
+            .zip(twap_sources.iter())
             .zip(token_metadatas.metadatas_array.iter())
-            .filter(|(((_, &oracle_mapping), _), _)| oracle_mapping != zero_pk)
+            .filter(|(((((_, &oracle_mapping), _), _), _), _)| oracle_mapping != zero_pk)
             .map(
-                |(((idx, &oracle_mapping), oracle_type), token_metadata)| async move {
+                |(
+                    ((((idx, &oracle_mapping), oracle_type), twap_enabled), twap_source),
+                    token_metadata,
+                )| async move {
                     let id: u16 = idx.try_into()?;
+                    let twap_source = if *twap_source == u16::MAX {
+                        None
+                    } else {
+                        Some(*twap_source)
+                    };
+                    let twap_enabled = *twap_enabled != 0;
                     let first_0_or_length = token_metadata
                         .name
                         .iter()
@@ -253,6 +302,8 @@ where
                             Ok(nz) => Some(nz),
                         },
                         oracle_mapping,
+                        twap_enabled,
+                        twap_source,
                     };
                     let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
                     Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
@@ -276,9 +327,11 @@ where
                     *id,
                     TokenConfig {
                         label: entry.to_string(),
-                        oracle_mapping: *entry.get_mapping_account(),
+                        oracle_mapping: entry.get_mapping_account().unwrap_or_default(),
                         oracle_type: entry.get_type(),
-                        max_age: None,
+                        max_age: std::num::NonZeroU64::new(entry.get_max_age()),
+                        twap_enabled: entry.is_twap_enabled(),
+                        twap_source: entry.get_twap_source(),
                     },
                 )
             })
@@ -464,10 +517,12 @@ where
 
         for entry in self.tokens.values() {
             let main_mapping = entry.get_mapping_account();
-            pubkeys.insert(*main_mapping);
-            let extra_accounts = entry.get_extra_accounts(None).await?;
-            for account in extra_accounts {
-                pubkeys.insert(account);
+            if let Some(main_mapping) = main_mapping {
+                pubkeys.insert(main_mapping);
+                let extra_accounts = entry.get_extra_accounts(None).await?;
+                for account in extra_accounts {
+                    pubkeys.insert(account);
+                }
             }
         }
         pubkeys.iter().for_each(|pk| print!("{pk} "));
@@ -506,6 +561,7 @@ where
         Ok(token_metadatas)
     }
 
+    #[allow(clippy::too_many_arguments)]
     #[tracing::instrument(skip(client))]
     async fn ix_initialize(
         client: &OrbitLink<T, S>,
@@ -514,6 +570,7 @@ where
         oracle_prices_acc: &Keypair,
         oracle_mappings_acc: &Keypair,
         token_metadatas_acc: &Keypair,
+        twap_buffers_acc: &Keypair,
         price_feed: &str,
     ) -> Result<()> {
         debug!("Entering initialize ix");
@@ -526,6 +583,7 @@ where
             oracle_prices: oracle_prices_acc.pubkey(),
             oracle_mappings: oracle_mappings_acc.pubkey(),
             token_metadatas: token_metadatas_acc.pubkey(),
+            oracle_twaps: twap_buffers_acc.pubkey(),
         };
 
         let init_tx = client
@@ -563,6 +621,16 @@ where
                     .await?,
                 50_000,
             )
+            .add_ix_with_budget(
+                client
+                    .create_account_ix(
+                        &twap_buffers_acc.pubkey(),
+                        size_of::<OracleTwaps>() + 8,
+                        program_id,
+                    )
+                    .await?,
+                50_000,
+            )
             .add_anchor_ix(
                 program_id,
                 init_account,
@@ -574,6 +642,7 @@ where
                 oracle_prices_acc,
                 oracle_mappings_acc,
                 token_metadatas_acc,
+                twap_buffers_acc,
             ])
             .await?;
 
@@ -586,32 +655,27 @@ where
         }
     }
 
-    #[tracing::instrument(skip(client))]
-    async fn ix_initialize_token_metadatas(
+    async fn ix_initialize_oracle_twaps(
         client: &OrbitLink<T, S>,
         program_id: &Pubkey,
         configuration_acc: &Pubkey,
-        token_metadatas_acc: &Keypair,
+        oracle_twaps_acc: &Keypair,
         price_feed: &str,
     ) -> Result<()> {
-        debug!("Entering token_metadatas initialize ix");
-
-        // Prepare init instruction accounts
-        let init_account = accounts::InitializeTokensMetadata {
+        let init_accounts = accounts::InitializeOracleTwaps {
             admin: client.payer(),
-            system_program: system_program::ID,
             configuration: *configuration_acc,
-            token_metadatas: token_metadatas_acc.pubkey(),
+            oracle_twaps: oracle_twaps_acc.pubkey(),
+            system_program: system_program::ID,
         };
 
         let init_tx = client
             .tx_builder()
-            // Create the price account
             .add_ix_with_budget(
                 client
                     .create_account_ix(
-                        &token_metadatas_acc.pubkey(),
-                        size_of::<TokenMetadatas>() + 8,
+                        &oracle_twaps_acc.pubkey(),
+                        size_of::<OracleTwaps>() + 8,
                         program_id,
                     )
                     .await?,
@@ -619,12 +683,12 @@ where
             )
             .add_anchor_ix(
                 program_id,
-                init_account,
-                instruction::InitializeTokensMetadata {
+                init_accounts,
+                instruction::InitializeOracleTwaps {
                     feed_name: price_feed.to_string(),
                 },
             )
-            .build_with_budget_and_fee(&[token_metadatas_acc])
+            .build_with_budget_and_fee(&[oracle_twaps_acc])
             .await?;
 
         let (signature, init_res) = client.send_retry_and_confirm_transaction(init_tx).await?;
@@ -639,15 +703,20 @@ where
     #[tracing::instrument(skip(self))]
     async fn ix_update_mapping(
         &self,
-        oracle_account: Option<&Pubkey>,
+        oracle_account: Option<Pubkey>,
         token: u64,
         price_type: u8,
+        twap_enabled: bool,
+        twap_source: Option<u16>,
     ) -> Result<()> {
+        // Manually skip auto anchor resolution of optional account because of issues with mainnet/devnet/localnet builds.
+        let price_info = Some(oracle_account.unwrap_or(self.program_id));
+
         let update_accounts = accounts::UpdateOracleMapping {
             admin: self.client.payer(),
             configuration: self.configuration_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            price_info: oracle_account.copied(),
+            price_info,
         };
 
         let request = self.client.tx_builder();
@@ -659,6 +728,8 @@ where
                 instruction::UpdateMapping {
                     token,
                     price_type,
+                    twap_enabled,
+                    twap_source: twap_source.unwrap_or(u16::MAX),
                     feed_name: self.feed_name.clone(),
                 },
             )
@@ -729,6 +800,47 @@ where
     }
 
     #[tracing::instrument(skip(self))]
+    pub async fn ix_reset_twap(&self, token: u16) -> Result<()> {
+        let reset_twap_price_accounts = accounts::ResetTwap {
+            admin: self.client.payer(),
+            oracle_prices: self.oracle_prices_acc,
+            configuration: self.configuration_acc,
+            oracle_twaps: self.oracle_twaps_acc,
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        };
+
+        let request = self.client.tx_builder();
+
+        let tx = request
+            .add_anchor_ix(
+                &self.program_id,
+                reset_twap_price_accounts,
+                instruction::ResetTwap {
+                    token: token.into(),
+                    feed_name: self.feed_name.clone(),
+                },
+            )
+            .build_with_budget_and_fee(&[])
+            .await?;
+
+        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
+
+        match res {
+            Some(Ok(())) => info!(%signature, "TWAP reset successfully"),
+            Some(Err(err)) => {
+                error!(%signature, err = ?err, "TWAP reset failed");
+                bail!(err);
+            }
+            None => {
+                error!(%signature, "Could not confirm TWAP reset transaction");
+                bail!("Could not confirm TWAP reset transaction");
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
     pub async fn ix_refresh_one_price(&self, token: u16) -> Result<()> {
         let entry = self
             .tokens
@@ -737,8 +849,8 @@ where
         let mut refresh_accounts = accounts::RefreshOne {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            price_info: *entry.get_mapping_account(),
-            clock: Clock::id(),
+            oracle_twaps: self.oracle_twaps_acc,
+            price_info: entry.get_mapping_account().unwrap_or(self.program_id),
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -779,7 +891,7 @@ where
         let mut refresh_accounts = accounts::RefreshList {
             oracle_prices: self.oracle_prices_acc,
             oracle_mappings: self.oracle_mappings_acc,
-            clock: Clock::id(),
+            oracle_twaps: self.oracle_twaps_acc,
             instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
         }
         .to_account_metas(None);
@@ -794,7 +906,7 @@ where
                 .ok_or_else(|| anyhow!("Unexpected token {token_idx}"))?;
             // Note: no control at this point, all token accounts will be sent in on tx
             refresh_accounts.push(AccountMeta::new_readonly(
-                *entry.get_mapping_account(),
+                entry.get_mapping_account().unwrap_or(self.program_id),
                 false,
             ));
             for extra in entry.get_extra_accounts(Some(rpc)).await? {
