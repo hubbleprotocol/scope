@@ -237,8 +237,8 @@ pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
-    pub oracle_twaps: Pubkey,
     pub tokens_metadata: Pubkey,
+    pub oracle_twaps: Pubkey,
     _padding: [u64; 1259],
 }
 
