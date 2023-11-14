@@ -192,13 +192,11 @@ async fn main() -> Result<()> {
                 alert_old_price_after_slots,
                 old_price_is_error,
             } => {
-                println!("initial crank call");
                 let _server_handle = if server {
                     Some(web::server::thread_start(server_port).await)
                 } else {
                     None
                 };
-                println!("before crank");
                 crank(
                     &mut scope,
                     (mapping).as_ref(),
@@ -293,8 +291,6 @@ async fn crank<T: AsyncClient, S: Signer>(
     old_price_is_error: bool,
 ) -> Result<()> {
     if let Some(mapping) = mapping_op {
-        println!("SILVIU  in if");
-        info!("SILVIU  in if");
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         info!(
             "Default refresh interval set to {:?} slots",
@@ -303,8 +299,6 @@ async fn crank<T: AsyncClient, S: Signer>(
         scope.set_local_mapping(&token_list).await?;
         // TODO add check if local is correctly equal to remote mapping
     } else {
-        println!("SILVIU  in else");
-        info!("SILVIU  in else");
         info!(
             "Default refresh interval set to {:?} slots",
             refresh_interval_slot
