@@ -38,13 +38,6 @@ pub mod scope {
         handler_initialize::process(ctx, feed_name)
     }
 
-    pub fn initialize_tokens_metadata(
-        ctx: Context<InitializeTokensMetadata>,
-        feed_name: String,
-    ) -> Result<()> {
-        handler_initialize_tokens_metadata::process(ctx, feed_name)
-    }
-
     pub fn initialize_oracle_twaps(
         ctx: Context<InitializeOracleTwaps>,
         feed_name: String,
