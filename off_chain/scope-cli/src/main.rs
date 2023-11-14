@@ -130,6 +130,15 @@ enum Actions {
         #[clap(long, env, parse(from_os_str))]
         mapping: Option<PathBuf>,
     },
+
+    /// Resets the value of a TWAP to the current price for that asset.
+    /// This requires initial program deploy account
+    #[clap()]
+    ResetTwap {
+        /// The index of the token for which we want to reset the TWAP
+        #[clap(long, env)]
+        token: u16,
+    },
 }
 
 #[tokio::main]
@@ -200,6 +209,7 @@ async fn main() -> Result<()> {
                 .await
             }
             Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping).await,
+            Actions::ResetTwap { token } => reset_twap(&scope, token).await,
         }
     }
 }
@@ -358,4 +368,11 @@ async fn crank<T: AsyncClient, S: Signer>(
             _ = &mut async_refresh_price_loop => {},
         }
     }
+}
+
+async fn reset_twap<T: AsyncClient, S: Signer>(
+    scope: &ScopeClient<T, S>,
+    token: u16,
+) -> Result<()> {
+    scope.reset_twap_price(token).await
 }

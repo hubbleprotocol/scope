@@ -10,7 +10,7 @@ use std::{convert::TryInto, num::TryFromIntError};
 
 pub use anchor_lang;
 use anchor_lang::prelude::*;
-use decimal_wad::error::DecimalError;
+use decimal_wad::{decimal::Decimal, error::DecimalError};
 use handlers::*;
 use num_derive::FromPrimitive;
 pub use num_enum;
@@ -32,8 +32,6 @@ pub const VALUE_BYTE_ARRAY_LEN: usize = 32;
 #[program]
 pub mod scope {
 
-    use handlers::handler_update_token_metadata::UpdateTokensMetadata;
-
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, feed_name: String) -> Result<()> {
@@ -45,6 +43,13 @@ pub mod scope {
         feed_name: String,
     ) -> Result<()> {
         handler_initialize_tokens_metadata::process(ctx, feed_name)
+    }
+
+    pub fn initialize_oracle_twaps(
+        ctx: Context<InitializeOracleTwaps>,
+        feed_name: String,
+    ) -> Result<()> {
+        handler_initialize_oracle_twaps::process(ctx, feed_name)
     }
 
     //This handler only works for Pyth type tokens
@@ -63,12 +68,28 @@ pub mod scope {
         ctx: Context<UpdateOracleMapping>,
         token: u64,
         price_type: u8,
+        twap_enabled: bool,
+        twap_source: u16,
         feed_name: String,
     ) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
-        handler_update_mapping::process(ctx, token, price_type, feed_name)
+        handler_update_mapping::process(
+            ctx,
+            token,
+            price_type,
+            twap_enabled,
+            twap_source,
+            feed_name,
+        )
+    }
+
+    pub fn reset_twap(ctx: Context<ResetTwap>, token: u64, feed_name: String) -> Result<()> {
+        let token: usize = token
+            .try_into()
+            .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
+        handler_reset_twap::process(ctx, token, feed_name)
     }
 
     pub fn update_token_metadata(
@@ -133,6 +154,49 @@ impl Default for DatedPrice {
     }
 }
 
+#[zero_copy]
+#[derive(Debug, Eq, PartialEq)]
+pub struct EmaTwap {
+    pub last_update_slot: u64, // the slot when the last observation was added
+    pub last_update_unix_timestamp: u64,
+
+    pub current_ema_1h: u128,
+
+    pub padding: [u128; 40],
+}
+
+impl Default for EmaTwap {
+    fn default() -> Self {
+        Self {
+            current_ema_1h: 0,
+            last_update_slot: 0,
+            last_update_unix_timestamp: 0,
+            padding: [0_u128; 40],
+        }
+    }
+}
+
+impl EmaTwap {
+    fn as_dated_price(&self, index: u16) -> DatedPrice {
+        DatedPrice {
+            price: Decimal::from_scaled_val(self.current_ema_1h).into(),
+            last_updated_slot: self.last_update_slot,
+            unix_timestamp: self.last_update_unix_timestamp,
+            _reserved: [0; 2],
+            _reserved2: [0; 3],
+            index,
+        }
+    }
+}
+
+// Account to store dated TWAP prices
+#[account(zero_copy)]
+pub struct OracleTwaps {
+    pub oracle_prices: Pubkey,
+    pub oracle_mappings: Pubkey,
+    pub twaps: [EmaTwap; MAX_ENTRIES],
+}
+
 // Account to store dated prices
 #[account(zero_copy)]
 pub struct OraclePrices {
@@ -145,7 +209,20 @@ pub struct OraclePrices {
 pub struct OracleMappings {
     pub price_info_accounts: [Pubkey; MAX_ENTRIES],
     pub price_types: [u8; MAX_ENTRIES],
-    pub _reserved2: [u64; MAX_ENTRIES],
+    pub twap_source: [u16; MAX_ENTRIES], // meaningful only if type == TWAP; the index of where we find the TWAP
+    pub twap_enabled: [u8; MAX_ENTRIES], // true or false
+    pub _reserved1: [u8; MAX_ENTRIES],
+    pub _reserved2: [u32; MAX_ENTRIES],
+}
+
+impl OracleMappings {
+    pub fn is_twap_enabled(&self, token: usize) -> bool {
+        self.twap_enabled[token] > 0
+    }
+
+    pub fn get_twap_source(&self, token: usize) -> usize {
+        usize::from(self.twap_source[token])
+    }
 }
 
 #[account(zero_copy)]
@@ -167,8 +244,9 @@ pub struct Configuration {
     pub admin: Pubkey,
     pub oracle_mappings: Pubkey,
     pub oracle_prices: Pubkey,
+    pub oracle_twaps: Pubkey,
     pub tokens_metadata: Pubkey,
-    _padding: [u64; 1263],
+    _padding: [u64; 1259],
 }
 
 #[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
@@ -180,6 +258,10 @@ pub enum UpdateTokenMetadataMode {
 
 impl UpdateTokenMetadataMode {
     pub fn to_u64(self) -> u64 {
+        self.to_u16().into()
+    }
+
+    pub fn to_u16(self) -> u16 {
         match self {
             UpdateTokenMetadataMode::Name => 0,
             UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
@@ -240,6 +322,18 @@ pub enum ScopeError {
 
     #[msg("Unable to derive PDA address")]
     UnableToDerivePDA,
+
+    #[msg("Invalid timestamp")]
+    BadTimestamp,
+
+    #[msg("Invalid slot")]
+    BadSlot,
+
+    #[msg("TWAP price account is different than Scope ID")]
+    PriceAccountNotExpected,
+
+    #[msg("TWAP source index out of range")]
+    TwapSourceIndexOutOfRange,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

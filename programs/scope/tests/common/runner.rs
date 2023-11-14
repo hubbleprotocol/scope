@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anchor_lang::prelude::AccountMeta;
 use anchor_lang::{
     prelude::{Clock, Pubkey},
@@ -241,5 +243,16 @@ impl TestContext {
             self.context.get_new_latest_blockhash().await?,
         );
         self.context.banks_client.process_transaction(tx).await
+    }
+
+    pub async fn fast_forward_seconds(&mut self, seconds: u64) {
+        self.fast_forward(Duration::from_secs(seconds)).await
+    }
+
+    async fn fast_forward(&mut self, duration: Duration) {
+        let mut clock = self.get_clock().await;
+        clock.unix_timestamp += duration.as_secs() as i64;
+        clock.slot += duration.as_secs() as u64 * 2;
+        self.context.set_sysvar(&clock);
     }
 }

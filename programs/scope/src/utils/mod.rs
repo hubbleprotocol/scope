@@ -1,3 +1,4 @@
+pub mod macros;
 pub mod math;
 pub mod price_impl;
 pub mod scope_chain;

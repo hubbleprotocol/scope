@@ -1,7 +1,9 @@
 use std::{fs::File, io::BufReader, path::Path};
 
+use anchor_client::solana_sdk::pubkey::Pubkey;
 use anyhow::Result;
 use nohash_hasher::IntMap;
+use scope::oracles::OracleType;
 use serde::{Deserialize, Serialize};
 
 use super::{token_config::TokenConfig, utils::serde_int_map};
@@ -28,7 +30,38 @@ impl ScopeConfig {
     pub fn read_from_file(file_path: &impl AsRef<Path>) -> Result<Self> {
         let file = File::open(file_path)?;
         let buf_reader = BufReader::new(file);
-        Ok(serde_json::from_reader(buf_reader)?)
+        let config: ScopeConfig = serde_json::from_reader(buf_reader)?;
+        for (id, token) in config.tokens.iter() {
+            if token.oracle_type == OracleType::ScopeTwap {
+                if token.twap_source.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "Twap source not set for token {id}: {}",
+                        token.label
+                    ));
+                }
+                if token.oracle_mapping != Pubkey::default() {
+                    return Err(anyhow::anyhow!(
+                        "Token {id}: {} is of type Twap but oracle mapping is provided",
+                        token.label
+                    ));
+                }
+            } else {
+                if token.twap_source.is_some() {
+                    return Err(anyhow::anyhow!(
+                        "Twap source set for token {id}: {} but token is not of type Twap",
+                        token.label
+                    ));
+                }
+                if token.oracle_mapping == Pubkey::default() {
+                    return Err(anyhow::anyhow!(
+                        "Token {id}: {} invalid oracle mapping provided",
+                        token.label
+                    ));
+                }
+            }
+        }
+
+        Ok(config)
     }
 }
 
@@ -56,6 +89,8 @@ mod tests {
                 oracle_mapping: Pubkey::from_str("J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix")
                     .unwrap(),
                 oracle_type: OracleType::Pyth,
+                twap_enabled: false,
+                twap_source: None,
             },
         );
         token_conf_list.tokens.insert(
@@ -66,6 +101,8 @@ mod tests {
                 oracle_mapping: Pubkey::from_str("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw")
                     .unwrap(),
                 oracle_type: OracleType::SwitchboardV1,
+                twap_enabled: false,
+                twap_source: None,
             },
         );
         token_conf_list.tokens.insert(
@@ -76,6 +113,8 @@ mod tests {
                 oracle_mapping: Pubkey::from_str("9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA")
                     .unwrap(),
                 oracle_type: OracleType::SwitchboardV2,
+                twap_enabled: false,
+                twap_source: None,
             },
         );
         token_conf_list.tokens.insert(
@@ -86,6 +125,8 @@ mod tests {
                 oracle_mapping: Pubkey::from_str("9LNYQZLJG5DAyeACCTzBFG6H3sDhehP5xtYLdhrZtQkA")
                     .unwrap(),
                 oracle_type: OracleType::CToken,
+                twap_enabled: false,
+                twap_source: None,
             },
         );
         token_conf_list.tokens.insert(
@@ -96,6 +137,8 @@ mod tests {
                 oracle_mapping: Pubkey::from_str("VF45TSF5WPAay9qy2zr1hPYgieBv7r17vYLRK6v1RmB")
                     .unwrap(),
                 oracle_type: OracleType::KToken,
+                twap_enabled: false,
+                twap_source: None,
             },
         );
 

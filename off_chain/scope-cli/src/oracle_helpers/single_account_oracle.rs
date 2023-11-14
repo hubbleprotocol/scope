@@ -16,6 +16,7 @@ pub struct SingleAccountOracle {
     pub oracle_account: Pubkey,
     pub oracle_type: OracleType,
     pub max_age: clock::Slot,
+    pub twap_enabled: bool,
 }
 
 impl SingleAccountOracle {
@@ -25,6 +26,7 @@ impl SingleAccountOracle {
             oracle_account: conf.oracle_mapping,
             oracle_type: conf.oracle_type,
             max_age: conf.max_age.map(|nz| nz.into()).unwrap_or(default_max_age),
+            twap_enabled: conf.twap_enabled,
         }
     }
 }
@@ -39,8 +41,8 @@ impl OracleHelper for SingleAccountOracle {
         0_usize
     }
 
-    fn get_mapping_account(&self) -> &Pubkey {
-        &self.oracle_account
+    fn get_mapping_account(&self) -> Option<Pubkey> {
+        Some(self.oracle_account)
     }
 
     async fn get_extra_accounts(&self, _rpc: Option<&dyn AsyncClient>) -> Result<Vec<Pubkey>> {
@@ -61,6 +63,10 @@ impl OracleHelper for SingleAccountOracle {
         _rpc: &dyn AsyncClient,
     ) -> Result<bool> {
         Ok(false)
+    }
+
+    fn is_twap_enabled(&self) -> bool {
+        self.twap_enabled
     }
 }
 

@@ -48,6 +48,7 @@ describe('Switchboard Scope tests', () => {
   let oracleAccount: PublicKey;
   let oracleMappingAccount: PublicKey;
   let tokenMetadatasAccount: PublicKey;
+  let oracleTwapsAccount: PublicKey;
 
   let testTokens: ITokenEntry[];
 
@@ -63,10 +64,12 @@ describe('Switchboard Scope tests', () => {
     let oracleAccount_kp = Keypair.generate();
     let oracleMappingAccount_kp = Keypair.generate();
     let tokenMetadatasAccount_kp = Keypair.generate();
+    let oracleTwapsAccount_kp = Keypair.generate();
 
     oracleAccount = oracleAccount_kp.publicKey;
     oracleMappingAccount = oracleMappingAccount_kp.publicKey;
     tokenMetadatasAccount = tokenMetadatasAccount_kp.publicKey;
+    oracleTwapsAccount = oracleTwapsAccount_kp.publicKey;
 
     console.log(`program data address is ${programDataAddress.toBase58()}`);
 
@@ -78,13 +81,15 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         tokenMetadatas: tokenMetadatasAccount,
+        oracleTwaps: oracleTwapsAccount,
         rent: SYSVAR_RENT_PUBKEY,
       },
-      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp],
+      signers: [admin, oracleAccount_kp, oracleMappingAccount_kp, tokenMetadatasAccount_kp, oracleTwapsAccount_kp],
       instructions: [
         await program.account.oraclePrices.createInstruction(oracleAccount_kp),
         await program.account.oracleMappings.createInstruction(oracleMappingAccount_kp),
         await program.account.tokenMetadatas.createInstruction(tokenMetadatasAccount_kp),
+        await program.account.oracleTwaps.createInstruction(oracleTwapsAccount_kp),
       ],
     });
 
@@ -98,7 +103,7 @@ describe('Switchboard Scope tests', () => {
       testTokens.map(async (fakeOracleAccount, idx): Promise<any> => {
         // console.log(`Set mapping of ${fakeOracleAccount.ticker}`);
 
-        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), PRICE_FEED, {
+        await program.rpc.updateMapping(new BN(idx), fakeOracleAccount.getType(), false, new BN(65_535), PRICE_FEED, {
           accounts: {
             admin: admin.publicKey,
             configuration: confAccount,
@@ -116,7 +121,7 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.STSOLUSD].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
@@ -132,7 +137,7 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
@@ -148,7 +153,7 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.USDHUSD].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
@@ -166,7 +171,7 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.STSOLUSD].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
@@ -183,7 +188,7 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],
@@ -200,7 +205,7 @@ describe('Switchboard Scope tests', () => {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
         priceInfo: testTokens[HubbleTokens.USDHUSD].account,
-        clock: SYSVAR_CLOCK_PUBKEY,
+        oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
       signers: [],

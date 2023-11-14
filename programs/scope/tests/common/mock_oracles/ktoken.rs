@@ -52,11 +52,15 @@ pub(super) async fn get_ktoken_price_accounts(
         pubkey: pubkey!("KaminoTokenAPyth111111111111111111111111111"),
         price_type: TestOracleType::Pyth,
         token: token_a,
+        twap_enabled: false,
+        twap_source: None,
     };
     let token_b_oracle_conf = OracleConf {
         pubkey: pubkey!("KaminoTokenBPyth111111111111111111111111111"),
         price_type: TestOracleType::Pyth,
         token: token_b,
+        twap_enabled: false,
+        twap_source: None,
     };
     // Set the price
     mock_oracles::set_price(

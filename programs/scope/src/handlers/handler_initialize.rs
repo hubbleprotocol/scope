@@ -17,6 +17,9 @@ pub struct Initialize<'info> {
     #[account(zero)]
     pub token_metadatas: AccountLoader<'info, crate::TokenMetadatas>,
 
+    #[account(zero)]
+    pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
+
     // Account is pre-reserved/paid outside the program
     #[account(zero)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
@@ -28,20 +31,29 @@ pub struct Initialize<'info> {
 
 pub fn process(ctx: Context<Initialize>, _: String) -> Result<()> {
     // Initialize oracle mapping account
-    let _mappings = ctx.accounts.oracle_mappings.load_init()?;
+    let _ = ctx.accounts.oracle_mappings.load_init()?;
 
     // Initialize oracle price account
     let oracle_pbk = ctx.accounts.oracle_mappings.key();
+    let twaps_pbk = ctx.accounts.oracle_twaps.key();
+
     let mut oracle_prices = ctx.accounts.oracle_prices.load_init()?;
     oracle_prices.oracle_mappings = oracle_pbk;
 
     // Initialize configuration account
     let prices_pbk = ctx.accounts.oracle_prices.key();
     let admin = ctx.accounts.admin.key();
-    let mut configuration = ctx.accounts.configuration.load_init()?;
+    let mut configuration: std::cell::RefMut<'_, crate::Configuration> =
+        ctx.accounts.configuration.load_init()?;
     configuration.admin = admin;
     configuration.oracle_mappings = oracle_pbk;
     configuration.oracle_prices = prices_pbk;
+    configuration.oracle_twaps = twaps_pbk;
+
+    // Initialize oracle twap account
+    let mut oracle_twaps = ctx.accounts.oracle_twaps.load_init()?;
+    oracle_twaps.oracle_prices = prices_pbk;
+    oracle_twaps.oracle_mappings = oracle_pbk;
 
     let _ = ctx.accounts.token_metadatas.load_init()?;
     configuration.tokens_metadata = ctx.accounts.token_metadatas.key();

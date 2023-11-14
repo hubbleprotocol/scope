@@ -11,12 +11,13 @@ pub mod pyth_ema;
 pub mod spl_stake;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
+pub mod twap;
 
 use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
-use crate::{DatedPrice, ScopeError};
+use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError};
 
 use self::ktokens_token_x::TokenTypes;
 
@@ -56,9 +57,15 @@ pub enum OracleType {
     KTokenToTokenB = 10,
     /// Jupiter's perpetual LP tokens
     JupiterLP = 11,
+    /// Scope twap
+    ScopeTwap = 12,
 }
 
 impl OracleType {
+    pub fn is_twap(&self) -> bool {
+        matches!(self, OracleType::ScopeTwap)
+    }
+
     /// Get the number of compute unit needed to refresh the price of a token
     pub fn get_update_cu_budget(&self) -> u32 {
         match self {
@@ -73,6 +80,7 @@ impl OracleType {
             OracleType::KTokenToTokenB => 100000,
             OracleType::MsolStake => 20000,
             OracleType::JupiterLP => 40000,
+            OracleType::ScopeTwap => 10000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -90,6 +98,9 @@ pub fn get_price<'a, 'b>(
     base_account: &AccountInfo,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
     clock: &Clock,
+    oracle_twaps: &OracleTwaps,
+    oracle_mappings: &OracleMappings,
+    index: usize,
 ) -> crate::Result<DatedPrice>
 where
     'a: 'b,
@@ -131,6 +142,7 @@ where
         }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
         OracleType::JupiterLP => jupiter_lp::get_price(base_account, clock, extra_accounts),
+        OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
@@ -157,6 +169,7 @@ pub fn validate_oracle_account(
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::MsolStake => Ok(()),
         OracleType::JupiterLP => jupiter_lp::validate_jlp_pool(price_account),
+        OracleType::ScopeTwap => twap::validate_price_account(price_account),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

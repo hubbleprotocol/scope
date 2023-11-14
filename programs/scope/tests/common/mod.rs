@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+pub mod client;
 pub mod fixtures;
 pub mod mock_oracles;
 pub mod operations;
