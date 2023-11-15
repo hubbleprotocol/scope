@@ -290,83 +290,87 @@ async fn crank<T: AsyncClient, S: Signer>(
     alert_old_price_after_slots: clock::Slot,
     old_price_is_error: bool,
 ) -> Result<()> {
-    if let Some(mapping) = mapping_op {
+    let auto_refresh_mapping = if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         info!(
             "Default refresh interval set to {:?} slots",
             token_list.default_max_age
         );
         scope.set_local_mapping(&token_list).await?;
-        // TODO add check if local is correctly equal to remote mapping
+
+        false
     } else {
         info!(
             "Default refresh interval set to {:?} slots",
             refresh_interval_slot
         );
         scope.download_oracle_mapping(refresh_interval_slot).await?;
-    }
 
-    let async_print_price_loop = async {
-        let print_period = Duration::from_secs(print_period_s);
-        loop {
-            let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
-
-            info!(current_slot);
-            let _ = scope.log_prices(current_slot).await;
-            sleep(print_period).await;
-        }
+        true
     };
 
-    let async_refresh_price_loop = async {
-        let alert_threshold: i64 = (alert_old_price_after_slots as i64).neg();
-        let alert_snooze_time = Duration::from_secs(old_price_alert_snooze_time_s);
-        let error_log = format!(
-            "Some prices are older than max age by more than {alert_old_price_after_slots} slots."
-        );
-        let mut last_alert = Instant::now();
+    let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
+    scope.log_prices(current_slot).await.unwrap();
 
-        loop {
-            let start = Instant::now();
+    let alert_threshold: i64 = (alert_old_price_after_slots as i64).neg();
+    let alert_snooze_time = Duration::from_secs(old_price_alert_snooze_time_s);
+    let error_log = format!(
+        "Some prices are older than max age by more than {alert_old_price_after_slots} slots."
+    );
+    let mut last_alert = Instant::now();
 
-            if let Err(e) = scope.refresh_old_prices().await {
-                warn!("Error while refreshing prices {:?}", e);
-            }
+    let print_period = Duration::from_secs(print_period_s);
+    let mut last_print = Instant::now();
 
-            let elapsed = start.elapsed();
-            trace!("last refresh duration was {:?}", elapsed);
-
-            let shortest_ttl = scope.get_prices_shortest_ttl().await.unwrap_or_default();
-            trace!(shortest_ttl);
-
-            if alert_threshold > shortest_ttl && last_alert.elapsed() > alert_snooze_time {
-                last_alert = Instant::now();
-                if old_price_is_error {
-                    error!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
-                } else {
-                    warn!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
-                }
-            }
-
-            let sleep_ms_from_slots = if shortest_ttl > 0 {
-                // Time to sleep if we consider slot age
-                (shortest_ttl as u64) * clock::DEFAULT_MS_PER_SLOT
-            } else {
-                // Avoid spamming the network with requests, sleep at least 1 slot
-                clock::DEFAULT_MS_PER_SLOT
-            };
-            trace!(sleep_ms_from_slots);
-            sleep(Duration::from_millis(sleep_ms_from_slots)).await;
-        }
-    };
-
-    tokio::pin!(async_print_price_loop);
-    tokio::pin!(async_refresh_price_loop);
+    const MAPPING_REFRESH_PERIOD: Duration = Duration::from_secs(60);
+    let mut last_mapping_refresh = Instant::now();
 
     loop {
-        tokio::select! {
-            _ = &mut async_print_price_loop => {},
-            _ = &mut async_refresh_price_loop => {},
+        let start = Instant::now();
+
+        if last_mapping_refresh.elapsed() > MAPPING_REFRESH_PERIOD {
+            if auto_refresh_mapping {
+                let res = scope.download_oracle_mapping(refresh_interval_slot).await;
+                warn!("Error while refreshing mapping {:?}", res)
+            }
+            last_mapping_refresh = Instant::now();
         }
+
+        if last_print.elapsed() > print_period {
+            let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
+            info!(current_slot);
+            let _ = scope.log_prices(current_slot).await;
+            last_print = Instant::now();
+        }
+
+        if let Err(e) = scope.refresh_old_prices().await {
+            warn!("Error while refreshing prices {:?}", e);
+        }
+
+        let elapsed = start.elapsed();
+        trace!("last refresh duration was {:?}", elapsed);
+
+        let shortest_ttl = scope.get_prices_shortest_ttl().await.unwrap_or_default();
+        trace!(shortest_ttl);
+
+        if alert_threshold > shortest_ttl && last_alert.elapsed() > alert_snooze_time {
+            last_alert = Instant::now();
+            if old_price_is_error {
+                error!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
+            } else {
+                warn!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
+            }
+        }
+
+        let sleep_ms_from_slots = if shortest_ttl > 0 {
+            // Time to sleep if we consider slot age
+            (shortest_ttl as u64) * clock::DEFAULT_MS_PER_SLOT
+        } else {
+            // Avoid spamming the network with requests, sleep at least 1 slot
+            clock::DEFAULT_MS_PER_SLOT
+        };
+        trace!(sleep_ms_from_slots);
+        sleep(Duration::from_millis(sleep_ms_from_slots)).await;
     }
 }
 
