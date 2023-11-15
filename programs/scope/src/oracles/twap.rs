@@ -22,20 +22,19 @@ pub fn validate_price_account(account: &AccountInfo) -> Result<()> {
     Err(PriceAccountNotExpected.into())
 }
 
-pub fn update_twap(
-    oracle_twaps: &mut OracleTwaps,
-    token: usize,
-    price: Price,
-    price_ts: u64,
-    price_slot: u64,
-) -> Result<()> {
+pub fn update_twap(oracle_twaps: &mut OracleTwaps, token: usize, price: &DatedPrice) -> Result<()> {
     let twap = oracle_twaps
         .twaps
         .get_mut(token)
         .ok_or(ScopeError::TwapSourceIndexOutOfRange)?;
 
     // if there is no previous twap, store the existent
-    update_ema_twap(twap, price, price_ts, price_slot);
+    update_ema_twap(
+        twap,
+        price.price,
+        price.unix_timestamp,
+        price.last_updated_slot,
+    );
     Ok(())
 }
 
@@ -86,25 +85,28 @@ mod utils {
         price_ts: u64,
         price_slot: u64,
     ) {
-        if twap.last_update_slot == 0 {
-            twap.current_ema_1h = Decimal::from(price).to_scaled_val().unwrap();
-        } else {
-            let ema_decimal = Decimal::from_scaled_val(twap.current_ema_1h);
-            let price_decimal = Decimal::from(price);
+        // Skip update if the price is the same as the last one
+        if price_slot > twap.last_update_slot {
+            if twap.last_update_slot == 0 {
+                twap.current_ema_1h = Decimal::from(price).to_scaled_val().unwrap();
+            } else {
+                let ema_decimal = Decimal::from_scaled_val(twap.current_ema_1h);
+                let price_decimal = Decimal::from(price);
 
-            let smoothing_factor = Decimal::from_scaled_val(SMOOTHING_FACTOR);
-            let weighted_smoothing_factor = ((smoothing_factor)
+                let smoothing_factor = Decimal::from_scaled_val(SMOOTHING_FACTOR);
+                let weighted_smoothing_factor = ((smoothing_factor)
                 * (price_ts.saturating_sub(twap.last_update_unix_timestamp))
                 + Decimal::from_scaled_val(HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED)) // the addition is for rounding purposes
                 / (EMA_1H_SAMPLING_RATE_SECONDS);
-            let new_ema = price_decimal * weighted_smoothing_factor
-                + (Decimal::from(1) - weighted_smoothing_factor) * ema_decimal;
+                let new_ema = price_decimal * weighted_smoothing_factor
+                    + (Decimal::from(1) - weighted_smoothing_factor) * ema_decimal;
 
-            twap.current_ema_1h = new_ema.to_scaled_val().unwrap();
+                twap.current_ema_1h = new_ema.to_scaled_val().unwrap();
+            }
+
+            twap.last_update_slot = price_slot;
+            twap.last_update_unix_timestamp = price_ts;
         }
-
-        twap.last_update_slot = price_slot;
-        twap.last_update_unix_timestamp = price_ts;
     }
 
     pub(crate) fn reset_ema_twap(twap: &mut EmaTwap, price: Price, price_ts: u64, price_slot: u64) {
