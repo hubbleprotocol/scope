@@ -330,8 +330,9 @@ async fn crank<T: AsyncClient, S: Signer>(
 
         if last_mapping_refresh.elapsed() > MAPPING_REFRESH_PERIOD {
             if auto_refresh_mapping {
-                let res = scope.download_oracle_mapping(refresh_interval_slot).await;
-                warn!("Error while refreshing mapping {:?}", res)
+                if let Err(res) = scope.download_oracle_mapping(refresh_interval_slot).await {
+                    warn!("Error while refreshing mapping {:?}", res)
+                }
             }
             last_mapping_refresh = Instant::now();
         }
