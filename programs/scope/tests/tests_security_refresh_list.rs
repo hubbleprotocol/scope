@@ -42,16 +42,50 @@ const TEST_JLP_ORACLE: OracleConf = OracleConf {
     twap_source: None,
 };
 
+const TEST_ORCA_ATOB: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeorcaPriceAccount11111111111111111111111"),
+    token: 6,
+    price_type: TestOracleType::OrcaWhirlpool(true),
+    twap_enabled: false,
+    twap_source: None,
+};
+
+const TEST_ORCA_BTOA: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeorcaPriceAccount21111111111111111111111"),
+    token: 7,
+    price_type: TestOracleType::OrcaWhirlpool(false),
+    twap_enabled: false,
+    twap_source: None,
+};
+
+const TEST_RAYDIUM_ATOB: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeRaydiumPriceAccount11111111111111111111"),
+    token: 8,
+    price_type: TestOracleType::RaydiumAmmV3(true),
+    twap_enabled: false,
+    twap_source: None,
+};
+
 #[cfg(feature = "yvaults")]
-const TEST_ORACLE_CONF: [OracleConf; 5] = [
+const TEST_ORACLE_CONF: [OracleConf; 8] = [
     TEST_PYTH_ORACLE,
     TEST_PYTH2_ORACLE,
     ktoken_tests::TEST_ORCA_KTOKEN_ORACLE,
     ktoken_tests::TEST_RAYDIUM_KTOKEN_ORACLE,
     TEST_JLP_ORACLE,
+    TEST_ORCA_ATOB,
+    TEST_ORCA_BTOA,
+    TEST_RAYDIUM_ATOB,
 ];
 #[cfg(not(feature = "yvaults"))]
-const TEST_ORACLE_CONF: [OracleConf; 3] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE, TEST_JLP_ORACLE];
+const TEST_ORACLE_CONF: [OracleConf; 6] = [
+    TEST_PYTH_ORACLE,
+    TEST_PYTH2_ORACLE,
+    TEST_JLP_ORACLE,
+    TEST_ORCA_ATOB,
+    TEST_ORCA_BTOA,
+    TEST_RAYDIUM_ATOB,
+];
 
 // - [x] Wrong oracle mapping
 // - [x] Wrong oracle account (copy)
@@ -69,6 +103,10 @@ const TEST_ORACLE_CONF: [OracleConf; 3] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE, 
 
 // Jupiter LP:
 // - [x] Wrong Jupiter LP additional mint account
+
+// Orca Whirlpool:
+// - [x] Wrong Orca Whirlpool additional token mint A
+// - [x] Wrong Orca Whirlpool additional token mint B
 
 #[tokio::test]
 async fn test_working_refresh_list() {
@@ -120,7 +158,10 @@ async fn test_working_refresh_list() {
             value: (i as u64) + 1,
             exp: 6,
         };
-        assert_eq!(data.prices[conf.token].price, ref_price);
+        assert_eq!(
+            data.prices[conf.token].price, ref_price,
+            "Token {i}:{conf:?}"
+        );
         assert!(data.prices[conf.token].last_updated_slot > 0);
     }
 }

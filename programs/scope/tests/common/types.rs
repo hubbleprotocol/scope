@@ -48,6 +48,10 @@ pub enum TestOracleType {
     JupiterLP,
     // Scope's TWAP
     ScopeTwap(usize),
+    /// Orca's whirlpool price (CLMM) (bool: A to B)
+    OrcaWhirlpool(bool),
+    /// Raydium's AMM v3 price (CLMM) (bool: A to B)
+    RaydiumAmmV3(bool),
 }
 
 impl TestOracleType {
@@ -69,6 +73,20 @@ impl From<TestOracleType> for OracleType {
             TestOracleType::PythEMA => OracleType::PythEMA,
             TestOracleType::JupiterLP => OracleType::JupiterLP,
             TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap,
+            TestOracleType::OrcaWhirlpool(dir) => {
+                if dir {
+                    OracleType::OrcaWhirlpoolAtoB
+                } else {
+                    OracleType::OrcaWhirlpoolBtoA
+                }
+            }
+            TestOracleType::RaydiumAmmV3(dir) => {
+                if dir {
+                    OracleType::RaydiumAmmV3AtoB
+                } else {
+                    OracleType::RaydiumAmmV3BtoA
+                }
+            }
             TestOracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
