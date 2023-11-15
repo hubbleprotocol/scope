@@ -182,6 +182,7 @@ async fn test_2_prices_with_same_value_no_twap_change() {
 
     // Fast forward time and refresh price with the same value
     ctx.fast_forward_seconds(10).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
     let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
     ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
@@ -233,6 +234,7 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
     for index in 1..100 {
         // Fast forward time and refresh price with the same value
         ctx.fast_forward_seconds(60).await;
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
         let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
@@ -307,6 +309,7 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
 
         // Fast forward time and refresh price with the same value
         ctx.fast_forward_seconds(60).await;
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
         let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
@@ -368,6 +371,7 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
 
         // Fast forward time and refresh price with the same value
         ctx.fast_forward_seconds(70).await;
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
         let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
