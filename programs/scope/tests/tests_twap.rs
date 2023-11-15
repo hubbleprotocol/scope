@@ -205,6 +205,57 @@ async fn test_2_prices_with_same_value_no_twap_change() {
 }
 
 #[tokio::test]
+async fn test_2_prices_with_same_value_no_twap_change_1h() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
+
+    let token_price = Price { value: 100, exp: 6 };
+    // Change price
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+
+    setup_mapping_for_token_with_twap(&mut ctx, &feed, TEST_PYTH_ORACLE, TEST_TWAP).await;
+
+    // Refresh price
+    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+    // Verify that TWAP is the same as the price as it is the first sample
+    let last_update_unix_timestamp = {
+        let oracle_twaps: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
+        assert_eq!(oracle_twaps.twaps[0].last_update_slot, 1);
+        assert_eq!(
+            oracle_twaps.twaps[0].current_ema_1h,
+            Decimal::from(token_price).to_scaled_val().unwrap()
+        );
+
+        oracle_twaps.twaps[0].last_update_unix_timestamp
+    };
+
+    // Fast forward time and refresh price with the same value
+    ctx.fast_forward_seconds(60 * 60 + 120).await; // 1h
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+    // verify that the twap value didn't change but the twap date increased
+    {
+        let oracle_twaps_updated: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
+        let token_price_u128: u128 = Decimal::from(token_price).to_scaled_val().unwrap();
+        assert_fuzzy_eq!(
+            oracle_twaps_updated.twaps[0].current_ema_1h,
+            token_price_u128,
+            1
+        );
+
+        assert_eq!(
+            oracle_twaps_updated.twaps[0].last_update_unix_timestamp,
+            last_update_unix_timestamp + 60 * 60 + 120
+        );
+    }
+}
+
+#[tokio::test]
 async fn test_multiple_prices_with_same_value_no_twap_change() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, Vec::new()).await;
 
@@ -300,14 +351,7 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
         price_value += 5;
         token_price.value = price_value;
 
-        // Change price
-        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
-
-        // Refresh price
-        let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
-        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
-
-        // Fast forward time and refresh price with the same value
+        // Fast forward time and refresh price with the new value
         ctx.fast_forward_seconds(60).await;
         mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
         let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
@@ -328,6 +372,28 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
         );
 
         prev_oracle_twaps = oracle_twaps_updated;
+    }
+
+    // Check that the twap stabilize after 1hour without price change
+    for _ in 1..60 {
+        ctx.fast_forward_seconds(60).await;
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+        let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+    }
+
+    {
+        let refresh_ix = refresh_one_ix(&feed, TEST_TWAP);
+        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+        let oracle_prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+        let price: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
+        let expected: Decimal = token_price.into();
+        assert_fuzzy_eq!(
+            price.to_scaled_val::<u128>().unwrap(),
+            expected.to_scaled_val::<u128>().unwrap(),
+            2
+        );
     }
 }
 
@@ -362,14 +428,7 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
         price_value -= 10;
         token_price.value = price_value;
 
-        // Change price
-        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
-
-        // Refresh price
-        let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
-        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
-
-        // Fast forward time and refresh price with the same value
+        // Fast forward time and refresh price with the new value
         ctx.fast_forward_seconds(70).await;
         mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
         let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
@@ -390,6 +449,28 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
         );
 
         prev_oracle_twaps = oracle_twaps_updated;
+    }
+
+    // Check that the twap stabilize after 1hour without price change
+    for _ in 1..60 {
+        ctx.fast_forward_seconds(60).await;
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+        let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+    }
+
+    {
+        let refresh_ix = refresh_one_ix(&feed, TEST_TWAP);
+        ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+        let oracle_prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+        let price: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
+        let expected: Decimal = token_price.into();
+        assert_fuzzy_eq!(
+            price.to_scaled_val::<u128>().unwrap(),
+            expected.to_scaled_val::<u128>().unwrap(),
+            2
+        );
     }
 }
 
