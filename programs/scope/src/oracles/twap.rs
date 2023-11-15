@@ -97,8 +97,9 @@ mod utils {
                 * (price_ts.saturating_sub(twap.last_update_unix_timestamp))
                 + Decimal::from_scaled_val(HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED)) // the addition is for rounding purposes
                 / (EMA_1H_SAMPLING_RATE_SECONDS);
+            let weighted_smoothing_factor = weighted_smoothing_factor.min(Decimal::one());
             let new_ema = price_decimal * weighted_smoothing_factor
-                + (Decimal::from(1) - weighted_smoothing_factor) * ema_decimal;
+                + (Decimal::one() - weighted_smoothing_factor) * ema_decimal;
 
             twap.current_ema_1h = new_ema.to_scaled_val().unwrap();
         }
