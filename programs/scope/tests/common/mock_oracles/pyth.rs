@@ -18,13 +18,14 @@ pub fn get_account_data_for_price(price: &Price, clock: &Clock) -> Vec<u8> {
         expo,
         valid_slot: clock.slot,
         last_slot: clock.slot,
+        timestamp: clock.unix_timestamp,
         num_qt: 3,
-        twap: pyth_tools::Ema {
+        ema_price: pyth_tools::Ema {
             val: int_price,
             numer: int_price,
             denom: 1,
         },
-        twac: pyth_tools::Ema {
+        ema_conf: pyth_tools::Ema {
             val: 0,
             numer: 0,
             denom: 1,
@@ -115,30 +116,57 @@ mod pyth_tools {
     #[derive(Default, Copy, Clone)]
     #[repr(C)]
     pub struct Price {
-        pub magic: u32,            // Pyth magic number
-        pub ver: u32,              // Program version
-        pub atype: u32,            // Account type
-        pub size: u32,             // Price account size
-        pub ptype: PriceType,      // Price or calculation type
-        pub expo: i32,             // Price exponent
-        pub num: u32,              // Number of component prices
-        pub num_qt: u32,           // Number of quoters that make up aggregate
-        pub last_slot: u64,        // Slot of last valid (not unknown) aggregate price
-        pub valid_slot: u64,       // Valid slot-time of agg. price
-        pub twap: Ema,             // Time-weighted average price
-        pub twac: Ema,             // Time-weighted average confidence interval
-        pub drv1: i64,             // Space for future derived values
-        pub drv2: i64,             // Space for future derived values
-        pub prod: AccKey,          // Product account key
-        pub next: AccKey,          // Next Price account in linked list
-        pub prev_slot: u64,        // Valid slot of previous update
-        pub prev_price: i64,       // Aggregate price of previous update
-        pub prev_conf: u64,        // Confidence interval of previous update
-        pub drv3: i64,             // Space for future derived values
-        pub agg: PriceInfo,        // Aggregate price info
-        pub comp: [PriceComp; 32], // Price components one per quoter
+        /// pyth magic number
+        pub magic: u32,
+        /// program version
+        pub ver: u32,
+        /// account type
+        pub atype: u32,
+        /// price account size
+        pub size: u32,
+        /// price or calculation type
+        pub ptype: PriceType,
+        /// price exponent
+        pub expo: i32,
+        /// number of component prices
+        pub num: u32,
+        /// number of quoters that make up aggregate
+        pub num_qt: u32,
+        /// slot of last valid (not unknown) aggregate price
+        pub last_slot: u64,
+        /// valid slot-time of agg. price
+        pub valid_slot: u64,
+        /// exponentially moving average price
+        pub ema_price: Ema,
+        /// exponentially moving average confidence interval
+        pub ema_conf: Ema,
+        /// unix timestamp of aggregate price
+        pub timestamp: i64,
+        /// min publishers for valid price
+        pub min_pub: u8,
+        /// space for future derived values
+        pub drv2: u8,
+        /// space for future derived values
+        pub drv3: u16,
+        /// space for future derived values
+        pub drv4: u32,
+        /// product account key
+        pub prod: AccKey,
+        /// next Price account in linked list
+        pub next: AccKey,
+        /// valid slot of previous update
+        pub prev_slot: u64,
+        /// aggregate price of previous update with TRADING status
+        pub prev_price: i64,
+        /// confidence interval of previous update with TRADING status
+        pub prev_conf: u64,
+        /// unix timestamp of previous aggregate with TRADING status
+        pub prev_timestamp: i64,
+        /// aggregate price info
+        pub agg: PriceInfo,
+        /// price components one per quoter
+        pub comp: [PriceComp; 32],
     }
-
     impl Price {
         pub fn as_bytes(&self) -> Vec<u8> {
             bytes_of(self).to_vec()

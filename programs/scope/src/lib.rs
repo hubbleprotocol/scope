@@ -38,13 +38,6 @@ pub mod scope {
         handler_initialize::process(ctx, feed_name)
     }
 
-    pub fn initialize_oracle_twaps(
-        ctx: Context<InitializeOracleTwaps>,
-        feed_name: String,
-    ) -> Result<()> {
-        handler_initialize_oracle_twaps::process(ctx, feed_name)
-    }
-
     //This handler only works for Pyth type tokens
     pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> Result<()> {
         let token: usize = token
