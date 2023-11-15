@@ -75,14 +75,8 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     price.index = token.try_into().unwrap();
 
     if oracle_mappings.is_twap_enabled(token) {
-        let _ = crate::oracles::twap::update_twap(
-            &mut oracle_twaps,
-            token,
-            price.price,
-            clock.unix_timestamp as u64,
-            clock.slot,
-        )
-        .map_err(|_| msg!("Twap not found for token {}", token));
+        let _ = crate::oracles::twap::update_twap(&mut oracle_twaps, token, &price)
+            .map_err(|_| msg!("Twap not found for token {}", token));
     };
 
     // Only load when needed, allows prices computation to use scope chain
@@ -169,14 +163,8 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
 
         if let Some(price) = price {
             if oracle_mappings.is_twap_enabled(token_idx) {
-                let _ = crate::oracles::twap::update_twap(
-                    &mut oracle_twaps,
-                    token_idx,
-                    price.price,
-                    clock.unix_timestamp as u64,
-                    clock.slot,
-                )
-                .map_err(|_| msg!("Twap not found for token {}", token_idx));
+                let _ = crate::oracles::twap::update_twap(&mut oracle_twaps, token_idx, &price)
+                    .map_err(|_| msg!("Twap not found for token {}", token_idx));
             };
 
             // Only temporary load as mut to allow prices to be computed based on a scope chain
