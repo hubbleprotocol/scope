@@ -392,7 +392,7 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
         assert_fuzzy_eq!(
             price.to_scaled_val::<u128>().unwrap(),
             expected.to_scaled_val::<u128>().unwrap(),
-            2
+            3
         );
     }
 }

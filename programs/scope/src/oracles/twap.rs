@@ -9,11 +9,12 @@ use self::utils::{reset_ema_twap, update_ema_twap};
 const EMA_1H_SAMPLES_NUMBER: u128 = 30;
 const HALF_EMA_1H_SAMPLES_NUMBER: u128 = EMA_1H_SAMPLES_NUMBER / 2;
 
-const EMA_1H_PERIOD_SEC: u64 = 60 * 60;
-const HALF_EMA_1H_PERIOD_SEC_SCALED: u128 = (EMA_1H_PERIOD_SEC as u128 * WAD as u128) / 2;
+const EMA_1H_SAMPLING_RATE_SECONDS_SCALED: u64 = 2 * 60;
+const HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED: u128 =
+    (EMA_1H_SAMPLING_RATE_SECONDS_SCALED as u128 * WAD as u128) / 2;
 
 const SMOOTHING_FACTOR_NOMINATOR: u128 = 2 * (WAD as u128) + HALF_EMA_1H_SAMPLES_NUMBER; // we do the addition of HALF_EMA_1H_SAMPLES_NUMBER for rounding purposes, so it rounds to the closest value
-const SMOOTHING_FACTOR: u128 = SMOOTHING_FACTOR_NOMINATOR / EMA_1H_SAMPLES_NUMBER;
+const SMOOTHING_FACTOR: u128 = SMOOTHING_FACTOR_NOMINATOR / (EMA_1H_SAMPLES_NUMBER + 1);
 
 pub fn validate_price_account(account: &AccountInfo) -> Result<()> {
     if account.key().eq(&crate::id()) {
@@ -96,8 +97,8 @@ mod utils {
                 // Adjusting the factor based on time elapsed *(delta t / delta T)
                 let weighted_smoothing_factor = ((smoothing_factor)
                 * (price_ts.saturating_sub(twap.last_update_unix_timestamp))
-                + Decimal::from_scaled_val(HALF_EMA_1H_PERIOD_SEC_SCALED)) // the addition is for rounding purposes
-                / (EMA_1H_PERIOD_SEC);
+                + Decimal::from_scaled_val(HALF_EMA_1H_SAMPLING_RATE_SECONDS_SCALED)) // the addition is for rounding purposes
+                / (EMA_1H_SAMPLING_RATE_SECONDS_SCALED);
                 let weighted_smoothing_factor = weighted_smoothing_factor.min(Decimal::one());
                 let new_ema = price_decimal * weighted_smoothing_factor
                     + (Decimal::one() - weighted_smoothing_factor) * ema_decimal;
