@@ -15,6 +15,7 @@ use handlers::*;
 pub use num_enum;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
+pub use whirlpool;
 #[cfg(feature = "yvaults")]
 pub use yvaults;
 

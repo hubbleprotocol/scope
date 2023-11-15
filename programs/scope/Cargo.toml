@@ -63,3 +63,4 @@ solana-program-test.workspace = true
 solana-sdk.workspace = true
 thiserror.workspace = true
 test_cpi_caller = { path = "../test_cpi_caller" }
+test-case = "3.2.1"

@@ -1,17 +1,21 @@
 use crate::{ScopeError, ScopeResult};
 use decimal_wad::decimal::U192;
 use decimal_wad::rate::U128;
+use raydium_amm_v3::libraries::U256;
 
 use crate::Price;
 
 /// Transform sqrt price to normal price scaled by 2^64
-fn sqrt_price_to_x64_price(sqrt_price: U192, decimals_a: u8, decimals_b: u8) -> U192 {
-    let price = (sqrt_price * sqrt_price) >> U192::from(64);
-    if decimals_a >= decimals_b {
-        price * U192::from(ten_pow(decimals_a - decimals_b))
+fn sqrt_price_to_x64_price(sqrt_price: u128, decimals_a: u8, decimals_b: u8) -> U192 {
+    let sqrt_price = U256::from(sqrt_price);
+    let price = (sqrt_price * sqrt_price) >> U256::from(64);
+    let price_u256 = if decimals_a >= decimals_b {
+        price * U256::from(ten_pow(decimals_a - decimals_b))
     } else {
-        price / U192::from(ten_pow(decimals_b - decimals_a))
-    }
+        price / U256::from(ten_pow(decimals_b - decimals_a))
+    };
+    debug_assert_eq!(price_u256.0[3], 0, "price overflow: {:?}", price_u256); // should not overflow because of the shift
+    U192([price_u256.0[0], price_u256.0[1], price_u256.0[2]])
 }
 
 pub fn sqrt_price_to_price(
@@ -22,7 +26,17 @@ pub fn sqrt_price_to_price(
 ) -> ScopeResult<Price> {
     const MAX_INTEGER_PART: u128 = u64::MAX as u128;
 
-    let x64_price = sqrt_price_to_x64_price(U192::from(sqrt_price), decimals_a, decimals_b);
+    if sqrt_price == 0 {
+        return Ok(Price { value: 0, exp: 0 });
+    }
+
+    let x64_price = if a_to_b {
+        sqrt_price_to_x64_price(sqrt_price, decimals_a, decimals_b)
+    } else {
+        // invert the sqrt price
+        let inverted_sqrt_price = (U192::one() << 128) / sqrt_price;
+        sqrt_price_to_x64_price(inverted_sqrt_price.as_u128(), decimals_b, decimals_a)
+    };
     let integer_part_u192 = x64_price >> U192::from(64);
     let integer_part_u128 = integer_part_u192.as_u128();
 
@@ -130,6 +144,7 @@ pub fn ten_pow(exponent: u8) -> u128 {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+    use test_case::test_case;
 
     proptest! {
         #[test]
@@ -139,5 +154,31 @@ mod tests {
             let expected_price_f64: f64 = numerator as f64 / denominator as f64;
             prop_assert!((price_f64 - expected_price_f64).abs() < expected_price_f64/1000000000.0, "price_f64: {}, expected_price_f64: {}", price_f64, expected_price_f64);
         }
+    }
+
+    #[test_case(true, 1.0, 1.0, 6, 6;"one equal decimals a to b")]
+    #[test_case(true, 1.0, 1000.0, 9, 6;"one diff decimals a to b")]
+    #[test_case(true, 1.0, 0.001, 6, 9;"one diff decimals2 a to b")]
+    #[test_case(true, 1000.0, 1000000.0, 6, 6;"1k equal decimals a to b")]
+    #[test_case(true, 2.0, 4.0, 6, 6;"two equal decimals a to b")]
+    #[test_case(false, 1.0, 1.0, 6, 6;"one equal decimals b to a")]
+    #[test_case(false, 0.5, 4.0, 6, 6;"two equal decimals b to a")]
+    #[test_case(false, 0.001, 1000000.0, 6, 6;"1/1k equal decimals b to a")]
+    fn test_sqrt_price_conversion(
+        a_to_b: bool,
+        sqrt_price: f64,
+        expected_price_f64: f64,
+        decimals_a: u8,
+        decimals_b: u8,
+    ) {
+        let sqrt_price = (sqrt_price * (2.0_f64.powi(64))) as u128;
+        let price = sqrt_price_to_price(a_to_b, sqrt_price, decimals_a, decimals_b).unwrap();
+        let price_f64: f64 = price.into();
+        assert!(
+            (price_f64 - expected_price_f64).abs() < expected_price_f64 / 10000000.0,
+            "price_f64: {}, expected_price_f64: {}",
+            price_f64,
+            expected_price_f64
+        );
     }
 }
