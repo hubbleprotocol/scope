@@ -585,10 +585,6 @@ pub mod utils {
 
         ctx.send_transaction(&[ix]).await.unwrap();
 
-        println!(
-            "twap_oracle.twap_source.unwrap_or(u16::MAX) {}",
-            twap_oracle.twap_source.unwrap_or(u16::MAX)
-        );
         // Set the mapping for the TWAP
         let accounts = scope::accounts::UpdateOracleMapping {
             admin: ctx.admin.pubkey(),

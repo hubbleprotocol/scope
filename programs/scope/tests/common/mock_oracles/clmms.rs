@@ -2,7 +2,8 @@ use anchor_lang::AnchorSerialize;
 use anchor_lang::{prelude::Pubkey, Discriminator};
 use anchor_spl::token::spl_token::state::Mint;
 use decimal_wad::common::WAD;
-use decimal_wad::decimal::{Decimal, U192};
+use decimal_wad::decimal::Decimal;
+use raydium_amm_v3::libraries::U256;
 use raydium_amm_v3::states::PoolState as RaydiumPoolState;
 use scope::utils::math::ten_pow;
 use scope::Price;
@@ -85,7 +86,7 @@ pub fn price_to_sqrt_price(price: &Price, a_to_b: bool, decimals_a: u8, decimals
     if price.value == 0 {
         return 0;
     }
-    let price_dec: Decimal = dbg!((*price).into());
+    let price_dec: Decimal = (*price).into();
     let price_dec = if a_to_b {
         price_dec
     } else {
@@ -95,12 +96,14 @@ pub fn price_to_sqrt_price(price: &Price, a_to_b: bool, decimals_a: u8, decimals
 }
 
 pub fn decimal_price_to_sqrt_price(price: Decimal, decimals_a: u8, decimals_b: u8) -> u128 {
-    let scaled_price_x64 = (price.0 << 64) / WAD;
+    let price_u192 = price.0;
+    let price_u256 = U256([price_u192.0[0], price_u192.0[1], price_u192.0[2], 0]);
+    let scaled_price_x64 = (price_u256 << 128) / WAD;
 
     let price = if decimals_b >= decimals_a {
-        scaled_price_x64 * U192::from(ten_pow(decimals_b - decimals_a))
+        scaled_price_x64 * U256::from(ten_pow(decimals_b - decimals_a))
     } else {
-        scaled_price_x64 / U192::from(ten_pow(decimals_a - decimals_b))
+        scaled_price_x64 / U256::from(ten_pow(decimals_a - decimals_b))
     };
-    dbg!(price.integer_sqrt().as_u128())
+    price.integer_sqrt().as_u128()
 }

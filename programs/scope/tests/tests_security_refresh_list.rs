@@ -3,7 +3,7 @@ use anchor_lang::{
     InstructionData, ToAccountMetas,
 };
 use common::*;
-use scope::{OraclePrices, Price, ScopeError};
+use scope::{assert_fuzzy_price_eq, OraclePrices, Price, ScopeError};
 use solana_program::{
     instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
@@ -158,9 +158,12 @@ async fn test_working_refresh_list() {
             value: (i as u64) + 1,
             exp: 6,
         };
-        assert_eq!(
-            data.prices[conf.token].price, ref_price,
-            "Token {i}:{conf:?}"
+        assert_fuzzy_price_eq!(
+            data.prices[conf.token].price,
+            ref_price,
+            decimal_wad::decimal::Decimal::from(ref_price) / 1000,
+            "Price {:?}",
+            conf
         );
         assert!(data.prices[conf.token].last_updated_slot > 0);
     }

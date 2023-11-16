@@ -1,5 +1,4 @@
 use crate::{ScopeError, ScopeResult};
-use anchor_lang::prelude::*;
 use decimal_wad::decimal::U192;
 use decimal_wad::rate::U128;
 use raydium_amm_v3::libraries::U256;
@@ -26,13 +25,6 @@ pub fn sqrt_price_to_price(
     decimals_b: u8,
 ) -> ScopeResult<Price> {
     const MAX_INTEGER_PART: u128 = u64::MAX as u128;
-    msg!(
-        "sqrt_price_to_price a_to_b: {}, sqrt_price: {}, decimals_a: {}, decimals_b: {}",
-        a_to_b,
-        sqrt_price,
-        decimals_a,
-        decimals_b
-    );
 
     if sqrt_price == 0 {
         return Ok(Price { value: 0, exp: 0 });
