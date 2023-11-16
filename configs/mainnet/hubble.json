@@ -118,7 +118,7 @@
     "label": "TWAP USDH/USD",
     "oracle_mapping": "3DCCiwqtbyZAb15FG1QBh6pSHtJFk1hFHBdaqvRHDnWy",
     "oracle_type": "SwitchboardV2",
-    "max_age": 300
+    "max_age": 200
   },
   "39": {
     "label": "TWAP UXD/USD",
@@ -612,6 +612,19 @@
     "label": "TWAP kUXD-USDC_Orca/USD",
     "oracle_type": "ScopeTwap",
     "twap_source": 50,
+    "max_age": 200
+  },
+  "131": {
+    "label": "bSOL/USD Blaze",
+    "oracle_type": "SwitchboardV2",
+    "oracle_mapping": "EPw1Vb9YFu6TcasVKaj5mEUtvtz3G18iBdByqzigbzUG",
+    "max_age": 150,
+    "twap_enabled": true
+  },
+  "132": {
+    "label": "TWAP bSOL/USD Blaze",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 131,
     "max_age": 200
   }
 }
