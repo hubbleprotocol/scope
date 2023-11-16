@@ -3952,7 +3952,7 @@ dependencies = [
  "anchor-lang",
  "bytemuck",
  "cfg-if",
- "num_enum 0.7.1",
+ "num_enum 0.5.11",
  "solana-program",
 ]
 

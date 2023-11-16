@@ -14,4 +14,4 @@ no-entrypoint = []
 cpi = ["no-entrypoint"]
 
 [dependencies]
-solana-program.workspace = true
+solana-program = "~1.16.18"
