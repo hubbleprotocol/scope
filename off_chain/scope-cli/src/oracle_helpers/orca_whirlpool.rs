@@ -49,7 +49,7 @@ impl OrcaWhirlpoolOracle {
             .get_account(&mapping)
             .await
             .context("Retrieving Whirlpool account")?;
-        let mut ref_slice = &whirlpool_raw.data.as_slice()[8..];
+        let mut ref_slice = whirlpool_raw.data.as_slice();
         let whirlpool: Whirlpool = Whirlpool::try_deserialize(&mut ref_slice)
             .context("Trying to deserialize Whirlpool account")?;
         let token_a_mint = whirlpool.token_mint_a;
