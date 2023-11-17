@@ -12,10 +12,10 @@ pub use anchor_lang;
 use anchor_lang::prelude::*;
 use decimal_wad::{decimal::Decimal, error::DecimalError};
 use handlers::*;
-use num_derive::FromPrimitive;
 pub use num_enum;
 use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
+pub use whirlpool;
 #[cfg(feature = "yvaults")]
 pub use yvaults;
 
@@ -256,7 +256,7 @@ impl UpdateTokenMetadataMode {
 }
 
 #[error_code]
-#[derive(PartialEq, Eq, FromPrimitive)]
+#[derive(PartialEq, Eq, TryFromPrimitive)]
 pub enum ScopeError {
     #[msg("Integer overflow")]
     IntegerOverflow,

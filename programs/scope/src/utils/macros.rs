@@ -26,3 +26,20 @@ macro_rules! assert_fuzzy_eq {
         }
     };
 }
+
+#[macro_export]
+macro_rules! assert_fuzzy_price_eq {
+    ($actual:expr, $expected:expr, $epsilon:expr, $($t:tt)*) => {
+        let eps: ::decimal_wad::decimal::Decimal = $epsilon.into();
+        let act: ::decimal_wad::decimal::Decimal = $actual.into();
+        let exp: ::decimal_wad::decimal::Decimal = $expected.into();
+        let diff = if act > exp { act - exp } else { exp - act };
+        if diff > eps {
+            let msg = format!($($t)*);
+            panic!(
+                "{} Actual {} Expected {} diff {} Epsilon {}",
+                msg, act, exp, diff, eps
+            );
+        }
+    };
+}

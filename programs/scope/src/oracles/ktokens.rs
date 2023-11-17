@@ -325,7 +325,6 @@ fn get_price_per_full_share(
 
 pub(super) mod price_utils {
     use decimal_wad::rate::U128;
-    use num_traits::Pow;
 
     use super::*;
 
@@ -433,31 +432,30 @@ pub(super) mod price_utils {
     pub fn calc_price_from_sqrt_price(price: u128, decimals_a: u64, decimals_b: u64) -> f64 {
         let sqrt_price_x_64 = price as f64;
         (sqrt_price_x_64 / 2.0_f64.powf(64.0)).powf(2.0)
-            * 10.0_f64.pow(decimals_a as i32 - decimals_b as i32)
+            * 10.0_f64.powi(decimals_a as i32 - decimals_b as i32)
     }
 }
 
 #[cfg(test)]
 mod tests_price_utils {
-    use num_traits::Pow;
     use price_utils::*;
     use yvaults::utils::price::Price;
 
     use super::*;
 
     pub fn calc_sqrt_price_from_float_price(price: f64, decimals_a: u64, decimals_b: u64) -> u128 {
-        let px = (price * 10.0_f64.pow(decimals_b as i32 - decimals_a as i32)).sqrt();
+        let px = (price * 10.0_f64.powi(decimals_b as i32 - decimals_a as i32)).sqrt();
 
         (px * 2.0_f64.powf(64.0)) as u128
     }
 
     pub fn f(price: Price) -> f64 {
-        let factor = 10_f64.pow(price.exp as f64);
+        let factor = 10_f64.powi(price.exp as i32);
         price.value as f64 / factor
     }
 
     fn p(price: f64, exp: u64) -> Price {
-        let factor = 10_f64.pow(exp as f64);
+        let factor = 10_f64.powi(exp as i32);
         Price {
             value: (price * factor) as u64,
             exp,

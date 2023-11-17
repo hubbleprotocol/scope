@@ -6,8 +6,10 @@ pub mod ktokens_token_x;
 
 pub mod jupiter_lp;
 pub mod msol_stake;
+pub mod orca_whirlpool;
 pub mod pyth;
 pub mod pyth_ema;
+pub mod raydium_ammv3;
 pub mod spl_stake;
 pub mod switchboard_v1;
 pub mod switchboard_v2;
@@ -59,6 +61,14 @@ pub enum OracleType {
     JupiterLP = 11,
     /// Scope twap
     ScopeTwap = 12,
+    /// Orca's whirlpool price (CLMM) A to B
+    OrcaWhirlpoolAtoB = 13,
+    /// Orca's whirlpool price (CLMM) B to A
+    OrcaWhirlpoolBtoA = 14,
+    /// Raydium's AMM v3 price (CLMM) A to B
+    RaydiumAmmV3AtoB = 15,
+    /// Raydium's AMM v3 price (CLMM) B to A
+    RaydiumAmmV3BtoA = 16,
 }
 
 impl OracleType {
@@ -81,6 +91,10 @@ impl OracleType {
             OracleType::MsolStake => 20000,
             OracleType::JupiterLP => 40000,
             OracleType::ScopeTwap => 10000,
+            OracleType::OrcaWhirlpoolAtoB
+            | OracleType::OrcaWhirlpoolBtoA
+            | OracleType::RaydiumAmmV3AtoB
+            | OracleType::RaydiumAmmV3BtoA => 10000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -146,6 +160,14 @@ where
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
+        OracleType::OrcaWhirlpoolAtoB => {
+            orca_whirlpool::get_price(true, base_account, clock, extra_accounts)
+        }
+        OracleType::OrcaWhirlpoolBtoA => {
+            orca_whirlpool::get_price(false, base_account, clock, extra_accounts)
+        }
+        OracleType::RaydiumAmmV3AtoB => raydium_ammv3::get_price(true, base_account, clock),
+        OracleType::RaydiumAmmV3BtoA => todo!(),
     }
 }
 
@@ -170,6 +192,12 @@ pub fn validate_oracle_account(
         OracleType::MsolStake => Ok(()),
         OracleType::JupiterLP => jupiter_lp::validate_jlp_pool(price_account),
         OracleType::ScopeTwap => twap::validate_price_account(price_account),
+        OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
+            orca_whirlpool::validate_pool_account(price_account)
+        }
+        OracleType::RaydiumAmmV3AtoB | OracleType::RaydiumAmmV3BtoA => {
+            raydium_ammv3::validate_pool_account(price_account)
+        }
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
