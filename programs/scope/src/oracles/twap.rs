@@ -71,15 +71,53 @@ pub fn get_price(
 }
 
 mod utils {
-    use decimal_wad::decimal::Decimal;
+    use decimal_wad::decimal::{Decimal, U192};
 
-    use crate::{EmaTwap, Price};
+    use crate::{EmaTwap, Price, ScopeResult};
 
     use super::*;
 
+    /// Get the adjusted smoothing factor (alpha) based on the time between the last two samples.
+    ///
+    /// N = number of samples per period
+    /// alpha = smoothing factor
+    /// alpha = 2 / (1 + N)
+    /// N' = adjusted number of samples per period
+    /// delta t = time between the last two samples
+    /// T = ema period
+    /// N' = T/delta t
+    pub(super) fn get_adjusted_smoothing_factor(
+        last_sample_ts: u64,
+        current_sample_ts: u64,
+        num_samples_per_period: u64,
+        sampling_period_s: u64,
+        ema_period_s: u64,
+    ) -> ScopeResult<Decimal> {
+        debug_assert_eq!(ema_period_s / num_samples_per_period, sampling_period_s);
+
+        let last_sample_delta = current_sample_ts.saturating_sub(last_sample_ts);
+
+        if last_sample_delta >= ema_period_s {
+            // Smoothing factor is capped at 1
+            Ok(Decimal::one())
+        // If the sample is late, we adjust the smoothing factor
+        } else if last_sample_delta >= sampling_period_s {
+            let number_of_missed_samples =
+                (Decimal::from(last_sample_delta) / sampling_period_s) - Decimal::one();
+
+            let adjusted_denom =
+                Decimal::from(num_samples_per_period) - number_of_missed_samples + Decimal::one();
+
+            Ok(Decimal::from(2) / adjusted_denom)
+        // If the sample is too early, we skip it
+        } else {
+            Err(ScopeError::TwapSampleTooFrequent)
+        }
+    }
+
     /// update the EMA  time weighted on how recent the last price is. EMA is calculated as:
     /// EMA = (price * smoothing_factor) + (1 - smoothing_factor) * previous_EMA. The smoothing factor is calculated as: (last_sample_delta / sampling_rate_in_seconds) * (2 / (1 + samples_number_per_period)).
-    pub(crate) fn update_ema_twap(
+    pub(super) fn update_ema_twap(
         twap: &mut EmaTwap,
         price: Price,
         price_ts: u64,
@@ -111,7 +149,7 @@ mod utils {
         }
     }
 
-    pub(crate) fn reset_ema_twap(twap: &mut EmaTwap, price: Price, price_ts: u64, price_slot: u64) {
+    pub(super) fn reset_ema_twap(twap: &mut EmaTwap, price: Price, price_ts: u64, price_slot: u64) {
         twap.current_ema_1h = Decimal::from(price).to_scaled_val().unwrap();
         twap.last_update_slot = price_slot;
         twap.last_update_unix_timestamp = price_ts;
@@ -184,6 +222,43 @@ mod tests_reset_twap {
         );
         assert_eq!(twap.last_update_slot, price_slot);
         assert_eq!(twap.last_update_unix_timestamp, price_ts);
+    }
+}
+
+#[cfg(test)]
+mod tests_smoothing_factor {
+    use crate::assert_fuzzy_eq;
+
+    use super::utils::*;
+    use decimal_wad::common::WAD;
+    use test_case::test_case;
+
+    #[test_case(60, 60, 60*60, 2.0/61.0)]
+    #[test_case(60*60, 60, 60*60, 1.0)]
+    #[test_case(4000, 60, 60*60, 1.0)]
+    #[test_case(90, 60, 60*60, 2.0/60.5)]
+    #[test_case(120, 60, 60*60, 2.0/60.0)]
+    #[test_case(600, 60, 60*60, 2.0/51.0)]
+    fn test_get_adjusted_smoothing_factor(
+        delta_ts: u64,
+        sampling_period_s: u64,
+        ema_period_s: u64,
+        expected_smoothing_factor: f64,
+    ) {
+        let number_of_samples_per_period = dbg!(ema_period_s / sampling_period_s);
+        let smoothing_factor = get_adjusted_smoothing_factor(
+            100,
+            100 + delta_ts,
+            number_of_samples_per_period,
+            sampling_period_s,
+            ema_period_s,
+        )
+        .unwrap();
+        assert_fuzzy_eq!(
+            smoothing_factor.to_scaled_val::<u128>().unwrap(),
+            (expected_smoothing_factor * WAD as f64) as u128,
+            2
+        );
     }
 }
 

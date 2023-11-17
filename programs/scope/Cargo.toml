@@ -62,3 +62,4 @@ solana-program-test = "~1.16.18"
 solana-sdk = "~1.16.18"
 thiserror = "1.0.38"
 test_cpi_caller = { path = "../test_cpi_caller" }
+test-case = "3.3.0"
