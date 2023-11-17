@@ -27,32 +27,35 @@ mainnet = []
 anchor-lang = "0.28.0"
 anchor-spl = "0.28.0"
 solana-program = "~1.16.18"
+bytemuck = { version = "1.4.0", features = ["min_const_generics", "derive"] }
 num_enum = "0.7.0"
-num = "0.4"
-pyth-sdk-solana = "0.4.2"
 cfg-if = "1.0.0"
 serde = "1.0.136"
+strum = { git = "https://github.com/hubbleprotocol/strum", features = [
+    "derive",
+], branch = "checked_arithmetics" }
+pyth-sdk-solana = "0.4.2"
 switchboard-program = "0.2.0"
 arrayref = "0.3.6"
 decimal-wad = "0.1.7"
 rust_decimal = "1.18.0"
-strum = { git = "https://github.com/hubbleprotocol/strum", features = [
-    "derive",
-], branch = "checked_arithmetics" }
 # Comment out the line below if you do not have access to the yvaults repo
 yvaults = { git = "ssh://git@github.com/hubbleprotocol/yvaults.git", features = [
     "no-entrypoint",
     "cpi",
     "mainnet",
 ], optional = true }
-mpl-token-metadata = { version = "1.13" }
 # Uncomment the line below if you do not have access to the yvaults repo
 #yvaults = { path = "../yvaults_stub", package = "yvaults_stub", optional = true }
-bytemuck = { version = "1.4.0", features = ["min_const_generics", "derive"] }
 sha2 = "0.10.0"
-num-traits = "0.2.15"
-num-derive = "0.4.1"
-spl-associated-token-account = "1.0.3"
+whirlpool = { git = "https://github.com/hubbleprotocol/whirlpools", branch = "anchor/0.28.0", features = [
+    "no-entrypoint",
+    "cpi",
+] }
+raydium-amm-v3 = { git = "https://github.com/raydium-io/raydium-clmm", features = [
+    "no-entrypoint",
+    "cpi",
+] }
 
 [dev-dependencies]
 async-recursion = "1.0.5"
@@ -62,3 +65,4 @@ solana-program-test = "~1.16.18"
 solana-sdk = "~1.16.18"
 thiserror = "1.0.38"
 test_cpi_caller = { path = "../test_cpi_caller" }
+test-case = "3.2.1"

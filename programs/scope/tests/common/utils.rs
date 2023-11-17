@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 
 use num_enum::TryFromPrimitive;
-use num_traits::cast::FromPrimitive;
 use scope::oracles::OracleType;
 use solana_program::instruction::{AccountMeta, InstructionError};
 use solana_program_test::BanksClientError;
@@ -40,11 +39,16 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         | OracleType::SplStake
         | OracleType::PythEMA
         | OracleType::MsolStake
-        | OracleType::ScopeTwap => {}
+        | OracleType::ScopeTwap
+        | OracleType::RaydiumAmmV3AtoB
+        | OracleType::RaydiumAmmV3BtoA => {}
         OracleType::JupiterLP => accounts.extend_from_slice(&get_jlp_remaining_accounts(conf)),
         OracleType::CToken => panic!("CToken is not supported in tests"),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
+        }
+        OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
+            accounts.extend_from_slice(&get_orca_whirlpool_remaining_accounts(ctx, conf).await)
         }
     }
     accounts
@@ -54,6 +58,17 @@ pub fn get_jlp_remaining_accounts(conf: &OracleConf) -> [AccountMeta; 1] {
     use scope::oracles::jupiter_lp as jlp;
     let (mint_pk, _) = jlp::get_mint_pk(&conf.pubkey);
     [AccountMeta::new_readonly(mint_pk, false)]
+}
+
+pub async fn get_orca_whirlpool_remaining_accounts(
+    ctx: &mut TestContext,
+    conf: &OracleConf,
+) -> [AccountMeta; 2] {
+    let pool: whirlpool::state::Whirlpool = ctx.get_anchor_account(&conf.pubkey).await.unwrap();
+    [
+        AccountMeta::new_readonly(pool.token_mint_a, false),
+        AccountMeta::new_readonly(pool.token_mint_b, false),
+    ]
 }
 
 #[cfg(feature = "yvaults")]
@@ -89,8 +104,10 @@ pub fn map_scope_error<T: Debug>(res: Result<T, BanksClientError>) -> scope::Sco
         InstructionError::Custom(z),
     ))) = &res
     {
-        let z: scope::ScopeError = scope::ScopeError::from_i64(*z as i64 - 6000).unwrap(); // as borrowing::BorrowError;
-        return z;
+        if *z >= 6000 {
+            let z: scope::ScopeError = scope::ScopeError::try_from_primitive(*z - 6000).unwrap(); // as borrowing::BorrowError;
+            return z;
+        }
     }
     panic!("Result is {:?}", res)
 }

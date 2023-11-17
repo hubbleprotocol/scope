@@ -3,7 +3,7 @@ use anchor_lang::{
     InstructionData, ToAccountMetas,
 };
 use common::*;
-use scope::{OraclePrices, Price, ScopeError};
+use scope::{assert_fuzzy_price_eq, OraclePrices, Price, ScopeError};
 use solana_program::{
     instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
@@ -42,16 +42,50 @@ const TEST_JLP_ORACLE: OracleConf = OracleConf {
     twap_source: None,
 };
 
+const TEST_ORCA_ATOB: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeorcaPriceAccount11111111111111111111111"),
+    token: 6,
+    price_type: TestOracleType::OrcaWhirlpool(true),
+    twap_enabled: false,
+    twap_source: None,
+};
+
+const TEST_ORCA_BTOA: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeorcaPriceAccount21111111111111111111111"),
+    token: 7,
+    price_type: TestOracleType::OrcaWhirlpool(false),
+    twap_enabled: false,
+    twap_source: None,
+};
+
+const TEST_RAYDIUM_ATOB: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeRaydiumPriceAccount11111111111111111111"),
+    token: 8,
+    price_type: TestOracleType::RaydiumAmmV3(true),
+    twap_enabled: false,
+    twap_source: None,
+};
+
 #[cfg(feature = "yvaults")]
-const TEST_ORACLE_CONF: [OracleConf; 5] = [
+const TEST_ORACLE_CONF: [OracleConf; 8] = [
     TEST_PYTH_ORACLE,
     TEST_PYTH2_ORACLE,
     ktoken_tests::TEST_ORCA_KTOKEN_ORACLE,
     ktoken_tests::TEST_RAYDIUM_KTOKEN_ORACLE,
     TEST_JLP_ORACLE,
+    TEST_ORCA_ATOB,
+    TEST_ORCA_BTOA,
+    TEST_RAYDIUM_ATOB,
 ];
 #[cfg(not(feature = "yvaults"))]
-const TEST_ORACLE_CONF: [OracleConf; 3] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE, TEST_JLP_ORACLE];
+const TEST_ORACLE_CONF: [OracleConf; 6] = [
+    TEST_PYTH_ORACLE,
+    TEST_PYTH2_ORACLE,
+    TEST_JLP_ORACLE,
+    TEST_ORCA_ATOB,
+    TEST_ORCA_BTOA,
+    TEST_RAYDIUM_ATOB,
+];
 
 // - [x] Wrong oracle mapping
 // - [x] Wrong oracle account (copy)
@@ -69,6 +103,10 @@ const TEST_ORACLE_CONF: [OracleConf; 3] = [TEST_PYTH_ORACLE, TEST_PYTH2_ORACLE, 
 
 // Jupiter LP:
 // - [x] Wrong Jupiter LP additional mint account
+
+// Orca Whirlpool:
+// - [x] Wrong Orca Whirlpool additional token mint A
+// - [x] Wrong Orca Whirlpool additional token mint B
 
 #[tokio::test]
 async fn test_working_refresh_list() {
@@ -120,7 +158,13 @@ async fn test_working_refresh_list() {
             value: (i as u64) + 1,
             exp: 6,
         };
-        assert_eq!(data.prices[conf.token].price, ref_price);
+        assert_fuzzy_price_eq!(
+            data.prices[conf.token].price,
+            ref_price,
+            decimal_wad::decimal::Decimal::from(ref_price) / 1000,
+            "Price {:?}",
+            conf
+        );
         assert!(data.prices[conf.token].last_updated_slot > 0);
     }
 }
@@ -1234,7 +1278,7 @@ async fn test_refresh_list_jlp_wrong_mint() {
         let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
         if conf == &TEST_JLP_ORACLE {
             // Set the wrong mint
-            let mint = &mut refresh_accounts[0];
+            let mint = &mut refresh_accounts[1];
             let mint_pk = mint.pubkey;
             let cloned_mint = Pubkey::new_unique();
             ctx.clone_account(&mint_pk, &cloned_mint).await;
@@ -1253,7 +1297,109 @@ async fn test_refresh_list_jlp_wrong_mint() {
         data: args.data(),
     };
 
-    let res = ctx.send_transaction_with_bot(&[ix]).await;
+    ctx.send_transaction(&[ix]).await.unwrap();
+    let prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+    // price not updated
+    assert_eq!(prices.prices[TEST_JLP_ORACLE.token].last_updated_slot, 0);
+    assert_eq!(prices.prices[TEST_JLP_ORACLE.token].price.value, 0);
+}
 
-    assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+// - [x] Wrong Orca Whirlpool additional token mint A
+#[tokio::test]
+async fn test_refresh_list_orca_wrong_mint_a() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
+
+    let price = Price {
+        value: 1000,
+        exp: 1,
+    };
+    // Change price
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_ORCA_ATOB, &price).await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshList {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        oracle_twaps: feed.twaps,
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+    }
+    .to_account_metas(None);
+    for conf in TEST_ORACLE_CONF.iter() {
+        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        if conf == &TEST_ORCA_ATOB {
+            // Set the wrong mint a
+            let mint = &mut refresh_accounts[1];
+            let mint_pk = mint.pubkey;
+            let cloned_mint = Pubkey::new_unique();
+            ctx.clone_account(&mint_pk, &cloned_mint).await;
+            mint.pubkey = cloned_mint;
+        }
+        accounts.append(&mut refresh_accounts);
+    }
+
+    let args = scope::instruction::RefreshPriceList {
+        tokens: TEST_ORACLE_CONF.map(|conf| conf.token as u16).to_vec(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    ctx.send_transaction(&[ix]).await.unwrap();
+    let prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+    // price not updated
+    assert_eq!(prices.prices[TEST_ORCA_ATOB.token].last_updated_slot, 0);
+    assert_eq!(prices.prices[TEST_ORCA_ATOB.token].price.value, 0);
+}
+
+// - [x] Wrong Orca Whirlpool additional token mint B
+#[tokio::test]
+async fn test_refresh_list_orca_wrong_mint_b() {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
+
+    let price = Price {
+        value: 1000,
+        exp: 1,
+    };
+    // Change price
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_ORCA_ATOB, &price).await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshList {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        oracle_twaps: feed.twaps,
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+    }
+    .to_account_metas(None);
+    for conf in TEST_ORACLE_CONF.iter() {
+        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        if conf == &TEST_ORCA_ATOB {
+            // Set the wrong mint b
+            let mint = &mut refresh_accounts[2];
+            let mint_pk = mint.pubkey;
+            let cloned_mint = Pubkey::new_unique();
+            ctx.clone_account(&mint_pk, &cloned_mint).await;
+            mint.pubkey = cloned_mint;
+        }
+        accounts.append(&mut refresh_accounts);
+    }
+
+    let args = scope::instruction::RefreshPriceList {
+        tokens: TEST_ORACLE_CONF.map(|conf| conf.token as u16).to_vec(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    ctx.send_transaction(&[ix]).await.unwrap();
+    let prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+    //  price not updated
+    assert_eq!(prices.prices[TEST_ORCA_ATOB.token].last_updated_slot, 0);
+    assert_eq!(prices.prices[TEST_ORCA_ATOB.token].price.value, 0);
 }

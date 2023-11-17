@@ -16,6 +16,7 @@ use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 pub mod jupiter_lp;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
+pub mod orca_whirlpool;
 pub mod single_account_oracle;
 pub mod twap;
 
@@ -89,7 +90,11 @@ pub async fn entry_from_config(
         | OracleType::CToken
         | OracleType::SplStake
         | OracleType::MsolStake
-        | OracleType::PythEMA => Box::new(SingleAccountOracle::new(token_conf, default_max_age)),
+        | OracleType::PythEMA
+        | OracleType::RaydiumAmmV3AtoB
+        | OracleType::RaydiumAmmV3BtoA => {
+            Box::new(SingleAccountOracle::new(token_conf, default_max_age))
+        }
         #[cfg(feature = "yvaults")]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, rpc).await?)
@@ -105,5 +110,8 @@ pub async fn entry_from_config(
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
+        OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => Box::new(
+            orca_whirlpool::OrcaWhirlpoolOracle::new(token_conf, default_max_age, rpc).await?,
+        ),
     })
 }

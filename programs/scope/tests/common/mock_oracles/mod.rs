@@ -5,6 +5,7 @@ use scope::Price;
 use super::types::{OracleConf, TestContext};
 use crate::common::types::{ScopeFeedDefinition, TestOracleType};
 
+mod clmms;
 mod jupiter_lp;
 #[cfg(feature = "yvaults")]
 mod ktoken;
@@ -53,6 +54,8 @@ pub async fn set_price(
             // This is a derived oracle, we don't override it
             panic!("Twap oracle is not overridable")
         }
+        TestOracleType::OrcaWhirlpool(a_to_b) => clmms::get_orca_whirlpool_accounts(price, a_to_b),
+        TestOracleType::RaydiumAmmV3(a_to_b) => clmms::get_raydium_amm_v3_accounts(price, a_to_b),
         TestOracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
