@@ -632,5 +632,11 @@
     "oracle_mapping": "nrYkQQQur7z8rYTST3G9GqATviK5SxTDkrqd21MW6Ue",
     "oracle_type": "Pyth",
     "max_age": 200
+  },
+  "134": {
+    "label": "EMA PYTH/USD",
+    "oracle_mapping": "nrYkQQQur7z8rYTST3G9GqATviK5SxTDkrqd21MW6Ue",
+    "oracle_type": "PythEMA",
+    "max_age": 200
   }
 }
