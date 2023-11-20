@@ -16,7 +16,7 @@ pub(super) fn get_jlp_price_accounts(
     let aum_usd = Decimal::from(*price).to_scaled_val().unwrap();
     let mint_supply = WAD;
 
-    let (mint_pk, mint_bump) = jlp::get_mint_pk(mapping_pk);
+    let (mint_pk, mint_bump) = jlp::utils::get_mint_pk(mapping_pk);
 
     let pool = jlp::Pool {
         name: "This is a test pool".to_string(),
@@ -30,7 +30,7 @@ pub(super) fn get_jlp_price_accounts(
 
     let mint = Mint {
         supply: mint_supply,
-        decimals: jlp::POOL_VALUE_SCALE_DECIMALS,
+        decimals: scope::oracles::jupiter_lp::POOL_VALUE_SCALE_DECIMALS,
         is_initialized: true,
         ..Default::default()
     };
