@@ -50,6 +50,9 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
             accounts.extend_from_slice(&get_orca_whirlpool_remaining_accounts(ctx, conf).await)
         }
+        OracleType::JupiterLpCpi => {
+            panic!("JupiterLpCpi is not supported in tests")
+        }
     }
     accounts
 }

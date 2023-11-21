@@ -4,26 +4,25 @@ pub mod states;
 pub mod utils;
 
 use anchor_lang::prelude::*;
+use solana_program::pubkey;
 pub use states::*;
 
 declare_id!("PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu");
+
+pub const PERPETUAL_ACC: Pubkey = pubkey!("H4ND9aYttUVLFmNypZqLjZ52FYiGvdEB45GmwNoKEjTj");
 
 #[program]
 pub mod perpetuals {
     use super::*;
 
+    #[allow(unused_variables)]
     pub fn get_assets_under_management(
-        _ctx: Context<GetAssetsUnderManagement>,
-        _params: GetAssetsUnderManagementParams,
+        ctx: Context<GetAssetsUnderManagement>,
+        mode: Option<PriceCalcMode>,
     ) -> Result<u128> {
         // We only need the interface, not the actual implementation here.
         unimplemented!("jup-perp-itf is just an interface")
     }
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct GetAssetsUnderManagementParams {
-    pub mode: Option<PriceCalcMode>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]

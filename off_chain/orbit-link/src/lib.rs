@@ -77,6 +77,23 @@ where
         Ok(AccDeser::try_deserialize(&mut data)?)
     }
 
+    pub async fn get_anchor_accounts<AccDeser: AccountDeserialize>(
+        &self,
+        pubkey: &[Pubkey],
+    ) -> Result<Vec<Option<AccDeser>>> {
+        let accounts = self.client.get_multiple_accounts(pubkey).await?;
+        accounts
+            .into_iter()
+            .map(|acc| {
+                acc.map(|acc| {
+                    let mut data: &[u8] = &acc.data;
+                    AccDeser::try_deserialize(&mut data).map_err(ErrorKind::from)
+                })
+                .transpose()
+            })
+            .collect()
+    }
+
     pub fn tx_builder(&self) -> tx_builder::TxBuilder<T, S> {
         tx_builder::TxBuilder::new(self)
     }

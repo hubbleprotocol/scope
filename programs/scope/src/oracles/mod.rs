@@ -69,6 +69,8 @@ pub enum OracleType {
     RaydiumAmmV3AtoB = 15,
     /// Raydium's AMM v3 price (CLMM) B to A
     RaydiumAmmV3BtoA = 16,
+    /// Jupiter's perpetual LP tokens computed through CPI
+    JupiterLpCpi = 17,
 }
 
 impl OracleType {
@@ -79,22 +81,22 @@ impl OracleType {
     /// Get the number of compute unit needed to refresh the price of a token
     pub fn get_update_cu_budget(&self) -> u32 {
         match self {
-            OracleType::Pyth => 15000,
-            OracleType::SwitchboardV1 => 15000,
-            OracleType::SwitchboardV2 => 30000,
-            OracleType::CToken => 130000,
-            OracleType::SplStake => 20000,
-            OracleType::KToken => 120000,
-            OracleType::PythEMA => 15000,
-            OracleType::KTokenToTokenA => 100000,
-            OracleType::KTokenToTokenB => 100000,
-            OracleType::MsolStake => 20000,
-            OracleType::JupiterLP => 40000,
-            OracleType::ScopeTwap => 10000,
+            OracleType::Pyth => 15_000,
+            OracleType::SwitchboardV1 => 15_000,
+            OracleType::SwitchboardV2 => 30_000,
+            OracleType::CToken => 130_000,
+            OracleType::SplStake => 20_000,
+            OracleType::KToken => 120_000,
+            OracleType::PythEMA => 15_000,
+            OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => 100_000,
+            OracleType::MsolStake => 20_000,
+            OracleType::JupiterLP => 40_000,
+            OracleType::ScopeTwap => 10_000,
             OracleType::OrcaWhirlpoolAtoB
             | OracleType::OrcaWhirlpoolBtoA
             | OracleType::RaydiumAmmV3AtoB
-            | OracleType::RaydiumAmmV3BtoA => 10000,
+            | OracleType::RaydiumAmmV3BtoA => 10_000,
+            OracleType::JupiterLpCpi => 100_000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -109,7 +111,7 @@ impl OracleType {
 /// with the data contained in the `base_account`
 pub fn get_price<'a, 'b>(
     price_type: OracleType,
-    base_account: &AccountInfo,
+    base_account: &AccountInfo<'a>,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
     clock: &Clock,
     oracle_twaps: &OracleTwaps,
@@ -155,7 +157,9 @@ where
             panic!("yvaults feature is not enabled, KToken oracle type is not available")
         }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
-        OracleType::JupiterLP => jupiter_lp::get_price(base_account, clock, extra_accounts),
+        OracleType::JupiterLP => {
+            jupiter_lp::get_price_no_recompute(base_account, clock, extra_accounts)
+        }
         OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
@@ -167,7 +171,10 @@ where
             orca_whirlpool::get_price(false, base_account, clock, extra_accounts)
         }
         OracleType::RaydiumAmmV3AtoB => raydium_ammv3::get_price(true, base_account, clock),
-        OracleType::RaydiumAmmV3BtoA => todo!(),
+        OracleType::RaydiumAmmV3BtoA => raydium_ammv3::get_price(false, base_account, clock),
+        OracleType::JupiterLpCpi => {
+            jupiter_lp::get_price_with_cpi(base_account, clock, extra_accounts)
+        }
     }
 }
 
@@ -190,7 +197,9 @@ pub fn validate_oracle_account(
         OracleType::KTokenToTokenB => Ok(()), // TODO, should validate ownership of the ktoken account
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::MsolStake => Ok(()),
-        OracleType::JupiterLP => jupiter_lp::validate_jlp_pool(price_account),
+        OracleType::JupiterLP | OracleType::JupiterLpCpi => {
+            jupiter_lp::validate_jlp_pool(price_account)
+        }
         OracleType::ScopeTwap => twap::validate_price_account(price_account),
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
             orca_whirlpool::validate_pool_account(price_account)

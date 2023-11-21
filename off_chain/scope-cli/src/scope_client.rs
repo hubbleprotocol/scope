@@ -137,7 +137,7 @@ where
     /// Set the locally known oracle mapping according to the provided configuration list.
     pub async fn set_local_mapping(&mut self, token_list: &ScopeConfig) -> Result<()> {
         let default_max_age = token_list.default_max_age;
-        let rpc = self.get_rpc();
+        let rpc = self.get_orbit_link();
         // Transform the configuration entries in appropriate local token entries
         // Local implies to get a copy of needed onchain data (as a cache)
         let tokens_res: Result<TokenEntryList> =
@@ -243,7 +243,7 @@ where
         let twap_sources = &onchain_oracle_mapping.twap_source;
 
         let zero_pk = Pubkey::default();
-        let rpc = self.get_rpc();
+        let rpc = self.get_orbit_link();
 
         let entry_builders = onchain_mapping
             .iter()
@@ -511,6 +511,11 @@ where
     /// Get an the rpc instance used by the ScopeClient
     pub fn get_rpc(&self) -> &T {
         &self.client.client
+    }
+
+    /// Get OrbitLink instance used by the ScopeClient
+    pub fn get_orbit_link(&self) -> &OrbitLink<T, S> {
+        &self.client
     }
 
     /// Get all prices

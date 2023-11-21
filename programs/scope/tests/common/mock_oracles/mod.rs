@@ -56,9 +56,6 @@ pub async fn set_price(
         }
         TestOracleType::OrcaWhirlpool(a_to_b) => clmms::get_orca_whirlpool_accounts(price, a_to_b),
         TestOracleType::RaydiumAmmV3(a_to_b) => clmms::get_raydium_amm_v3_accounts(price, a_to_b),
-        TestOracleType::DeprecatedPlaceholder => {
-            panic!("DeprecatedPlaceholder is not a valid oracle type")
-        }
     };
     additional_accs.into_iter().for_each(|a| {
         let AdditionalAccount {

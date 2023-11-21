@@ -64,10 +64,10 @@ pub struct Custody {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]
 pub struct OracleParams {
-    oracle_account: Pubkey,
-    oracle_type: OracleType,
-    max_price_error: u64,
-    max_price_age_sec: u64,
+    pub oracle_account: Pubkey,
+    pub oracle_type: OracleType,
+    pub max_price_error: u64,
+    pub max_price_age_sec: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]

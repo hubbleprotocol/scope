@@ -33,9 +33,6 @@ pub enum TestOracleType {
     Pyth,
     SwitchboardV1,
     SwitchboardV2,
-    /// Deprecated (formerly YiToken)
-    // Do not remove - breaks the typescript idl codegen
-    DeprecatedPlaceholder,
     /// Solend tokens
     CToken,
     /// SPL Stake Pool token (like scnSol)
@@ -86,9 +83,6 @@ impl From<TestOracleType> for OracleType {
                 } else {
                     OracleType::RaydiumAmmV3BtoA
                 }
-            }
-            TestOracleType::DeprecatedPlaceholder => {
-                panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
         }
     }

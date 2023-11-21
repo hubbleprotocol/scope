@@ -9,11 +9,14 @@
 //! - [`std::fmt::Debug`] for detailed debug and error logs.
 
 use anchor_client::solana_sdk::clock;
+use anchor_client::solana_sdk::signer::Signer;
 use anyhow::Result;
-use orbit_link::async_client::AsyncClient;
+use orbit_link::async_client::{self, AsyncClient};
+use orbit_link::OrbitLink;
 use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
 pub mod jupiter_lp;
+pub mod jupiter_lp_cpi;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod orca_whirlpool;
@@ -78,11 +81,15 @@ pub trait OracleHelper: Sync {
     fn is_twap_enabled(&self) -> bool;
 }
 
-pub async fn entry_from_config(
+pub async fn entry_from_config<T, S>(
     token_conf: &TokenConfig,
     default_max_age: clock::Slot,
-    rpc: &dyn AsyncClient,
-) -> Result<Box<dyn TokenEntry>> {
+    rpc: &OrbitLink<T, S>,
+) -> Result<Box<dyn TokenEntry>>
+where
+    T: async_client::AsyncClient,
+    S: Signer,
+{
     Ok(match token_conf.oracle_type {
         OracleType::Pyth
         | OracleType::SwitchboardV1
@@ -97,21 +104,26 @@ pub async fn entry_from_config(
         }
         #[cfg(feature = "yvaults")]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
-            Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, rpc).await?)
+            Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, &rpc.client).await?)
         }
         OracleType::ScopeTwap => Box::new(twap::TwapOracle::new(token_conf, default_max_age)),
         #[cfg(not(feature = "yvaults"))]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             panic!("yvaults feature is not enabled, KTokenOracle is not available")
         }
-        OracleType::JupiterLP => {
-            Box::new(jupiter_lp::JupiterLPOracle::new(token_conf, default_max_age).await?)
-        }
+        OracleType::JupiterLP => Box::new(jupiter_lp::JupiterLPOracle::new(
+            token_conf,
+            default_max_age,
+        )?),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => Box::new(
-            orca_whirlpool::OrcaWhirlpoolOracle::new(token_conf, default_max_age, rpc).await?,
+            orca_whirlpool::OrcaWhirlpoolOracle::new(token_conf, default_max_age, &rpc.client)
+                .await?,
+        ),
+        OracleType::JupiterLpCpi => Box::new(
+            jupiter_lp_cpi::JupiterLPOracleCpi::new(token_conf, default_max_age, rpc).await?,
         ),
     })
 }

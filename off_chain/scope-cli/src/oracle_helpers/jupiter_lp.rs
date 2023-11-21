@@ -28,7 +28,7 @@ pub struct JupiterLPOracle {
 }
 
 impl JupiterLPOracle {
-    pub async fn new(conf: &TokenConfig, default_max_age: clock::Slot) -> Result<Self> {
+    pub fn new(conf: &TokenConfig, default_max_age: clock::Slot) -> Result<Self> {
         let mapping = conf.oracle_mapping;
         let (lp_mint, _) = get_mint_pk(&mapping);
 
