@@ -74,7 +74,7 @@ impl JupiterLPOracleCpi {
 #[async_trait::async_trait]
 impl OracleHelper for JupiterLPOracleCpi {
     fn get_type(&self) -> OracleType {
-        OracleType::JupiterLP
+        OracleType::JupiterLpCpi
     }
 
     fn get_number_of_extra_accounts(&self) -> usize {
