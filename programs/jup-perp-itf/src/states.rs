@@ -44,7 +44,7 @@ pub struct PoolApr {
 }
 
 #[account]
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Custody {
     pub pool: Pubkey,
     pub mint: Pubkey,
@@ -67,7 +67,7 @@ pub struct OracleParams {
     pub oracle_account: Pubkey,
     pub oracle_type: OracleType,
     pub max_price_error: u64,
-    pub max_price_age_sec: u64,
+    pub max_price_age_sec: u32,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]
