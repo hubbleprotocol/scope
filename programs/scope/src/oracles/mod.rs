@@ -167,7 +167,7 @@ where
             orca_whirlpool::get_price(false, base_account, clock, extra_accounts)
         }
         OracleType::RaydiumAmmV3AtoB => raydium_ammv3::get_price(true, base_account, clock),
-        OracleType::RaydiumAmmV3BtoA => todo!(),
+        OracleType::RaydiumAmmV3BtoA => raydium_ammv3::get_price(false, base_account, clock),
     }
 }
 
