@@ -326,6 +326,9 @@ pub enum ScopeError {
 
     #[msg("TWAP source index out of range")]
     TwapSourceIndexOutOfRange,
+
+    #[msg("TWAP sample is too close to the previous one")]
+    TwapSampleTooFrequent,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

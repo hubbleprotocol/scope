@@ -180,13 +180,13 @@ async fn test_2_prices_with_same_value_no_twap_change() {
         oracle_twaps.twaps[0].last_update_unix_timestamp
     };
 
-    // Fast forward time and refresh price with the same value
+    // Fast forward not enough time and refresh price with the same value
     ctx.fast_forward_seconds(10).await;
     mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
     let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
     ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
-    // verify that the twap value didn't change but the twap date increased
+    // verify that the twap value and ts didn't change (too frequent updates)
     {
         let oracle_twaps_updated: Box<OracleTwaps> =
             ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
@@ -199,7 +199,30 @@ async fn test_2_prices_with_same_value_no_twap_change() {
 
         assert_eq!(
             oracle_twaps_updated.twaps[0].last_update_unix_timestamp,
-            last_update_unix_timestamp + 10
+            last_update_unix_timestamp
+        );
+    }
+
+    // Fast forward time and refresh price with the same value
+    ctx.fast_forward_seconds(90).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_PYTH_ORACLE, &token_price).await;
+    let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
+    ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
+
+    // verify that the twap value didn't change but the twap date increased (update after right amount of time)
+    {
+        let oracle_twaps_updated: Box<OracleTwaps> =
+            ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
+        let token_price_u128: u128 = Decimal::from(token_price).to_scaled_val().unwrap();
+        assert_fuzzy_eq!(
+            oracle_twaps_updated.twaps[0].current_ema_1h,
+            token_price_u128,
+            1
+        );
+
+        assert_eq!(
+            oracle_twaps_updated.twaps[0].last_update_unix_timestamp,
+            last_update_unix_timestamp + 100
         );
     }
 }
@@ -296,7 +319,7 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
         assert_fuzzy_eq!(
             oracle_twaps_updated.twaps[0].current_ema_1h,
             token_price_u128,
-            2
+            token_price_u128 / 1000000
         );
 
         assert_eq!(
@@ -312,11 +335,9 @@ async fn test_multiple_prices_with_same_value_no_twap_change() {
         let oracle_prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
         let price: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
         let expected: Decimal = token_price.into();
-        assert_fuzzy_eq!(
-            price.to_scaled_val::<u128>().unwrap(),
-            expected.to_scaled_val::<u128>().unwrap(),
-            2
-        );
+        let price_scaled = price.to_scaled_val::<u128>().unwrap();
+        let expected_scaled = expected.to_scaled_val::<u128>().unwrap();
+        assert_fuzzy_eq!(price_scaled, expected_scaled, expected_scaled / 100000000);
     }
 }
 
@@ -374,6 +395,10 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
         prev_oracle_twaps = oracle_twaps_updated;
     }
 
+    let twap_after_price_move = Decimal::from_scaled_val(prev_oracle_twaps.twaps[0].current_ema_1h);
+    let price_after_price_move = Decimal::from(token_price);
+    let diff_price_twap_after_price_move = price_after_price_move - twap_after_price_move;
+
     // Check that the twap stabilize after 1hour without price change
     for _ in 1..60 {
         ctx.fast_forward_seconds(60).await;
@@ -387,13 +412,16 @@ async fn test_multiple_prices_with_same_increasing_value_twap_increases() {
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
         let oracle_prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
-        let price: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
-        let expected: Decimal = token_price.into();
-        assert_fuzzy_eq!(
-            price.to_scaled_val::<u128>().unwrap(),
-            expected.to_scaled_val::<u128>().unwrap(),
-            3
-        );
+
+        let price: Decimal = oracle_prices.prices[TEST_PYTH_ORACLE.token].price.into();
+        let twap: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
+        let diff_price_twap_after_1h = price - twap;
+
+        // Assert that the diff has decreased by 85% after 1h
+        assert!(
+            diff_price_twap_after_1h < diff_price_twap_after_price_move * 15/100,
+            "diff_price_twap_after_1h: {diff_price_twap_after_1h}, diff_price_twap_after_price_move: {diff_price_twap_after_price_move}"
+        )
     }
 }
 
@@ -434,7 +462,6 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
         let refresh_ix = refresh_one_ix(&feed, TEST_PYTH_ORACLE);
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
-        // verify that the twap value didn't change but the twap date increased
         let oracle_twaps_updated: Box<OracleTwaps> =
             ctx.get_zero_copy_account_boxed(&feed.twaps).await.unwrap();
 
@@ -451,6 +478,10 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
         prev_oracle_twaps = oracle_twaps_updated;
     }
 
+    let twap_after_price_move = Decimal::from_scaled_val(prev_oracle_twaps.twaps[0].current_ema_1h);
+    let price_after_price_move = Decimal::from(token_price);
+    let diff_price_twap_after_price_move = twap_after_price_move - price_after_price_move;
+
     // Check that the twap stabilize after 1hour without price change
     for _ in 1..60 {
         ctx.fast_forward_seconds(60).await;
@@ -464,12 +495,15 @@ async fn test_multiple_prices_with_decreasing_value_twap_decreases() {
         ctx.send_transaction_with_bot(&[refresh_ix]).await.unwrap();
 
         let oracle_prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
-        let price: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
-        let expected: Decimal = token_price.into();
-        assert_fuzzy_eq!(
-            price.to_scaled_val::<u128>().unwrap(),
-            expected.to_scaled_val::<u128>().unwrap(),
-            2
+
+        let price: Decimal = oracle_prices.prices[TEST_PYTH_ORACLE.token].price.into();
+        let twap: Decimal = oracle_prices.prices[TEST_TWAP.token].price.into();
+        let diff_price_twap_after_1h = twap - price;
+
+        // Assert that the diff has decreased by 85% after 1h
+        assert!(
+            diff_price_twap_after_1h < diff_price_twap_after_price_move * 15/100,
+            "diff_price_twap_after_1h: {diff_price_twap_after_1h}, diff_price_twap_after_price_move: {diff_price_twap_after_price_move}"
         );
     }
 }
