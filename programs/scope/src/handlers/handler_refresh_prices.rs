@@ -158,11 +158,9 @@ pub fn refresh_price_list<'info>(
             oracle_mappings,
             token_nb.into(),
         )
-        .map_err(|_| {
+        .map_err(|e| {
             msg!(
-                "Price skipped as validation failed (token {}, type {:?})",
-                token_idx,
-                price_type
+                "Price skipped as validation failed (token {token_idx}, type {price_type:?}): {e}",
             );
         })
         .ok();
