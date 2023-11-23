@@ -1,8 +1,10 @@
 #![doc = include_str!("../Readme.md")]
 
-use anchor_client::anchor_lang::AccountSerialize;
 use anchor_client::{
-    anchor_lang::{AccountDeserialize, AnchorDeserialize, Discriminator, Owner},
+    anchor_lang::{
+        AccountDeserialize, AccountSerialize, AnchorDeserialize, Discriminator, Owner,
+        __private::bytemuck::{from_bytes, AnyBitPattern},
+    },
     solana_sdk::{
         address_lookup_table_account::AddressLookupTableAccount,
         commitment_config::CommitmentConfig,
@@ -139,6 +141,30 @@ where
                 let mut data: &[u8] = &account.data;
                 let acc = Acc::try_deserialize(&mut data)?;
                 Ok((pubkey, acc))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(parsed_accounts)
+    }
+
+    pub async fn get_all_zero_copy_accounts<Acc>(&self) -> Result<Vec<(Pubkey, Acc)>>
+    where
+        Acc: AnyBitPattern + Owner + Discriminator,
+    {
+        let size = u64::try_from(std::mem::size_of::<Acc>() + 8).unwrap();
+        let accounts = self
+            .client
+            .get_program_accounts_with_size_and_discriminator(
+                &Acc::owner(),
+                size as u64,
+                async_client::ClientDiscriminator::Byte(Acc::DISCRIMINATOR[0]),
+            )
+            .await?;
+        let parsed_accounts = accounts
+            .into_iter()
+            .map(|(pubkey, account)| {
+                let data: &[u8] = &account.data;
+                let acc: &Acc = from_bytes(&data[8..]);
+                Ok((pubkey, *acc))
             })
             .collect::<Result<Vec<_>>>()?;
         Ok(parsed_accounts)
