@@ -173,7 +173,7 @@ where
         OracleType::RaydiumAmmV3AtoB => raydium_ammv3::get_price(true, base_account, clock),
         OracleType::RaydiumAmmV3BtoA => raydium_ammv3::get_price(false, base_account, clock),
         OracleType::JupiterLpCompute => {
-            jupiter_lp::get_price_recomputed(base_account, extra_accounts)
+            jupiter_lp::get_price_recomputed(base_account, clock, extra_accounts)
         }
     }
 }

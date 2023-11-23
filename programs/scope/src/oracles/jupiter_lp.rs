@@ -71,6 +71,7 @@ pub fn validate_jlp_pool(account: &AccountInfo) -> Result<()> {
 /// - All oracles of the pool (from the custodies)
 pub fn get_price_recomputed<'a, 'b>(
     jup_pool_acc: &AccountInfo<'a>,
+    clock: &Clock,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
 ) -> Result<DatedPrice>
 where
@@ -126,8 +127,8 @@ where
         mint.supply
     };
 
-    let mut oldest_price_ts: u64 = 0;
-    let mut oldest_price_slot: u64 = 0;
+    let mut oldest_price_ts: u64 = clock.unix_timestamp.try_into().unwrap();
+    let mut oldest_price_slot: u64 = clock.slot;
 
     // 4. Get AUM with CPI
     let lp_value: u128 = {
@@ -256,5 +257,35 @@ fn asset_amount_to_usd(price: &Price, token_amount: u64, token_decimals: u8) -> 
     } else {
         let diff = POOL_VALUE_SCALE_DECIMALS - (price_decimals + token_decimals);
         price_value * token_amount * ten_pow(diff)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
+
+    #[test_case(1, 0, 1, 0, 1_000_000)]
+    #[test_case(1_000_000, 6, 1, 0, 1_000_000)]
+    #[test_case(1, 0, 1, 6, 1)]
+    #[test_case(5, 0, 5, 0, 25_000_000)]
+    #[test_case(10, 0, 6, 0, 60_000_000)]
+    #[test_case(25, 3, 1, 3, 25)]
+    fn test_asset_amount_to_usd(
+        price_value: u64,
+        price_exp: u64,
+        token_amount: u64,
+        token_decimals: u8,
+        expected: u128,
+    ) {
+        let price = Price {
+            value: price_value,
+            exp: price_exp,
+        };
+        let token_amount: u64 = token_amount;
+        let token_decimals: u8 = token_decimals;
+
+        let usd = asset_amount_to_usd(&price, token_amount, token_decimals);
+        assert_eq!(usd, expected);
     }
 }

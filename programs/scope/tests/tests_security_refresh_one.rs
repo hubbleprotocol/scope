@@ -2,7 +2,7 @@ mod common;
 
 use anchor_lang::{prelude::Pubkey, InstructionData, ToAccountMetas};
 use common::*;
-use scope::{OraclePrices, Price, ScopeError};
+use scope::{assert_fuzzy_price_eq, OraclePrices, Price, ScopeError};
 use solana_program::{
     instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
@@ -45,8 +45,13 @@ const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
 // - [x] Wrong kToken additional orca position account
 // - [x] Wrong kToken additional scope prices account
 
-// Jupiter LP:
+// Jupiter LP Fetch:
 // - [x] Wrong Jupiter LP additional mint account
+
+// Jupiter LP Compute:
+// - [x] Wrong Jupiter LP additional mint account
+// - [x] Wrong Jupiter LP additional custodies account
+// - [x] Wrong Jupiter LP additional oracles account
 
 #[tokio::test]
 async fn test_working_refresh_one() {
@@ -1061,13 +1066,13 @@ mod ktoken_tests {
     }
 }
 
-mod test_jlp {
+mod test_jlp_fetch {
     use super::*;
 
     const TEST_JLP_ORACLE: OracleConf = OracleConf {
         pubkey: pubkey!("SomeJLPPriceAccount111111111111111111111111"),
         token: 0,
-        price_type: TestOracleType::JupiterLP,
+        price_type: TestOracleType::JupiterLPFetch,
         twap_enabled: false,
         twap_source: None,
     };
@@ -1156,5 +1161,115 @@ mod test_jlp {
         let res = ctx.send_transaction_with_bot(&[ix]).await;
 
         assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+    }
+}
+
+mod test_jlp_compute {
+    use super::*;
+
+    const TEST_JLP_ORACLE: OracleConf = OracleConf {
+        pubkey: pubkey!("SomeJLPPriceAccount111111111111111111111111"),
+        token: 0,
+        price_type: TestOracleType::JupiterLpCompute,
+        twap_enabled: false,
+        twap_source: None,
+    };
+
+    #[tokio::test]
+    async fn test_working_refresh_one_jlp() {
+        let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_JLP_ORACLE]).await;
+
+        let price = Price {
+            value: 1000,
+            exp: 6,
+        };
+        // Change price
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_JLP_ORACLE, &price).await;
+
+        // Refresh
+        let mut accounts = scope::accounts::RefreshOne {
+            oracle_prices: feed.prices,
+            oracle_mappings: feed.mapping,
+            oracle_twaps: feed.twaps,
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+            price_info: TEST_JLP_ORACLE.pubkey,
+        }
+        .to_account_metas(None);
+
+        accounts.append(&mut utils::get_remaining_accounts(&mut ctx, &TEST_JLP_ORACLE).await);
+
+        let args = scope::instruction::RefreshOnePrice {
+            token: TEST_JLP_ORACLE.token.try_into().unwrap(),
+        };
+
+        let ix = Instruction {
+            program_id: scope::id(),
+            accounts: accounts.to_account_metas(None),
+            data: args.data(),
+        };
+
+        ctx.send_transaction_with_bot(&[ix]).await.unwrap();
+
+        // Check price
+        let data: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+        assert_fuzzy_price_eq!(
+            data.prices[TEST_JLP_ORACLE.token].price,
+            price,
+            decimal_wad::decimal::Decimal::from(price) / 1000,
+            "Price {:?}",
+            data.prices[TEST_JLP_ORACLE.token]
+        );
+    }
+
+    // All extra accounts at once
+    // - [x] Wrong Jupiter LP additional mint account
+    // - [x] Wrong Jupiter LP additional custodies account
+    // - [x] Wrong Jupiter LP additional oracles account
+    #[tokio::test]
+    async fn test_refresh_one_jlp_wrong_extra_accounts() {
+        let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_JLP_ORACLE]).await;
+
+        let price = Price {
+            value: 1000,
+            exp: 3,
+        };
+        // Change price
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_JLP_ORACLE, &price).await;
+
+        // Refresh
+        let mut accounts = scope::accounts::RefreshOne {
+            oracle_prices: feed.prices,
+            oracle_mappings: feed.mapping,
+            oracle_twaps: feed.twaps,
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+            price_info: TEST_JLP_ORACLE.pubkey,
+        }
+        .to_account_metas(None);
+
+        let remaining_accounts = utils::get_remaining_accounts(&mut ctx, &TEST_JLP_ORACLE).await;
+
+        for i in 0..remaining_accounts.len() {
+            let mut remaining_accounts = remaining_accounts.clone();
+            let acc = &mut remaining_accounts[i];
+            let acc_pk = acc.pubkey;
+            let cloned_acc = Pubkey::new_unique();
+            ctx.clone_account(&acc_pk, &cloned_acc).await;
+            acc.pubkey = cloned_acc;
+            accounts.append(&mut remaining_accounts);
+
+            let args = scope::instruction::RefreshOnePrice {
+                token: TEST_JLP_ORACLE.token.try_into().unwrap(),
+            };
+
+            let ix = Instruction {
+                program_id: scope::id(),
+                accounts: accounts.to_account_metas(None),
+                data: args.data(),
+            };
+
+            let res = ctx.send_transaction_with_bot(&[ix]).await;
+
+            assert_eq!(map_scope_error(res), ScopeError::UnexpectedAccount);
+        }
     }
 }

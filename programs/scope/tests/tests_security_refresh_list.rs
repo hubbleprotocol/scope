@@ -1,3 +1,4 @@
+#![allow(clippy::items_after_test_module)]
 use anchor_lang::{
     prelude::{AccountMeta, Pubkey},
     InstructionData, ToAccountMetas,
@@ -9,6 +10,7 @@ use solana_program::{
 };
 use solana_program_test::tokio;
 use solana_sdk::{pubkey, signer::Signer};
+use test_case::test_case;
 use types::*;
 
 use crate::{
@@ -34,17 +36,25 @@ const TEST_PYTH2_ORACLE: OracleConf = OracleConf {
     twap_source: None,
 };
 
-const TEST_JLP_ORACLE: OracleConf = OracleConf {
+const TEST_JLP_FETCH_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomeJLPPriceAccount111111111111111111111111"),
     token: 5,
-    price_type: TestOracleType::JupiterLP,
+    price_type: TestOracleType::JupiterLPFetch,
+    twap_enabled: false,
+    twap_source: None,
+};
+
+const TEST_JLP_COMPUTE_ORACLE: OracleConf = OracleConf {
+    pubkey: pubkey!("SomeJLP2PriceAccount11111111111111111111111"),
+    token: 6,
+    price_type: TestOracleType::JupiterLpCompute,
     twap_enabled: false,
     twap_source: None,
 };
 
 const TEST_ORCA_ATOB: OracleConf = OracleConf {
     pubkey: pubkey!("SomeorcaPriceAccount11111111111111111111111"),
-    token: 6,
+    token: 7,
     price_type: TestOracleType::OrcaWhirlpool(true),
     twap_enabled: false,
     twap_source: None,
@@ -52,7 +62,7 @@ const TEST_ORCA_ATOB: OracleConf = OracleConf {
 
 const TEST_ORCA_BTOA: OracleConf = OracleConf {
     pubkey: pubkey!("SomeorcaPriceAccount21111111111111111111111"),
-    token: 7,
+    token: 8,
     price_type: TestOracleType::OrcaWhirlpool(false),
     twap_enabled: false,
     twap_source: None,
@@ -60,28 +70,30 @@ const TEST_ORCA_BTOA: OracleConf = OracleConf {
 
 const TEST_RAYDIUM_ATOB: OracleConf = OracleConf {
     pubkey: pubkey!("SomeRaydiumPriceAccount11111111111111111111"),
-    token: 8,
+    token: 9,
     price_type: TestOracleType::RaydiumAmmV3(true),
     twap_enabled: false,
     twap_source: None,
 };
 
 #[cfg(feature = "yvaults")]
-const TEST_ORACLE_CONF: [OracleConf; 8] = [
+const TEST_ORACLE_CONF: [OracleConf; 9] = [
     TEST_PYTH_ORACLE,
     TEST_PYTH2_ORACLE,
     ktoken_tests::TEST_ORCA_KTOKEN_ORACLE,
     ktoken_tests::TEST_RAYDIUM_KTOKEN_ORACLE,
-    TEST_JLP_ORACLE,
+    TEST_JLP_FETCH_ORACLE,
+    TEST_JLP_COMPUTE_ORACLE,
     TEST_ORCA_ATOB,
     TEST_ORCA_BTOA,
     TEST_RAYDIUM_ATOB,
 ];
 #[cfg(not(feature = "yvaults"))]
-const TEST_ORACLE_CONF: [OracleConf; 6] = [
+const TEST_ORACLE_CONF: [OracleConf; 7] = [
     TEST_PYTH_ORACLE,
     TEST_PYTH2_ORACLE,
-    TEST_JLP_ORACLE,
+    TEST_JLP_FETCH_ORACLE,
+    TEST_JLP_COMPUTE_ORACLE,
     TEST_ORCA_ATOB,
     TEST_ORCA_BTOA,
     TEST_RAYDIUM_ATOB,
@@ -101,8 +113,11 @@ const TEST_ORACLE_CONF: [OracleConf; 6] = [
 // - [x] Wrong kToken additional orca position account
 // - [x] Wrong kToken additional scope prices account
 
-// Jupiter LP:
+// Jupiter LP Fetch:
 // - [x] Wrong Jupiter LP additional mint account
+
+// Jupiter LP Compute:
+// - [x] Any of the extra account is wrong
 
 // Orca Whirlpool:
 // - [x] Wrong Orca Whirlpool additional token mint A
@@ -1254,7 +1269,7 @@ mod ktoken_tests {
     }
 }
 
-// - [x] Wrong Jupiter LP additional mint account
+// - [x] Wrong Jupiter LP Fetch additional mint account
 #[tokio::test]
 async fn test_refresh_list_jlp_wrong_mint() {
     let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
@@ -1264,7 +1279,7 @@ async fn test_refresh_list_jlp_wrong_mint() {
         exp: 1,
     };
     // Change price
-    mock_oracles::set_price(&mut ctx, &feed, &TEST_JLP_ORACLE, &price).await;
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_JLP_FETCH_ORACLE, &price).await;
 
     // Refresh
     let mut accounts = scope::accounts::RefreshList {
@@ -1276,7 +1291,7 @@ async fn test_refresh_list_jlp_wrong_mint() {
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
         let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
-        if conf == &TEST_JLP_ORACLE {
+        if conf == &TEST_JLP_FETCH_ORACLE {
             // Set the wrong mint
             let mint = &mut refresh_accounts[1];
             let mint_pk = mint.pubkey;
@@ -1300,8 +1315,71 @@ async fn test_refresh_list_jlp_wrong_mint() {
     ctx.send_transaction(&[ix]).await.unwrap();
     let prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
     // price not updated
-    assert_eq!(prices.prices[TEST_JLP_ORACLE.token].last_updated_slot, 0);
-    assert_eq!(prices.prices[TEST_JLP_ORACLE.token].price.value, 0);
+    assert_eq!(
+        prices.prices[TEST_JLP_FETCH_ORACLE.token].last_updated_slot,
+        0
+    );
+    assert_eq!(prices.prices[TEST_JLP_FETCH_ORACLE.token].price.value, 0);
+}
+
+// - [x] Any of the Jupiter LP Compute additional account is wrong
+#[test_case(0; "wrong mint")]
+#[test_case(1; "wrong custody 1")]
+#[test_case(2; "wrong custody 2")]
+#[test_case(3; "wrong custody 3")]
+#[test_case(4; "wrong oracle 1")]
+#[test_case(5; "wrong oracle 2")]
+#[test_case(6; "wrong oracle 3")]
+#[tokio::test]
+async fn test_refresh_list_jlp_compute_wrong_extra_account(extra_account_index: usize) {
+    let (mut ctx, feed) = fixtures::setup_scope(DEFAULT_FEED_NAME, TEST_ORACLE_CONF.to_vec()).await;
+
+    let price = Price {
+        value: 1000,
+        exp: 3,
+    };
+    // Change price
+    mock_oracles::set_price(&mut ctx, &feed, &TEST_JLP_COMPUTE_ORACLE, &price).await;
+
+    // Refresh
+    let mut accounts = scope::accounts::RefreshList {
+        oracle_prices: feed.prices,
+        oracle_mappings: feed.mapping,
+        oracle_twaps: feed.twaps,
+        instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+    }
+    .to_account_metas(None);
+    for conf in TEST_ORACLE_CONF.iter() {
+        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        if conf == &TEST_JLP_COMPUTE_ORACLE {
+            // Set the wrong mint
+            let acc = &mut refresh_accounts[1 + extra_account_index];
+            let acc_pk = acc.pubkey;
+            let cloned_acc = Pubkey::new_unique();
+            ctx.clone_account(&acc_pk, &cloned_acc).await;
+            acc.pubkey = cloned_acc;
+        }
+        accounts.append(&mut refresh_accounts);
+    }
+
+    let args = scope::instruction::RefreshPriceList {
+        tokens: TEST_ORACLE_CONF.map(|conf| conf.token as u16).to_vec(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts,
+        data: args.data(),
+    };
+
+    ctx.send_transaction(&[ix]).await.unwrap();
+    let prices: OraclePrices = ctx.get_zero_copy_account(&feed.prices).await.unwrap();
+    // price not updated
+    assert_eq!(
+        prices.prices[TEST_JLP_COMPUTE_ORACLE.token].last_updated_slot,
+        0
+    );
+    assert_eq!(prices.prices[TEST_JLP_COMPUTE_ORACLE.token].price.value, 0);
 }
 
 // - [x] Wrong Orca Whirlpool additional token mint A
