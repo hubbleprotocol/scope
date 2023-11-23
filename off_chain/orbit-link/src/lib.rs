@@ -1,7 +1,8 @@
 #![doc = include_str!("../Readme.md")]
 
+use anchor_client::anchor_lang::AccountSerialize;
 use anchor_client::{
-    anchor_lang::{AccountDeserialize, AnchorDeserialize, Discriminator},
+    anchor_lang::{AccountDeserialize, AnchorDeserialize, Discriminator, Owner},
     solana_sdk::{
         address_lookup_table_account::AddressLookupTableAccount,
         commitment_config::CommitmentConfig,
@@ -112,6 +113,35 @@ where
                 .transpose()
             })
             .collect()
+    }
+
+    pub async fn get_all_anchor_accounts<Acc>(&self) -> Result<Vec<(Pubkey, Acc)>>
+    where
+        Acc: AccountDeserialize + AccountSerialize + Default + Owner + Discriminator,
+    {
+        let default_acc = Acc::default();
+        let size = {
+            let mut data = Vec::new();
+            default_acc.try_serialize(&mut data)?;
+            data.len()
+        };
+        let accounts = self
+            .client
+            .get_program_accounts_with_size_and_discriminator(
+                &Acc::owner(),
+                size as u64,
+                async_client::ClientDiscriminator::Bytes(Acc::DISCRIMINATOR),
+            )
+            .await?;
+        let parsed_accounts = accounts
+            .into_iter()
+            .map(|(pubkey, account)| {
+                let mut data: &[u8] = &account.data;
+                let acc = Acc::try_deserialize(&mut data)?;
+                Ok((pubkey, acc))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(parsed_accounts)
     }
 
     pub fn tx_builder(&self) -> tx_builder::TxBuilder<T, S> {

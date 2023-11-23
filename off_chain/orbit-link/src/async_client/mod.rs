@@ -15,6 +15,20 @@ use solana_transaction_status::TransactionStatus;
 
 use crate::Result;
 
+pub enum ClientDiscriminator {
+    Byte(u8),
+    Bytes([u8; 8]),
+}
+
+impl ClientDiscriminator {
+    pub fn to_vec(&self) -> Vec<u8> {
+        match self {
+            ClientDiscriminator::Byte(b) => vec![*b],
+            ClientDiscriminator::Bytes(b) => b.to_vec(),
+        }
+    }
+}
+
 #[async_trait]
 pub trait AsyncClient: Sync {
     async fn simulate_transaction(
@@ -38,6 +52,13 @@ pub trait AsyncClient: Sync {
     async fn get_account(&self, pubkey: &Pubkey) -> Result<Account>;
 
     async fn get_multiple_accounts(&self, pubkeys: &[Pubkey]) -> Result<Vec<Option<Account>>>;
+
+    async fn get_program_accounts_with_size_and_discriminator(
+        &self,
+        program_id: &Pubkey,
+        size: u64,
+        discriminator: ClientDiscriminator,
+    ) -> Result<Vec<(Pubkey, Account)>>;
 
     async fn get_slot_with_commitment(&self, commitment: CommitmentConfig) -> Result<Slot>;
 
