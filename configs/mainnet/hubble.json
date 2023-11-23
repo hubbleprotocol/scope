@@ -567,9 +567,10 @@
   },
   "123": {
     "label": "xSTEP/USD",
-    "oracle_mapping": "2fnxDPcLAZzYy1pJTMFNUo2mxWHD4ggrEgTu6my54Npm",
+    "oracle_mapping": "G6dMsEkMdgjX6Lsd1hMtgq79JivHpSsraDr9MD4XNiAt",
     "oracle_type": "SwitchboardV2",
-    "max_age": 750
+    "max_age": 200,
+    "twap_enabled": true
   },
   "124": {
     "label": "JLP/USD",
@@ -638,5 +639,11 @@
     "oracle_mapping": "nrYkQQQur7z8rYTST3G9GqATviK5SxTDkrqd21MW6Ue",
     "oracle_type": "PythEMA",
     "max_age": 200
+  },
+  "135": {
+    "label": "TWAP xSTEP",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 123,
+    "max_age": 250
   }
 }
