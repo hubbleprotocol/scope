@@ -1,7 +1,7 @@
 #![doc = include_str!("../Readme.md")]
 
 use anchor_client::{
-    anchor_lang::AccountDeserialize,
+    anchor_lang::{AccountDeserialize, AnchorDeserialize, Discriminator},
     solana_sdk::{
         address_lookup_table_account::AddressLookupTableAccount,
         commitment_config::CommitmentConfig,
@@ -75,6 +75,43 @@ where
         let account = self.client.get_account(pubkey).await?;
         let mut data: &[u8] = &account.data;
         Ok(AccDeser::try_deserialize(&mut data)?)
+    }
+
+    /// Get and parse an anchor account but skip sizes checks.
+    pub async fn get_anchor_account_relaxed<AccDeser: Discriminator + AnchorDeserialize>(
+        &self,
+        pubkey: &Pubkey,
+    ) -> Result<AccDeser> {
+        let account = self.client.get_account(pubkey).await?;
+        let data: &[u8] = &account.data;
+
+        if AccDeser::DISCRIMINATOR != data[..8] {
+            return Err(ErrorKind::DeserializationError(format!(
+                "Discriminator mismatch: expected {:?}, got {:?}",
+                AccDeser::DISCRIMINATOR,
+                &data[..8]
+            )));
+        }
+        let acc: AccDeser = AnchorDeserialize::deserialize(&mut &data[8..])
+            .map_err(|e| ErrorKind::DeserializationError(e.to_string()))?;
+        Ok(acc)
+    }
+
+    pub async fn get_anchor_accounts<AccDeser: AccountDeserialize>(
+        &self,
+        pubkey: &[Pubkey],
+    ) -> Result<Vec<Option<AccDeser>>> {
+        let accounts = self.client.get_multiple_accounts(pubkey).await?;
+        accounts
+            .into_iter()
+            .map(|acc| {
+                acc.map(|acc| {
+                    let mut data: &[u8] = &acc.data;
+                    AccDeser::try_deserialize(&mut data).map_err(ErrorKind::from)
+                })
+                .transpose()
+            })
+            .collect()
     }
 
     pub fn tx_builder(&self) -> tx_builder::TxBuilder<T, S> {

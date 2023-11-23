@@ -42,7 +42,9 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         | OracleType::ScopeTwap
         | OracleType::RaydiumAmmV3AtoB
         | OracleType::RaydiumAmmV3BtoA => {}
-        OracleType::JupiterLP => accounts.extend_from_slice(&get_jlp_remaining_accounts(conf)),
+        OracleType::JupiterLpFetch => {
+            accounts.extend_from_slice(&get_jlp_fetch_remaining_accounts(conf))
+        }
         OracleType::CToken => panic!("CToken is not supported in tests"),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
@@ -50,14 +52,42 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
             accounts.extend_from_slice(&get_orca_whirlpool_remaining_accounts(ctx, conf).await)
         }
+        OracleType::JupiterLpCompute => {
+            accounts.append(&mut get_jlp_compute_remaining_accounts(ctx, conf).await)
+        }
     }
     accounts
 }
 
-pub fn get_jlp_remaining_accounts(conf: &OracleConf) -> [AccountMeta; 1] {
+pub fn get_jlp_fetch_remaining_accounts(conf: &OracleConf) -> [AccountMeta; 1] {
     use scope::oracles::jupiter_lp as jlp;
     let (mint_pk, _) = jlp::get_mint_pk(&conf.pubkey);
     [AccountMeta::new_readonly(mint_pk, false)]
+}
+
+pub async fn get_jlp_compute_remaining_accounts(
+    ctx: &mut TestContext,
+    conf: &OracleConf,
+) -> Vec<AccountMeta> {
+    use scope::oracles::jupiter_lp as jlp;
+    let pool: jlp::perpetuals::Pool = ctx.get_anchor_account(&conf.pubkey).await.unwrap();
+    let (mint_pk, _) = jlp::get_mint_pk(&conf.pubkey);
+    let custodies_pks = &pool.custodies;
+    let oracles_pk_it = ctx
+        .get_anchor_accounts::<jlp::perpetuals::Custody>(custodies_pks)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|c: jlp::perpetuals::Custody| c.oracle.oracle_account);
+
+    let mut accounts = vec![AccountMeta::new_readonly(mint_pk, false)];
+    accounts.extend(
+        custodies_pks
+            .iter()
+            .map(|pk| AccountMeta::new_readonly(*pk, false)),
+    );
+    accounts.extend(oracles_pk_it.map(|pk| AccountMeta::new_readonly(pk, false)));
+    accounts
 }
 
 pub async fn get_orca_whirlpool_remaining_accounts(

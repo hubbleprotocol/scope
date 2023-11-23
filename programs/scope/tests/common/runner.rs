@@ -67,6 +67,17 @@ impl TestContext {
         T::try_deserialize(&mut data_ref).map_err(|_| TestError::CannotDeserialize)
     }
 
+    pub async fn get_anchor_accounts<T: anchor_lang::AccountDeserialize>(
+        &mut self,
+        pubkeys: &[Pubkey],
+    ) -> Result<Vec<T>, TestError> {
+        let mut accounts = Vec::with_capacity(pubkeys.len());
+        for pubkey in pubkeys {
+            accounts.push(self.get_anchor_account(pubkey).await?);
+        }
+        Ok(accounts)
+    }
+
     pub async fn get_zero_copy_account<T: anchor_lang::ZeroCopy>(
         &mut self,
         pubkey: &Pubkey,

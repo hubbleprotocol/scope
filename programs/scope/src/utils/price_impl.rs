@@ -2,9 +2,25 @@ use decimal_wad::decimal::Decimal;
 
 use crate::Price;
 
+use super::math::ten_pow;
+
 impl From<Price> for f64 {
     fn from(val: Price) -> Self {
         val.value as f64 / 10u64.pow(val.exp as u32) as f64
+    }
+}
+
+impl Price {
+    pub fn to_scaled_value(&self, decimals: u8) -> u128 {
+        let exp = u8::try_from(self.exp).expect("Price exp is too big");
+        let value: u128 = self.value.into();
+        if exp > decimals {
+            let diff = exp - decimals;
+            value / ten_pow(diff)
+        } else {
+            let diff = decimals - exp;
+            value * ten_pow(diff)
+        }
     }
 }
 
@@ -82,6 +98,7 @@ mod tests {
     use super::*;
     use decimal_wad::common::WAD;
     use proptest::prelude::*;
+    use test_case::test_case;
 
     const MAX_VALID_DECIMAL_U128: u128 = (u64::MAX as u128) * (WAD as u128);
 
@@ -94,5 +111,18 @@ mod tests {
             let re_decimal_u128 =  re_decimal.to_scaled_val::<u128>().unwrap();
             prop_assert!(re_decimal_u128.abs_diff(decimal_u128) < decimal_u128/100_000_000, "decimal: {}, re_decimal: {}, price: {:?}", decimal, re_decimal, price);
         }
+    }
+
+    #[test_case(1, 0, 6, 1_000_000)]
+    #[test_case(1, 6, 6, 1)]
+    #[test_case(1_000_000, 6, 6, 1_000_000)]
+    #[test_case(2_000_000_000_000, 18, 6, 2)]
+    fn test_price_to_scaled_value(price: u64, exp: u8, target_scale: u8, expected: u128) {
+        let price = Price {
+            value: price,
+            exp: exp.into(),
+        };
+        let scaled_value = price.to_scaled_value(target_scale);
+        assert_eq!(scaled_value, expected);
     }
 }

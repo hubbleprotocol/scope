@@ -39,14 +39,20 @@ pub mod scope {
     }
 
     //This handler only works for Pyth type tokens
-    pub fn refresh_one_price(ctx: Context<RefreshOne>, token: u64) -> Result<()> {
+    pub fn refresh_one_price<'info>(
+        ctx: Context<'_, '_, '_, 'info, RefreshOne<'info>>,
+        token: u64,
+    ) -> Result<()> {
         let token: usize = token
             .try_into()
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_refresh_prices::refresh_one_price(ctx, token)
     }
 
-    pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: Vec<u16>) -> Result<()> {
+    pub fn refresh_price_list<'info>(
+        ctx: Context<'_, '_, '_, 'info, RefreshList<'info>>,
+        tokens: Vec<u16>,
+    ) -> Result<()> {
         handler_refresh_prices::refresh_price_list(ctx, &tokens)
     }
 
@@ -323,6 +329,9 @@ pub enum ScopeError {
 
     #[msg("TWAP sample is too close to the previous one")]
     TwapSampleTooFrequent,
+
+    #[msg("Unexpected JLP configuration")]
+    UnexpectedJlpConfiguration,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

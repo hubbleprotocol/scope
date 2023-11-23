@@ -28,6 +28,9 @@ pub enum ErrorKind {
 
     #[error("Anchor program error: {0:#?}")]
     AnchorProgramError(anchor_client::anchor_lang::prelude::ProgramErrorWithOrigin),
+
+    #[error("Error while deserializing an account: {0}")]
+    DeserializationError(String),
 }
 
 #[cfg(feature = "banks-client")]

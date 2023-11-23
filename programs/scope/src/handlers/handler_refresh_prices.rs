@@ -45,7 +45,10 @@ pub struct RefreshList<'info> {
     // Note: use remaining accounts as price accounts
 }
 
-pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
+pub fn refresh_one_price<'info>(
+    ctx: Context<'_, '_, '_, 'info, RefreshOne<'info>>,
+    token: usize,
+) -> Result<()> {
     check_execution_ctx(&ctx.accounts.instruction_sysvar_account_info)?;
 
     let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
@@ -98,7 +101,10 @@ pub fn refresh_one_price(ctx: Context<RefreshOne>, token: usize) -> Result<()> {
     Ok(())
 }
 
-pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<()> {
+pub fn refresh_price_list<'info>(
+    ctx: Context<'_, '_, '_, 'info, RefreshList<'info>>,
+    tokens: &[u16],
+) -> Result<()> {
     check_execution_ctx(&ctx.accounts.instruction_sysvar_account_info)?;
 
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
@@ -152,11 +158,9 @@ pub fn refresh_price_list(ctx: Context<RefreshList>, tokens: &[u16]) -> Result<(
             oracle_mappings,
             token_nb.into(),
         )
-        .map_err(|_| {
+        .map_err(|e| {
             msg!(
-                "Price skipped as validation failed (token {}, type {:?})",
-                token_idx,
-                price_type
+                "Price skipped as validation failed (token {token_idx}, type {price_type:?}): {e}",
             );
         })
         .ok();

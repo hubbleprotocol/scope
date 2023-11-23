@@ -33,9 +33,6 @@ pub enum TestOracleType {
     Pyth,
     SwitchboardV1,
     SwitchboardV2,
-    /// Deprecated (formerly YiToken)
-    // Do not remove - breaks the typescript idl codegen
-    DeprecatedPlaceholder,
     /// Solend tokens
     CToken,
     /// SPL Stake Pool token (like scnSol)
@@ -44,9 +41,11 @@ pub enum TestOracleType {
     KToken(DEX),
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA,
-    /// Jupiter's perpetual LP tokens
-    JupiterLP,
-    // Scope's TWAP
+    /// Jupiter's perpetual LP tokens (fetch)
+    JupiterLPFetch,
+    /// Jupiter's perpetual LP tokens (compute)
+    JupiterLpCompute,
+    /// Scope's TWAP
     ScopeTwap(usize),
     /// Orca's whirlpool price (CLMM) (bool: A to B)
     OrcaWhirlpool(bool),
@@ -71,7 +70,8 @@ impl From<TestOracleType> for OracleType {
             TestOracleType::SplStake => OracleType::SplStake,
             TestOracleType::KToken(_) => OracleType::KToken,
             TestOracleType::PythEMA => OracleType::PythEMA,
-            TestOracleType::JupiterLP => OracleType::JupiterLP,
+            TestOracleType::JupiterLPFetch => OracleType::JupiterLpFetch,
+            TestOracleType::JupiterLpCompute => OracleType::JupiterLpCompute,
             TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap,
             TestOracleType::OrcaWhirlpool(dir) => {
                 if dir {
@@ -86,9 +86,6 @@ impl From<TestOracleType> for OracleType {
                 } else {
                     OracleType::RaydiumAmmV3BtoA
                 }
-            }
-            TestOracleType::DeprecatedPlaceholder => {
-                panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
         }
     }

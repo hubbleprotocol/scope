@@ -573,14 +573,14 @@
     "twap_enabled": true
   },
   "124": {
-    "label": "JLP/USD",
+    "label": "Fetched JLP/USD",
     "oracle_mapping": "5BUwFW4nRbftYTDMbgxykoFWqWHPzahFSNAaaaJtVKsq",
-    "oracle_type": "JupiterLP",
+    "oracle_type": "JupiterLpFetch",
     "max_age": 100,
     "twap_enabled": true
   },
   "125": {
-    "label": "TWAP JLP/USD",
+    "label": "TWAP Fetched JLP/USD",
     "oracle_type": "ScopeTwap",
     "max_age": 150,
     "twap_source": 124
@@ -645,5 +645,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 123,
     "max_age": 250
+  },
+  "136": {
+    "label": "Computed JLP/USD",
+    "oracle_mapping": "5BUwFW4nRbftYTDMbgxykoFWqWHPzahFSNAaaaJtVKsq",
+    "oracle_type": "JupiterLpCompute",
+    "max_age": 150,
+    "twap_enabled": true
+  },
+  "137": {
+    "label": "TWAP Computed JLP/USD",
+    "oracle_type": "ScopeTwap",
+    "max_age": 200,
+    "twap_source": 136
   }
 }
