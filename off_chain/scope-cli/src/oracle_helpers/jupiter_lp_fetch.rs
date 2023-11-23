@@ -12,7 +12,7 @@ use super::{OracleHelper, TokenEntry};
 use crate::config::TokenConfig;
 
 #[derive(Debug)]
-pub struct JupiterLPOracle {
+pub struct JupiterLPOracleFetch {
     label: String,
     /// Pubkey to the Pool account account
     mapping: Pubkey,
@@ -27,7 +27,7 @@ pub struct JupiterLPOracle {
     twap_enabled: bool,
 }
 
-impl JupiterLPOracle {
+impl JupiterLPOracleFetch {
     pub fn new(conf: &TokenConfig, default_max_age: clock::Slot) -> Result<Self> {
         let mapping = conf.oracle_mapping;
         let (lp_mint, _) = get_mint_pk(&mapping);
@@ -43,9 +43,9 @@ impl JupiterLPOracle {
 }
 
 #[async_trait::async_trait]
-impl OracleHelper for JupiterLPOracle {
+impl OracleHelper for JupiterLPOracleFetch {
     fn get_type(&self) -> OracleType {
-        OracleType::JupiterLP
+        OracleType::JupiterLpFetch
     }
 
     fn get_number_of_extra_accounts(&self) -> usize {
@@ -81,10 +81,10 @@ impl OracleHelper for JupiterLPOracle {
     }
 }
 
-impl Display for JupiterLPOracle {
+impl Display for JupiterLPOracleFetch {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.label)
     }
 }
 
-impl TokenEntry for JupiterLPOracle {}
+impl TokenEntry for JupiterLPOracleFetch {}

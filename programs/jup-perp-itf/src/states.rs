@@ -62,6 +62,36 @@ pub struct Custody {
     pub token_account_bump: u8,
 }
 
+impl Custody {
+    /// Returns the traders pnl delta and if the position has profit
+    ///
+    /// # Arguments
+    ///
+    /// * `current_price` - The current price of the asset scaled to `PRICE_DECIMALS`
+    ///
+    /// # Returns
+    ///
+    /// - `None` - In case of math overflow
+    /// - `Some((traders_pnl_delta, position_has_profit))` - Otherwise
+    pub fn get_global_short_pnl(&self, current_price: u64) -> Option<(u128, bool)> {
+        let average_price = self.assets.global_short_average_prices;
+        let price_delta = average_price.abs_diff(current_price);
+
+        // traders_pnl_delta = global_short_sizes * price_delta / average_price
+        let global_short_sizes: u128 = self.assets.global_short_sizes.into();
+        let price_delta: u128 = price_delta.into();
+        let nom = global_short_sizes.checked_mul(price_delta)?;
+        let denom: u128 = average_price.into();
+        let traders_pnl_delta = nom.checked_div(denom)?;
+
+        // if true, pool lost, trader profit
+        // if false, pool profit, trader lost
+        let position_has_profit = average_price > current_price;
+
+        Some((traders_pnl_delta, position_has_profit))
+    }
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]
 pub struct OracleParams {
     pub oracle_account: Pubkey,
@@ -70,7 +100,7 @@ pub struct OracleParams {
     pub max_price_age_sec: u32,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default, PartialEq, Eq)]
 pub enum OracleType {
     #[default]
     None,
@@ -90,12 +120,12 @@ pub struct PricingParams {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]
 pub struct Assets {
-    fees_reserves: u64,
-    owned: u64,
-    locked: u64,
-    guaranteed_usd: u64,
-    global_short_sizes: u64,
-    global_short_average_prices: u64,
+    pub fees_reserves: u64,
+    pub owned: u64,
+    pub locked: u64,
+    pub guaranteed_usd: u64,
+    pub global_short_sizes: u64,
+    pub global_short_average_prices: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Default)]

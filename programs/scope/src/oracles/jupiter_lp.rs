@@ -1,12 +1,12 @@
-use anchor_lang::{prelude::*, InstructionData, ToAccountMetas};
+use anchor_lang::prelude::*;
 use anchor_spl::token::spl_token::state::Mint;
 use decimal_wad::decimal::Decimal;
-use solana_program::instruction::Instruction;
-use solana_program::program::{get_return_data, invoke};
+use perpetuals::Custody;
 use solana_program::program_pack::Pack;
 
 use crate::utils::account_deserialize;
-use crate::{DatedPrice, Result, ScopeError};
+use crate::utils::math::ten_pow;
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 pub use jup_perp_itf as perpetuals;
 pub use perpetuals::utils::{check_mint_pk, get_mint_pk};
@@ -64,16 +64,13 @@ pub fn validate_jlp_pool(account: &AccountInfo) -> Result<()> {
 
 /// Get the price of 1 JLP token in USD
 ///
-/// This function will make a CPI call to the JLP program to get the AUM of the pool
+/// This function recompute the AUM of the pool from the custodies and the oracles
 /// Required extra accounts:
-/// - Perpetuals program (PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu)
-/// - Perpetuals account (H4ND9aYttUVLFmNypZqLjZ52FYiGvdEB45GmwNoKEjTj)
 /// - Mint of the JLP token
 /// - All custodies of the pool
 /// - All oracles of the pool (from the custodies)
-pub fn get_price_with_cpi<'a, 'b>(
+pub fn get_price_recomputed<'a, 'b>(
     jup_pool_acc: &AccountInfo<'a>,
-    clock: &Clock,
     extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
 ) -> Result<DatedPrice>
 where
@@ -83,47 +80,40 @@ where
     let jup_pool_pk = jup_pool_acc.key;
     let jup_pool: perpetuals::Pool = account_deserialize(jup_pool_acc)?;
 
-    let perpetuals_program = extra_accounts
-        .next()
-        .ok_or(ScopeError::AccountsAndTokenMismatch)?;
-
-    let perpetuals_acc = extra_accounts
-        .next()
-        .ok_or(ScopeError::AccountsAndTokenMismatch)?;
-
     let mint_acc = extra_accounts
         .next()
         .ok_or(ScopeError::AccountsAndTokenMismatch)?;
 
-    // Get custodies and oracles later. They will be checked by the CPI call
+    // Get custodies and oracles
     let num_custodies = jup_pool.custodies.len();
-    // Custodies and oracles (in that order) are placed as extra accounts
-    let num_extra_accounts = num_custodies * 2;
 
-    // Create account infos for the CPI call
-    // program, perpetuals, pool, custodies, oracles
-    let mut account_infos = Vec::with_capacity(3 + num_extra_accounts);
-    account_infos.push(perpetuals_program.clone());
-    account_infos.push(perpetuals_acc.clone());
-    account_infos.push(jup_pool_acc.clone());
-    account_infos.extend(extra_accounts.take(num_extra_accounts).cloned());
-    let cpi_extra_accounts = &account_infos[3..];
+    // Note: we take all the needed accounts before any check to leave the iterator in a consistent state
+    // (otherwise, we could break the next price computation)
+    let custodies_accs = extra_accounts.take(num_custodies).collect::<Vec<_>>();
+    require!(
+        custodies_accs.len() == num_custodies,
+        ScopeError::AccountsAndTokenMismatch
+    );
+
+    let oracles_accs = extra_accounts.take(num_custodies).collect::<Vec<_>>();
+    require!(
+        oracles_accs.len() == num_custodies,
+        ScopeError::AccountsAndTokenMismatch
+    );
 
     // 2. Check accounts
-    require_keys_eq!(
-        *perpetuals_program.key,
-        perpetuals::ID,
-        ScopeError::UnexpectedAccount
-    );
-
-    require_keys_eq!(
-        *perpetuals_acc.key,
-        perpetuals::PERPETUAL_ACC,
-        ScopeError::UnexpectedAccount
-    );
-
     check_mint_pk(jup_pool_pk, mint_acc.key, jup_pool.lp_token_bump)
-        .map_err(|_| ScopeError::UnexpectedAccount)?;
+        .map_err(|_| error!(ScopeError::UnexpectedAccount))?;
+
+    for (expected_custody_pk, custody_acc) in jup_pool.custodies.iter().zip(custodies_accs.iter()) {
+        require_keys_eq!(
+            *expected_custody_pk,
+            *custody_acc.key,
+            ScopeError::UnexpectedAccount
+        );
+    }
+    // Check of oracles will be done in the next step while deserializing custodies
+    // (avoid double iteration or keeping custodies in memory)
 
     // 3. Get mint supply
 
@@ -131,48 +121,140 @@ where
         let mint_borrow = mint_acc.data.borrow();
         let mint = Mint::unpack(&mint_borrow)?;
         // This is a sanity check to make sure the mint is configured as expected
-        // This allows to just divide the two values to get the price
+        // This allows to just divide aum by the supply to get the price
         require_eq!(mint.decimals, POOL_VALUE_SCALE_DECIMALS);
         mint.supply
     };
 
+    let mut oldest_price_ts: u64 = 0;
+    let mut oldest_price_slot: u64 = 0;
+
     // 4. Get AUM with CPI
     let lp_value: u128 = {
-        let data = perpetuals::instruction::GetAssetsUnderManagement {
-            mode: Some(perpetuals::PriceCalcMode::Min),
+        let mut pool_amount_usd: u128 = 0;
+        let mut trader_short_profits: u128 = 0;
+
+        for (custody_acc, oracle_acc) in custodies_accs.iter().zip(oracles_accs.iter()) {
+            // Compute custody AUM
+            let custody_r = compute_custody_aum(custody_acc, oracle_acc)?;
+
+            pool_amount_usd += custody_r.token_amount_usd;
+            trader_short_profits += custody_r.trader_short_profits;
+
+            // Update oldest price
+            if custody_r.price_ts < oldest_price_ts {
+                oldest_price_ts = custody_r.price_ts;
+                oldest_price_slot = custody_r.price_slot;
+            }
         }
-        .data();
-        let mut accounts = perpetuals::accounts::GetAssetsUnderManagement {
-            perpetuals: perpetuals_acc.key(),
-            pool: *jup_pool_pk,
-        }
-        .to_account_metas(None);
 
-        accounts.extend(cpi_extra_accounts.iter().map(|info| AccountMeta {
-            pubkey: info.key(),
-            is_signer: false,
-            is_writable: false,
-        }));
-
-        let ix = Instruction {
-            program_id: perpetuals::ID,
-            accounts,
-            data,
-        };
-
-        invoke(&ix, &account_infos).unwrap();
-        let (_, ret_data) = get_return_data().unwrap();
-        borsh::BorshDeserialize::try_from_slice(&ret_data)?
+        pool_amount_usd.saturating_sub(trader_short_profits)
     };
 
     // 5. Compute price
     let price_dec = Decimal::from(lp_value) / lp_token_supply;
+
     let dated_price = DatedPrice {
         price: price_dec.into(),
-        last_updated_slot: clock.slot,
-        unix_timestamp: u64::try_from(clock.unix_timestamp).unwrap(),
+        last_updated_slot: oldest_price_slot,
+        unix_timestamp: oldest_price_ts,
         ..Default::default()
     };
 
     Ok(dated_price)
+}
+
+struct CustodyAumResult {
+    pub token_amount_usd: u128,
+    pub trader_short_profits: u128,
+
+    pub price_ts: u64,
+    pub price_slot: u64,
+}
+
+/// Compute the AUM of a custody scaled by `POOL_VALUE_SCALE_DECIMALS` decimals
+fn compute_custody_aum(
+    custody_acc: &AccountInfo,
+    oracle_acc: &AccountInfo,
+) -> Result<CustodyAumResult> {
+    let custody: Custody = account_deserialize(custody_acc)?;
+    require!(
+        custody.oracle.oracle_type == perpetuals::OracleType::Pyth,
+        ScopeError::UnexpectedJlpConfiguration
+    );
+    require_keys_eq!(
+        custody.oracle.oracle_account,
+        *oracle_acc.key,
+        ScopeError::UnexpectedAccount
+    );
+    let dated_price = super::pyth::get_price(oracle_acc)?;
+    let price = dated_price.price;
+
+    let (token_amount_usd, trader_short_profits) = if custody.is_stable {
+        (
+            asset_amount_to_usd(&price, custody.assets.owned, custody.decimals),
+            0,
+        )
+    } else {
+        let mut pool_amount_usd: u128 = 0;
+        let mut trader_short_profits: u128 = 0;
+        // calculate global short profit / loss of pool
+        if custody.assets.global_short_sizes > 0 {
+            let (global_pnl_delta, trader_has_profit) = custody
+                .get_global_short_pnl(
+                    price
+                        .to_scaled_value(POOL_VALUE_SCALE_DECIMALS)
+                        .try_into()
+                        .unwrap(),
+                )
+                .ok_or_else(|| error!(ScopeError::MathOverflow))?;
+
+            // add global short profit / loss
+            if trader_has_profit {
+                trader_short_profits += global_pnl_delta;
+            } else {
+                pool_amount_usd += global_pnl_delta;
+            }
+        }
+
+        // calculate long position profit / loss
+        pool_amount_usd += u128::from(custody.assets.guaranteed_usd);
+
+        let net_assets_token = custody
+            .assets
+            .owned
+            .checked_sub(custody.assets.locked)
+            .ok_or_else(|| error!(ScopeError::MathOverflow))?;
+        let net_assets_usd = asset_amount_to_usd(&price, net_assets_token, custody.decimals);
+        pool_amount_usd += net_assets_usd;
+
+        (pool_amount_usd, trader_short_profits)
+    };
+
+    Ok(CustodyAumResult {
+        token_amount_usd,
+        trader_short_profits,
+        price_ts: dated_price.unix_timestamp,
+        price_slot: dated_price.last_updated_slot,
+    })
+}
+
+/// Return the value of the number of tokens in USD scaled by `POOL_VALUE_SCALE_DECIMALS` decimals
+fn asset_amount_to_usd(price: &Price, token_amount: u64, token_decimals: u8) -> u128 {
+    let price_value: u128 = price.value.into();
+    let token_amount: u128 = token_amount.into();
+    let token_decimals: u8 = token_decimals;
+    let price_decimals: u8 = price.exp.try_into().unwrap();
+
+    // price * 10^(-price_decimals) * token_amount * 10^(-token_decimals) * 10^POOL_VALUE_SCALE_DECIMALS
+    if price_decimals + token_decimals > POOL_VALUE_SCALE_DECIMALS {
+        let diff = price_decimals + token_decimals - POOL_VALUE_SCALE_DECIMALS;
+        let nom = price_value * token_amount;
+        let denom = ten_pow(diff);
+
+        nom / denom
+    } else {
+        let diff = POOL_VALUE_SCALE_DECIMALS - (price_decimals + token_decimals);
+        price_value * token_amount * ten_pow(diff)
+    }
 }

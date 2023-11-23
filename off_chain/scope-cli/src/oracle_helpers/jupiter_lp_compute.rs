@@ -15,14 +15,12 @@ use super::{OracleHelper, TokenEntry};
 use crate::config::TokenConfig;
 
 #[derive(Debug)]
-pub struct JupiterLPOracleCpi {
+pub struct JupiterLPOracleCompute {
     label: String,
     /// Pubkey to the Pool account account
     mapping: Pubkey,
 
     /// Extra accounts:
-    /// - Perpetuals program (PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu)
-    /// - Perpetuals account (H4ND9aYttUVLFmNypZqLjZ52FYiGvdEB45GmwNoKEjTj)
     /// - Mint of the JLP token
     /// - All custodies of the pool
     /// - All oracles of the pool (from the custodies)
@@ -34,20 +32,18 @@ pub struct JupiterLPOracleCpi {
     twap_enabled: bool,
 }
 
-impl JupiterLPOracleCpi {
+impl JupiterLPOracleCompute {
     pub async fn new<T: AsyncClient, S: Signer>(
         conf: &TokenConfig,
         default_max_age: clock::Slot,
         rpc: &OrbitLink<T, S>,
     ) -> Result<Self> {
         let mapping = conf.oracle_mapping;
-        let perp_program = perpetuals::id();
-        let perp_acc = perpetuals::PERPETUAL_ACC;
         let (lp_mint, _) = get_mint_pk(&mapping);
 
         let jup_pool: perpetuals::Pool = rpc.get_anchor_account(&conf.oracle_mapping).await?;
 
-        let mut extra_accounts = Vec::with_capacity(3 + jup_pool.custodies.len() * 2);
+        let mut extra_accounts = Vec::with_capacity(1 + jup_pool.custodies.len() * 2);
         let custodies: Vec<perpetuals::Custody> = rpc
             .get_anchor_accounts::<perpetuals::Custody>(&jup_pool.custodies)
             .await?
@@ -55,8 +51,6 @@ impl JupiterLPOracleCpi {
             .map(|c| c.ok_or(anyhow!("Error while fetching custodies")))
             .collect::<Result<Vec<_>>>()?;
 
-        extra_accounts.push(perp_program);
-        extra_accounts.push(perp_acc);
         extra_accounts.push(lp_mint);
         extra_accounts.extend(jup_pool.custodies.iter().cloned());
         extra_accounts.extend(custodies.iter().map(|c| c.oracle.oracle_account));
@@ -72,9 +66,9 @@ impl JupiterLPOracleCpi {
 }
 
 #[async_trait::async_trait]
-impl OracleHelper for JupiterLPOracleCpi {
+impl OracleHelper for JupiterLPOracleCompute {
     fn get_type(&self) -> OracleType {
-        OracleType::JupiterLpCpi
+        OracleType::JupiterLpCompute
     }
 
     fn get_number_of_extra_accounts(&self) -> usize {
@@ -110,10 +104,10 @@ impl OracleHelper for JupiterLPOracleCpi {
     }
 }
 
-impl Display for JupiterLPOracleCpi {
+impl Display for JupiterLPOracleCompute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.label)
     }
 }
 
-impl TokenEntry for JupiterLPOracleCpi {}
+impl TokenEntry for JupiterLPOracleCompute {}

@@ -2,9 +2,25 @@ use decimal_wad::decimal::Decimal;
 
 use crate::Price;
 
+use super::math::ten_pow;
+
 impl From<Price> for f64 {
     fn from(val: Price) -> Self {
         val.value as f64 / 10u64.pow(val.exp as u32) as f64
+    }
+}
+
+impl Price {
+    pub fn to_scaled_value(&self, decimals: u8) -> u128 {
+        let exp = u8::try_from(self.exp).expect("Price exp is too big");
+        let value: u128 = self.value.into();
+        if exp > decimals {
+            let diff = exp - decimals;
+            value / ten_pow(diff)
+        } else {
+            let diff = decimals - exp;
+            value * ten_pow(diff)
+        }
     }
 }
 

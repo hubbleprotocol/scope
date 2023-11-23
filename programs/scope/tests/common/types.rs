@@ -68,7 +68,7 @@ impl From<TestOracleType> for OracleType {
             TestOracleType::SplStake => OracleType::SplStake,
             TestOracleType::KToken(_) => OracleType::KToken,
             TestOracleType::PythEMA => OracleType::PythEMA,
-            TestOracleType::JupiterLP => OracleType::JupiterLP,
+            TestOracleType::JupiterLP => OracleType::JupiterLpFetch,
             TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap,
             TestOracleType::OrcaWhirlpool(dir) => {
                 if dir {

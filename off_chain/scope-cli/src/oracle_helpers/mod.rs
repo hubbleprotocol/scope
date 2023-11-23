@@ -15,8 +15,8 @@ use orbit_link::async_client::{self, AsyncClient};
 use orbit_link::OrbitLink;
 use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
-pub mod jupiter_lp;
-pub mod jupiter_lp_cpi;
+pub mod jupiter_lp_compute;
+pub mod jupiter_lp_fetch;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod orca_whirlpool;
@@ -111,7 +111,7 @@ where
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             panic!("yvaults feature is not enabled, KTokenOracle is not available")
         }
-        OracleType::JupiterLP => Box::new(jupiter_lp::JupiterLPOracle::new(
+        OracleType::JupiterLpFetch => Box::new(jupiter_lp_fetch::JupiterLPOracleFetch::new(
             token_conf,
             default_max_age,
         )?),
@@ -122,8 +122,9 @@ where
             orca_whirlpool::OrcaWhirlpoolOracle::new(token_conf, default_max_age, &rpc.client)
                 .await?,
         ),
-        OracleType::JupiterLpCpi => Box::new(
-            jupiter_lp_cpi::JupiterLPOracleCpi::new(token_conf, default_max_age, rpc).await?,
+        OracleType::JupiterLpCompute => Box::new(
+            jupiter_lp_compute::JupiterLPOracleCompute::new(token_conf, default_max_age, rpc)
+                .await?,
         ),
     })
 }

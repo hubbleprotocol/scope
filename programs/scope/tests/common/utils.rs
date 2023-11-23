@@ -42,7 +42,7 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         | OracleType::ScopeTwap
         | OracleType::RaydiumAmmV3AtoB
         | OracleType::RaydiumAmmV3BtoA => {}
-        OracleType::JupiterLP => accounts.extend_from_slice(&get_jlp_remaining_accounts(conf)),
+        OracleType::JupiterLpFetch => accounts.extend_from_slice(&get_jlp_remaining_accounts(conf)),
         OracleType::CToken => panic!("CToken is not supported in tests"),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
@@ -50,7 +50,7 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
             accounts.extend_from_slice(&get_orca_whirlpool_remaining_accounts(ctx, conf).await)
         }
-        OracleType::JupiterLpCpi => {
+        OracleType::JupiterLpCompute => {
             panic!("JupiterLpCpi is not supported in tests")
         }
     }

@@ -58,7 +58,7 @@ pub enum OracleType {
     /// Number of lamports of token B for 1 lamport of kToken
     KTokenToTokenB = 10,
     /// Jupiter's perpetual LP tokens
-    JupiterLP = 11,
+    JupiterLpFetch = 11,
     /// Scope twap
     ScopeTwap = 12,
     /// Orca's whirlpool price (CLMM) A to B
@@ -70,7 +70,7 @@ pub enum OracleType {
     /// Raydium's AMM v3 price (CLMM) B to A
     RaydiumAmmV3BtoA = 16,
     /// Jupiter's perpetual LP tokens computed through CPI
-    JupiterLpCpi = 17,
+    JupiterLpCompute = 17,
 }
 
 impl OracleType {
@@ -90,13 +90,13 @@ impl OracleType {
             OracleType::PythEMA => 15_000,
             OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => 100_000,
             OracleType::MsolStake => 20_000,
-            OracleType::JupiterLP => 40_000,
+            OracleType::JupiterLpFetch => 40_000,
             OracleType::ScopeTwap => 10_000,
             OracleType::OrcaWhirlpoolAtoB
             | OracleType::OrcaWhirlpoolBtoA
             | OracleType::RaydiumAmmV3AtoB
             | OracleType::RaydiumAmmV3BtoA => 10_000,
-            OracleType::JupiterLpCpi => 100_000,
+            OracleType::JupiterLpCompute => 100_000,
             OracleType::DeprecatedPlaceholder => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -157,7 +157,7 @@ where
             panic!("yvaults feature is not enabled, KToken oracle type is not available")
         }
         OracleType::MsolStake => msol_stake::get_price(base_account, clock),
-        OracleType::JupiterLP => {
+        OracleType::JupiterLpFetch => {
             jupiter_lp::get_price_no_recompute(base_account, clock, extra_accounts)
         }
         OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index),
@@ -172,8 +172,8 @@ where
         }
         OracleType::RaydiumAmmV3AtoB => raydium_ammv3::get_price(true, base_account, clock),
         OracleType::RaydiumAmmV3BtoA => raydium_ammv3::get_price(false, base_account, clock),
-        OracleType::JupiterLpCpi => {
-            jupiter_lp::get_price_with_cpi(base_account, clock, extra_accounts)
+        OracleType::JupiterLpCompute => {
+            jupiter_lp::get_price_recomputed(base_account, extra_accounts)
         }
     }
 }
@@ -197,7 +197,7 @@ pub fn validate_oracle_account(
         OracleType::KTokenToTokenB => Ok(()), // TODO, should validate ownership of the ktoken account
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::MsolStake => Ok(()),
-        OracleType::JupiterLP | OracleType::JupiterLpCpi => {
+        OracleType::JupiterLpFetch | OracleType::JupiterLpCompute => {
             jupiter_lp::validate_jlp_pool(price_account)
         }
         OracleType::ScopeTwap => twap::validate_price_account(price_account),

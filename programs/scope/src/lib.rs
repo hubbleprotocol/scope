@@ -329,6 +329,9 @@ pub enum ScopeError {
 
     #[msg("TWAP sample is too close to the previous one")]
     TwapSampleTooFrequent,
+
+    #[msg("Unexpected JLP configuration")]
+    UnexpectedJlpConfiguration,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

@@ -11,6 +11,8 @@ declare_id!("PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu");
 
 pub const PERPETUAL_ACC: Pubkey = pubkey!("H4ND9aYttUVLFmNypZqLjZ52FYiGvdEB45GmwNoKEjTj");
 
+pub const PRICE_DECIMALS: u8 = 6;
+
 #[program]
 pub mod perpetuals {
     use super::*;
