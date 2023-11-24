@@ -102,6 +102,24 @@ pub mod scope {
             .map_err(|_| ScopeError::OutOfRangeIntegralConversion)?;
         handler_update_token_metadata::process(ctx, index, mode, value, feed_name)
     }
+
+    pub fn set_admin_cached(
+        ctx: Context<SetAdminCached>,
+        new_admin: Pubkey,
+        feed_name: String,
+    ) -> Result<()> {
+        msg!(
+            "setting admin_cached to {} feed_name {}",
+            new_admin,
+            feed_name
+        );
+        handler_set_admin_cached::process(ctx, new_admin, feed_name)
+    }
+
+    pub fn approve_admin_cached(ctx: Context<ApproveAdminCached>, feed_name: String) -> Result<()> {
+        msg!("setting admin to admin_cached for feed_name {}", feed_name);
+        handler_approve_admin_cached::process(ctx, feed_name)
+    }
 }
 
 #[zero_copy]
@@ -238,7 +256,8 @@ pub struct Configuration {
     pub oracle_prices: Pubkey,
     pub tokens_metadata: Pubkey,
     pub oracle_twaps: Pubkey,
-    _padding: [u64; 1259],
+    pub admin_cached: Pubkey,
+    _padding: [u64; 1255],
 }
 
 #[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
