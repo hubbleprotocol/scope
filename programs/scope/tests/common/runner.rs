@@ -5,8 +5,9 @@ use anchor_lang::{
     prelude::{Clock, Pubkey},
     Owner,
 };
-use solana_program::pubkey;
+use solana_program::{pubkey, system_instruction, system_program};
 use solana_program_test::{processor, BanksClientError, ProgramTest};
+use solana_sdk::commitment_config::CommitmentLevel;
 use solana_sdk::{
     account::{Account, AccountSharedData},
     instruction::Instruction,
@@ -282,5 +283,30 @@ impl TestContext {
         clock.unix_timestamp += duration.as_secs() as i64;
         clock.slot += duration.as_secs() * 2;
         self.context.set_sysvar(&clock);
+    }
+
+    pub async fn new_keypair(&mut self, min_lamports: u64) -> Keypair {
+        let account = Keypair::new();
+        let hash = self.context.get_new_latest_blockhash().await.unwrap();
+        let transaction = Transaction::new_signed_with_payer(
+            &[system_instruction::create_account(
+                &self.context.payer.pubkey(),
+                &account.pubkey(),
+                min_lamports,
+                0,
+                &system_program::id(),
+            )],
+            Some(&self.context.payer.pubkey()),
+            &[&self.context.payer, &account],
+            hash,
+        );
+
+        self.context
+            .banks_client
+            .process_transaction_with_commitment(transaction, CommitmentLevel::Processed)
+            .await
+            .unwrap();
+
+        account
     }
 }
