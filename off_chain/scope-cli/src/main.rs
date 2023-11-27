@@ -139,6 +139,36 @@ enum Actions {
         #[clap(long, env)]
         token: u16,
     },
+
+    /// Sets the admin cached for the config
+    /// This requires admin keypair
+    #[clap()]
+    SetAdminCached {
+        /// The pubkey of the admin_cached
+        #[clap(long, env, parse(try_from_str))]
+        admin_cached: Pubkey,
+        /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
+        #[clap(long, env)]
+        multisig: bool,
+        /// Wether it should return tx in base64 - useful for simulations
+        #[clap(long, env)]
+        base64: bool,
+    },
+
+    /// Approves the admin cached for the config
+    /// This requires adminc_cached keypair
+    #[clap()]
+    ApproveAdminCached {
+        /// The pubkey of the admin_cached - to become admin
+        #[clap(long, env, parse(try_from_str))]
+        admin_cached: Pubkey,
+        /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
+        #[clap(long, env)]
+        multisig: bool,
+        /// Wether it should return tx in base64 - useful for simulations
+        #[clap(long, env)]
+        base64: bool,
+    },
 }
 
 #[tokio::main]
@@ -210,6 +240,16 @@ async fn main() -> Result<()> {
             }
             Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping).await,
             Actions::ResetTwap { token } => reset_twap(&scope, token).await,
+            Actions::SetAdminCached {
+                admin_cached,
+                multisig,
+                base64,
+            } => set_admin_cached(&mut scope, admin_cached, multisig, base64).await,
+            Actions::ApproveAdminCached {
+                admin_cached,
+                multisig,
+                base64,
+            } => approve_admin_cached(&mut scope, admin_cached, multisig, base64).await,
         }
     }
 }
@@ -380,4 +420,26 @@ async fn reset_twap<T: AsyncClient, S: Signer>(
     token: u16,
 ) -> Result<()> {
     scope.reset_twap_price(token).await
+}
+
+async fn set_admin_cached<T: AsyncClient, S: Signer>(
+    scope: &ScopeClient<T, S>,
+    admin_cached: Pubkey,
+    multisig: bool,
+    base64: bool,
+) -> Result<()> {
+    scope
+        .ix_set_admin_cached(admin_cached, multisig, base64)
+        .await
+}
+
+async fn approve_admin_cached<T: AsyncClient, S: Signer>(
+    scope: &ScopeClient<T, S>,
+    admin_cached: Pubkey,
+    multisig: bool,
+    base64: bool,
+) -> Result<()> {
+    scope
+        .ix_approve_admin_cached(admin_cached, multisig, base64)
+        .await
 }

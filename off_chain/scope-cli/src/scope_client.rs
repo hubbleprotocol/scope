@@ -1,6 +1,7 @@
 use std::mem::size_of;
 use std::{collections::HashSet, num::NonZeroU64};
 
+use anchor_client::solana_sdk::transaction::VersionedTransaction;
 use anchor_client::{
     anchor_lang::ToAccountMetas,
     solana_sdk::{
@@ -823,6 +824,96 @@ where
             Some(r) => r.context(format!("Price refresh transaction: {signature}")),
             None => bail!("Init transaction failed to confirm: {signature}"),
         }
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn ix_set_admin_cached(
+        &self,
+        admin_cached: Pubkey,
+        multisig: bool,
+        base64: bool,
+    ) -> Result<()> {
+        let accounts = accounts::SetAdminCached {
+            admin: self.client.payer(),
+            configuration: self.configuration_acc,
+        }
+        .to_account_metas(None);
+
+        let args = instruction::SetAdminCached {
+            new_admin: admin_cached.clone(),
+            feed_name: self.feed_name.clone(),
+        };
+
+        let request = self.client.tx_builder();
+
+        let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
+
+        if multisig {
+            if base64 {
+                println!("{}", tx_builder.to_base64());
+            } else {
+                println!("{}", tx_builder.to_base58());
+            }
+        } else {
+            let tx = tx_builder.build_with_budget_and_fee(&[]).await?;
+            self.send_transaction(tx).await?;
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn ix_approve_admin_cached(
+        &self,
+        admin_cached: Pubkey,
+        multisig: bool,
+        base64: bool,
+    ) -> Result<()> {
+        let accounts = accounts::ApproveAdminCached {
+            admin_cached: admin_cached.clone(),
+            configuration: self.configuration_acc,
+        }
+        .to_account_metas(None);
+
+        let args = instruction::ApproveAdminCached {
+            feed_name: self.feed_name.clone(),
+        };
+
+        let request = self.client.tx_builder();
+
+        let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
+
+        if multisig {
+            if base64 {
+                println!("{}", tx_builder.to_base64());
+            } else {
+                println!("{}", tx_builder.to_base58());
+            }
+        } else {
+            let tx = tx_builder.build_with_budget_and_fee(&[]).await?;
+            self.send_transaction(tx).await?;
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn send_transaction(&self, tx: VersionedTransaction) -> Result<()> {
+        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
+
+        match res {
+            Some(Ok(())) => info!(%signature, "Accounts updated successfully"),
+            Some(Err(err)) => {
+                error!(%signature, err = ?err, "Mapping update failed");
+                bail!(err);
+            }
+            None => {
+                error!(%signature, "Could not confirm mapping update transaction");
+                bail!("Could not confirm mapping update transaction");
+            }
+        }
+
+        Ok(())
     }
 
     async fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<Signature> {
