@@ -273,7 +273,7 @@
     "max_age": 200
   },
   "72": {
-    "label": "bSOL/SOL",
+    "label": "Stake rate bSOL/SOL",
     "oracle_mapping": "stk9ApL5HeVAwPLr3TLhDXdZS8ptVu7zp6ov8HFDuMi",
     "oracle_type": "SplStake"
   },
@@ -616,14 +616,14 @@
     "max_age": 200
   },
   "131": {
-    "label": "bSOL/USD Blaze",
+    "label": "Switchboard bSOL/USD Blaze",
     "oracle_type": "SwitchboardV2",
     "oracle_mapping": "EPw1Vb9YFu6TcasVKaj5mEUtvtz3G18iBdByqzigbzUG",
     "max_age": 150,
     "twap_enabled": true
   },
   "132": {
-    "label": "TWAP bSOL/USD Blaze",
+    "label": "TWAP Switchboard bSOL/USD Blaze",
     "oracle_type": "ScopeTwap",
     "twap_source": 131,
     "max_age": 200
@@ -658,5 +658,17 @@
     "oracle_type": "ScopeTwap",
     "max_age": 200,
     "twap_source": 136
+  },
+  "138": {
+    "label": "Pyth bSOL/USD",
+    "oracle_mapping": "AFrYBhb5wKQtxRS9UA9YRS4V3dwFm7SqmS6DHKq6YVgo",
+    "oracle_type": "Pyth",
+    "max_age": 150
+  },
+  "139": {
+    "label": "EMA Pyth bSOL/USD",
+    "oracle_mapping": "AFrYBhb5wKQtxRS9UA9YRS4V3dwFm7SqmS6DHKq6YVgo",
+    "oracle_type": "PythEMA",
+    "max_age": 150
   }
 }
