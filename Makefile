@@ -29,6 +29,7 @@ endif
 CLUSTER ?= localnet
 OWNER_KEYPAIR ?= ./keys/$(CLUSTER)/owner.json
 FEED_NAME ?= hubble
+MAINNET_RPC_URL ?= "https://api.mainnet-beta.solana.com"
 
 #declare CLUSTER to be dependable
 $(eval $(call DEPENDABLE_VAR,CLUSTER))
@@ -43,7 +44,7 @@ ifeq ($(CLUSTER),localnet)
 endif
 ifeq ($(CLUSTER),mainnet)
    SWITCHBOARD_BASE_URL ?= https://switchboard.xyz/explorer/3/
-   URL ?= "https://solana-mainnet.rpc.extrnode.com"
+   URL ?= $(MAINNET_RPC_URL)
    SCOPE_PROGRAM_ID ?= "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ"
 endif
 ifeq ($(CLUSTER),devnet)
@@ -147,7 +148,7 @@ print-pubkeys: $(SCOPE_CLI)
 
 clone-mainnet-to-local-validator: $(SCOPE_CLI)
 >@ export ORACLE_PUBKEYS="${shell CLUSTER=mainnet make -s print-pubkeys 2> /dev/null}"
-> solana-test-validator -r --url "https://solana-mainnet.rpc.extrnode.com" --clone $$ORACLE_PUBKEYS
+> solana-test-validator -r --url $(MAINNET_RPC_URL) --clone $$ORACLE_PUBKEYS
 
 clone-devnet-to-local-validator:
 >@ export ORACLE_PUBKEYS="${shell CLUSTER=devnet make -s print-pubkeys 2> /dev/null}"
