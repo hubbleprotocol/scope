@@ -15,7 +15,7 @@ pub async fn setup_scope(
 ) -> (TestContext, types::ScopeFeedDefinition) {
     let mut test_program = runner::program();
     let admin = setup::funded_kp(&mut test_program, 100000000);
-    let bot = setup::funded_kp(&mut test_program, 100000000);
+    let bot = setup::funded_kp(&mut test_program, 10000000000);
     let zero_copy_accounts = types::ScopeZeroCopyAccounts::new();
     zero_copy_accounts.add_accounts(&mut test_program);
     let mut ctx = runner::start(test_program, admin, bot).await;
