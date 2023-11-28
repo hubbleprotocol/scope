@@ -670,5 +670,17 @@
     "oracle_mapping": "AFrYBhb5wKQtxRS9UA9YRS4V3dwFm7SqmS6DHKq6YVgo",
     "oracle_type": "PythEMA",
     "max_age": 150
+  },
+  "140": {
+    "label": "HBB per 5XL..PFM kHBB-USDH",
+    "oracle_mapping": "5XLxZ2wbJeD9ub2ii2zVWvPjnjSHXGatQ399PAA2yPFM",
+    "oracle_type": "KTokenToTokenB",
+    "max_age": 650
+  },
+  "141": {
+    "label": "HBB per 2G8x..EmFe kHBB-USDH",
+    "oracle_mapping": "2G8xgnQjAJnLQBX2nVh42TWqPrMmVm3q5aPJAkArEmFe",
+    "oracle_type": "KTokenToTokenB",
+    "max_age": 650
   }
 }
