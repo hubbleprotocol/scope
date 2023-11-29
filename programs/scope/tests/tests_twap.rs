@@ -1,7 +1,7 @@
 mod common;
 
-use crate::client::reset_twap;
-use crate::{common::client::refresh_one_ix, utils::setup_mapping_for_token_with_twap};
+use crate::common::client::refresh_one_ix;
+use crate::{client::reset_twap, common::fixtures::setup_mapping_for_token_with_twap};
 use anchor_lang::{InstructionData, ToAccountMetas};
 use common::*;
 use decimal_wad::decimal::Decimal;
@@ -577,69 +577,5 @@ async fn test_reset_twap() {
             oracle_twaps.twaps[0].current_ema_1h,
             Decimal::from(token_price).to_scaled_val().unwrap()
         );
-    }
-}
-
-pub mod utils {
-    use anchor_lang::{InstructionData, ToAccountMetas};
-    use solana_program::instruction::Instruction;
-    use solana_sdk::signer::Signer;
-
-    use crate::{
-        common::types::{OracleConf, ScopeFeedDefinition},
-        TestContext,
-    };
-
-    pub async fn setup_mapping_for_token_with_twap(
-        ctx: &mut TestContext,
-        feed: &ScopeFeedDefinition,
-        token_oracle: OracleConf,
-        twap_oracle: OracleConf,
-    ) {
-        // Set the mapping for first price account
-        let accounts = scope::accounts::UpdateOracleMapping {
-            admin: ctx.admin.pubkey(),
-            configuration: feed.conf,
-            oracle_mappings: feed.mapping,
-            price_info: Some(token_oracle.pubkey),
-        };
-        let args = scope::instruction::UpdateMapping {
-            feed_name: feed.feed_name.clone(),
-            token: token_oracle.token.try_into().unwrap(),
-            price_type: token_oracle.price_type.to_u8(),
-            twap_enabled: token_oracle.twap_enabled,
-            twap_source: token_oracle.twap_source.unwrap_or(u16::MAX),
-        };
-
-        let ix = Instruction {
-            program_id: scope::id(),
-            accounts: accounts.to_account_metas(None),
-            data: args.data(),
-        };
-
-        ctx.send_transaction(&[ix]).await.unwrap();
-
-        // Set the mapping for the TWAP
-        let accounts = scope::accounts::UpdateOracleMapping {
-            admin: ctx.admin.pubkey(),
-            configuration: feed.conf,
-            oracle_mappings: feed.mapping,
-            price_info: Some(twap_oracle.pubkey),
-        };
-        let args = scope::instruction::UpdateMapping {
-            feed_name: feed.feed_name.clone(),
-            token: twap_oracle.token.try_into().unwrap(),
-            price_type: twap_oracle.price_type.to_u8(),
-            twap_enabled: twap_oracle.twap_enabled,
-            twap_source: twap_oracle.twap_source.unwrap_or(u16::MAX),
-        };
-
-        let ix = Instruction {
-            program_id: scope::id(),
-            accounts: accounts.to_account_metas(None),
-            data: args.data(),
-        };
-
-        ctx.send_transaction(&[ix]).await.unwrap();
     }
 }
