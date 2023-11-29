@@ -18,7 +18,7 @@ const TEST_TWAP: OracleConf = OracleConf {
     pubkey: pubkey!("HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ"),
     token: 1,
     price_type: TestOracleType::ScopeTwap(1),
-    twap_enabled: true,
+    twap_enabled: false,
     twap_source: Some(0),
 };
 
@@ -26,7 +26,7 @@ const TEST_PYTH_ORACLE: OracleConf = OracleConf {
     pubkey: pubkey!("SomePythPriceAccount11111111111111111111111"),
     token: 0,
     price_type: TestOracleType::Pyth,
-    twap_enabled: false,
+    twap_enabled: true,
     twap_source: None,
 };
 
