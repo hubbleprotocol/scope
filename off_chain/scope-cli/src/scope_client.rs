@@ -46,7 +46,9 @@ pub struct ScopeClient<T: AsyncClient, S: Signer> {
     oracle_twaps_acc: Pubkey,
     oracle_mappings_acc: Pubkey,
     tokens_metadata_acc: Pubkey,
+    admin_cached_acc: Pubkey,
     tokens: TokenEntryList,
+    multisig: bool,
 }
 
 impl<T, S> ScopeClient<T, S>
@@ -59,12 +61,13 @@ where
         client: OrbitLink<T, S>,
         program_id: Pubkey,
         price_feed: &str,
+        multisig: bool,
     ) -> Result<Self> {
         // Retrieve accounts in configuration PDA
         let (configuration_acc, _) =
             Pubkey::find_program_address(&[b"conf", price_feed.as_bytes()], &program_id);
 
-        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, oracle_twaps, .. } = client
+        let Configuration { oracle_mappings, oracle_prices, tokens_metadata, oracle_twaps, admin_cached, .. } = client
             .get_anchor_account::<Configuration>(&configuration_acc).await
             .context("Error while retrieving program configuration account, the program might be uninitialized")?;
 
@@ -77,7 +80,9 @@ where
             oracle_prices_acc: oracle_prices,
             oracle_mappings_acc: oracle_mappings,
             tokens_metadata_acc: tokens_metadata,
+            admin_cached_acc: admin_cached,
             tokens: IntMap::default(),
+            multisig,
         };
 
         debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %tokens_metadata, %price_feed);
@@ -91,12 +96,14 @@ where
         client: OrbitLink<T, S>,
         program_id: &Pubkey,
         price_feed: &str,
+        multisig: bool,
     ) -> Result<Self> {
         // Generate accounts keypairs.
         let oracle_prices_acc = Keypair::new();
         let oracle_mappings_acc = Keypair::new();
         let token_metadatas_acc = Keypair::new();
         let twap_buffers_acc = Keypair::new();
+        let admin_cached_acc = Pubkey::default();
 
         // Compute configuration PDA pbk
         let (configuration_acc, _) =
@@ -125,7 +132,9 @@ where
             oracle_twaps_acc: twap_buffers_acc.pubkey(),
             oracle_mappings_acc: oracle_mappings_acc.pubkey(),
             tokens_metadata_acc: token_metadatas_acc.pubkey(),
+            admin_cached_acc,
             tokens: IntMap::default(),
+            multisig,
         })
     }
 
@@ -828,10 +837,8 @@ where
 
     #[tracing::instrument(skip(self))]
     pub async fn ix_set_admin_cached(
-        &self,
+        &mut self,
         admin_cached: Pubkey,
-        multisig: bool,
-        base64: bool,
     ) -> Result<()> {
         let accounts = accounts::SetAdminCached {
             admin: self.client.payer(),
@@ -840,7 +847,7 @@ where
         .to_account_metas(None);
 
         let args = instruction::SetAdminCached {
-            new_admin: admin_cached.clone(),
+            new_admin: admin_cached,
             feed_name: self.feed_name.clone(),
         };
 
@@ -848,14 +855,16 @@ where
 
         let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
 
-        if multisig {
-            if base64 {
-                println!("{}", tx_builder.to_base64());
-            } else {
-                println!("{}", tx_builder.to_base58());
-            }
+        info!("here");
+        if self.multisig {
+            let fee = self.client.client.get_recommended_micro_lamport_fee().await?;
+            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
+            // TODO: Workout why tx simulation does not work - Error: Blob.encode[recentBlockhash] requires (length 32) Uint8Array as src
+            let latest_blockhash = self.client.client.get_latest_blockhash().await?;
+            info!("https://explorer.solana.com/tx/inspector?message={}", tx_builder.to_base64_with_blockhash(&latest_blockhash));
+            info!("{}", tx_builder.to_base58());
         } else {
-            let tx = tx_builder.build_with_budget_and_fee(&[]).await?;
+            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
             self.send_transaction(tx).await?;
         }
 
@@ -863,14 +872,9 @@ where
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn ix_approve_admin_cached(
-        &self,
-        admin_cached: Pubkey,
-        multisig: bool,
-        base64: bool,
-    ) -> Result<()> {
+    pub async fn ix_approve_admin_cached(&mut self) -> Result<()> {
         let accounts = accounts::ApproveAdminCached {
-            admin_cached: admin_cached.clone(),
+            admin_cached: self.admin_cached_acc,
             configuration: self.configuration_acc,
         }
         .to_account_metas(None);
@@ -882,37 +886,36 @@ where
         let request = self.client.tx_builder();
 
         let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
-
-        if multisig {
-            if base64 {
-                println!("{}", tx_builder.to_base64());
-            } else {
-                println!("{}", tx_builder.to_base58());
-            }
+        
+        info!("here");
+        if self.multisig {
+            let fee = self.client.client.get_recommended_micro_lamport_fee().await?;
+            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
+            // TODO: Workout why tx simulation does not work - Error: Blob.encode[recentBlockhash] requires (length 32) Uint8Array as src
+            let latest_blockhash = self.client.client.get_latest_blockhash().await?;
+            info!("https://explorer.solana.com/tx/inspector?message={}", tx_builder.to_base64_with_blockhash(&latest_blockhash));
+            info!("{}", tx_builder.to_base58());
         } else {
-            let tx = tx_builder.build_with_budget_and_fee(&[]).await?;
+            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
             self.send_transaction(tx).await?;
         }
 
         Ok(())
     }
 
-    #[tracing::instrument(skip(self))]
     async fn send_transaction(&self, tx: VersionedTransaction) -> Result<()> {
         let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
-
         match res {
-            Some(Ok(())) => info!(%signature, "Accounts updated successfully"),
+            Some(Ok(())) => info!(%signature, "TWAP reset successfully"),
             Some(Err(err)) => {
-                error!(%signature, err = ?err, "Mapping update failed");
+                error!(%signature, err = ?err, "TWAP reset failed");
                 bail!(err);
             }
             None => {
-                error!(%signature, "Could not confirm mapping update transaction");
-                bail!("Could not confirm mapping update transaction");
+                error!(%signature, "Could not confirm TWAP reset transaction");
+                bail!("Could not confirm TWAP reset transaction");
             }
         }
-
         Ok(())
     }
 

@@ -30,7 +30,7 @@ struct Args {
 
     /// Account keypair to pay for the transactions
     #[clap(long, env, parse(from_os_str))]
-    keypair: PathBuf,
+    keypair: Option<PathBuf>,
 
     /// Program Id
     #[clap(long, env, parse(try_from_str))]
@@ -39,6 +39,10 @@ struct Args {
     /// "Price feed" unique name to work with
     #[clap(long, env)]
     price_feed: String,
+
+    /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
+    #[clap(long, env)]
+    multisig: bool,
 
     /// Set flag to activate json log output
     #[clap(long, env = "JSON_LOGS")]
@@ -147,28 +151,12 @@ enum Actions {
         /// The pubkey of the admin_cached
         #[clap(long, env, parse(try_from_str))]
         admin_cached: Pubkey,
-        /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
-        #[clap(long, env)]
-        multisig: bool,
-        /// Wether it should return tx in base64 - useful for simulations
-        #[clap(long, env)]
-        base64: bool,
     },
 
     /// Approves the admin cached for the config
     /// This requires adminc_cached keypair
     #[clap()]
-    ApproveAdminCached {
-        /// The pubkey of the admin_cached - to become admin
-        #[clap(long, env, parse(try_from_str))]
-        admin_cached: Pubkey,
-        /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
-        #[clap(long, env)]
-        multisig: bool,
-        /// Wether it should return tx in base64 - useful for simulations
-        #[clap(long, env)]
-        base64: bool,
-    },
+    ApproveAdminCached {},
 }
 
 #[tokio::main]
@@ -189,7 +177,14 @@ async fn main() -> Result<()> {
     }
 
     // Read keypair to sign transactions
-    let payer = read_keypair_file(args.keypair).expect("Keypair file not found or invalid");
+    let payer = match args.keypair {
+        Some(ref path) => {
+            Some(read_keypair_file(path).expect("Keypair file not found or invalid"))
+        }
+        None => {
+            None
+        }
+    };
 
     let commitment = if let Actions::Crank { .. } = args.action {
         // For crank we don't want to wait for proper confirmation of the refresh transaction
@@ -203,9 +198,17 @@ async fn main() -> Result<()> {
     let client = OrbitLink::new(rpc_client, payer, None, commitment);
 
     if let Actions::Init { mapping } = args.action {
-        init(client, &args.program_id, &args.price_feed, &mapping).await
+        init(
+            client,
+            &args.program_id,
+            &args.price_feed,
+            &mapping,
+            args.multisig,
+        )
+        .await
     } else {
-        let mut scope = ScopeClient::new(client, args.program_id, &args.price_feed).await?;
+        let mut scope =
+            ScopeClient::new(client, args.program_id, &args.price_feed, args.multisig).await?;
 
         match args.action {
             Actions::Download { mapping } => download(&mut scope, &mapping).await,
@@ -242,14 +245,10 @@ async fn main() -> Result<()> {
             Actions::ResetTwap { token } => reset_twap(&scope, token).await,
             Actions::SetAdminCached {
                 admin_cached,
-                multisig,
-                base64,
-            } => set_admin_cached(&mut scope, admin_cached, multisig, base64).await,
-            Actions::ApproveAdminCached {
-                admin_cached,
-                multisig,
-                base64,
-            } => approve_admin_cached(&mut scope, admin_cached, multisig, base64).await,
+            } => set_admin_cached(&mut scope, admin_cached).await,
+            Actions::ApproveAdminCached { } => {
+                approve_admin_cached(&mut scope).await
+            }
         }
     }
 }
@@ -259,8 +258,9 @@ async fn init<T: AsyncClient, S: Signer>(
     program_id: &Pubkey,
     price_feed: &str,
     mapping_op: &Option<impl AsRef<Path>>,
+    multisig: bool,
 ) -> Result<()> {
-    let mut scope = ScopeClient::new_init_program(client, program_id, price_feed).await?;
+    let mut scope = ScopeClient::new_init_program(client, program_id, price_feed, multisig).await?;
 
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
@@ -423,23 +423,14 @@ async fn reset_twap<T: AsyncClient, S: Signer>(
 }
 
 async fn set_admin_cached<T: AsyncClient, S: Signer>(
-    scope: &ScopeClient<T, S>,
+    scope: &mut ScopeClient<T, S>,
     admin_cached: Pubkey,
-    multisig: bool,
-    base64: bool,
 ) -> Result<()> {
-    scope
-        .ix_set_admin_cached(admin_cached, multisig, base64)
-        .await
+    scope.ix_set_admin_cached(admin_cached).await
 }
 
 async fn approve_admin_cached<T: AsyncClient, S: Signer>(
-    scope: &ScopeClient<T, S>,
-    admin_cached: Pubkey,
-    multisig: bool,
-    base64: bool,
+    scope: &mut ScopeClient<T, S>,
 ) -> Result<()> {
-    scope
-        .ix_approve_admin_cached(admin_cached, multisig, base64)
-        .await
+    scope.ix_approve_admin_cached().await
 }

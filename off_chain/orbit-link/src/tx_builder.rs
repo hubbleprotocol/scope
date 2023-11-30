@@ -3,7 +3,7 @@ use anchor_client::{
     solana_sdk::{
         address_lookup_table_account::AddressLookupTableAccount,
         compute_budget::ComputeBudgetInstruction, instruction::Instruction, message::Message,
-        pubkey::Pubkey, signer::Signer, transaction::VersionedTransaction,
+        pubkey::Pubkey, signer::Signer, transaction::VersionedTransaction, hash::Hash,
     },
 };
 use base64::engine::{general_purpose::STANDARD as BS64, Engine};
@@ -138,6 +138,21 @@ where
             .await
     }
 
+    pub fn add_budget_ix(
+        mut self,
+    ) -> Self {
+        let mut instructions = Vec::with_capacity(self.instructions.len() + 1);
+        if let Some(ix_budget) = self.get_budget_ix() {
+            instructions.push(ix_budget);
+        }
+
+        instructions.extend(self.instructions);
+
+        self.instructions = instructions;
+
+        self
+    }
+
     pub async fn build_with_budget_and_fee(
         self,
         extra_signers: &[&dyn Signer],
@@ -164,12 +179,46 @@ where
             .await
     }
 
+    pub fn add_budget_and_fee_ix(
+        mut self,
+        fee: u64,
+    ) -> Self {
+        let mut instructions = Vec::with_capacity(self.instructions.len() + 2);
+
+        if let Some(ix_budget) = self.get_budget_ix() {
+            instructions.push(ix_budget);
+        }
+
+        if fee > 0 {
+            instructions.push(ComputeBudgetInstruction::set_compute_unit_price(fee));
+        }
+
+        instructions.extend(self.instructions);
+
+        self.instructions = instructions;
+
+        self
+    }
+
     /// Build a raw message from the known instructions
     ///
     /// The message is not signed, and the blockhash is not set allowing future signing by a multisig.
     /// Note: This is not compatible with versioned transactions yet and does not include lookup tables.
     pub fn build_raw_msg(&self) -> Vec<u8> {
-        let msg = Message::new(&self.instructions, Some(&self.link.payer.pubkey()));
+        let mut payer_option = None;
+        let payer_pubkey = self.link.payer();
+        if payer_pubkey != Pubkey::default() {
+            payer_option = Some(&payer_pubkey);
+        }
+
+        let msg = Message::new(&self.instructions, payer_option);
+        msg.serialize()
+    }
+
+    pub fn build_raw_msg_with_blockhash(&self, blockhash: &Hash) -> Vec<u8> {
+        let payer_pubkey = self.link.payer();
+
+        let msg = Message::new_with_blockhash(&self.instructions, Some(&payer_pubkey), blockhash);
         msg.serialize()
     }
 
@@ -178,6 +227,14 @@ where
     /// See `build_raw_msg` for more details.
     pub fn to_base64(&self) -> String {
         let raw_msg = self.build_raw_msg();
+        BS64.encode(raw_msg)
+    }
+
+    /// Build a base64 encoded raw message from the known instructions.
+    /// using a blockhash in order to be simulatable 
+    /// See `build_raw_msg` for more details.
+    pub fn to_base64_with_blockhash(&self, blockhash: &Hash) -> String {
+        let raw_msg = self.build_raw_msg_with_blockhash(blockhash);
         BS64.encode(raw_msg)
     }
 

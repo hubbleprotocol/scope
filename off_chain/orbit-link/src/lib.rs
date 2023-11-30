@@ -9,7 +9,7 @@ use anchor_client::{
         message::{v0, VersionedMessage},
         pubkey::Pubkey,
         signature::Signature,
-        signer::Signer,
+        signer::{Signer, SignerError},
         system_instruction,
         transaction::{TransactionError, VersionedTransaction},
     },
@@ -35,7 +35,7 @@ where
     S: Signer,
 {
     pub client: T,
-    payer: S,
+    payer: Option<S>,
     lookup_tables: Vec<AddressLookupTableAccount>,
     commitment_config: CommitmentConfig,
 }
@@ -47,7 +47,7 @@ where
 {
     pub fn new(
         client: T,
-        payer: S,
+        payer: Option<S>,
         lookup_tables: impl Into<Option<Vec<AddressLookupTableAccount>>>,
         commitment_config: CommitmentConfig,
     ) -> Self {
@@ -61,7 +61,11 @@ where
     }
 
     pub fn payer(&self) -> Pubkey {
-        self.payer.pubkey()
+        if let Some(payer) = &self.payer {
+            payer.pubkey()
+        } else {
+            Pubkey::default()
+        }
     }
 
     pub fn add_lookup_table(&mut self, table: AddressLookupTableAccount) {
@@ -143,13 +147,23 @@ where
         extra_signers: &[&dyn Signer],
     ) -> Result<VersionedTransaction> {
         let mut signers: Vec<&dyn Signer> = Vec::with_capacity(extra_signers.len() + 1);
-        signers.push(&self.payer);
+
+        match self.payer {
+            Some(ref payer) => {
+                signers.push(payer);
+            }
+            None => {
+                return Err(errors::ErrorKind::SignerError(SignerError::InvalidInput(
+                    "No payer provided".to_string())));
+            }
+        }
+
         signers.extend_from_slice(extra_signers);
 
         Ok(VersionedTransaction::try_new(
             VersionedMessage::V0(
                 v0::Message::try_compile(
-                    &self.payer.pubkey(),
+                    &self.payer.as_ref().unwrap().pubkey(),
                     instructions,
                     &self.lookup_tables,
                     // TODO: cache blockhash
@@ -168,7 +182,17 @@ where
         lookup_tables_extra: &[AddressLookupTableAccount],
     ) -> Result<VersionedTransaction> {
         let mut signers: Vec<&dyn Signer> = Vec::with_capacity(extra_signers.len() + 1);
-        signers.push(&self.payer);
+
+        match self.payer {
+            Some(ref payer) => {
+                signers.push(payer);
+            }
+            None => {
+                return Err(errors::ErrorKind::SignerError(SignerError::InvalidInput(
+                    "No payer provided".to_string())));
+            }
+        }
+        
         signers.extend_from_slice(extra_signers);
 
         let mut lookup_tables = self.lookup_tables.clone();
@@ -177,7 +201,7 @@ where
         Ok(VersionedTransaction::try_new(
             VersionedMessage::V0(
                 v0::Message::try_compile(
-                    &self.payer.pubkey(),
+                    &self.payer.as_ref().unwrap().pubkey(),
                     instructions,
                     &lookup_tables,
                     // TODO: cache blockhash

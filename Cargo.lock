@@ -3955,6 +3955,7 @@ dependencies = [
  "anchor-client",
  "anyhow",
  "async-trait",
+ "bincode",
  "clap 3.2.25",
  "futures",
  "nohash-hasher",
