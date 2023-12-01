@@ -91,11 +91,9 @@ mod utils {
         } else if last_sample_delta < ema_period_s / 120 {
             Err(ScopeError::TwapSampleTooFrequent)
         } else {
-            // For rounding purposes we add half of denominator to the nominator
-            let half_sample_delta = last_sample_delta / 2;
-            let n = (ema_period_s + half_sample_delta) / last_sample_delta;
+            let n = Decimal::from(ema_period_s) / last_sample_delta;
 
-            let adjusted_denom = n + 1;
+            let adjusted_denom = n + Decimal::one();
 
             Ok(Decimal::from(2) / adjusted_denom)
         }
