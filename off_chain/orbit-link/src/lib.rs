@@ -36,6 +36,7 @@ where
 {
     pub client: T,
     payer: Option<S>,
+    payer_pubkey: Option<Pubkey>,
     lookup_tables: Vec<AddressLookupTableAccount>,
     commitment_config: CommitmentConfig,
 }
@@ -50,22 +51,35 @@ where
         payer: Option<S>,
         lookup_tables: impl Into<Option<Vec<AddressLookupTableAccount>>>,
         commitment_config: CommitmentConfig,
+        payer_pubkey: Option<Pubkey>,
     ) -> Self {
         let lookup_tables: Option<Vec<AddressLookupTableAccount>> = lookup_tables.into();
         OrbitLink {
             client,
             payer,
+            payer_pubkey,
             lookup_tables: lookup_tables.unwrap_or_default(),
             commitment_config,
         }
     }
 
-    pub fn payer(&self) -> Pubkey {
+    pub fn payer_pubkey(&self) -> Pubkey {
         if let Some(payer) = &self.payer {
             payer.pubkey()
+        } else if let Some(payer_pubkey) = self.payer_pubkey {
+            payer_pubkey
         } else {
             Pubkey::default()
         }
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn payer(&self) -> Result<&S> {
+        self.payer
+            .as_ref()
+            .ok_or(errors::ErrorKind::SignerError(SignerError::InvalidInput(
+                "No payer provided".to_string(),
+            )))
     }
 
     pub fn add_lookup_table(&mut self, table: AddressLookupTableAccount) {
@@ -129,7 +143,7 @@ where
         new_owner: &Pubkey,
     ) -> Result<Instruction> {
         Ok(system_instruction::create_account(
-            &self.payer(),
+            &self.payer_pubkey(),
             account_to_create,
             self.client
                 .get_minimum_balance_for_rent_exemption(space)
@@ -148,22 +162,17 @@ where
     ) -> Result<VersionedTransaction> {
         let mut signers: Vec<&dyn Signer> = Vec::with_capacity(extra_signers.len() + 1);
 
-        match self.payer {
-            Some(ref payer) => {
-                signers.push(payer);
-            }
-            None => {
-                return Err(errors::ErrorKind::SignerError(SignerError::InvalidInput(
-                    "No payer provided".to_string())));
-            }
-        }
+        let payer = self.payer.as_ref().ok_or(errors::ErrorKind::SignerError(
+            SignerError::InvalidInput("No payer provided".to_string()),
+        ))?;
 
+        signers.push(payer);
         signers.extend_from_slice(extra_signers);
 
         Ok(VersionedTransaction::try_new(
             VersionedMessage::V0(
                 v0::Message::try_compile(
-                    &self.payer.as_ref().unwrap().pubkey(),
+                    &payer.pubkey(),
                     instructions,
                     &self.lookup_tables,
                     // TODO: cache blockhash
@@ -189,10 +198,11 @@ where
             }
             None => {
                 return Err(errors::ErrorKind::SignerError(SignerError::InvalidInput(
-                    "No payer provided".to_string())));
+                    "No payer provided".to_string(),
+                )));
             }
         }
-        
+
         signers.extend_from_slice(extra_signers);
 
         let mut lookup_tables = self.lookup_tables.clone();

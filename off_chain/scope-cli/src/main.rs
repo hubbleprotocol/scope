@@ -29,7 +29,7 @@ struct Args {
     cluster: Cluster,
 
     /// Account keypair to pay for the transactions
-    #[clap(long, env, parse(from_os_str))]
+    #[clap(long, env, parse(from_os_str), group = "payer")]
     keypair: Option<PathBuf>,
 
     /// Program Id
@@ -41,8 +41,8 @@ struct Args {
     price_feed: String,
 
     /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
-    #[clap(long, env)]
-    multisig: bool,
+    #[clap(long, env, parse(try_from_str), group = "payer")]
+    multisig: Option<Pubkey>,
 
     /// Set flag to activate json log output
     #[clap(long, env = "JSON_LOGS")]
@@ -177,13 +177,17 @@ async fn main() -> Result<()> {
     }
 
     // Read keypair to sign transactions
-    let payer = match args.keypair {
-        Some(ref path) => {
-            Some(read_keypair_file(path).expect("Keypair file not found or invalid"))
-        }
-        None => {
-            None
-        }
+    let payer = args
+        .keypair
+        .as_ref()
+        .map(|path| read_keypair_file(path).expect("Keypair file not found or invalid"));
+
+    let payer_pubkey = if payer.is_some() {
+        Some(payer.as_ref().unwrap().pubkey())
+    } else if args.multisig.is_some() {
+        Some(args.multisig.unwrap())
+    } else {
+        None
     };
 
     let commitment = if let Actions::Crank { .. } = args.action {
@@ -194,8 +198,9 @@ async fn main() -> Result<()> {
     };
 
     let rpc_client = RpcClient::new_with_commitment(args.cluster.url().to_string(), commitment);
+    let is_localnet = args.cluster == Cluster::Localnet;
     // TODO: use lookup tables
-    let client = OrbitLink::new(rpc_client, payer, None, commitment);
+    let client = OrbitLink::new(rpc_client, payer, None, commitment, payer_pubkey);
 
     if let Actions::Init { mapping } = args.action {
         init(
@@ -203,12 +208,19 @@ async fn main() -> Result<()> {
             &args.program_id,
             &args.price_feed,
             &mapping,
-            args.multisig,
+            args.multisig.is_some(),
+            is_localnet,
         )
         .await
     } else {
-        let mut scope =
-            ScopeClient::new(client, args.program_id, &args.price_feed, args.multisig).await?;
+        let mut scope = ScopeClient::new(
+            client,
+            args.program_id,
+            &args.price_feed,
+            args.multisig.is_some(),
+            is_localnet,
+        )
+        .await?;
 
         match args.action {
             Actions::Download { mapping } => download(&mut scope, &mapping).await,
@@ -243,12 +255,10 @@ async fn main() -> Result<()> {
             }
             Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping).await,
             Actions::ResetTwap { token } => reset_twap(&scope, token).await,
-            Actions::SetAdminCached {
-                admin_cached,
-            } => set_admin_cached(&mut scope, admin_cached).await,
-            Actions::ApproveAdminCached { } => {
-                approve_admin_cached(&mut scope).await
+            Actions::SetAdminCached { admin_cached } => {
+                set_admin_cached(&mut scope, admin_cached).await
             }
+            Actions::ApproveAdminCached {} => approve_admin_cached(&mut scope).await,
         }
     }
 }
@@ -259,8 +269,11 @@ async fn init<T: AsyncClient, S: Signer>(
     price_feed: &str,
     mapping_op: &Option<impl AsRef<Path>>,
     multisig: bool,
+    is_localnet: bool,
 ) -> Result<()> {
-    let mut scope = ScopeClient::new_init_program(client, program_id, price_feed, multisig).await?;
+    let mut scope =
+        ScopeClient::new_init_program(client, program_id, price_feed, multisig, is_localnet)
+            .await?;
 
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;

@@ -1,3 +1,4 @@
+use std::io::IsTerminal;
 use std::mem::size_of;
 use std::{collections::HashSet, num::NonZeroU64};
 
@@ -15,6 +16,7 @@ use anchor_client::{
     },
 };
 use anyhow::{anyhow, bail, Context, Result};
+use form_urlencoded::Serializer;
 use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
@@ -34,6 +36,10 @@ use crate::{
 const MAX_REFRESH_CHUNK_SIZE: usize = 24;
 /// Token gap to max age that still trigger refresh (in slots)
 const REMAINING_AGE_TO_REFRESH: i64 = 10;
+/// Base URL for mainnet explorer
+const BASE_URL_MAINNET: &str = "https://explorer.solana.com/tx/inspector?";
+/// Base URL for localnet explorer
+const BASE_URL_LOCALNET: &str = "https://explorer.solana.com/tx/inspector?cluster=custom&customUrl=http%3A%2F%2Flocalhost%3A8899";
 
 type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 
@@ -49,6 +55,7 @@ pub struct ScopeClient<T: AsyncClient, S: Signer> {
     admin_cached_acc: Pubkey,
     tokens: TokenEntryList,
     multisig: bool,
+    is_localnet: bool,
 }
 
 impl<T, S> ScopeClient<T, S>
@@ -62,6 +69,7 @@ where
         program_id: Pubkey,
         price_feed: &str,
         multisig: bool,
+        is_localnet: bool,
     ) -> Result<Self> {
         // Retrieve accounts in configuration PDA
         let (configuration_acc, _) =
@@ -83,6 +91,7 @@ where
             admin_cached_acc: admin_cached,
             tokens: IntMap::default(),
             multisig,
+            is_localnet,
         };
 
         debug!(%oracle_prices, %oracle_mappings, %configuration_acc, %tokens_metadata, %price_feed);
@@ -97,6 +106,7 @@ where
         program_id: &Pubkey,
         price_feed: &str,
         multisig: bool,
+        is_localnet: bool,
     ) -> Result<Self> {
         // Generate accounts keypairs.
         let oracle_prices_acc = Keypair::new();
@@ -135,6 +145,7 @@ where
             admin_cached_acc,
             tokens: IntMap::default(),
             multisig,
+            is_localnet,
         })
     }
 
@@ -570,7 +581,7 @@ where
 
         // Prepare init instruction accounts
         let init_account = accounts::Initialize {
-            admin: client.payer(),
+            admin: client.payer_pubkey(),
             system_program: system_program::ID,
             configuration: *configuration_acc,
             oracle_prices: oracle_prices_acc.pubkey(),
@@ -661,7 +672,7 @@ where
         let price_info = Some(oracle_account.unwrap_or(self.program_id));
 
         let update_accounts = accounts::UpdateOracleMapping {
-            admin: self.client.payer(),
+            admin: self.client.payer_pubkey(),
             configuration: self.configuration_acc,
             oracle_mappings: self.oracle_mappings_acc,
             price_info,
@@ -669,33 +680,34 @@ where
 
         let request = self.client.tx_builder();
 
-        let tx = request
-            .add_anchor_ix(
-                &self.program_id,
-                update_accounts,
-                instruction::UpdateMapping {
-                    token,
-                    price_type,
-                    twap_enabled,
-                    twap_source: twap_source.unwrap_or(u16::MAX),
-                    feed_name: self.feed_name.clone(),
-                },
-            )
-            .build_with_budget_and_fee(&[])
-            .await?;
+        let tx_builder = request.add_anchor_ix(
+            &self.program_id,
+            update_accounts,
+            instruction::UpdateMapping {
+                token,
+                price_type,
+                twap_enabled,
+                twap_source: twap_source.unwrap_or(u16::MAX),
+                feed_name: self.feed_name.clone(),
+            },
+        );
 
-        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
-
-        match res {
-            Some(Ok(())) => info!(%signature, "Accounts updated successfully"),
-            Some(Err(err)) => {
-                error!(%signature, err = ?err, "Mapping update failed");
-                bail!(err);
+        if self.multisig {
+            let fee = self
+                .client
+                .client
+                .get_recommended_micro_lamport_fee()
+                .await?;
+            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
+            if !std::io::stdout().is_terminal() {
+                println!("{}", tx_builder.to_base58());
+            } else {
+                self.print_base_64_explorer_url(&tx_builder.to_base64());
+                info!("{}", tx_builder.to_base58());
             }
-            None => {
-                error!(%signature, "Could not confirm mapping update transaction");
-                bail!("Could not confirm mapping update transaction");
-            }
+        } else {
+            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
+            self.send_transaction(tx).await?;
         }
 
         Ok(())
@@ -709,39 +721,40 @@ where
         value: Vec<u8>,
     ) -> Result<()> {
         let update_accounts = accounts::UpdateTokensMetadata {
-            admin: self.client.payer(),
+            admin: self.client.payer_pubkey(),
             configuration: self.configuration_acc,
             tokens_metadata: self.tokens_metadata_acc,
         };
 
         let request = self.client.tx_builder();
 
-        let tx = request
-            .add_anchor_ix(
-                &self.program_id,
-                update_accounts,
-                instruction::UpdateTokenMetadata {
-                    index: token,
-                    mode: mode.to_u64(),
-                    value,
-                    feed_name: self.feed_name.clone(),
-                },
-            )
-            .build_with_budget_and_fee(&[])
-            .await?;
+        let tx_builder = request.add_anchor_ix(
+            &self.program_id,
+            update_accounts,
+            instruction::UpdateTokenMetadata {
+                index: token,
+                mode: mode.to_u64(),
+                value,
+                feed_name: self.feed_name.clone(),
+            },
+        );
 
-        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
-
-        match res {
-            Some(Ok(())) => info!(%signature, "Token metadata updated successfully"),
-            Some(Err(err)) => {
-                error!(%signature, err = ?err, "Token metadata update failed");
-                bail!(err);
+        if self.multisig {
+            let fee = self
+                .client
+                .client
+                .get_recommended_micro_lamport_fee()
+                .await?;
+            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
+            if !std::io::stdout().is_terminal() {
+                println!("{}", tx_builder.to_base58());
+            } else {
+                self.print_base_64_explorer_url(&tx_builder.to_base64());
+                info!("{}", tx_builder.to_base58());
             }
-            None => {
-                error!(%signature, "Could not confirm token metadata update transaction");
-                bail!("Could not confirm mapping update transaction");
-            }
+        } else {
+            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
+            self.send_transaction(tx).await?;
         }
 
         Ok(())
@@ -750,7 +763,7 @@ where
     #[tracing::instrument(skip(self))]
     pub async fn ix_reset_twap(&self, token: u16) -> Result<()> {
         let reset_twap_price_accounts = accounts::ResetTwap {
-            admin: self.client.payer(),
+            admin: self.client.payer_pubkey(),
             oracle_prices: self.oracle_prices_acc,
             configuration: self.configuration_acc,
             oracle_twaps: self.oracle_twaps_acc,
@@ -759,30 +772,31 @@ where
 
         let request = self.client.tx_builder();
 
-        let tx = request
-            .add_anchor_ix(
-                &self.program_id,
-                reset_twap_price_accounts,
-                instruction::ResetTwap {
-                    token: token.into(),
-                    feed_name: self.feed_name.clone(),
-                },
-            )
-            .build_with_budget_and_fee(&[])
-            .await?;
+        let tx_builder = request.add_anchor_ix(
+            &self.program_id,
+            reset_twap_price_accounts,
+            instruction::ResetTwap {
+                token: token.into(),
+                feed_name: self.feed_name.clone(),
+            },
+        );
 
-        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
-
-        match res {
-            Some(Ok(())) => info!(%signature, "TWAP reset successfully"),
-            Some(Err(err)) => {
-                error!(%signature, err = ?err, "TWAP reset failed");
-                bail!(err);
+        if self.multisig {
+            let fee = self
+                .client
+                .client
+                .get_recommended_micro_lamport_fee()
+                .await?;
+            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
+            if !std::io::stdout().is_terminal() {
+                println!("{}", tx_builder.to_base58());
+            } else {
+                self.print_base_64_explorer_url(&tx_builder.to_base64());
+                info!("{}", tx_builder.to_base58());
             }
-            None => {
-                error!(%signature, "Could not confirm TWAP reset transaction");
-                bail!("Could not confirm TWAP reset transaction");
-            }
+        } else {
+            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
+            self.send_transaction(tx).await?;
         }
 
         Ok(())
@@ -836,12 +850,9 @@ where
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn ix_set_admin_cached(
-        &mut self,
-        admin_cached: Pubkey,
-    ) -> Result<()> {
+    pub async fn ix_set_admin_cached(&mut self, admin_cached: Pubkey) -> Result<()> {
         let accounts = accounts::SetAdminCached {
-            admin: self.client.payer(),
+            admin: self.client.payer_pubkey(),
             configuration: self.configuration_acc,
         }
         .to_account_metas(None);
@@ -855,14 +866,19 @@ where
 
         let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
 
-        info!("here");
         if self.multisig {
-            let fee = self.client.client.get_recommended_micro_lamport_fee().await?;
+            let fee = self
+                .client
+                .client
+                .get_recommended_micro_lamport_fee()
+                .await?;
             let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
-            // TODO: Workout why tx simulation does not work - Error: Blob.encode[recentBlockhash] requires (length 32) Uint8Array as src
-            let latest_blockhash = self.client.client.get_latest_blockhash().await?;
-            info!("https://explorer.solana.com/tx/inspector?message={}", tx_builder.to_base64_with_blockhash(&latest_blockhash));
-            info!("{}", tx_builder.to_base58());
+            if !std::io::stdout().is_terminal() {
+                println!("{}", tx_builder.to_base58());
+            } else {
+                self.print_base_64_explorer_url(&tx_builder.to_base64());
+                info!("{}", tx_builder.to_base58());
+            }
         } else {
             let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
             self.send_transaction(tx).await?;
@@ -886,15 +902,20 @@ where
         let request = self.client.tx_builder();
 
         let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
-        
-        info!("here");
+
         if self.multisig {
-            let fee = self.client.client.get_recommended_micro_lamport_fee().await?;
+            let fee = self
+                .client
+                .client
+                .get_recommended_micro_lamport_fee()
+                .await?;
             let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
-            // TODO: Workout why tx simulation does not work - Error: Blob.encode[recentBlockhash] requires (length 32) Uint8Array as src
-            let latest_blockhash = self.client.client.get_latest_blockhash().await?;
-            info!("https://explorer.solana.com/tx/inspector?message={}", tx_builder.to_base64_with_blockhash(&latest_blockhash));
-            info!("{}", tx_builder.to_base58());
+            if !std::io::stdout().is_terminal() {
+                println!("{}", tx_builder.to_base58());
+            } else {
+                self.print_base_64_explorer_url(&tx_builder.to_base64());
+                info!("{}", tx_builder.to_base58());
+            }
         } else {
             let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
             self.send_transaction(tx).await?;
@@ -906,17 +927,29 @@ where
     async fn send_transaction(&self, tx: VersionedTransaction) -> Result<()> {
         let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
         match res {
-            Some(Ok(())) => info!(%signature, "TWAP reset successfully"),
+            Some(Ok(())) => info!(%signature, "Transaction successfull"),
             Some(Err(err)) => {
-                error!(%signature, err = ?err, "TWAP reset failed");
+                error!(%signature, err = ?err, "Transaction failed");
                 bail!(err);
             }
             None => {
-                error!(%signature, "Could not confirm TWAP reset transaction");
-                bail!("Could not confirm TWAP reset transaction");
+                error!(%signature, "Could not confirm transaction");
+                bail!("Could not confirm transaction");
             }
         }
         Ok(())
+    }
+
+    fn print_base_64_explorer_url(&self, base64_message: &str) {
+        let base_url = if self.is_localnet {
+            BASE_URL_LOCALNET
+        } else {
+            BASE_URL_MAINNET
+        };
+        let url_b64_encoded = Serializer::new(base_url.to_string())
+            .append_pair("message", base64_message)
+            .finish();
+        info!("{}", url_b64_encoded);
     }
 
     async fn ix_refresh_price_list(&self, tokens: &[u16]) -> Result<Signature> {
