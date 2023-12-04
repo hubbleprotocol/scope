@@ -307,6 +307,8 @@ mod test {
     #[test_case(100, 0, 6, 3, 100, 3)]
     #[test_case(1, 0, 0, 6, 1000000, 0)]
     #[test_case(1, 0, 6, 0, 1, 6)]
+    #[test_case(1, 6, 0, 6, 1, 0)]
+    #[test_case(99, 8, 0, 6, 99, 2)]
     fn test_price_lamport_to_token_x_per_share(
         value: u64,
         exp: u64,
