@@ -693,5 +693,18 @@
     "oracle_mapping": "8EzbUfvcRT1Q6RL462ekGkgqbxsPmwC5FMLQZhSPMjJ3",
     "oracle_type": "RaydiumAmmV3BtoA",
     "max_age": 100
+  },
+  "146": {
+    "label": "Orca JTO/USDC",
+    "oracle_mapping": "93MjUKNKxazKmgS3GBX2Gj2BttEjJUyi7NYeyDHdHSc2 ",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "147": {
+    "label": "TWAP Orca JTO/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 146,
+    "max_age": 120
   }
 }
