@@ -669,5 +669,29 @@
     "oracle_mapping": "2G8xgnQjAJnLQBX2nVh42TWqPrMmVm3q5aPJAkArEmFe",
     "oracle_type": "KTokenToTokenB",
     "max_age": 650
+  },
+  "142": {
+    "label": "Orca SOL/USDC",
+    "oracle_mapping": "7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "max_age": 100
+  },
+  "143": {
+    "label": "Orca JITOSOL/USDC",
+    "oracle_mapping": "GgAqL1Lfs3zYZK6Gea9Bey5jmPbK8c4dmBbe5gPeYQEz",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "max_age": 100
+  },
+  "144": {
+    "label": "Raydium SOL/USDC",
+    "oracle_mapping": "2QdhepnKRTLjjSqPL1PtKNwqrUkoLee5Gqs8bvZhRdMv",
+    "oracle_type": "RaydiumAmmV3AtoB",
+    "max_age": 100
+  },
+  "145": {
+    "label": "Raydium MSOL/SOL",
+    "oracle_mapping": "8EzbUfvcRT1Q6RL462ekGkgqbxsPmwC5FMLQZhSPMjJ3",
+    "oracle_type": "RaydiumAmmV3BtoA",
+    "max_age": 100
   }
 }
