@@ -29,8 +29,8 @@ struct Args {
     cluster: Cluster,
 
     /// Account keypair to pay for the transactions
-    #[clap(long, env, parse(from_os_str))]
-    keypair: PathBuf,
+    #[clap(long, env, parse(from_os_str), group = "payer")]
+    keypair: Option<PathBuf>,
 
     /// Program Id
     #[clap(long, env, parse(try_from_str))]
@@ -39,6 +39,10 @@ struct Args {
     /// "Price feed" unique name to work with
     #[clap(long, env)]
     price_feed: String,
+
+    /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
+    #[clap(long, env, parse(try_from_str), group = "payer")]
+    multisig: Option<Pubkey>,
 
     /// Set flag to activate json log output
     #[clap(long, env = "JSON_LOGS")]
@@ -139,6 +143,20 @@ enum Actions {
         #[clap(long, env)]
         token: u16,
     },
+
+    /// Sets the admin cached for the config
+    /// This requires admin keypair
+    #[clap()]
+    SetAdminCached {
+        /// The pubkey of the admin_cached
+        #[clap(long, env, parse(try_from_str))]
+        admin_cached: Pubkey,
+    },
+
+    /// Approves the admin cached for the config
+    /// This requires adminc_cached keypair
+    #[clap()]
+    ApproveAdminCached {},
 }
 
 #[tokio::main]
@@ -159,7 +177,18 @@ async fn main() -> Result<()> {
     }
 
     // Read keypair to sign transactions
-    let payer = read_keypair_file(args.keypair).expect("Keypair file not found or invalid");
+    let payer = args
+        .keypair
+        .as_ref()
+        .map(|path| read_keypair_file(path).expect("Keypair file not found or invalid"));
+
+    let payer_pubkey = if payer.is_some() {
+        Some(payer.as_ref().unwrap().pubkey())
+    } else if args.multisig.is_some() {
+        Some(args.multisig.unwrap())
+    } else {
+        None
+    };
 
     let commitment = if let Actions::Crank { .. } = args.action {
         // For crank we don't want to wait for proper confirmation of the refresh transaction
@@ -169,13 +198,29 @@ async fn main() -> Result<()> {
     };
 
     let rpc_client = RpcClient::new_with_commitment(args.cluster.url().to_string(), commitment);
+    let is_localnet = args.cluster == Cluster::Localnet;
     // TODO: use lookup tables
-    let client = OrbitLink::new(rpc_client, payer, None, commitment);
+    let client = OrbitLink::new(rpc_client, payer, None, commitment, payer_pubkey);
 
     if let Actions::Init { mapping } = args.action {
-        init(client, &args.program_id, &args.price_feed, &mapping).await
+        init(
+            client,
+            &args.program_id,
+            &args.price_feed,
+            &mapping,
+            args.multisig.is_some(),
+            is_localnet,
+        )
+        .await
     } else {
-        let mut scope = ScopeClient::new(client, args.program_id, &args.price_feed).await?;
+        let mut scope = ScopeClient::new(
+            client,
+            args.program_id,
+            &args.price_feed,
+            args.multisig.is_some(),
+            is_localnet,
+        )
+        .await?;
 
         match args.action {
             Actions::Download { mapping } => download(&mut scope, &mapping).await,
@@ -210,6 +255,10 @@ async fn main() -> Result<()> {
             }
             Actions::GetPubkeys { mapping } => get_pubkeys(&mut scope, &mapping).await,
             Actions::ResetTwap { token } => reset_twap(&scope, token).await,
+            Actions::SetAdminCached { admin_cached } => {
+                set_admin_cached(&mut scope, admin_cached).await
+            }
+            Actions::ApproveAdminCached {} => approve_admin_cached(&mut scope).await,
         }
     }
 }
@@ -219,8 +268,12 @@ async fn init<T: AsyncClient, S: Signer>(
     program_id: &Pubkey,
     price_feed: &str,
     mapping_op: &Option<impl AsRef<Path>>,
+    multisig: bool,
+    is_localnet: bool,
 ) -> Result<()> {
-    let mut scope = ScopeClient::new_init_program(client, program_id, price_feed).await?;
+    let mut scope =
+        ScopeClient::new_init_program(client, program_id, price_feed, multisig, is_localnet)
+            .await?;
 
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
@@ -380,4 +433,17 @@ async fn reset_twap<T: AsyncClient, S: Signer>(
     token: u16,
 ) -> Result<()> {
     scope.reset_twap_price(token).await
+}
+
+async fn set_admin_cached<T: AsyncClient, S: Signer>(
+    scope: &mut ScopeClient<T, S>,
+    admin_cached: Pubkey,
+) -> Result<()> {
+    scope.ix_set_admin_cached(admin_cached).await
+}
+
+async fn approve_admin_cached<T: AsyncClient, S: Signer>(
+    scope: &mut ScopeClient<T, S>,
+) -> Result<()> {
+    scope.ix_approve_admin_cached().await
 }

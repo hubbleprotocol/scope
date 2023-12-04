@@ -138,6 +138,19 @@ where
             .await
     }
 
+    pub fn add_budget_ix(mut self) -> Self {
+        let mut instructions = Vec::with_capacity(self.instructions.len() + 1);
+        if let Some(ix_budget) = self.get_budget_ix() {
+            instructions.push(ix_budget);
+        }
+
+        instructions.extend(self.instructions);
+
+        self.instructions = instructions;
+
+        self
+    }
+
     pub async fn build_with_budget_and_fee(
         self,
         extra_signers: &[&dyn Signer],
@@ -164,12 +177,32 @@ where
             .await
     }
 
+    pub fn add_budget_and_fee_ix(mut self, fee: u64) -> Self {
+        let mut instructions = Vec::with_capacity(self.instructions.len() + 2);
+
+        if let Some(ix_budget) = self.get_budget_ix() {
+            instructions.push(ix_budget);
+        }
+
+        if fee > 0 {
+            instructions.push(ComputeBudgetInstruction::set_compute_unit_price(fee));
+        }
+
+        instructions.extend(self.instructions);
+
+        self.instructions = instructions;
+
+        self
+    }
+
     /// Build a raw message from the known instructions
     ///
     /// The message is not signed, and the blockhash is not set allowing future signing by a multisig.
     /// Note: This is not compatible with versioned transactions yet and does not include lookup tables.
     pub fn build_raw_msg(&self) -> Vec<u8> {
-        let msg = Message::new(&self.instructions, Some(&self.link.payer.pubkey()));
+        let payer_pubkey = self.link.payer_pubkey();
+
+        let msg = Message::new(&self.instructions, Some(&payer_pubkey));
         msg.serialize()
     }
 

@@ -1,8 +1,9 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use solana_program::{
-    instruction::Instruction, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
+    instruction::Instruction, pubkey::Pubkey, sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID,
 };
-use solana_sdk::signature::Signer;
+use solana_program_test::BanksClientError;
+use solana_sdk::signature::{Keypair, Signer};
 
 use crate::common::{
     types,
@@ -61,4 +62,51 @@ pub async fn refresh_price(
         data: args.data(),
     };
     ctx.send_transaction(&[ix]).await.unwrap();
+}
+
+pub async fn set_admin_cached(
+    ctx: &mut TestContext,
+    feed: &types::ScopeFeedDefinition,
+    admin_cached: &Pubkey,
+) -> Result<(), BanksClientError> {
+    let accounts = scope::accounts::SetAdminCached {
+        admin: ctx.admin.pubkey(),
+        configuration: feed.conf,
+    }
+    .to_account_metas(None);
+
+    let args = scope::instruction::SetAdminCached {
+        new_admin: admin_cached.clone(),
+        feed_name: feed.feed_name.clone(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts: accounts.to_account_metas(None),
+        data: args.data(),
+    };
+    ctx.send_transaction(&[ix]).await
+}
+
+pub async fn approve_admin_cached(
+    ctx: &mut TestContext,
+    feed: &types::ScopeFeedDefinition,
+    admin_cached: &Keypair,
+) -> Result<(), BanksClientError> {
+    let accounts = scope::accounts::ApproveAdminCached {
+        admin_cached: admin_cached.pubkey(),
+        configuration: feed.conf,
+    }
+    .to_account_metas(None);
+
+    let args = scope::instruction::ApproveAdminCached {
+        feed_name: feed.feed_name.clone(),
+    };
+
+    let ix = Instruction {
+        program_id: scope::id(),
+        accounts: accounts.to_account_metas(None),
+        data: args.data(),
+    };
+    ctx.send_transaction_with_payer(&[ix], admin_cached).await
 }
