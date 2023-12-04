@@ -91,11 +91,9 @@ mod utils {
         } else if last_sample_delta < ema_period_s / 120 {
             Err(ScopeError::TwapSampleTooFrequent)
         } else {
-            // For rounding purposes we add half of denominator to the nominator
-            let half_sample_delta = last_sample_delta / 2;
-            let n = (ema_period_s + half_sample_delta) / last_sample_delta;
+            let n = Decimal::from(ema_period_s) / last_sample_delta;
 
-            let adjusted_denom = n + 1;
+            let adjusted_denom = n + Decimal::one();
 
             Ok(Decimal::from(2) / adjusted_denom)
         }
@@ -226,6 +224,7 @@ mod tests_smoothing_factor {
     #[test_case(90, 60*60, 2.0/41.0)]
     #[test_case(120, 60*60, 2.0/31.0)]
     #[test_case(600, 60*60, 2.0/7.0)]
+    #[test_case(40*60, 60*60, 2.0/2.5)]
     fn test_get_adjusted_smoothing_factor(
         delta_ts: u64,
         ema_period_s: u64,
@@ -237,7 +236,7 @@ mod tests_smoothing_factor {
         assert_fuzzy_eq!(
             smoothing_factor.to_scaled_val::<u128>().unwrap(),
             expected_scaled,
-            expected_scaled / 1000000000
+            expected_scaled / 10000000000000
         );
     }
 }
