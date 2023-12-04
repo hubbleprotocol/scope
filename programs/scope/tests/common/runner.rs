@@ -143,6 +143,12 @@ impl TestContext {
         self.set_account(pubkey, data, &T::owner());
     }
 
+    pub async fn create_zeroed_account(&mut self, pubkey: &Pubkey, size: usize, owner: &Pubkey) {
+        let mut account = AccountSharedData::new(u64::MAX / 2, size, owner);
+        account.set_data(vec![0; size]);
+        self.context.set_account(pubkey, &account);
+    }
+
     pub async fn clone_account(&mut self, previous_address: &Pubkey, new_address: &Pubkey) {
         let account_to_clone = self
             .context

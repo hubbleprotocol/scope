@@ -10,7 +10,11 @@ pub struct ResetTwap<'info> {
 
     #[account()]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
-    #[account(seeds = [b"conf", feed_name.as_bytes()], bump, has_one = admin)]
+    #[account(seeds = [b"conf", feed_name.as_bytes()], bump,
+                has_one = admin,
+                has_one = oracle_prices,
+                has_one = oracle_twaps,
+            )]
     pub configuration: AccountLoader<'info, crate::Configuration>,
     #[account(mut, has_one = oracle_prices)]
     pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
