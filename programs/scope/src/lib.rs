@@ -108,16 +108,10 @@ pub mod scope {
         new_admin: Pubkey,
         feed_name: String,
     ) -> Result<()> {
-        msg!(
-            "setting admin_cached to {} feed_name {}",
-            new_admin,
-            feed_name
-        );
         handler_set_admin_cached::process(ctx, new_admin, feed_name)
     }
 
     pub fn approve_admin_cached(ctx: Context<ApproveAdminCached>, feed_name: String) -> Result<()> {
-        msg!("setting admin to admin_cached for feed_name {}", feed_name);
         handler_approve_admin_cached::process(ctx, feed_name)
     }
 }

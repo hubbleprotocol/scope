@@ -11,15 +11,16 @@ pub struct ApproveAdminCached<'info> {
     pub configuration: AccountLoader<'info, crate::Configuration>,
 }
 
-pub fn process(ctx: Context<ApproveAdminCached>, _: String) -> Result<()> {
+pub fn process(ctx: Context<ApproveAdminCached>, feed_name: String) -> Result<()> {
     check_context(&ctx)?;
 
     let configuration = &mut ctx.accounts.configuration.load_mut()?;
 
     msg!(
-        "old admin {} new admin {}",
+        "old admin {} new admin {}, feed_name {}",
         configuration.admin,
-        configuration.admin_cached
+        configuration.admin_cached,
+        feed_name
     );
 
     configuration.admin = configuration.admin_cached;
