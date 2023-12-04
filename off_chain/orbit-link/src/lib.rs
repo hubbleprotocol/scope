@@ -155,7 +155,7 @@ where
             .client
             .get_program_accounts_with_size_and_discriminator(
                 &Acc::owner(),
-                size as u64,
+                size,
                 async_client::ClientDiscriminator::Byte(Acc::DISCRIMINATOR[0]),
             )
             .await?;
