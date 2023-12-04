@@ -53,9 +53,9 @@ pub enum OracleType {
     PythEMA = 7,
     /// MSOL Stake Pool token
     MsolStake = 8,
-    /// Number of lamports of token A for 1 lamport of kToken
+    /// Number of token A for 1 kToken
     KTokenToTokenA = 9,
-    /// Number of lamports of token B for 1 lamport of kToken
+    /// Number of token B for 1 kToken
     KTokenToTokenB = 10,
     /// Jupiter's perpetual LP tokens
     JupiterLpFetch = 11,
