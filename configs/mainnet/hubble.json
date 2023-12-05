@@ -696,7 +696,7 @@
   },
   "146": {
     "label": "Orca JTO/USDC",
-    "oracle_mapping": "93MjUKNKxazKmgS3GBX2Gj2BttEjJUyi7NYeyDHdHSc2 ",
+    "oracle_mapping": "93MjUKNKxazKmgS3GBX2Gj2BttEjJUyi7NYeyDHdHSc2",
     "oracle_type": "OrcaWhirlpoolAtoB",
     "twap_enabled": true,
     "max_age": 100
