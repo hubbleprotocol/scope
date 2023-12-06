@@ -14,3 +14,4 @@ keys/**/*.*
 !keys/localnet/owner.json
 .vscode/
 CLUSTER
+.cargo
