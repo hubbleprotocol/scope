@@ -695,14 +695,14 @@
     "max_age": 100
   },
   "146": {
-    "label": "Orca JTO/USDC",
-    "oracle_mapping": "93MjUKNKxazKmgS3GBX2Gj2BttEjJUyi7NYeyDHdHSc2",
+    "label": "Orca SHDW/jitoSOL",
+    "oracle_mapping": "HJ9xK7sT9ujrAxBbsd2BMaS6c6SF9KqUsLUtu3h7frJe",
     "oracle_type": "OrcaWhirlpoolAtoB",
     "twap_enabled": true,
     "max_age": 100
   },
   "147": {
-    "label": "TWAP Orca JTO/USDC",
+    "label": "TWAP Orca SHDW/jitoSOL",
     "oracle_type": "ScopeTwap",
     "twap_source": 146,
     "max_age": 120
