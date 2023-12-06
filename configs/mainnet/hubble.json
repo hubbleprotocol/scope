@@ -705,7 +705,7 @@
   "149": {
     "label": "TWAP Orca SHDW/jitoSOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 146,
+    "twap_source": 148,
     "max_age": 120
   }
 }
