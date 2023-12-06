@@ -7093,7 +7093,7 @@ dependencies = [
 [[package]]
 name = "yvaults"
 version = "0.1.0"
-source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git?branch=fix-overflow-scope-chain#ac5c2afb317a3c0a5392eabd1a457276571c371b"
+source = "git+ssh://git@github.com/hubbleprotocol/yvaults.git#1096f49c5c9230fcf91d07ce9c5bc52411e88c1b"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
