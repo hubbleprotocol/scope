@@ -706,5 +706,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 146,
     "max_age": 120
+  },
+  "148": {
+    "label": "Orca SHDW/jitoSOL",
+    "oracle_mapping": "HJ9xK7sT9ujrAxBbsd2BMaS6c6SF9KqUsLUtu3h7frJe",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "149": {
+    "label": "TWAP Orca SHDW/jitoSOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 148,
+    "max_age": 120
   }
 }
