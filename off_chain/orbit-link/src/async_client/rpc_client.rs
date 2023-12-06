@@ -1,5 +1,8 @@
 use async_trait::async_trait;
+use solana_account_decoder::UiAccountEncoding;
 use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig};
+use solana_client::rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType};
 
 use super::*;
 use crate::Result;
@@ -58,6 +61,30 @@ impl AsyncClient for RpcClient {
 
     async fn get_multiple_accounts(&self, pubkeys: &[Pubkey]) -> Result<Vec<Option<Account>>> {
         <RpcClient>::get_multiple_accounts(self, pubkeys)
+            .await
+            .map_err(Into::into)
+    }
+
+    async fn get_program_accounts_with_size_and_discriminator(
+        &self,
+        program_id: &Pubkey,
+        size: u64,
+        discriminator: ClientDiscriminator,
+    ) -> Result<Vec<(Pubkey, Account)>> {
+        let memcmp = RpcFilterType::Memcmp(Memcmp::new(
+            0,
+            MemcmpEncodedBytes::Bytes(discriminator.to_vec()),
+        ));
+        let config = RpcProgramAccountsConfig {
+            filters: Some(vec![RpcFilterType::DataSize(size), memcmp]),
+            account_config: RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::Base64Zstd),
+                ..RpcAccountInfoConfig::default()
+            },
+            ..RpcProgramAccountsConfig::default()
+        };
+
+        <RpcClient>::get_program_accounts_with_config(self, program_id, config)
             .await
             .map_err(Into::into)
     }
