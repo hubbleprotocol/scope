@@ -44,7 +44,7 @@ yvaults = { git = "ssh://git@github.com/hubbleprotocol/yvaults.git", features = 
     "no-entrypoint",
     "cpi",
     "mainnet",
-], optional = true }
+], branch = "fix-overflow-scope-chain", optional = true }
 # Uncomment the line below if you do not have access to the yvaults repo
 #yvaults = { path = "../yvaults_stub", package = "yvaults_stub", optional = true }
 sha2 = "0.10.0"
