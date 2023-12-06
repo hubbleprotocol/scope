@@ -298,6 +298,9 @@ fn new_global_config() -> GlobalConfig {
         treasury_fee_vaults: vaults,
         block_local_admin: 0,
         min_performance_fee_bps: 0,
-        _padding: [0; 2042],
+        min_swap_uneven_slippage_tolerance_bps: 0,
+        min_reference_price_slippage_tolerance_bps: 0,
+        actions_after_rebalance_delay_seconds: 0,
+        _padding: [0; 2039],
     }
 }
