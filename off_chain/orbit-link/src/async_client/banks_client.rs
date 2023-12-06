@@ -138,6 +138,15 @@ impl AsyncClient for Mutex<BanksClient> {
         Ok(accounts)
     }
 
+    async fn get_program_accounts_with_size_and_discriminator(
+        &self,
+        program_id: &Pubkey,
+        size: u64,
+        discriminator: ClientDiscriminator,
+    ) -> Result<Vec<(Pubkey, Account)>> {
+        unimplemented!("get_program_accounts_with_size_and_discriminator for BanksClient")
+    }
+
     async fn get_slot_with_commitment(&self, _commitment: CommitmentConfig) -> Result<Slot> {
         let mut bank = self.lock().await;
         bank.get_root_slot().await.map_err(Into::into)
