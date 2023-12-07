@@ -729,6 +729,13 @@
     "label": "JTO/8DR...Hdu kJTO-JITOSOL Orca",
     "oracle_mapping": "8DRToyNBUTR4MxqkKAP49s9z1JhotQWy3rMQKEw1HHdu",
     "oracle_type": "KTokenToTokenA",
+    "twap_enabled": true,
     "max_age": 150
+  },
+  "152": {
+    "label": "TWAP JTO/8DR...Hdu kJTO-JITOSOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 151,
+    "max_age": 180
   }
 }
