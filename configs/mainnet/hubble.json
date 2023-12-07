@@ -695,16 +695,15 @@
     "max_age": 100
   },
   "146": {
-    "label": "Orca JTO/USDC",
-    "oracle_mapping": "93MjUKNKxazKmgS3GBX2Gj2BttEjJUyi7NYeyDHdHSc2",
-    "oracle_type": "OrcaWhirlpoolAtoB",
-    "twap_enabled": true,
+    "label": "JTO/USD",
+    "oracle_mapping": "D8UUgr8a3aR3yUeHLu7v8FWK7E8Y5sSU7qrYBXUJXBQ5",
+    "oracle_type": "Pyth",
     "max_age": 100
   },
   "147": {
-    "label": "TWAP Orca JTO/USDC",
-    "oracle_type": "ScopeTwap",
-    "twap_source": 146,
+    "label": "EMA JTO/USD",
+    "oracle_type": "PythEMA",
+    "oracle_mapping": "D8UUgr8a3aR3yUeHLu7v8FWK7E8Y5sSU7qrYBXUJXBQ5",
     "max_age": 120
   },
   "148": {
