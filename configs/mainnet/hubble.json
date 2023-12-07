@@ -695,14 +695,16 @@
     "max_age": 100
   },
   "146": {
-    "label": "JTO/USDC",
+    "label": "JTO/USD",
     "oracle_mapping": "D8UUgr8a3aR3yUeHLu7v8FWK7E8Y5sSU7qrYBXUJXBQ5",
-    "oracle_type": "Pyth"
+    "oracle_type": "Pyth",
+    "max_age": 100
   },
   "147": {
-    "label": "EMA JTO/USDC",
+    "label": "EMA JTO/USD",
     "oracle_type": "PythEMA",
-    "oracle_mapping": "D8UUgr8a3aR3yUeHLu7v8FWK7E8Y5sSU7qrYBXUJXBQ5"
+    "oracle_mapping": "D8UUgr8a3aR3yUeHLu7v8FWK7E8Y5sSU7qrYBXUJXBQ5",
+    "max_age": 120
   },
   "148": {
     "label": "Orca SHDW/jitoSOL",
