@@ -725,5 +725,23 @@
     "oracle_mapping": "GhNJyhF7YpVH4FE8iMXo71rUU1uZkJgaTTPLu1mkkGaY",
     "oracle_type": "KTokenToTokenA",
     "max_age": 150
+  },
+  "151": {
+    "label": "JTO/8DR...Hdu kJTO-JITOSOL Orca",
+    "oracle_mapping": "8DRToyNBUTR4MxqkKAP49s9z1JhotQWy3rMQKEw1HHdu",
+    "oracle_type": "KTokenToTokenA",
+    "max_age": 150
+  },
+  "152": {
+    "label": "JTO/ASt..12U kJTO-USDC Orca",
+    "oracle_mapping": "ASthgHPi327Ub7DAhVGjWr7Y1v3M2UiReGRZyh6DG12U",
+    "oracle_type": "KTokenToTokenA",
+    "max_age": 150
+  },
+  "153": {
+    "label": "JTO/5ZY..fvf kSOL-JTO Raydium",
+    "oracle_mapping": "5ZY5beRceadUCqgHskc59EaS7mgDJk51ak3yw5Kaxfvf",
+    "oracle_type": "KTokenToTokenB",
+    "max_age": 150
   }
 }
