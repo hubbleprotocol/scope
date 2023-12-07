@@ -725,5 +725,11 @@
     "oracle_mapping": "GhNJyhF7YpVH4FE8iMXo71rUU1uZkJgaTTPLu1mkkGaY",
     "oracle_type": "KTokenToTokenA",
     "max_age": 150
+  },
+  "151": {
+    "label": "JTO/8DR...Hdu kJTO-JITOSOL Orca",
+    "oracle_mapping": "8DRToyNBUTR4MxqkKAP49s9z1JhotQWy3rMQKEw1HHdu",
+    "oracle_type": "KTokenToTokenA",
+    "max_age": 150
   }
 }

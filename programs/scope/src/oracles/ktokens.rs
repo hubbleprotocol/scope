@@ -328,13 +328,7 @@ pub(super) mod price_utils {
 
     use super::*;
 
-    const TARGET_EXPONENT: u64 = 12;
-
     // Helper
-    fn sub(a: u64, b: u64) -> Result<u32> {
-        let res = a.checked_sub(b).ok_or(ScopeError::IntegerOverflow)?;
-        u32::try_from(res).map_err(|_e| error!(ScopeError::IntegerOverflow))
-    }
 
     fn pow(base: u64, exp: u64) -> U128 {
         U128::from(base).pow(U128::from(exp))
@@ -361,27 +355,25 @@ pub(super) mod price_utils {
         a: &yvaults::utils::price::Price,
         b: &yvaults::utils::price::Price,
     ) -> Result<yvaults::utils::price::Price> {
-        let exp = TARGET_EXPONENT;
-        let exp = u64::max(exp, a.exp);
-        let exp = u64::max(exp, b.exp);
+        let a = crate::Price {
+            value: a.value,
+            exp: a.exp,
+        };
+        let b = crate::Price {
+            value: b.value,
+            exp: b.exp,
+        };
 
-        let extra_factor_a = 10_u64.pow(sub(exp, a.exp)?);
-        let extra_factor_b = 10_u64.pow(sub(exp, b.exp)?);
+        let price_a_dec = Decimal::from(a);
+        let price_b_dec = Decimal::from(b);
 
-        let px_a = U128::from(a.value.checked_mul(extra_factor_a).unwrap());
-        let px_b = U128::from(b.value.checked_mul(extra_factor_b).unwrap());
+        let price_a_to_b_dec = price_a_dec / price_b_dec;
 
-        let final_factor = pow(10, exp);
-
-        let price_a_to_b = px_a
-            .checked_mul(final_factor)
-            .unwrap()
-            .checked_div(px_b)
-            .unwrap();
+        let price_a_to_b: crate::Price = price_a_to_b_dec.into();
 
         Ok(yvaults::utils::price::Price {
-            value: price_a_to_b.as_u64(),
-            exp,
+            value: price_a_to_b.value,
+            exp: price_a_to_b.exp,
         })
     }
 
