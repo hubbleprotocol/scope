@@ -13,7 +13,7 @@ use anchor_lang::prelude::*;
 use decimal_wad::{decimal::Decimal, error::DecimalError};
 use handlers::*;
 pub use num_enum;
-use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
+use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
 pub use whirlpool;
 #[cfg(feature = "yvaults")]
@@ -158,6 +158,19 @@ impl Default for DatedPrice {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
+#[repr(usize)]
+pub enum EmaType {
+    Ema1h,
+}
+
+/// The sample tracker is a 64 bit number where each bit represents a point in time.
+/// We only track one point per time slot. The time slot being the ema_period / 64.
+/// The bit is set to 1 if there is a sample at that point in time slot.
+#[derive(bytemuck::Zeroable, bytemuck::Pod, Debug, Eq, PartialEq, Clone, Copy, Default)]
+#[repr(transparent)]
+pub struct EmaTracker(pub u64);
+
 #[zero_copy]
 #[derive(Debug, Eq, PartialEq)]
 pub struct EmaTwap {
@@ -165,8 +178,10 @@ pub struct EmaTwap {
     pub last_update_unix_timestamp: u64,
 
     pub current_ema_1h: u128,
+    pub updates_tracker_1h: EmaTracker,
+    pub padding_0: u64,
 
-    pub padding: [u128; 40],
+    pub padding_1: [u128; 39],
 }
 
 impl Default for EmaTwap {
@@ -175,7 +190,9 @@ impl Default for EmaTwap {
             current_ema_1h: 0,
             last_update_slot: 0,
             last_update_unix_timestamp: 0,
-            padding: [0_u128; 40],
+            updates_tracker_1h: EmaTracker::default(),
+            padding_0: 0,
+            padding_1: [0_u128; 39],
         }
     }
 }
@@ -345,6 +362,9 @@ pub enum ScopeError {
 
     #[msg("Unexpected JLP configuration")]
     UnexpectedJlpConfiguration,
+
+    #[msg("Not enough price samples in period to compute TWAP")]
+    TwapNotEnoughSamplesInPeriod,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
