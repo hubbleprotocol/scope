@@ -247,7 +247,7 @@ impl EmaTracker {
                 return;
             }
 
-            let first_point_to_clean = last_update_point + 1; // +1 because we want to reset the point after the last one we updated
+            let first_point_to_clean = (last_update_point + 1) % Self::NB_POINTS; // +1 because we want to reset the point after the last one we updated
             let last_point_to_clean = current_point;
 
             match first_point_to_clean.cmp(&last_point_to_clean) {
@@ -256,11 +256,11 @@ impl EmaTracker {
                 }
                 Ordering::Less => {
                     // Reset all points between the first and the last one
-                    sample_tracker.set_bits(first_point_to_clean..last_point_to_clean, 0);
+                    sample_tracker.set_bits(first_point_to_clean..=last_point_to_clean, 0);
                 }
                 Ordering::Greater => {
                     sample_tracker.set_bits(first_point_to_clean..Self::NB_POINTS, 0);
-                    sample_tracker.set_bits(0..last_point_to_clean, 0);
+                    sample_tracker.set_bits(0..=last_point_to_clean, 0);
                 }
             }
         }
@@ -790,6 +790,7 @@ mod tests_samples_tracker {
     #[test_case(64, &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] => 11)]
     #[test_case(64, &[63, 68] => 2)]
     #[test_case(64, &[1, 2, 5, 64, 68, 124] => 3)]
+    #[test_case(64, &[0, 2, 5, 63, 66, 67] => 4)]
     #[test_case(64*60, &[60, 120, 240, 2400] => 4)]
     #[test_case(60*60, &[60, 120, 240, 2400] => 4)]
     #[test_case(60*60, &[60, 90, 120, 240, 245, 2400] => 4)]
