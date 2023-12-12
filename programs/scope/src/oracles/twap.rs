@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 
+use crate::ScopeError;
 use crate::ScopeError::PriceAccountNotExpected;
 use crate::{DatedPrice, OracleMappings, OracleTwaps, Price};
-use crate::{EmaTracker, ScopeError};
 use anchor_lang::prelude::*;
 use intbits::Bits;
 
@@ -138,12 +138,13 @@ mod utils {
                     .to_scaled_val()
                     .map_err(|_| ScopeError::IntegerOverflow)?;
             }
-
-            twap.updates_tracker_1h.update_tracker(
+            let mut tracker: EmaTracker = twap.updates_tracker_1h.into();
+            tracker.update_tracker(
                 EMA_1H_DURATION_SECONDS,
                 price_ts,
                 twap.last_update_unix_timestamp,
             );
+            twap.updates_tracker_1h = tracker.into();
             twap.last_update_slot = price_slot;
             twap.last_update_unix_timestamp = price_ts;
         }
@@ -154,11 +155,11 @@ mod utils {
         twap.current_ema_1h = Decimal::from(price).to_scaled_val().unwrap();
         twap.last_update_slot = price_slot;
         twap.last_update_unix_timestamp = price_ts;
-        twap.updates_tracker_1h = EmaTracker::default();
+        twap.updates_tracker_1h = 0;
     }
 
     pub(super) fn validate_ema(twap: &EmaTwap, current_ts: u64) -> ScopeResult<()> {
-        let mut tracker = twap.updates_tracker_1h;
+        let mut tracker: EmaTracker = twap.updates_tracker_1h.into();
         tracker.erase_old_samples(
             EMA_1H_DURATION_SECONDS,
             current_ts,
@@ -183,6 +184,25 @@ mod utils {
         }
 
         Ok(())
+    }
+}
+
+/// The sample tracker is a 64 bit number where each bit represents a point in time.
+/// We only track one point per time slot. The time slot being the ema_period / 64.
+/// The bit is set to 1 if there is a sample at that point in time slot.
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Default)]
+#[repr(transparent)]
+pub struct EmaTracker(u64);
+
+impl From<EmaTracker> for u64 {
+    fn from(tracker: EmaTracker) -> Self {
+        tracker.0
+    }
+}
+
+impl From<u64> for EmaTracker {
+    fn from(tracker: u64) -> Self {
+        Self(tracker)
     }
 }
 

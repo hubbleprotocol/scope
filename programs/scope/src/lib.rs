@@ -164,13 +164,6 @@ pub enum EmaType {
     Ema1h,
 }
 
-/// The sample tracker is a 64 bit number where each bit represents a point in time.
-/// We only track one point per time slot. The time slot being the ema_period / 64.
-/// The bit is set to 1 if there is a sample at that point in time slot.
-#[derive(bytemuck::Zeroable, bytemuck::Pod, Debug, Eq, PartialEq, Clone, Copy, Default)]
-#[repr(transparent)]
-pub struct EmaTracker(pub u64);
-
 #[zero_copy]
 #[derive(Debug, Eq, PartialEq)]
 pub struct EmaTwap {
@@ -178,7 +171,8 @@ pub struct EmaTwap {
     pub last_update_unix_timestamp: u64,
 
     pub current_ema_1h: u128,
-    pub updates_tracker_1h: EmaTracker,
+    /// The sample tracker is a 64 bit number where each bit represents a point in time.
+    pub updates_tracker_1h: u64,
     pub padding_0: u64,
 
     pub padding_1: [u128; 39],
@@ -190,7 +184,7 @@ impl Default for EmaTwap {
             current_ema_1h: 0,
             last_update_slot: 0,
             last_update_unix_timestamp: 0,
-            updates_tracker_1h: EmaTracker::default(),
+            updates_tracker_1h: 0,
             padding_0: 0,
             padding_1: [0_u128; 39],
         }
