@@ -13,7 +13,7 @@ use anchor_lang::prelude::*;
 use decimal_wad::{decimal::Decimal, error::DecimalError};
 use handlers::*;
 pub use num_enum;
-use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
+use num_enum::{IntoPrimitive, TryFromPrimitive, TryFromPrimitiveError};
 use program_id::PROGRAM_ID;
 pub use whirlpool;
 #[cfg(feature = "yvaults")]
@@ -158,6 +158,12 @@ impl Default for DatedPrice {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
+#[repr(usize)]
+pub enum EmaType {
+    Ema1h,
+}
+
 #[zero_copy]
 #[derive(Debug, Eq, PartialEq)]
 pub struct EmaTwap {
@@ -165,8 +171,11 @@ pub struct EmaTwap {
     pub last_update_unix_timestamp: u64,
 
     pub current_ema_1h: u128,
+    /// The sample tracker is a 64 bit number where each bit represents a point in time.
+    pub updates_tracker_1h: u64,
+    pub padding_0: u64,
 
-    pub padding: [u128; 40],
+    pub padding_1: [u128; 39],
 }
 
 impl Default for EmaTwap {
@@ -175,7 +184,9 @@ impl Default for EmaTwap {
             current_ema_1h: 0,
             last_update_slot: 0,
             last_update_unix_timestamp: 0,
-            padding: [0_u128; 40],
+            updates_tracker_1h: 0,
+            padding_0: 0,
+            padding_1: [0_u128; 39],
         }
     }
 }
@@ -345,6 +356,9 @@ pub enum ScopeError {
 
     #[msg("Unexpected JLP configuration")]
     UnexpectedJlpConfiguration,
+
+    #[msg("Not enough price samples in period to compute TWAP")]
+    TwapNotEnoughSamplesInPeriod,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
