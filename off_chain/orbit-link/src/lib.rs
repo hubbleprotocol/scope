@@ -67,12 +67,10 @@ where
     }
 
     pub fn payer_pubkey(&self) -> Pubkey {
-        if let Some(payer) = &self.payer {
-            payer.pubkey()
-        } else if let Some(payer_pubkey) = self.payer_pubkey {
-            payer_pubkey
-        } else {
-            Pubkey::default()
+        match (&self.payer, self.payer_pubkey) {
+            (Some(p), _) => p.pubkey(),
+            (_, Some(p)) => p,
+            _ => panic!(),
         }
     }
 

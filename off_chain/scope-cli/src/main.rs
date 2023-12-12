@@ -1,4 +1,5 @@
 use std::{
+    io::IsTerminal,
     ops::Neg,
     path::{Path, PathBuf},
     time::{Duration, Instant},
@@ -40,6 +41,7 @@ struct Args {
     #[clap(long, env)]
     price_feed: String,
 
+    /// Multisig authority
     /// If set returns a base58 encoded string instead of executing tx signing with provided keypair
     #[clap(long, env, parse(try_from_str), group = "payer")]
     multisig: Option<Pubkey>,
@@ -154,7 +156,7 @@ enum Actions {
     },
 
     /// Approves the admin cached for the config
-    /// This requires adminc_cached keypair
+    /// This requires admin_cached keypair
     #[clap()]
     ApproveAdminCached {},
 }
@@ -172,8 +174,9 @@ async fn main() -> Result<()> {
         } else {
             tracing_subscriber::fmt().compact().without_time().init();
         }
-
-        info!("Starting with args {:#?}", args);
+        if std::io::stdout().is_terminal() {
+            info!("Starting with args {:#?}", args);
+        }
     }
 
     // Read keypair to sign transactions
@@ -182,10 +185,10 @@ async fn main() -> Result<()> {
         .as_ref()
         .map(|path| read_keypair_file(path).expect("Keypair file not found or invalid"));
 
-    let payer_pubkey = if payer.is_some() {
-        Some(payer.as_ref().unwrap().pubkey())
-    } else if args.multisig.is_some() {
-        Some(args.multisig.unwrap())
+    let payer_pubkey = if let Some(payer) = payer.as_ref() {
+        Some(payer.pubkey())
+    } else if let Some(payer_pk) = args.multisig {
+        Some(payer_pk)
     } else {
         None
     };

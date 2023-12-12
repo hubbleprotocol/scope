@@ -138,19 +138,6 @@ where
             .await
     }
 
-    pub fn add_budget_ix(mut self) -> Self {
-        let mut instructions = Vec::with_capacity(self.instructions.len() + 1);
-        if let Some(ix_budget) = self.get_budget_ix() {
-            instructions.push(ix_budget);
-        }
-
-        instructions.extend(self.instructions);
-
-        self.instructions = instructions;
-
-        self
-    }
-
     pub async fn build_with_budget_and_fee(
         self,
         extra_signers: &[&dyn Signer],
@@ -175,24 +162,6 @@ where
         self.link
             .create_tx_with_extra_lookup_tables(&instructions, extra_signers, &self.lookup_tables)
             .await
-    }
-
-    pub fn add_budget_and_fee_ix(mut self, fee: u64) -> Self {
-        let mut instructions = Vec::with_capacity(self.instructions.len() + 2);
-
-        if let Some(ix_budget) = self.get_budget_ix() {
-            instructions.push(ix_budget);
-        }
-
-        if fee > 0 {
-            instructions.push(ComputeBudgetInstruction::set_compute_unit_price(fee));
-        }
-
-        instructions.extend(self.instructions);
-
-        self.instructions = instructions;
-
-        self
     }
 
     /// Build a raw message from the known instructions
