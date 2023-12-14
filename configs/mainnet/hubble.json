@@ -772,7 +772,7 @@
   "158": {
     "label": "TWAP Orca WIF/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 153,
+    "twap_source": 157,
     "max_age": 120
   }
 }
