@@ -737,5 +737,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 151,
     "max_age": 180
+  },
+  "153": {
+    "label": "Orca WIF/SOL",
+    "oracle_mapping": "6qgyDW4fHvpTAmfNZvPAuETEbVwRKFVAuuHfNzvEmPkY",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "154": {
+    "label": "TWAP Orca WIF/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 153,
+    "max_age": 120
   }
 }
