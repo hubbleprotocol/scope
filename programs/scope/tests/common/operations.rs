@@ -76,7 +76,7 @@ pub async fn set_admin_cached(
     .to_account_metas(None);
 
     let args = scope::instruction::SetAdminCached {
-        new_admin: admin_cached.clone(),
+        new_admin: *admin_cached,
         feed_name: feed.feed_name.clone(),
     };
 

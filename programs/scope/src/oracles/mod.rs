@@ -160,7 +160,7 @@ where
         OracleType::JupiterLpFetch => {
             jupiter_lp::get_price_no_recompute(base_account, clock, extra_accounts)
         }
-        OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index),
+        OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index, clock),
         OracleType::DeprecatedPlaceholder => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
