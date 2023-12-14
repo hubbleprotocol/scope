@@ -49,28 +49,36 @@ where
     T: async_client::AsyncClient,
     S: Signer,
 {
+    #[allow(clippy::result_large_err)]
     pub fn new(
         client: T,
         payer: Option<S>,
         lookup_tables: impl Into<Option<Vec<AddressLookupTableAccount>>>,
         commitment_config: CommitmentConfig,
         payer_pubkey: Option<Pubkey>,
-    ) -> Self {
+    ) -> Result<Self> {
         let lookup_tables: Option<Vec<AddressLookupTableAccount>> = lookup_tables.into();
-        OrbitLink {
+
+        if payer.is_none() && payer_pubkey.is_none() {
+            return Err(errors::ErrorKind::SignerError(SignerError::InvalidInput(
+                "No payer nor payer_pubkey provided".to_string(),
+            )));
+        }
+
+        Ok(OrbitLink {
             client,
             payer,
             payer_pubkey,
             lookup_tables: lookup_tables.unwrap_or_default(),
             commitment_config,
-        }
+        })
     }
 
     pub fn payer_pubkey(&self) -> Pubkey {
         match (&self.payer, self.payer_pubkey) {
             (Some(p), _) => p.pubkey(),
             (_, Some(p)) => p,
-            _ => panic!(),
+            _ => Pubkey::default(),
         }
     }
 

@@ -190,6 +190,7 @@ async fn main() -> Result<()> {
     } else if let Some(payer_pk) = args.multisig {
         Some(payer_pk)
     } else {
+        error!("Either keypair or multisig must be provided");
         None
     };
 
@@ -203,7 +204,7 @@ async fn main() -> Result<()> {
     let rpc_client = RpcClient::new_with_commitment(args.cluster.url().to_string(), commitment);
     let is_localnet = args.cluster == Cluster::Localnet;
     // TODO: use lookup tables
-    let client = OrbitLink::new(rpc_client, payer, None, commitment, payer_pubkey);
+    let client = OrbitLink::new(rpc_client, payer, None, commitment, payer_pubkey)?;
 
     if let Actions::Init { mapping } = args.action {
         init(
