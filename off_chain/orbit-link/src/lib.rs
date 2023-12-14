@@ -78,7 +78,7 @@ where
         match (&self.payer, self.payer_pubkey) {
             (Some(p), _) => p.pubkey(),
             (_, Some(p)) => p,
-            _ => Pubkey::default(),
+            _ => unreachable!("A payer or payer_pubkey should be provided"),
         }
     }
 
