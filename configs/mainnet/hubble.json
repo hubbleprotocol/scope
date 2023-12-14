@@ -737,5 +737,29 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 151,
     "max_age": 180
+  },
+  "153": {
+    "label": "JITOSOL/USD",
+    "oracle_mapping": "7yyaeuJ1GGtVBLT2z2xub5ZWYKaNhF28mj1RdV4VDFVk",
+    "oracle_type": "Pyth",
+    "max_age": 100
+  },
+  "154": {
+    "label": "EMA JITOSOL/USD",
+    "oracle_mapping": "7yyaeuJ1GGtVBLT2z2xub5ZWYKaNhF28mj1RdV4VDFVk",
+    "oracle_type": "PythEMA",
+    "max_age": 100
+  },
+  "155": {
+    "label": "LST/USD",
+    "oracle_mapping": "2H6gWKxJuoFjBS4REqNm4XRa7uVFf9n9yKEowpwh7LML",
+    "oracle_type": "Pyth",
+    "max_age": 100
+  },
+  "156": {
+    "label": "EMA LST/USD",
+    "oracle_mapping": "2H6gWKxJuoFjBS4REqNm4XRa7uVFf9n9yKEowpwh7LML",
+    "oracle_type": "PythEMA",
+    "max_age": 100
   }
 }
