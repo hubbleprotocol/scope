@@ -8,7 +8,8 @@
   "1": {
     "label": "ETH/USD",
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
-    "oracle_type": "Pyth"
+    "oracle_type": "Pyth",
+    "max_age": 100
   },
   "2": {
     "label": "BTC/USD",
