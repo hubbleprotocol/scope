@@ -19,6 +19,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use form_urlencoded::Serializer;
 use futures::future::join_all;
 use nohash_hasher::IntMap;
+use orbit_link::tx_builder::TxBuilder;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope::{
     accounts, instruction, Configuration, OracleMappings, OraclePrices, OracleTwaps,
@@ -692,23 +693,7 @@ where
             },
         );
 
-        if self.multisig {
-            let fee = self
-                .client
-                .client
-                .get_recommended_micro_lamport_fee()
-                .await?;
-            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
-            if !std::io::stdout().is_terminal() {
-                println!("{}", tx_builder.to_base58());
-            } else {
-                self.print_base_64_explorer_url(&tx_builder.to_base64());
-                info!("{}", tx_builder.to_base58());
-            }
-        } else {
-            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
-            self.send_transaction(tx).await?;
-        }
+        self.send_transaction(tx_builder).await?;
 
         Ok(())
     }
@@ -739,23 +724,7 @@ where
             },
         );
 
-        if self.multisig {
-            let fee = self
-                .client
-                .client
-                .get_recommended_micro_lamport_fee()
-                .await?;
-            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
-            if !std::io::stdout().is_terminal() {
-                println!("{}", tx_builder.to_base58());
-            } else {
-                self.print_base_64_explorer_url(&tx_builder.to_base64());
-                info!("{}", tx_builder.to_base58());
-            }
-        } else {
-            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
-            self.send_transaction(tx).await?;
-        }
+        self.send_transaction(tx_builder).await?;
 
         Ok(())
     }
@@ -781,23 +750,7 @@ where
             },
         );
 
-        if self.multisig {
-            let fee = self
-                .client
-                .client
-                .get_recommended_micro_lamport_fee()
-                .await?;
-            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
-            if !std::io::stdout().is_terminal() {
-                println!("{}", tx_builder.to_base58());
-            } else {
-                self.print_base_64_explorer_url(&tx_builder.to_base64());
-                info!("{}", tx_builder.to_base58());
-            }
-        } else {
-            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
-            self.send_transaction(tx).await?;
-        }
+        self.send_transaction(tx_builder).await?;
 
         Ok(())
     }
@@ -866,23 +819,7 @@ where
 
         let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
 
-        if self.multisig {
-            let fee = self
-                .client
-                .client
-                .get_recommended_micro_lamport_fee()
-                .await?;
-            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
-            if !std::io::stdout().is_terminal() {
-                println!("{}", tx_builder.to_base58());
-            } else {
-                self.print_base_64_explorer_url(&tx_builder.to_base64());
-                info!("{}", tx_builder.to_base58());
-            }
-        } else {
-            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
-            self.send_transaction(tx).await?;
-        }
+        self.send_transaction(tx_builder).await?;
 
         Ok(())
     }
@@ -903,40 +840,35 @@ where
 
         let tx_builder = request.add_anchor_ix(&self.program_id, accounts, args);
 
-        if self.multisig {
-            let fee = self
-                .client
-                .client
-                .get_recommended_micro_lamport_fee()
-                .await?;
-            let tx_builder = tx_builder.add_budget_and_fee_ix(fee);
-            if !std::io::stdout().is_terminal() {
-                println!("{}", tx_builder.to_base58());
-            } else {
-                self.print_base_64_explorer_url(&tx_builder.to_base64());
-                info!("{}", tx_builder.to_base58());
-            }
-        } else {
-            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
-            self.send_transaction(tx).await?;
-        }
+        self.send_transaction(tx_builder).await?;
 
         Ok(())
     }
 
-    async fn send_transaction(&self, tx: VersionedTransaction) -> Result<()> {
-        let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
-        match res {
-            Some(Ok(())) => info!(%signature, "Transaction successfull"),
-            Some(Err(err)) => {
-                error!(%signature, err = ?err, "Transaction failed");
-                bail!(err);
+    async fn send_transaction<'a>(&self, tx_builder: TxBuilder<'a, T, S>) -> Result<()> {
+        if self.multisig {
+            if !std::io::stdout().is_terminal() {
+                println!("{}", tx_builder.to_base58());
+            } else {
+                self.print_base_64_explorer_url(&tx_builder.to_base64());
+                info!("Base 58: {}", tx_builder.to_base58());
             }
-            None => {
-                error!(%signature, "Could not confirm transaction");
-                bail!("Could not confirm transaction");
+        } else {
+            let tx: VersionedTransaction = tx_builder.build_with_budget_and_fee(&[]).await?;
+            let (signature, res) = self.client.send_retry_and_confirm_transaction(tx).await?;
+            match res {
+                Some(Ok(())) => info!(%signature, "Transaction successfull"),
+                Some(Err(err)) => {
+                    error!(%signature, err = ?err, "Transaction failed");
+                    bail!(err);
+                }
+                None => {
+                    error!(%signature, "Could not confirm transaction");
+                    bail!("Could not confirm transaction");
+                }
             }
         }
+
         Ok(())
     }
 
