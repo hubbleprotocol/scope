@@ -232,16 +232,13 @@ where
         signers.extend_from_slice(extra_signers);
 
         Ok(VersionedTransaction::try_new(
-            VersionedMessage::V0(
-                v0::Message::try_compile(
-                    &payer.pubkey(),
-                    instructions,
-                    &self.lookup_tables,
-                    // TODO: cache blockhash
-                    self.client.get_latest_blockhash().await?,
-                )
-                .map_err(|e| ErrorKind::TransactionCompileError(e.to_string()))?,
-            ),
+            VersionedMessage::V0(v0::Message::try_compile(
+                &payer.pubkey(),
+                instructions,
+                &self.lookup_tables,
+                // TODO: cache blockhash
+                self.client.get_latest_blockhash().await?,
+            )?),
             &signers,
         )?)
     }
@@ -271,16 +268,13 @@ where
         lookup_tables.extend_from_slice(lookup_tables_extra);
 
         Ok(VersionedTransaction::try_new(
-            VersionedMessage::V0(
-                v0::Message::try_compile(
-                    &self.payer.as_ref().unwrap().pubkey(),
-                    instructions,
-                    &lookup_tables,
-                    // TODO: cache blockhash
-                    self.client.get_latest_blockhash().await?,
-                )
-                .map_err(|e| ErrorKind::TransactionCompileError(e.to_string()))?,
-            ),
+            VersionedMessage::V0(v0::Message::try_compile(
+                &self.payer.as_ref().unwrap().pubkey(),
+                instructions,
+                &lookup_tables,
+                // TODO: cache blockhash
+                self.client.get_latest_blockhash().await?,
+            )?),
             &signers,
         )?)
     }
