@@ -802,68 +802,55 @@
     "max_age": 120
   },
   "163": {
-    "label": "Orca BLOCK/SOL",
-    "oracle_mapping": "DpRTn6DsBMVMkW2s9DaT4EGHBFSXx6vs7gVpw7niFJLY",
-    "oracle_type": "OrcaWhirlpoolAtoB",
-    "twap_enabled": true,
-    "max_age": 100
-  },
-  "164": {
-    "label": "TWAP Orca BLOCK/SOL",
-    "oracle_type": "ScopeTwap",
-    "twap_source": 163,
-    "max_age": 120
-  },
-  "165": {
     "label": "Orca MEAN/USDC",
     "oracle_mapping": "xLeM685ZkAZYXDKwzfB9eyszw1oELAmzCn45amKscmh",
     "oracle_type": "OrcaWhirlpoolAtoB",
     "twap_enabled": true,
     "max_age": 100
   },
-  "166": {
+  "164": {
     "label": "TWAP Orca MEAN/USDC",
     "oracle_type": "ScopeTwap",
-    "twap_source": 165,
+    "twap_source": 163,
     "max_age": 120
   },
-  "167": {
+  "165": {
     "label": "Orca DFL/USDC",
     "oracle_mapping": "5eNSot4bzvf2YKhNVyBTzSnxFQPXruvCMFd1zsR6oXXu",
     "oracle_type": "OrcaWhirlpoolAtoB",
     "twap_enabled": true,
     "max_age": 100
   },
-  "168": {
+  "166": {
     "label": "TWAP Orca DFL/USDC",
     "oracle_type": "ScopeTwap",
-    "twap_source": 167,
+    "twap_source": 165,
     "max_age": 120
   },
-  "169": {
+  "167": {
     "label": "Orca GP/USDC",
     "oracle_mapping": "9vNKzrrHAjqjuTGLjCBo9Ai4edMYgP9dsG4tFZ2hF251",
     "oracle_type": "OrcaWhirlpoolAtoB",
     "twap_enabled": true,
     "max_age": 100
   },
-  "170": {
+  "168": {
     "label": "TWAP Orca GP/USDC",
     "oracle_type": "ScopeTwap",
-    "twap_source": 169,
+    "twap_source": 167,
     "max_age": 120
   },
-  "171": {
+  "169": {
     "label": "Orca GUAC/SOL",
     "oracle_mapping": "HrXPdUiPbzof3yPBb2wdB9ryhRSEe2hKhzpfpPMQbnRZ",
     "oracle_type": "OrcaWhirlpoolBtoA",
     "twap_enabled": true,
     "max_age": 100
   },
-  "172": {
+  "170": {
     "label": "TWAP Orca GUAC/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 171,
+    "twap_source": 169,
     "max_age": 120
   }
 }
