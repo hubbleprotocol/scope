@@ -1,5 +1,8 @@
 #![doc = include_str!("../Readme.md")]
 
+use std::sync::atomic::AtomicU64;
+use std::time::Instant;
+
 use anchor_client::{
     anchor_lang::{
         AccountDeserialize, AccountSerialize, AnchorDeserialize, Discriminator, Owner,
@@ -32,6 +35,20 @@ type Result<T> = std::result::Result<T, errors::ErrorKind>;
 /// Transaction result. `Ok` if the transaction was successful, `Err` from the transaction otherwise.
 type TransactionResult = std::result::Result<(), TransactionError>;
 
+const FEE_CACHE_TTL_S: u64 = 60;
+
+// Note: Atomic is not the best choice here for concurrency as we still can have a possible data
+// race between the moment we check the delta_s and the moment we update everything.
+// However, it is good enough for our use case where we just want to avoid calling the RPC too
+// often and the refresh if needed is called manually sequentially before sending the transactions
+// in a possibly concurrent way.
+// TL;DR: Atomic is just here so we can keep OrbitLink immutable not to prevent concurrent access.
+struct FeeCache {
+    pub priority_fee: AtomicU64,
+    pub creation: Instant,
+    pub delta_s: AtomicU64,
+}
+
 pub struct OrbitLink<T, S>
 where
     T: async_client::AsyncClient,
@@ -42,6 +59,7 @@ where
     payer_pubkey: Option<Pubkey>,
     lookup_tables: Vec<AddressLookupTableAccount>,
     commitment_config: CommitmentConfig,
+    fee_cache: FeeCache,
 }
 
 impl<T, S> OrbitLink<T, S>
@@ -65,13 +83,54 @@ where
             )));
         }
 
+        let fee_cache = FeeCache {
+            priority_fee: AtomicU64::new(0),
+            creation: Instant::now(),
+            delta_s: AtomicU64::new(0),
+        };
+
         Ok(OrbitLink {
             client,
             payer,
             payer_pubkey,
             lookup_tables: lookup_tables.unwrap_or_default(),
             commitment_config,
+            fee_cache,
         })
+    }
+
+    pub async fn refresh_fee_cache(&self) -> Result<()> {
+        let fee = self.client.get_recommended_micro_lamport_fee().await?;
+        self.fee_cache
+            .priority_fee
+            .store(fee, std::sync::atomic::Ordering::Relaxed);
+        self.fee_cache.delta_s.store(
+            self.fee_cache.creation.elapsed().as_secs(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        Ok(())
+    }
+
+    pub async fn refresh_fee_cache_if_needed(&self) -> Result<()> {
+        let delta_ts_now = self.fee_cache.creation.elapsed().as_secs();
+
+        let delta_ts_pre = self
+            .fee_cache
+            .delta_s
+            .load(std::sync::atomic::Ordering::Relaxed);
+
+        let delta_ts = delta_ts_now - delta_ts_pre;
+
+        if delta_ts > FEE_CACHE_TTL_S {
+            self.refresh_fee_cache().await?;
+        }
+        Ok(())
+    }
+
+    pub fn get_recommended_micro_lamport_fee(&self) -> u64 {
+        self.fee_cache
+            .priority_fee
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 
     pub fn payer_pubkey(&self) -> Pubkey {

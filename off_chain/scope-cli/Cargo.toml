@@ -22,13 +22,20 @@ yvaults = ["scope/yvaults"]
 
 [dependencies]
 anchor-client = "0.28.0"
-scope = { path = "../../programs/scope", default-features = false, features = ["no-entrypoint"] }
+scope = { path = "../../programs/scope", default-features = false, features = [
+    "no-entrypoint",
+] }
 anyhow = "1.0.0"
 clap = { version = "3.2.11", features = ["derive", "env", "wrap_help"] }
 serde = "1.0.136"
 serde_json = "1.0.79"
 tracing = "0.1.10"
-tracing-subscriber = { version = "0.3.9", features = ["std", "fmt", "json"] }
+tracing-subscriber = { version = "0.3.9", features = [
+    "std",
+    "fmt",
+    "json",
+    "env-filter",
+] }
 tokio = "1.14.1"
 warp = "0.3.3"
 nohash-hasher = "0.2.0"

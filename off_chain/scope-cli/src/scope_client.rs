@@ -351,6 +351,9 @@ where
     #[tracing::instrument(skip(self))]
     pub async fn refresh_all_prices(&self) -> Result<()> {
         info!("Refresh all prices");
+        if let Err(e) = self.client.refresh_fee_cache_if_needed().await {
+            warn!(%e, "Failed to refresh fee cache");
+        }
         // Create chunk of tokens of max `MAX_REFRESH_CHUNK_SIZE` accounts
         let mut acc_account_num = 0_usize;
         let mut acc_token_id: Vec<u16> = Vec::with_capacity(MAX_REFRESH_CHUNK_SIZE);
@@ -385,6 +388,9 @@ where
     /// if some room is left.
     #[tracing::instrument(skip(self))]
     pub async fn refresh_old_prices(&self) -> Result<()> {
+        if let Err(e) = self.client.refresh_fee_cache_if_needed().await {
+            warn!(%e, "Failed to refresh fee cache");
+        }
         let mut prices_ttl: Vec<(u16, i64)> = self.get_prices_ttl().await?.collect();
         // TODO: filter prices that cannot be refreshed
         // Sort the prices ttl from the smallest to biggest.

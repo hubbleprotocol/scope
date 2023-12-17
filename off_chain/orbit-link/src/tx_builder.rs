@@ -152,7 +152,7 @@ where
             instructions.push(ix_budget);
         }
 
-        let fee = self.link.client.get_recommended_micro_lamport_fee().await?;
+        let fee = self.link.get_recommended_micro_lamport_fee();
         if fee > 0 {
             instructions.push(ComputeBudgetInstruction::set_compute_unit_price(fee));
         }
