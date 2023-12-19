@@ -42,19 +42,18 @@ pub async fn refresh_price(
     feed: &types::ScopeFeedDefinition,
     conf: &OracleConf,
 ) {
-    let mut accounts = scope::accounts::RefreshOne {
+    let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
-        price_info: conf.pubkey,
         oracle_twaps: feed.twaps,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
-    let mut refresh_accounts = utils::get_remaining_accounts(ctx, conf).await;
+    let mut refresh_accounts = utils::get_refresh_list_accounts(ctx, conf).await;
     accounts.append(&mut refresh_accounts);
 
-    let args = scope::instruction::RefreshOnePrice {
-        token: conf.token.try_into().unwrap(),
+    let args = scope::instruction::RefreshPriceList {
+        tokens: vec![conf.token.try_into().unwrap()],
     };
     let ix = Instruction {
         program_id: scope::id(),

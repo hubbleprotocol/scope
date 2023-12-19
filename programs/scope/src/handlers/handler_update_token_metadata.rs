@@ -1,5 +1,26 @@
-use crate::{ScopeError, UpdateTokenMetadataMode};
+use crate::ScopeError;
 use anchor_lang::prelude::*;
+use num_enum::TryFromPrimitive;
+
+#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
+#[repr(u64)]
+pub enum UpdateTokenMetadataMode {
+    Name = 0,
+    MaxPriceAgeSeconds = 1,
+}
+
+impl UpdateTokenMetadataMode {
+    pub fn to_u64(self) -> u64 {
+        self.to_u16().into()
+    }
+
+    pub fn to_u16(self) -> u16 {
+        match self {
+            UpdateTokenMetadataMode::Name => 0,
+            UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
+        }
+    }
+}
 
 #[derive(Accounts)]
 #[instruction(index: u64, mode: u64,  feed_name: String, value: Vec<u8>)]
