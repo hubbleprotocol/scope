@@ -57,6 +57,10 @@ pub fn process(
             token_metadata.max_age_price_seconds = value;
         }
         UpdateTokenMetadataMode::Name => {
+            assert!(
+                value.len() <= 32,
+                "Name is longer should be less than 32 bytes"
+            );
             token_metadata.name.fill(0);
             token_metadata
                 .name
