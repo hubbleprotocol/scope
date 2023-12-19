@@ -39,6 +39,14 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
         return err!(ScopeError::PriceNotValid);
     };
 
+    if pyth_ema_price.expo > 0 {
+        msg!(
+            "Pyth price account provided has a negative EMA price exponent: {}",
+            pyth_ema_price.expo
+        );
+        return err!(ScopeError::PriceNotValid);
+    }
+
     let ema_price =
         crate::oracles::pyth::validate_valid_price(&pyth_ema_price, ORACLE_CONFIDENCE_FACTOR)
             .map_err(|e| {
