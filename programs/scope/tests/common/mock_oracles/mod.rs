@@ -26,9 +26,6 @@ pub async fn set_price(
         additional_accs,
     } = match conf.price_type {
         TestOracleType::Pyth => sp(pyth::get_account_data_for_price(price, &clock), pyth::id()),
-        TestOracleType::SwitchboardV1 => {
-            panic!("SwitchboardV1 oracle type is not available in tests")
-        }
         TestOracleType::SwitchboardV2 => sp(
             switchboard_v2::get_account_data_for_price(price, &clock),
             switchboard_v2::id(),

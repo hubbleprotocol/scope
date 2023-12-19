@@ -34,7 +34,6 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         }
         // Single account oracles
         OracleType::Pyth
-        | OracleType::SwitchboardV1
         | OracleType::SwitchboardV2
         | OracleType::SplStake
         | OracleType::PythEMA
@@ -46,14 +45,14 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
             accounts.extend_from_slice(&get_jlp_fetch_remaining_accounts(conf))
         }
         OracleType::CToken => panic!("CToken is not supported in tests"),
-        OracleType::DeprecatedPlaceholder => {
-            panic!("DeprecatedPlaceholder is not a valid oracle type")
-        }
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
             accounts.extend_from_slice(&get_orca_whirlpool_remaining_accounts(ctx, conf).await)
         }
         OracleType::JupiterLpCompute => {
             accounts.append(&mut get_jlp_compute_remaining_accounts(ctx, conf).await)
+        }
+        OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
+            panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
     }
     accounts

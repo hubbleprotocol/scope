@@ -100,7 +100,7 @@ mod tests {
                 max_age: None,
                 oracle_mapping: Pubkey::from_str("EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw")
                     .unwrap(),
-                oracle_type: OracleType::SwitchboardV1,
+                oracle_type: OracleType::RaydiumAmmV3AtoB,
                 twap_enabled: false,
                 twap_source: None,
             },
@@ -151,7 +151,7 @@ mod tests {
             },
             "1": {
                 "label": "ETH/USD",
-                "oracle_type": "SwitchboardV1",
+                "oracle_type": "RaydiumAmmV3AtoB",
                 "oracle_mapping": "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw"
             },
             "13": {
