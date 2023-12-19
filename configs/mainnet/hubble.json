@@ -852,5 +852,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 169,
     "max_age": 120
+  },
+  "171": {
+    "label": "Orca USDY/USDC",
+    "oracle_mapping": "7riFsDxbskTqDtCSjev2jN9hyAJqeKmbWqgfiWD6ikUC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "172": {
+    "label": "TWAP Orca USDY/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 171,
+    "max_age": 120
   }
 }
