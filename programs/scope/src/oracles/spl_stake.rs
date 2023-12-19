@@ -26,6 +26,8 @@ pub fn get_price(
         );
         if stake_pool.last_update_epoch != current_clock.epoch && hours_since_epoch_started >= 1 {
             // The price has not been refreshed this epoch and it's been 1 hour
+            // We allow 1 hour of delay because stake account are never refreshed very quickly on a new epoch and we don't want to block the price usage.
+            // This is an accepted tradeoff as this price type is only used as reference and not to compute the value of the token.
             msg!("SPL Stake account has not been refreshed in current epoch");
             #[cfg(not(feature = "localnet"))]
             return Err(ScopeError::PriceNotValid.into());

@@ -46,19 +46,31 @@ pub enum OracleType {
     DeprecatedPlaceholder2 = 3,
     /// Solend tokens
     CToken = 4,
-    /// SPL Stake Pool token (like scnSol)
+    /// SPL Stake Pool token (giving the stake rate in SOL):
+    /// This oracle type provide a reference and is not meant to be used directly
+    /// to get the value of the token because of different limitations:
+    /// - The stake rate is only updated once per epoch and can be delayed by one hour after a new epoch.
+    /// - The stake rate does not take into account the fees that applies on staking or unstaking.
+    /// - Unstaking is not immediate and the market price is often lower than the "stake price".
     SplStake = 5,
     /// KTokens from Kamino
     KToken = 6,
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA = 7,
     /// MSOL Stake Pool token
+    /// This oracle type provide a reference and is not meant to be used directly
+    /// to get the value of the token because of different limitations:
+    /// - The stake rate is only updated once per epoch.
+    /// - The stake rate does not take into account the fees that applies on staking or unstaking.
+    /// - Unstaking is not immediate and the market price is often lower than the "stake price".
     MsolStake = 8,
     /// Number of token A for 1 kToken
     KTokenToTokenA = 9,
     /// Number of token B for 1 kToken
     KTokenToTokenB = 10,
     /// Jupiter's perpetual LP tokens
+    /// This oracle type provide a reference and is not meant to be used directly because
+    /// the price is just fetched from the Jupiter's pool and can be stalled.
     JupiterLpFetch = 11,
     /// Scope twap
     ScopeTwap = 12,
@@ -70,7 +82,7 @@ pub enum OracleType {
     RaydiumAmmV3AtoB = 15,
     /// Raydium's AMM v3 price (CLMM) B to A
     RaydiumAmmV3BtoA = 16,
-    /// Jupiter's perpetual LP tokens computed through CPI
+    /// Jupiter's perpetual LP tokens computed from current oracle prices
     JupiterLpCompute = 17,
 }
 
