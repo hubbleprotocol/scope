@@ -4,7 +4,6 @@ import { PublicKey } from '@solana/web3.js';
 import Decimal from 'decimal.js';
 
 import * as pyth from './pyth';
-import * as switchboardV1 from './switchboard_v1';
 import * as switchboardV2 from './switchboard_v2';
 import * as ctokens from './ctokens';
 import * as spl_stake from './spl_stake';
@@ -14,7 +13,6 @@ const mockOracleProgram = anchor.workspace.MockOracle;
 
 export enum OracleType {
   Pyth = 0,
-  SwitchboardV1 = 1,
   SwitchboardV2 = 2,
   CToken = 4,
   SplStake = 5,
@@ -51,7 +49,6 @@ export interface ITokenEntry {
 
 export const oracles: Record<OracleType, IMockOracle> = {
   [OracleType.Pyth]: new pyth.PythMockOracle(),
-  [OracleType.SwitchboardV1]: new switchboardV1.Sb1MockOracle(),
   [OracleType.SwitchboardV2]: new switchboardV2.Sb2MockOracle(),
   [OracleType.CToken]: new ctokens.CTokenMockOracle(),
   // TODO: modify this to use the correct mock oracle

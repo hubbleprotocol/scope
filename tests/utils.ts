@@ -17,8 +17,6 @@ export enum HubbleTokens {
   UST,
   BNB,
   AVAX,
-  SABERMSOLSOL,
-  USDHUSD,
   STSOLUSD,
   CSOL,
   CETH,
@@ -88,18 +86,6 @@ export const initialTokens: ITokenInput[] = [
     ticker: 'AVAX',
     decimals: 8,
     priceType: OracleType.Pyth,
-  },
-  {
-    price: new Decimal('343.92109348'),
-    ticker: 'SABERMSOLSOL',
-    decimals: 8,
-    priceType: OracleType.SwitchboardV1,
-  },
-  {
-    price: new Decimal('999.20334456'),
-    ticker: 'USDHUSD',
-    decimals: 8,
-    priceType: OracleType.SwitchboardV1,
   },
   {
     ticker: 'STSOLUSD',

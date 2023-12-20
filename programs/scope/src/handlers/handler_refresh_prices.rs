@@ -39,6 +39,11 @@ pub fn refresh_price_list<'info>(
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
     let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
 
+    // No token to refresh
+    if tokens.is_empty() {
+        return err!(ScopeError::EmptyTokenList);
+    }
+
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
         return Err(ProgramError::InvalidArgument.into());
@@ -69,6 +74,7 @@ pub fn refresh_price_list<'info>(
             .ok_or(ScopeError::AccountsAndTokenMismatch)?;
         // Ignore unset mapping accounts
         if zero_pk == *oracle_mapping {
+            msg!("Skipping token {} as no mapping is set", token_idx);
             continue;
         }
         // Check that the provided oracle accounts are the one referenced in oracleMapping

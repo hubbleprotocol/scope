@@ -78,6 +78,9 @@ pub enum ScopeError {
 
     #[msg("Not enough price samples in period to compute TWAP")]
     TwapNotEnoughSamplesInPeriod,
+
+    #[msg("The provided token list to refresh is empty")]
+    EmptyTokenList,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError

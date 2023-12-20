@@ -33,6 +33,7 @@ describe('Switchboard Scope tests', () => {
 
   const url = 'http://127.0.0.1:8899';
   const options = AnchorProvider.defaultOptions();
+  options.skipPreflight = true;
   const connection = new Connection(url, options.commitment);
 
   const wallet = new NodeWallet(admin);
@@ -131,38 +132,6 @@ describe('Switchboard Scope tests', () => {
       checkOraclePrice(HubbleTokens.STSOLUSD, oracle, testTokens);
     }
   });
-  it('test_update_sabermsolsol_v1_price', async () => {
-    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.SABERMSOLSOL]), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        oracleTwaps: oracleTwapsAccount,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.SABERMSOLSOL].account, isWritable: false, isSigner: false }],
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.SABERMSOLSOL, oracle, testTokens);
-    }
-  });
-  it('test_update_usdh_usd_v1_price', async () => {
-    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.USDHUSD]), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        oracleTwaps: oracleTwapsAccount,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.USDHUSD].account, isWritable: false, isSigner: false }],
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.USDHUSD, oracle, testTokens);
-    }
-  });
   it('test_set_update_stsolusd_v2_price', async () => {
     //await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.456789012345678'), 15);
     await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.4567890123'), 10);
@@ -179,40 +148,6 @@ describe('Switchboard Scope tests', () => {
     {
       let oracle = await program.account.oraclePrices.fetch(oracleAccount);
       checkOraclePrice(HubbleTokens.STSOLUSD, oracle, testTokens);
-    }
-  });
-  it('test_set_update_saber_msol_sol_v1_price', async () => {
-    await testTokens[HubbleTokens.SABERMSOLSOL].updatePrice(new Decimal('448.59120123'));
-    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.SABERMSOLSOL]), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        oracleTwaps: oracleTwapsAccount,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.SABERMSOLSOL].account, isWritable: false, isSigner: false }],
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.SABERMSOLSOL, oracle, testTokens);
-    }
-  });
-  it('test_set_update_usdh_usd_v1_price', async () => {
-    await testTokens[HubbleTokens.USDHUSD].updatePrice(new Decimal('886.75558012'));
-    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.USDHUSD]), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        oracleTwaps: oracleTwapsAccount,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.USDHUSD].account, isWritable: false, isSigner: false }],
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.USDHUSD, oracle, testTokens);
     }
   });
 });
