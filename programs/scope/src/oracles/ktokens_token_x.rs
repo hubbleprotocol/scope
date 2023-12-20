@@ -124,7 +124,7 @@ where
         scope_prices_ref.deref(),
         &collateral_infos_ref.infos,
         &strategy_account_ref,
-        Some(clmm.as_ref()),
+        None,
         clock.slot,
     )?;
 
