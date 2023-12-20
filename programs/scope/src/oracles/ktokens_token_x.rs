@@ -135,20 +135,22 @@ where
     // Get the least-recently updated component price from both scope chains
     let last_updated_slot = clock.slot;
     let unix_timestamp = u64::try_from(clock.unix_timestamp).expect("Unix timestamp negative");
-    let price_lamport_to_lamport = u64_div_to_price(num_token_x, num_shares);
 
-    // Final price need to be adjusted by the number of decimals of the kToken and the token X
-    let share_decimals = strategy_account_ref.shares_mint_decimals;
-    let token_decimals = match token {
-        TokenTypes::TokenA => strategy_account_ref.token_a_mint_decimals,
-        TokenTypes::TokenB => strategy_account_ref.token_b_mint_decimals,
+    let price = if num_shares == 0 {
+        // Assume price is 0 without shares issued
+        Price { value: 0, exp: 1 }
+    } else {
+        let price_lamport_to_lamport = u64_div_to_price(num_token_x, num_shares);
+
+        // Final price need to be adjusted by the number of decimals of the kToken and the token X
+        let share_decimals = strategy_account_ref.shares_mint_decimals;
+        let token_decimals = match token {
+            TokenTypes::TokenA => strategy_account_ref.token_a_mint_decimals,
+            TokenTypes::TokenB => strategy_account_ref.token_b_mint_decimals,
+        };
+
+        price_lamport_to_token_x_per_share(price_lamport_to_lamport, token_decimals, share_decimals)
     };
-
-    let price = price_lamport_to_token_x_per_share(
-        price_lamport_to_lamport,
-        token_decimals,
-        share_decimals,
-    );
 
     Ok(DatedPrice {
         price,
