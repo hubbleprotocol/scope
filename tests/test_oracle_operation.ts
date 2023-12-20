@@ -122,40 +122,6 @@ describe('Scope tests', () => {
     );
   });
 
-  it('test_update_msol_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.MSOL), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.MSOL].account,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-        oracleTwaps: oracleTwapsAccount,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.MSOL, oracle, testTokens);
-    }
-  });
-
-  it('test_update_srm_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.SRM), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.SRM].account,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-        oracleTwaps: oracleTwapsAccount,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.SRM, oracle, testTokens);
-    }
-  });
-
   it('test_update_price_list', async () => {
     await program.rpc.refreshPriceList(
       Uint16Array.from([

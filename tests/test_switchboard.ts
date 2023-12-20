@@ -116,14 +116,14 @@ describe('Switchboard Scope tests', () => {
     );
   });
   it('test_update_stsolusd_v2_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.STSOLUSD), {
+    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.STSOLUSD]), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.STSOLUSD].account,
         oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
+      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.STSOLUSD].account, isWritable: false, isSigner: false }],
       signers: [],
     });
     {
@@ -132,14 +132,14 @@ describe('Switchboard Scope tests', () => {
     }
   });
   it('test_update_sabermsolsol_v1_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.SABERMSOLSOL), {
+    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.SABERMSOLSOL]), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
         oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
+      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.SABERMSOLSOL].account, isWritable: false, isSigner: false }],
       signers: [],
     });
     {
@@ -148,14 +148,14 @@ describe('Switchboard Scope tests', () => {
     }
   });
   it('test_update_usdh_usd_v1_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.USDHUSD), {
+    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.USDHUSD]), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.USDHUSD].account,
         oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
+      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.USDHUSD].account, isWritable: false, isSigner: false }],
       signers: [],
     });
     {
@@ -166,14 +166,14 @@ describe('Switchboard Scope tests', () => {
   it('test_set_update_stsolusd_v2_price', async () => {
     //await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.456789012345678'), 15);
     await testTokens[HubbleTokens.STSOLUSD].updatePrice(new Decimal('123.4567890123'), 10);
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.STSOLUSD), {
+    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.STSOLUSD]), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.STSOLUSD].account,
         oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
+      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.STSOLUSD].account, isWritable: false, isSigner: false }],
       signers: [],
     });
     {
@@ -183,14 +183,14 @@ describe('Switchboard Scope tests', () => {
   });
   it('test_set_update_saber_msol_sol_v1_price', async () => {
     await testTokens[HubbleTokens.SABERMSOLSOL].updatePrice(new Decimal('448.59120123'));
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.SABERMSOLSOL), {
+    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.SABERMSOLSOL]), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.SABERMSOLSOL].account,
         oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
+      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.SABERMSOLSOL].account, isWritable: false, isSigner: false }],
       signers: [],
     });
     {
@@ -200,14 +200,14 @@ describe('Switchboard Scope tests', () => {
   });
   it('test_set_update_usdh_usd_v1_price', async () => {
     await testTokens[HubbleTokens.USDHUSD].updatePrice(new Decimal('886.75558012'));
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.USDHUSD), {
+    await program.rpc.refreshPriceList(Uint16Array.from([HubbleTokens.USDHUSD]), {
       accounts: {
         oraclePrices: oracleAccount,
         oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.USDHUSD].account,
         oracleTwaps: oracleTwapsAccount,
         instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
       },
+      remainingAccounts: [{ pubkey: testTokens[HubbleTokens.USDHUSD].account, isWritable: false, isSigner: false }],
       signers: [],
     });
     {
