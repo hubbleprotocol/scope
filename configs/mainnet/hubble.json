@@ -874,6 +874,7 @@
   },
   "174": {
     "label": "EMA EUR/USD",
+    "oracle_mapping": "CQzPyC5xVhkuBfWFJiPCvPEnBshmRium4xxUxnX1ober",
     "oracle_type": "PythEMA",
     "max_age": 100
   }
