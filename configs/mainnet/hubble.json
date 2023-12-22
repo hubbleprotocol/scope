@@ -865,5 +865,17 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 171,
     "max_age": 120
+  },
+  "173": {
+    "label": "EUR/USD",
+    "oracle_mapping": "CQzPyC5xVhkuBfWFJiPCvPEnBshmRium4xxUxnX1ober",
+    "oracle_type": "Pyth",
+    "max_age": 100
+  },
+  "174": {
+    "label": "EMA EUR/USD",
+    "oracle_mapping": "CQzPyC5xVhkuBfWFJiPCvPEnBshmRium4xxUxnX1ober",
+    "oracle_type": "PythEMA",
+    "max_age": 100
   }
 }
