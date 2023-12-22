@@ -983,14 +983,14 @@
     "max_age": 120
   },
   "191": {
-    "label": "Orca PEEPO/SOL",
+    "label": "Orca PEEP/SOL",
     "oracle_mapping": "GRFBvVKGsCDuMKgz69Ei9vrgcYZPEEUGCUf9KqVohh3C",
     "oracle_type": "OrcaWhirlpoolBtoA",
     "twap_enabled": true,
     "max_age": 100
   },
   "192": {
-    "label": "TWAP Orca PEEPO/SOL",
+    "label": "TWAP Orca PEEP/SOL",
     "oracle_type": "ScopeTwap",
     "twap_source": 191,
     "max_age": 120
