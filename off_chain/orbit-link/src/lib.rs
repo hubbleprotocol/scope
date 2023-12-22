@@ -26,6 +26,7 @@ use futures::future::join_all;
 pub mod async_client;
 pub mod consts;
 pub mod errors;
+pub mod fees;
 pub mod tx_builder;
 
 pub use consts::*;

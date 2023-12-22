@@ -2960,6 +2960,7 @@ dependencies = [
  "base64 0.21.5",
  "bs58 0.5.0",
  "futures",
+ "serde",
  "solana-account-decoder",
  "solana-banks-client",
  "solana-banks-interface",

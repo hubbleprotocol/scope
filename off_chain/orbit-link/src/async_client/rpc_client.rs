@@ -97,15 +97,16 @@ impl AsyncClient for RpcClient {
     }
 
     async fn get_recommended_micro_lamport_fee(&self) -> Result<u64> {
-        // Min to 10 lamports per 200_000 CU (default 1 ix transaction)
-        // 10 * 1M / 200_000 = 50
-        const MIN_PRIO_FEE: u64 = 50;
+        // Min to 200 lamports per 200_000 CU (default 1 ix transaction)
+        // 200 * 1M / 200_000 = 1000
+        const OFFSET_PRIO_FEE: u64 = 1000;
 
         let fees = self.get_recent_prioritization_fees(&[]).await?;
         trace!("Recent fees: {:#?}", fees);
         let fee = fees
             .into_iter()
-            .fold(MIN_PRIO_FEE, |acc, x| u64::max(acc, x.prioritization_fee));
+            .fold(0, |acc, x| u64::max(acc, x.prioritization_fee))
+            + OFFSET_PRIO_FEE;
 
         debug!("Selected fee: {}", fee);
 
