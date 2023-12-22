@@ -914,7 +914,7 @@
   "180": {
     "label": "TWAP Orca ISC/USDC",
     "oracle_type": "ScopeTwap",
-    "twap_source": 177,
+    "twap_source": 179,
     "max_age": 120
   },
   "181": {
@@ -972,7 +972,7 @@
   "189": {
     "label": "Orca GENE/USDC",
     "oracle_mapping": "9zv68rRmRRadbR4XMqAjKWhJxqN3FtcyTxYFT1kpASTh",
-    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_type": "OrcaWhirlpoolBtoA",
     "twap_enabled": true,
     "max_age": 100
   },
@@ -1021,6 +1021,4 @@
     "twap_source": 195,
     "max_age": 120
   }
-
-  
 }
