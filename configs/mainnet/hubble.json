@@ -938,7 +938,7 @@
     "max_age": 100
   },
   "184": {
-    "label": "TWAP Orca POLIS/USDC",
+    "label": "TWAP Orca POLIS/SOL",
     "oracle_type": "ScopeTwap",
     "twap_source": 183,
     "max_age": 120
