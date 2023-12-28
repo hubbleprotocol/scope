@@ -168,20 +168,23 @@ async fn main() -> Result<()> {
 
     // Skip logging if only printing pubkeys
     if !matches!(args.action, Actions::GetPubkeys { .. }) {
+        let env_filter = EnvFilter::builder()
+            .with_default_directive(tracing::level_filters::LevelFilter::INFO.into())
+            .from_env_lossy();
         if args.json {
             tracing_subscriber::fmt()
-                .with_env_filter(EnvFilter::from_default_env())
+                .with_env_filter(env_filter)
                 .json()
                 .without_time()
                 .init();
         } else if args.log_timestamps {
             tracing_subscriber::fmt()
-                .with_env_filter(EnvFilter::from_default_env())
+                .with_env_filter(env_filter)
                 .compact()
                 .init();
         } else {
             tracing_subscriber::fmt()
-                .with_env_filter(EnvFilter::from_default_env())
+                .with_env_filter(env_filter)
                 .compact()
                 .without_time()
                 .init();
