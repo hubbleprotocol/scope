@@ -29,6 +29,12 @@ pub enum ErrorKind {
 
     #[error("Error while deserializing an account: {0}")]
     DeserializationError(String),
+
+    #[error("Error while getting the recommended fee: {0}")]
+    SolanaCompassFetchError(#[from] reqwest::Error),
+
+    #[error("Error trying to parse the recommended fees")]
+    SolanaCompassReturnInvalid,
 }
 
 #[cfg(feature = "banks-client")]

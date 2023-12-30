@@ -30,6 +30,7 @@ pub mod fees;
 pub mod tx_builder;
 
 pub use consts::*;
+use tracing::debug;
 
 type Result<T> = std::result::Result<T, errors::ErrorKind>;
 
@@ -37,6 +38,10 @@ type Result<T> = std::result::Result<T, errors::ErrorKind>;
 type TransactionResult = std::result::Result<(), TransactionError>;
 
 const FEE_CACHE_TTL_S: u64 = 60;
+
+// Min to 200 lamports per 200_000 CU (default 1 ix transaction)
+// 200 * 1M / 200_000 = 1000
+const MIN_FEE: u64 = 1000;
 
 // Note: Atomic is not the best choice here for concurrency as we still can have a possible data
 // race between the moment we check the delta_s and the moment we update everything.
@@ -85,7 +90,7 @@ where
         }
 
         let fee_cache = FeeCache {
-            priority_fee: AtomicU64::new(0),
+            priority_fee: AtomicU64::new(MIN_FEE),
             creation: Instant::now(),
             delta_s: AtomicU64::new(0),
         };
@@ -101,7 +106,25 @@ where
     }
 
     pub async fn refresh_fee_cache(&self) -> Result<()> {
-        let fee = self.client.get_recommended_micro_lamport_fee().await?;
+        let solana_min_fee = self
+            .client
+            .get_recommended_micro_lamport_fee()
+            .await
+            .unwrap_or(0);
+        let solana_compass_median_fee = fees::solanacompass::get_last_5_min_median_fee()
+            .await
+            .unwrap_or(0);
+        // Base fee is 5000 lamports per tx
+        // In micro lamports per CU (200_000 CU per tx)
+        // 5000 * 1M / 200_000 = 25_000
+        // We will use double that as the maximum fee payed
+        const BASE_FEE: u64 = 25_000;
+        const MAX_FEE: u64 = 2 * BASE_FEE;
+        let fee = MIN_FEE
+            .max(solana_min_fee)
+            .max(solana_compass_median_fee)
+            .min(MAX_FEE);
+        debug!(solana_min_fee, solana_compass_median_fee, fee);
         self.fee_cache
             .priority_fee
             .store(fee, std::sync::atomic::Ordering::Relaxed);
