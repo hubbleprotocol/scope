@@ -70,6 +70,12 @@
     "oracle_type": "SwitchboardV2",
     "max_age": 200
   },
+  "19": {
+    "label": "LDO/USD",
+    "oracle_mapping": "ELrhqYY3WjLRnLwWt3u7sMykNc87EScEAsyCyrDDSAXv",
+    "oracle_type": "Pyth",
+    "max_age": 200
+  },
   "20": {
     "label": "USDC/USD",
     "oracle_mapping": "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD",
@@ -1020,5 +1026,11 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 195,
     "max_age": 120
+  },
+  "197": {
+    "label": "TWAP LDO/USD",
+    "oracle_mapping": "ELrhqYY3WjLRnLwWt3u7sMykNc87EScEAsyCyrDDSAXv",
+    "oracle_type": "PythEMA",
+    "max_age": 200
   }
 }
