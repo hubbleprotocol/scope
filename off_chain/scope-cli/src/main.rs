@@ -19,6 +19,7 @@ use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope_client::{utils::get_clock, ScopeClient, ScopeConfig};
 use tokio::time::sleep;
 use tracing::{error, info, trace, warn};
+use tracing_subscriber::EnvFilter;
 
 mod web;
 
@@ -167,12 +168,26 @@ async fn main() -> Result<()> {
 
     // Skip logging if only printing pubkeys
     if !matches!(args.action, Actions::GetPubkeys { .. }) {
+        let env_filter = EnvFilter::builder()
+            .with_default_directive(tracing::level_filters::LevelFilter::INFO.into())
+            .from_env_lossy();
         if args.json {
-            tracing_subscriber::fmt().json().without_time().init();
+            tracing_subscriber::fmt()
+                .with_env_filter(env_filter)
+                .json()
+                .without_time()
+                .init();
         } else if args.log_timestamps {
-            tracing_subscriber::fmt().compact().init();
+            tracing_subscriber::fmt()
+                .with_env_filter(env_filter)
+                .compact()
+                .init();
         } else {
-            tracing_subscriber::fmt().compact().without_time().init();
+            tracing_subscriber::fmt()
+                .with_env_filter(env_filter)
+                .compact()
+                .without_time()
+                .init();
         }
         if std::io::stdout().is_terminal() {
             info!("Starting with args {:#?}", args);
@@ -205,6 +220,7 @@ async fn main() -> Result<()> {
     let is_localnet = args.cluster == Cluster::Localnet;
     // TODO: use lookup tables
     let client = OrbitLink::new(rpc_client, payer, None, commitment, payer_pubkey)?;
+    client.refresh_fee_cache().await?;
 
     if let Actions::Init { mapping } = args.action {
         init(
