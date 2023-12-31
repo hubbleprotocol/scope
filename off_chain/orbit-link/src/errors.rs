@@ -1,3 +1,4 @@
+use anchor_client::solana_sdk::message::CompileError;
 use anchor_client::solana_sdk::signer::SignerError;
 use thiserror::Error;
 
@@ -14,11 +15,8 @@ pub enum ErrorKind {
     #[error(transparent)]
     SignerError(#[from] SignerError),
 
-    // TODO: replace with this once it's fixed: https://github.com/solana-labs/solana/issues/29858
-    //#[error(transparent)]
-    //TransactionCompileError(#[from] CompileError),
-    #[error("Transaction compile error: {0}")]
-    TransactionCompileError(String),
+    #[error(transparent)]
+    TransactionCompileError(#[from] CompileError),
 
     #[error("No instruction to include in the transaction")]
     NoInstructions,
@@ -31,6 +29,12 @@ pub enum ErrorKind {
 
     #[error("Error while deserializing an account: {0}")]
     DeserializationError(String),
+
+    #[error("Error while getting the recommended fee: {0}")]
+    SolanaCompassFetchError(#[from] reqwest::Error),
+
+    #[error("Error trying to parse the recommended fees")]
+    SolanaCompassReturnInvalid,
 }
 
 #[cfg(feature = "banks-client")]

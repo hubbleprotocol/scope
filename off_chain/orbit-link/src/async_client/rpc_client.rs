@@ -3,6 +3,7 @@ use solana_account_decoder::UiAccountEncoding;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig};
 use solana_client::rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType};
+use tracing::{debug, trace};
 
 use super::*;
 use crate::Result;
@@ -96,8 +97,14 @@ impl AsyncClient for RpcClient {
     }
 
     async fn get_recommended_micro_lamport_fee(&self) -> Result<u64> {
-        // Fixed to 10 lamports per 200_000 CU (default 1 ix transaction) for now
-        // 10 * 1M / 200_000 = 50
-        Ok(50)
+        let fees = self.get_recent_prioritization_fees(&[]).await?;
+        trace!("Recent fees: {:#?}", fees);
+        let fee = fees
+            .into_iter()
+            .fold(0, |acc, x| u64::max(acc, x.prioritization_fee));
+
+        debug!("Selected fee: {}", fee);
+
+        Ok(fee)
     }
 }

@@ -1,5 +1,8 @@
 #![doc = include_str!("../Readme.md")]
 
+use std::sync::atomic::AtomicU64;
+use std::time::Instant;
+
 use anchor_client::{
     anchor_lang::{
         AccountDeserialize, AccountSerialize, AnchorDeserialize, Discriminator, Owner,
@@ -23,14 +26,34 @@ use futures::future::join_all;
 pub mod async_client;
 pub mod consts;
 pub mod errors;
+pub mod fees;
 pub mod tx_builder;
 
 pub use consts::*;
+use tracing::debug;
 
 type Result<T> = std::result::Result<T, errors::ErrorKind>;
 
 /// Transaction result. `Ok` if the transaction was successful, `Err` from the transaction otherwise.
 type TransactionResult = std::result::Result<(), TransactionError>;
+
+const FEE_CACHE_TTL_S: u64 = 60;
+
+// Min to 200 lamports per 200_000 CU (default 1 ix transaction)
+// 200 * 1M / 200_000 = 1000
+const MIN_FEE: u64 = 1000;
+
+// Note: Atomic is not the best choice here for concurrency as we still can have a possible data
+// race between the moment we check the delta_s and the moment we update everything.
+// However, it is good enough for our use case where we just want to avoid calling the RPC too
+// often and the refresh if needed is called manually sequentially before sending the transactions
+// in a possibly concurrent way.
+// TL;DR: Atomic is just here so we can keep OrbitLink immutable not to prevent concurrent access.
+struct FeeCache {
+    pub priority_fee: AtomicU64,
+    pub creation: Instant,
+    pub delta_s: AtomicU64,
+}
 
 pub struct OrbitLink<T, S>
 where
@@ -42,6 +65,7 @@ where
     payer_pubkey: Option<Pubkey>,
     lookup_tables: Vec<AddressLookupTableAccount>,
     commitment_config: CommitmentConfig,
+    fee_cache: FeeCache,
 }
 
 impl<T, S> OrbitLink<T, S>
@@ -65,13 +89,72 @@ where
             )));
         }
 
+        let fee_cache = FeeCache {
+            priority_fee: AtomicU64::new(MIN_FEE),
+            creation: Instant::now(),
+            delta_s: AtomicU64::new(0),
+        };
+
         Ok(OrbitLink {
             client,
             payer,
             payer_pubkey,
             lookup_tables: lookup_tables.unwrap_or_default(),
             commitment_config,
+            fee_cache,
         })
+    }
+
+    pub async fn refresh_fee_cache(&self) -> Result<()> {
+        let solana_min_fee = self
+            .client
+            .get_recommended_micro_lamport_fee()
+            .await
+            .unwrap_or(0);
+        let solana_compass_median_fee = fees::solanacompass::get_last_5_min_median_fee()
+            .await
+            .unwrap_or(0);
+        // Base fee is 5000 lamports per tx
+        // In micro lamports per CU (200_000 CU per tx)
+        // 5000 * 1M / 200_000 = 25_000
+        // We will use double that as the maximum fee payed
+        const BASE_FEE: u64 = 25_000;
+        const MAX_FEE: u64 = 2 * BASE_FEE;
+        let fee = MIN_FEE
+            .max(solana_min_fee)
+            .max(solana_compass_median_fee)
+            .min(MAX_FEE);
+        debug!(solana_min_fee, solana_compass_median_fee, fee);
+        self.fee_cache
+            .priority_fee
+            .store(fee, std::sync::atomic::Ordering::Relaxed);
+        self.fee_cache.delta_s.store(
+            self.fee_cache.creation.elapsed().as_secs(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        Ok(())
+    }
+
+    pub async fn refresh_fee_cache_if_needed(&self) -> Result<()> {
+        let delta_ts_now = self.fee_cache.creation.elapsed().as_secs();
+
+        let delta_ts_pre = self
+            .fee_cache
+            .delta_s
+            .load(std::sync::atomic::Ordering::Relaxed);
+
+        let delta_ts = delta_ts_now - delta_ts_pre;
+
+        if delta_ts > FEE_CACHE_TTL_S {
+            self.refresh_fee_cache().await?;
+        }
+        Ok(())
+    }
+
+    pub fn get_recommended_micro_lamport_fee(&self) -> u64 {
+        self.fee_cache
+            .priority_fee
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 
     pub fn payer_pubkey(&self) -> Pubkey {
@@ -232,16 +315,13 @@ where
         signers.extend_from_slice(extra_signers);
 
         Ok(VersionedTransaction::try_new(
-            VersionedMessage::V0(
-                v0::Message::try_compile(
-                    &payer.pubkey(),
-                    instructions,
-                    &self.lookup_tables,
-                    // TODO: cache blockhash
-                    self.client.get_latest_blockhash().await?,
-                )
-                .map_err(|e| ErrorKind::TransactionCompileError(e.to_string()))?,
-            ),
+            VersionedMessage::V0(v0::Message::try_compile(
+                &payer.pubkey(),
+                instructions,
+                &self.lookup_tables,
+                // TODO: cache blockhash
+                self.client.get_latest_blockhash().await?,
+            )?),
             &signers,
         )?)
     }
@@ -271,16 +351,13 @@ where
         lookup_tables.extend_from_slice(lookup_tables_extra);
 
         Ok(VersionedTransaction::try_new(
-            VersionedMessage::V0(
-                v0::Message::try_compile(
-                    &self.payer.as_ref().unwrap().pubkey(),
-                    instructions,
-                    &lookup_tables,
-                    // TODO: cache blockhash
-                    self.client.get_latest_blockhash().await?,
-                )
-                .map_err(|e| ErrorKind::TransactionCompileError(e.to_string()))?,
-            ),
+            VersionedMessage::V0(v0::Message::try_compile(
+                &self.payer.as_ref().unwrap().pubkey(),
+                instructions,
+                &lookup_tables,
+                // TODO: cache blockhash
+                self.client.get_latest_blockhash().await?,
+            )?),
             &signers,
         )?)
     }
