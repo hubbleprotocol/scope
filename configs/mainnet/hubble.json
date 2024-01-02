@@ -102,6 +102,7 @@
     "label": "HBB/USD",
     "oracle_mapping": "Fz4tyRWTuwD3xdN5WVGxsZziFHJn4MucYf8MsfeZNqUp",
     "oracle_type": "SwitchboardV2",
+    "twap_enabled": true,
     "max_age": 300
   },
   "33": {
@@ -1034,7 +1035,7 @@
     "max_age": 200
   },
   "198": {
-    "label": "TWAP Switchboard HBB/USD",
+    "label": "TWAP HBB/USD",
     "oracle_type": "ScopeTwap",
     "twap_source": 25,
     "max_age": 300
