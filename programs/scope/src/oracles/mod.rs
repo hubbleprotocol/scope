@@ -107,7 +107,7 @@ impl OracleType {
             OracleType::OrcaWhirlpoolAtoB
             | OracleType::OrcaWhirlpoolBtoA
             | OracleType::RaydiumAmmV3AtoB
-            | OracleType::RaydiumAmmV3BtoA => 10_000,
+            | OracleType::RaydiumAmmV3BtoA => 20_000,
             OracleType::JupiterLpCompute => 100_000,
             OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
