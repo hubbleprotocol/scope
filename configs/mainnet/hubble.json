@@ -1040,5 +1040,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 25,
     "max_age": 300
+  },
+  "199": {
+    "label": "Orca AURY/USDC",
+    "oracle_mapping": "Gr7WKYBqRLt7oUkjZ54LSbiUf8EgNWcj3ogtN8dKbfeb",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "200": {
+    "label": "TWAP Orca AURY/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 199,
+    "max_age": 120
   }
 }
