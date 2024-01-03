@@ -32,6 +32,10 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
         // Don't validate price in tests
         pyth_raw.get_ema_price_unchecked()
     } else if let Some(pyth_ema_price) = pyth_raw.get_ema_price() {
+        if !matches!(pyth_raw.status, pyth_sdk_solana::PriceStatus::Trading) {
+            msg!("No valid EMA price in pyth account {}", price_info.key);
+            return err!(ScopeError::PriceNotValid);
+        }
         // Or use the current valid price if available
         pyth_ema_price
     } else {
