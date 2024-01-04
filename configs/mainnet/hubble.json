@@ -91,6 +91,7 @@
     "label": "ORCA/USD",
     "oracle_mapping": "3Jo3gPFkH1ov54LJVJaS9NMYuMvZAbtHk4aSUPHTzAMU",
     "oracle_type": "SwitchboardV2",
+    "twap_enabled": true,
     "max_age": 300
   },
   "24": {
@@ -162,6 +163,7 @@
     "label": "UXP/USD",
     "oracle_mapping": "4X9Yz6WdjhXSBPQMLUntEreZbZxmWZfEqrJrkrytW1Ur",
     "oracle_type": "SwitchboardV2",
+    "twap_enabled": true,
     "max_age": 300
   },
   "50": {
@@ -1053,5 +1055,17 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 199,
     "max_age": 120
+  },
+  "201": {
+    "label": "TWAP ORCA/USD",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 23,
+    "max_age": 300
+  },
+  "202": {
+    "label": "TWAP UXP/USD",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 49,
+    "max_age": 300
   }
 }
