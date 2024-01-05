@@ -1,4 +1,6 @@
-# Release 0.10.3
+# Release 0.11.0 and 0.11.1
+
+Version **0.11.0** has the scope twap points checks temporarily disabled. This check is reenabled in **0.11.1** as the only difference from **0.11.0**
 
 ## What's Changed
 
@@ -22,7 +24,7 @@
 * add hbb twap + update hbb max age by @silviutroscot in <https://github.com/hubbleprotocol/scope/pull/227>
 * Update configuration admin to multisig  by @mihalex98 in <https://github.com/hubbleprotocol/scope/pull/217>
 
-**Full Changelog**: <https://github.com/hubbleprotocol/scope/compare/release/v0.10.2...release/v0.11.0>
+**Full Changelog**: <https://github.com/hubbleprotocol/scope/compare/release/v0.10.2...release/v0.11.1>
 
 ## Post merge actions
 
@@ -30,15 +32,15 @@ N/A
 
 ## Mainnet Commands
 
-1. [x] Set `$CLUSTER` to mainnet: `export CLUSTER=mainnet`
-2. [x] Set `$URL` to a good RPC
-3. [x] Set `$FEED_NAME` to something good like `hubble`
-4. [x] Check everything is correct with `make check-env`
-5. [x] `make build` and check that it actually builds
-6. [x] Dump old program in case of rollback: `solana program dump -u $URL HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ scope-0.10.2.so`
-7. [x] Put owner keypair in `./keys/$CLUSTER/owner.json` and ensure you have enough funds: `solana balance keys/mainnet/owner.json -u m`
-8. [x] Write buffer `solana program write-buffer target/deploy/scope.so -u $URL -k ./keys/$CLUSTER/owner.json`
-9. [x] Make proposal on squads
+1. [ ] Set `$CLUSTER` to mainnet: `export CLUSTER=mainnet`
+2. [ ] Set `$URL` to a good RPC
+3. [ ] Set `$FEED_NAME` to something good like `hubble`
+4. [ ] Check everything is correct with `make check-env`
+5. [ ] `make build` and check that it actually builds
+6. [ ] Dump old program in case of rollback: `solana program dump -u $URL HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ scope-0.11.0.so`
+7. [ ] Put owner keypair in `./keys/$CLUSTER/owner.json` and ensure you have enough funds: `solana balance keys/mainnet/owner.json -u m`
+8. [ ] Write buffer `solana program write-buffer target/deploy/scope.so -u $URL -k ./keys/$CLUSTER/owner.json`
+9. [ ] Make proposal on squads
 10. [x] Update the IDL `anchor idl upgrade --provider.cluster mainnet --provider.wallet ./keys/mainnet/owner.json --filepath target/idl/scope.json HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ`
-11. [x] Launch the bot (possible with `make crank`)
+11. [ ] Launch the bot (possible with `make crank`)
 12. [N/A] Merge hubble infra PR to release the bot

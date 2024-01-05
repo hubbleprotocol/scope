@@ -66,8 +66,8 @@ pub fn get_price(
         .get(source_index)
         .ok_or(ScopeError::TwapSourceIndexOutOfRange)?;
 
-    // let current_ts = clock.unix_timestamp.try_into().unwrap();
-    // utils::validate_ema(twap, current_ts)?;
+    let current_ts = clock.unix_timestamp.try_into().unwrap();
+    utils::validate_ema(twap, current_ts)?;
 
     Ok(twap.as_dated_price(source_index.try_into().unwrap()))
 }
