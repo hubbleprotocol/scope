@@ -81,6 +81,9 @@ pub enum ScopeError {
 
     #[msg("The provided token list to refresh is empty")]
     EmptyTokenList,
+
+    #[msg("The stake pool fee is higher than the maximum allowed")]
+    StakeFeeTooHigh,
 }
 
 impl<T> From<TryFromPrimitiveError<T>> for ScopeError
