@@ -1158,5 +1158,5 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 213,
     "max_age": 120
-  },
-
+  }
+}
