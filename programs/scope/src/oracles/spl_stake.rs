@@ -7,6 +7,12 @@ use self::spl_stake_pool::StakePool;
 
 const DECIMALS: u32 = 15u32;
 
+/// 0.5%
+const MAX_ACCEPTABLE_FEE_BPS: spl_stake_pool::Fee = spl_stake_pool::Fee {
+    denominator: 1000,
+    numerator: 5,
+};
+
 // Gives the price of 1 staked SOL in SOL
 pub fn get_price(
     stake_pool_account_info: &AccountInfo,
@@ -26,11 +32,15 @@ pub fn get_price(
         );
         if stake_pool.last_update_epoch != current_clock.epoch && hours_since_epoch_started >= 1 {
             // The price has not been refreshed this epoch and it's been 1 hour
+            // We allow 1 hour of delay because stake account are never refreshed very quickly on a new epoch and we don't want to block the price usage.
+            // This is an accepted tradeoff as this price type is only used as reference and not to compute the value of the token.
             msg!("SPL Stake account has not been refreshed in current epoch");
             #[cfg(not(feature = "localnet"))]
             return Err(ScopeError::PriceNotValid.into());
         }
     }
+
+    check_fees(&stake_pool)?;
 
     let value = scaled_rate(&stake_pool)?;
 
@@ -55,7 +65,33 @@ fn scaled_rate(stake_pool: &StakePool) -> Result<u64> {
         .ok_or_else(|| ScopeError::MathOverflow.into())
 }
 
+fn check_fees(stake_pool: &StakePool) -> Result<()> {
+    require_gte!(
+        MAX_ACCEPTABLE_FEE_BPS,
+        stake_pool.sol_withdrawal_fee,
+        ScopeError::StakeFeeTooHigh
+    );
+    require_gte!(
+        MAX_ACCEPTABLE_FEE_BPS,
+        stake_pool.stake_withdrawal_fee,
+        ScopeError::StakeFeeTooHigh
+    );
+    require_gte!(
+        MAX_ACCEPTABLE_FEE_BPS,
+        stake_pool.sol_deposit_fee,
+        ScopeError::StakeFeeTooHigh
+    );
+    require_gte!(
+        MAX_ACCEPTABLE_FEE_BPS,
+        stake_pool.stake_deposit_fee,
+        ScopeError::StakeFeeTooHigh
+    );
+    Ok(())
+}
+
 mod spl_stake_pool {
+    use std::fmt::Display;
+
     use anchor_lang::prelude::borsh::BorshSchema;
     use solana_program::stake::state::Lockup;
 
@@ -93,14 +129,42 @@ mod spl_stake_pool {
     }
 
     #[repr(C)]
-    #[derive(
-        Clone, Copy, Debug, Default, PartialEq, AnchorSerialize, AnchorDeserialize, BorshSchema,
-    )]
+    #[derive(Clone, Copy, Debug, Default, AnchorSerialize, AnchorDeserialize, BorshSchema)]
     pub(crate) struct Fee {
         /// denominator of the fee ratio
         pub denominator: u64,
         /// numerator of the fee ratio
         pub numerator: u64,
+    }
+
+    impl Display for Fee {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_fmt(format_args!("{}/{}", self.numerator, self.denominator))
+        }
+    }
+
+    impl PartialEq for Fee {
+        fn eq(&self, other: &Self) -> bool {
+            let self_scaled = u128::from(self.numerator) * u128::from(other.denominator);
+            let other_scaled = u128::from(other.numerator) * u128::from(self.denominator);
+            self_scaled == other_scaled
+        }
+    }
+
+    impl Eq for Fee {}
+
+    impl PartialOrd for Fee {
+        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+            Some(self.cmp(other))
+        }
+    }
+
+    impl Ord for Fee {
+        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+            let self_scaled = u128::from(self.numerator) * u128::from(other.denominator);
+            let other_scaled = u128::from(other.numerator) * u128::from(self.denominator);
+            self_scaled.cmp(&other_scaled)
+        }
     }
 
     /// The type of fees that can be set on the stake pool

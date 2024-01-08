@@ -1,5 +1,26 @@
-use crate::{ScopeError, UpdateTokenMetadataMode};
+use crate::ScopeError;
 use anchor_lang::prelude::*;
+use num_enum::TryFromPrimitive;
+
+#[derive(TryFromPrimitive, PartialEq, Eq, Clone, Copy, Debug)]
+#[repr(u64)]
+pub enum UpdateTokenMetadataMode {
+    Name = 0,
+    MaxPriceAgeSeconds = 1,
+}
+
+impl UpdateTokenMetadataMode {
+    pub fn to_u64(self) -> u64 {
+        self.to_u16().into()
+    }
+
+    pub fn to_u16(self) -> u16 {
+        match self {
+            UpdateTokenMetadataMode::Name => 0,
+            UpdateTokenMetadataMode::MaxPriceAgeSeconds => 1,
+        }
+    }
+}
 
 #[derive(Accounts)]
 #[instruction(index: u64, mode: u64,  feed_name: String, value: Vec<u8>)]
@@ -36,6 +57,10 @@ pub fn process(
             token_metadata.max_age_price_seconds = value;
         }
         UpdateTokenMetadataMode::Name => {
+            assert!(
+                value.len() <= 32,
+                "Name is longer should be less than 32 bytes"
+            );
             token_metadata.name.fill(0);
             token_metadata
                 .name

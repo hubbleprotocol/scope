@@ -11,7 +11,6 @@ pub mod pyth;
 pub mod pyth_ema;
 pub mod raydium_ammv3;
 pub mod spl_stake;
-pub mod switchboard_v1;
 pub mod switchboard_v2;
 pub mod twap;
 
@@ -38,26 +37,40 @@ pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
 #[repr(u8)]
 pub enum OracleType {
     Pyth = 0,
-    SwitchboardV1 = 1,
+    /// Deprecated (formerly SwitchboardV1)
+    // Do not remove - breaks the typescript idl codegen
+    DeprecatedPlaceholder1 = 1,
     SwitchboardV2 = 2,
     /// Deprecated (formerly YiToken)
     // Do not remove - breaks the typescript idl codegen
-    DeprecatedPlaceholder = 3,
+    DeprecatedPlaceholder2 = 3,
     /// Solend tokens
     CToken = 4,
-    /// SPL Stake Pool token (like scnSol)
+    /// SPL Stake Pool token (giving the stake rate in SOL):
+    /// This oracle type provide a reference and is not meant to be used directly
+    /// to get the value of the token because of different limitations:
+    /// - The stake rate is only updated once per epoch and can be delayed by one hour after a new epoch.
+    /// - The stake rate does not take into account the fees that applies on staking or unstaking.
+    /// - Unstaking is not immediate and the market price is often lower than the "stake price".
     SplStake = 5,
     /// KTokens from Kamino
     KToken = 6,
     /// Pyth Exponentially-Weighted Moving Average
     PythEMA = 7,
     /// MSOL Stake Pool token
+    /// This oracle type provide a reference and is not meant to be used directly
+    /// to get the value of the token because of different limitations:
+    /// - The stake rate is only updated once per epoch.
+    /// - The stake rate does not take into account the fees that applies on staking or unstaking.
+    /// - Unstaking is not immediate and the market price is often lower than the "stake price".
     MsolStake = 8,
     /// Number of token A for 1 kToken
     KTokenToTokenA = 9,
     /// Number of token B for 1 kToken
     KTokenToTokenB = 10,
     /// Jupiter's perpetual LP tokens
+    /// This oracle type provide a reference and is not meant to be used directly because
+    /// the price is just fetched from the Jupiter's pool and can be stalled.
     JupiterLpFetch = 11,
     /// Scope twap
     ScopeTwap = 12,
@@ -69,7 +82,7 @@ pub enum OracleType {
     RaydiumAmmV3AtoB = 15,
     /// Raydium's AMM v3 price (CLMM) B to A
     RaydiumAmmV3BtoA = 16,
-    /// Jupiter's perpetual LP tokens computed through CPI
+    /// Jupiter's perpetual LP tokens computed from current oracle prices
     JupiterLpCompute = 17,
 }
 
@@ -82,7 +95,6 @@ impl OracleType {
     pub fn get_update_cu_budget(&self) -> u32 {
         match self {
             OracleType::Pyth => 15_000,
-            OracleType::SwitchboardV1 => 15_000,
             OracleType::SwitchboardV2 => 30_000,
             OracleType::CToken => 130_000,
             OracleType::SplStake => 20_000,
@@ -97,7 +109,7 @@ impl OracleType {
             | OracleType::RaydiumAmmV3AtoB
             | OracleType::RaydiumAmmV3BtoA => 20_000,
             OracleType::JupiterLpCompute => 100_000,
-            OracleType::DeprecatedPlaceholder => {
+            OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
         }
@@ -123,7 +135,6 @@ where
 {
     match price_type {
         OracleType::Pyth => pyth::get_price(base_account),
-        OracleType::SwitchboardV1 => switchboard_v1::get_price(base_account),
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::CToken => ctokens::get_price(base_account, clock),
         OracleType::SplStake => spl_stake::get_price(base_account, clock),
@@ -161,9 +172,6 @@ where
             jupiter_lp::get_price_no_recompute(base_account, clock, extra_accounts)
         }
         OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index, clock),
-        OracleType::DeprecatedPlaceholder => {
-            panic!("DeprecatedPlaceholder is not a valid oracle type")
-        }
         OracleType::OrcaWhirlpoolAtoB => {
             orca_whirlpool::get_price(true, base_account, clock, extra_accounts)
         }
@@ -174,6 +182,9 @@ where
         OracleType::RaydiumAmmV3BtoA => raydium_ammv3::get_price(false, base_account, clock),
         OracleType::JupiterLpCompute => {
             jupiter_lp::get_price_recomputed(base_account, clock, extra_accounts)
+        }
+        OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
+            panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
     }
 }
@@ -188,7 +199,6 @@ pub fn validate_oracle_account(
 ) -> crate::Result<()> {
     match price_type {
         OracleType::Pyth => pyth::validate_pyth_price_info(price_account),
-        OracleType::SwitchboardV1 => Ok(()), // TODO at least check account ownership?
         OracleType::SwitchboardV2 => Ok(()), // TODO at least check account ownership?
         OracleType::CToken => Ok(()),        // TODO how shall we validate ctoken account?
         OracleType::SplStake => Ok(()),      // TODO, should validate ownership of the account
@@ -207,7 +217,7 @@ pub fn validate_oracle_account(
         OracleType::RaydiumAmmV3AtoB | OracleType::RaydiumAmmV3BtoA => {
             raydium_ammv3::validate_pool_account(price_account)
         }
-        OracleType::DeprecatedPlaceholder => {
+        OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
     }

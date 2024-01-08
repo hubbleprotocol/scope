@@ -762,53 +762,6 @@ where
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn ix_refresh_one_price(&self, token: u16) -> Result<()> {
-        let entry = self
-            .tokens
-            .get(&token)
-            .ok_or_else(|| anyhow!("Unexpected token id {token}"))?;
-        let mut refresh_accounts = accounts::RefreshOne {
-            oracle_prices: self.oracle_prices_acc,
-            oracle_mappings: self.oracle_mappings_acc,
-            oracle_twaps: self.oracle_twaps_acc,
-            price_info: entry.get_mapping_account().unwrap_or(self.program_id),
-            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
-        }
-        .to_account_metas(None);
-
-        // Add eventual extra accounts (depends on price type)
-        refresh_accounts.extend(
-            entry
-                .get_extra_accounts(None)
-                .await?
-                .iter()
-                .map(|acc| AccountMeta::new_readonly(*acc, false)),
-        );
-
-        let request = self.client.tx_builder();
-
-        let tx = request
-            .add_anchor_ix(
-                &self.program_id,
-                refresh_accounts,
-                instruction::RefreshOnePrice {
-                    token: token.into(),
-                },
-            )
-            .build_with_budget_and_fee(&[])
-            .await?;
-
-        let (signature, res) = self.client.send_and_confirm_transaction(tx).await?;
-
-        info!(%signature, "Price refresh tx sent");
-
-        match res {
-            Some(r) => r.context(format!("Price refresh transaction: {signature}")),
-            None => bail!("Init transaction failed to confirm: {signature}"),
-        }
-    }
-
-    #[tracing::instrument(skip(self))]
     pub async fn ix_set_admin_cached(&mut self, admin_cached: Pubkey) -> Result<()> {
         let accounts = accounts::SetAdminCached {
             admin: self.client.payer_pubkey(),

@@ -38,6 +38,14 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
         return err!(ScopeError::PriceNotValid);
     };
 
+    if pyth_price.expo > 0 {
+        msg!(
+            "Pyth price account provided has a negative price exponent: {}",
+            pyth_price.expo
+        );
+        return err!(ScopeError::PriceNotValid);
+    }
+
     let price = validate_valid_price(&pyth_price, ORACLE_CONFIDENCE_FACTOR).map_err(|e| {
         msg!(
             "Confidence interval check failed on pyth account {}",

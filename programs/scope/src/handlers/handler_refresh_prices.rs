@@ -17,21 +17,6 @@ use crate::{
 const COMPUTE_BUDGET_ID: Pubkey = pubkey!("ComputeBudget111111111111111111111111111111");
 
 #[derive(Accounts)]
-pub struct RefreshOne<'info> {
-    #[account(mut, has_one = oracle_mappings)]
-    pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
-    #[account()]
-    pub oracle_mappings: AccountLoader<'info, crate::OracleMappings>,
-    #[account(mut, has_one = oracle_prices, has_one = oracle_mappings)]
-    pub oracle_twaps: AccountLoader<'info, crate::OracleTwaps>,
-    /// CHECK: In ix, check the account is in `oracle_mappings`
-    pub price_info: AccountInfo<'info>,
-    /// CHECK: Sysvar fixed address
-    #[account(address = SYSVAR_INSTRUCTIONS_ID)]
-    pub instruction_sysvar_account_info: AccountInfo<'info>,
-}
-
-#[derive(Accounts)]
 pub struct RefreshList<'info> {
     #[account(mut, has_one = oracle_mappings)]
     pub oracle_prices: AccountLoader<'info, crate::OraclePrices>,
@@ -45,62 +30,6 @@ pub struct RefreshList<'info> {
     // Note: use remaining accounts as price accounts
 }
 
-pub fn refresh_one_price<'info>(
-    ctx: Context<'_, '_, '_, 'info, RefreshOne<'info>>,
-    token: usize,
-) -> Result<()> {
-    check_execution_ctx(&ctx.accounts.instruction_sysvar_account_info)?;
-
-    let oracle_mappings = ctx.accounts.oracle_mappings.load()?;
-    let price_info = &ctx.accounts.price_info;
-    let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
-
-    // Check that the provided account is the one referenced in oracleMapping
-    if oracle_mappings.price_info_accounts[token] != price_info.key() {
-        return err!(ScopeError::UnexpectedAccount);
-    }
-
-    let price_type: OracleType = oracle_mappings.price_types[token]
-        .try_into()
-        .map_err(|_| ScopeError::BadTokenType)?;
-
-    let mut remaining_iter = ctx.remaining_accounts.iter();
-    let clock = Clock::get()?;
-    let mut price = get_price(
-        price_type,
-        price_info,
-        &mut remaining_iter,
-        &clock,
-        &oracle_twaps,
-        &oracle_mappings,
-        token,
-    )?;
-    price.index = token.try_into().unwrap();
-
-    if oracle_mappings.is_twap_enabled(token) {
-        let _ = crate::oracles::twap::update_twap(&mut oracle_twaps, token, &price)
-            .map_err(|_| msg!("Twap not found for token {}", token));
-    };
-
-    // Only load when needed, allows prices computation to use scope chain
-    let mut oracle = ctx.accounts.oracle_prices.load_mut()?;
-
-    msg!(
-        "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
-        token,
-        price_type,
-        oracle.prices[token].price.value,
-        price.price.value,
-        oracle.prices[token].last_updated_slot,
-        price.last_updated_slot,
-        clock.slot,
-    );
-
-    oracle.prices[token] = price;
-
-    Ok(())
-}
-
 pub fn refresh_price_list<'info>(
     ctx: Context<'_, '_, '_, 'info, RefreshList<'info>>,
     tokens: &[u16],
@@ -110,6 +39,11 @@ pub fn refresh_price_list<'info>(
     let oracle_mappings = &ctx.accounts.oracle_mappings.load()?;
     let mut oracle_twaps = ctx.accounts.oracle_twaps.load_mut()?;
 
+    // No token to refresh
+    if tokens.is_empty() {
+        return err!(ScopeError::EmptyTokenList);
+    }
+
     // Check that the received token list is not too long
     if tokens.len() > crate::MAX_ENTRIES {
         return Err(ProgramError::InvalidArgument.into());
@@ -118,6 +52,9 @@ pub fn refresh_price_list<'info>(
     if tokens.len() > ctx.remaining_accounts.len() {
         return err!(ScopeError::AccountsAndTokenMismatch);
     }
+
+    // In case only one token is provided fail the whole transaction if the price is not valid
+    let fail_tx_on_error = tokens.len() == 1;
 
     let zero_pk: Pubkey = Pubkey::default();
 
@@ -137,6 +74,7 @@ pub fn refresh_price_list<'info>(
             .ok_or(ScopeError::AccountsAndTokenMismatch)?;
         // Ignore unset mapping accounts
         if zero_pk == *oracle_mapping {
+            msg!("Skipping token {} as no mapping is set", token_idx);
             continue;
         }
         // Check that the provided oracle accounts are the one referenced in oracleMapping
@@ -149,7 +87,7 @@ pub fn refresh_price_list<'info>(
             return err!(ScopeError::UnexpectedAccount);
         }
         let clock = Clock::get()?;
-        let price = get_price(
+        let price_res = get_price(
             price_type,
             received_account,
             &mut accounts_iter,
@@ -157,43 +95,48 @@ pub fn refresh_price_list<'info>(
             &oracle_twaps,
             oracle_mappings,
             token_nb.into(),
-        )
-        .map_err(|e| {
-            msg!(
-                "Price skipped as validation failed (token {token_idx}, type {price_type:?}): {e}",
-            );
-        })
-        .ok();
+        );
+        let price = if fail_tx_on_error {
+            price_res?
+        } else {
+            match price_res {
+                Ok(price) => price,
+                Err(e) => {
+                    msg!(
+                        "Price skipped as validation failed (token {token_idx}, type {price_type:?}): {e}",
+                    );
+                    continue;
+                }
+            }
+        };
 
-        if let Some(price) = price {
-            if oracle_mappings.is_twap_enabled(token_idx) {
-                let _ = crate::oracles::twap::update_twap(&mut oracle_twaps, token_idx, &price)
-                    .map_err(|_| msg!("Twap not found for token {}", token_idx));
-            };
+        if oracle_mappings.is_twap_enabled(token_idx) {
+            let _ = crate::oracles::twap::update_twap(&mut oracle_twaps, token_idx, &price)
+                .map_err(|_| msg!("Twap not found for token {}", token_idx));
+        };
 
-            // Only temporary load as mut to allow prices to be computed based on a scope chain
-            // from the price feed that is currently updated
+        // Only temporary load as mut to allow prices to be computed based on a scope chain
+        // from the price feed that is currently updated
 
-            let mut oracle_prices = ctx.accounts.oracle_prices.load_mut()?;
-            let to_update = oracle_prices
-                .prices
-                .get_mut(token_idx)
-                .ok_or(ScopeError::BadTokenNb)?;
+        let mut oracle_prices = ctx.accounts.oracle_prices.load_mut()?;
+        let to_update = oracle_prices
+            .prices
+            .get_mut(token_idx)
+            .ok_or(ScopeError::BadTokenNb)?;
 
-            msg!(
-                "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
-                token_idx,
-                price_type,
-                to_update.price.value,
-                price.price.value,
-                to_update.last_updated_slot,
-                price.last_updated_slot,
-                clock.slot,
-            );
+        msg!(
+            "tk {}, {:?}: {:?} to {:?} | prev_slot: {:?}, new_slot: {:?}, crt_slot: {:?}",
+            token_idx,
+            price_type,
+            to_update.price.value,
+            price.price.value,
+            to_update.last_updated_slot,
+            price.last_updated_slot,
+            clock.slot,
+        );
 
-            *to_update = price;
-            to_update.index = token_nb;
-        }
+        *to_update = price;
+        to_update.index = token_nb;
     }
 
     Ok(())

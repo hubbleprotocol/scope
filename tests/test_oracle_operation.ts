@@ -122,47 +122,12 @@ describe('Scope tests', () => {
     );
   });
 
-  it('test_update_msol_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.MSOL), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.MSOL].account,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-        oracleTwaps: oracleTwapsAccount,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.MSOL, oracle, testTokens);
-    }
-  });
-
-  it('test_update_srm_price', async () => {
-    await program.rpc.refreshOnePrice(new BN(HubbleTokens.SRM), {
-      accounts: {
-        oraclePrices: oracleAccount,
-        oracleMappings: oracleMappingAccount,
-        priceInfo: testTokens[HubbleTokens.SRM].account,
-        instructionSysvarAccountInfo: SYSVAR_INSTRUCTIONS_PUBKEY,
-        oracleTwaps: oracleTwapsAccount,
-      },
-      signers: [],
-    });
-    {
-      let oracle = await program.account.oraclePrices.fetch(oracleAccount);
-      checkOraclePrice(HubbleTokens.SRM, oracle, testTokens);
-    }
-  });
-
   it('test_update_price_list', async () => {
     await program.rpc.refreshPriceList(
       Uint16Array.from([
         HubbleTokens.ETH,
         HubbleTokens.RAY,
         HubbleTokens.STSOLUSD,
-        HubbleTokens.SABERMSOLSOL,
         HubbleTokens.CSOL,
         HubbleTokens.SCNSOL,
         HubbleTokens.SOLEMA,
@@ -178,7 +143,6 @@ describe('Scope tests', () => {
           { pubkey: testTokens[HubbleTokens.ETH].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.RAY].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.STSOLUSD].account, isWritable: false, isSigner: false },
-          { pubkey: testTokens[HubbleTokens.SABERMSOLSOL].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.CSOL].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.SCNSOL].account, isWritable: false, isSigner: false },
           { pubkey: testTokens[HubbleTokens.SOLEMA].account, isWritable: false, isSigner: false },
@@ -192,7 +156,6 @@ describe('Scope tests', () => {
       checkOraclePrice(HubbleTokens.ETH, oracle, testTokens);
       checkOraclePrice(HubbleTokens.RAY, oracle, testTokens);
       checkOraclePrice(HubbleTokens.STSOLUSD, oracle, testTokens);
-      checkOraclePrice(HubbleTokens.SABERMSOLSOL, oracle, testTokens);
       checkOraclePrice(HubbleTokens.CSOL, oracle, testTokens);
       checkOraclePrice(HubbleTokens.SCNSOL, oracle, testTokens);
       checkOraclePrice(HubbleTokens.SOLEMA, oracle, testTokens);

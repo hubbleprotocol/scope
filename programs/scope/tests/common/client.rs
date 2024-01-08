@@ -1,25 +1,28 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
+use solana_program::instruction::AccountMeta;
 use solana_program::{instruction::Instruction, pubkey::Pubkey};
 
 use super::types::{OracleConf, ScopeFeedDefinition};
 use solana_program::sysvar::instructions::ID as SYSVAR_INSTRUCTIONS_ID;
 
-pub fn refresh_one_ix(feed: &ScopeFeedDefinition, oracle: OracleConf) -> Instruction {
-    let accounts = scope::accounts::RefreshOne {
+pub fn refresh_simple_oracle_ix(feed: &ScopeFeedDefinition, oracle: OracleConf) -> Instruction {
+    let mut accounts = scope::accounts::RefreshList {
         oracle_prices: feed.prices,
         oracle_mappings: feed.mapping,
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
-        price_info: oracle.pubkey,
         oracle_twaps: feed.twaps,
-    };
+    }
+    .to_account_metas(None);
 
-    let args = scope::instruction::RefreshOnePrice {
-        token: oracle.token.try_into().unwrap(),
+    accounts.push(AccountMeta::new_readonly(oracle.pubkey, false));
+
+    let args = scope::instruction::RefreshPriceList {
+        tokens: vec![oracle.token.try_into().unwrap()],
     };
 
     Instruction {
         program_id: scope::id(),
-        accounts: accounts.to_account_metas(None),
+        accounts,
         data: args.data(),
     }
 }

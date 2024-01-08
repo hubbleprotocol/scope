@@ -31,7 +31,6 @@ pub struct OracleConf {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TestOracleType {
     Pyth,
-    SwitchboardV1,
     SwitchboardV2,
     /// Solend tokens
     CToken,
@@ -64,7 +63,6 @@ impl From<TestOracleType> for OracleType {
     fn from(val: TestOracleType) -> Self {
         match val {
             TestOracleType::Pyth => OracleType::Pyth,
-            TestOracleType::SwitchboardV1 => OracleType::SwitchboardV1,
             TestOracleType::SwitchboardV2 => OracleType::SwitchboardV2,
             TestOracleType::CToken => OracleType::CToken,
             TestOracleType::SplStake => OracleType::SplStake,

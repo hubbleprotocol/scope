@@ -92,7 +92,6 @@ where
 {
     Ok(match token_conf.oracle_type {
         OracleType::Pyth
-        | OracleType::SwitchboardV1
         | OracleType::SwitchboardV2
         | OracleType::CToken
         | OracleType::SplStake
@@ -115,9 +114,6 @@ where
             token_conf,
             default_max_age,
         )?),
-        OracleType::DeprecatedPlaceholder => {
-            panic!("DeprecatedPlaceholder is not a valid oracle type")
-        }
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => Box::new(
             orca_whirlpool::OrcaWhirlpoolOracle::new(token_conf, default_max_age, &rpc.client)
                 .await?,
@@ -126,5 +122,8 @@ where
             jupiter_lp_compute::JupiterLPOracleCompute::new(token_conf, default_max_age, rpc)
                 .await?,
         ),
+        OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
+            panic!("DeprecatedPlaceholder is not a valid oracle type")
+        }
     })
 }

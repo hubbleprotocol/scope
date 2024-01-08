@@ -32,12 +32,24 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
         // Don't validate price in tests
         pyth_raw.get_ema_price_unchecked()
     } else if let Some(pyth_ema_price) = pyth_raw.get_ema_price() {
+        if !matches!(pyth_raw.status, pyth_sdk_solana::PriceStatus::Trading) {
+            msg!("No valid EMA price in pyth account {}", price_info.key);
+            return err!(ScopeError::PriceNotValid);
+        }
         // Or use the current valid price if available
         pyth_ema_price
     } else {
         msg!("No valid EMA price in pyth account {}", price_info.key);
         return err!(ScopeError::PriceNotValid);
     };
+
+    if pyth_ema_price.expo > 0 {
+        msg!(
+            "Pyth price account provided has a negative EMA price exponent: {}",
+            pyth_ema_price.expo
+        );
+        return err!(ScopeError::PriceNotValid);
+    }
 
     let ema_price =
         crate::oracles::pyth::validate_valid_price(&pyth_ema_price, ORACLE_CONFIDENCE_FACTOR)
