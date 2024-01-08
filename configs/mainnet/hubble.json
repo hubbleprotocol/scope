@@ -8,7 +8,8 @@
   "1": {
     "label": "ETH/USD",
     "oracle_mapping": "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
-    "oracle_type": "Pyth"
+    "oracle_type": "Pyth",
+    "max_age": 100
   },
   "2": {
     "label": "BTC/USD",
@@ -90,6 +91,7 @@
     "label": "ORCA/USD",
     "oracle_mapping": "3Jo3gPFkH1ov54LJVJaS9NMYuMvZAbtHk4aSUPHTzAMU",
     "oracle_type": "SwitchboardV2",
+    "twap_enabled": true,
     "max_age": 300
   },
   "24": {
@@ -161,6 +163,7 @@
     "label": "UXP/USD",
     "oracle_mapping": "4X9Yz6WdjhXSBPQMLUntEreZbZxmWZfEqrJrkrytW1Ur",
     "oracle_type": "SwitchboardV2",
+    "twap_enabled": true,
     "max_age": 300
   },
   "50": {
@@ -1039,5 +1042,121 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 25,
     "max_age": 300
+  },
+  "199": {
+    "label": "Orca AURY/USDC",
+    "oracle_mapping": "Gr7WKYBqRLt7oUkjZ54LSbiUf8EgNWcj3ogtN8dKbfeb",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "200": {
+    "label": "TWAP Orca AURY/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 199,
+    "max_age": 120
+  },
+  "201": {
+    "label": "TWAP ORCA/USD",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 23,
+    "max_age": 300
+  },
+  "202": {
+    "label": "TWAP UXP/USD",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 49,
+    "max_age": 300
+  },
+  "203": {
+    "label": "Orca CHONKY/USDC",
+    "oracle_mapping": "C5wdmudkJgTHiY7WF7MtygqB6GC3Mc7o8879Qe8sVk1j",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "204": {
+    "label": "TWAP Orca CHONKY/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 203,
+    "max_age": 120
+  },
+  "205": {
+    "label": "Orca DRAKO/USDC",
+    "oracle_mapping": "5VCkWAwA2FRpmPfmbmtxQo7Jm7BojTUGCz8Yoryp7v8K",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "206": {
+    "label": "TWAP Orca DRAKO/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 205,
+    "max_age": 120
+  },
+  "207": {
+    "label": "Orca POPCAT/SOL",
+    "oracle_mapping": "53nb67RHfUyfFD8BYUQrnx1A5Ro69aw14bYEaKQzzCed",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "208": {
+    "label": "TWAP Orca POPCAT/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 207,
+    "max_age": 120
+  },
+  "209": {
+    "label": "Orca ANALOS/SOL",
+    "oracle_mapping": "6R4nufKnpC8bHH9LridGS2UwpyK1cxgdiKBZtDorGqEn",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "210": {
+    "label": "TWAP Orca ANALOS/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 209,
+    "max_age": 120
+  },
+  "211": {
+    "label": "Orca MYRO/USDC",
+    "oracle_mapping": "E3aNeeseQLJEe1QavbqVRhESb87YCc9rxLJshQ6dAhSC",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "212": {
+    "label": "TWAP Orca MYRO/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 211,
+    "max_age": 120
+  },
+  "213": {
+    "label": "Orca USEDCAR/SOL",
+    "oracle_mapping": "yur7Z5VNg4m9oXXCj7Z5dmh7Xk857aaV4Cs7zG1YXMD",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "214": {
+    "label": "TWAP Orca USEDCAR/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 213,
+    "max_age": 120
+  },
+  "215": {
+    "label": "Orca JLP/USDC",
+    "oracle_mapping": "8Z8uy3xqUZqvpJ9QvJz7muz5aosL2VjGfJcEA99JK364",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "216": {
+    "label": "TWAP Orca JLP/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 213,
+    "max_age": 120
   }
 }
