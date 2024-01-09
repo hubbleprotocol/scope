@@ -103,7 +103,7 @@ impl OracleType {
             OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => 100_000,
             OracleType::MsolStake => 20_000,
             OracleType::JupiterLpFetch => 40_000,
-            OracleType::ScopeTwap => 10_000,
+            OracleType::ScopeTwap => 15_000,
             OracleType::OrcaWhirlpoolAtoB
             | OracleType::OrcaWhirlpoolBtoA
             | OracleType::RaydiumAmmV3AtoB
