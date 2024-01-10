@@ -5,5 +5,5 @@ type: application
 version: 0.0.1
 dependencies:
   - name: service-base-chart
-    version: 0.0.1-SNAPSHOT-1644324659
+    version: 0.1.0
     repository: '@hubbleprotocol'
