@@ -130,14 +130,14 @@
   },
   "37": {
     "label": "TWAP USDH/USD",
-    "oracle_mapping": "3DCCiwqtbyZAb15FG1QBh6pSHtJFk1hFHBdaqvRHDnWy",
-    "oracle_type": "SwitchboardV2",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 12,
     "max_age": 200
   },
   "39": {
     "label": "TWAP UXD/USD",
-    "oracle_mapping": "3B9tzM8DHr2KCSzU27jaZDMtBDFNyndJnYEstxLxdmoo",
-    "oracle_type": "SwitchboardV2",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 36,
     "max_age": 300
   },
   "41": {
@@ -232,9 +232,9 @@
   },
   "61": {
     "label": "TWAP STSOL/USD",
-    "oracle_mapping": "2xjosYMbYZqb8aTQADcdKDgFM9KWqxtGzt9m92D36MSC",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 300
+    "oracle_type": "ScopeTwap",
+    "twap_source": 13,
+    "max_age": 180
   },
   "62": {
     "label": "EMA USDC/USD",
@@ -254,15 +254,15 @@
   },
   "66": {
     "label": "TWAP wstETH/USD",
-    "oracle_mapping": "HdjRiFXQKvhRkMbrEnFuppjpkN8pkfDs6XTraT4noQib",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 18,
+    "max_age": 220
   },
   "67": {
     "label": "TWAP DUST/USD",
-    "oracle_mapping": "72osS12hcMSCsEZupwXmV9j5MPtwAVDrhEDHMNUafkCz",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 300
+    "oracle_type": "ScopeTwap",
+    "twap_source": 41,
+    "max_age": 220
   },
   "68": {
     "label": "BONK/USD",
@@ -273,9 +273,9 @@
   },
   "69": {
     "label": "TWAP BONK/USD",
-    "oracle_mapping": "FaEXa4kxB7q4MfZhyBsvnmvFVT5ZV5LCMjtQvW9ejuVz",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 68,
+    "max_age": 220
   },
   "70": {
     "label": "SAMO/USD",
@@ -286,9 +286,9 @@
   },
   "71": {
     "label": "TWAP SAMO/USD",
-    "oracle_mapping": "3poFd941QmkiTSfgogCxWFtBupSVFY8MS1nBPwJz1Ky1",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 70,
+    "max_age": 220
   },
   "72": {
     "label": "Stake rate bSOL/SOL",
@@ -309,9 +309,9 @@
   },
   "75": {
     "label": "TWAP HADES/USD",
-    "oracle_mapping": "Dk56aJYsAuYxZsrQ3UXjirP43ZWyRw5v1hHJoC81Jr4c",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 74,
+    "max_age": 220
   },
   "76": {
     "label": "STSOL/SOL",
@@ -322,9 +322,9 @@
   },
   "77": {
     "label": "TWAP STSOL/SOL",
-    "oracle_mapping": "HVCGgDzPbMm97DR5uUPQwKhvMsj8o199j6Db6C7qjTgm",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 76,
+    "max_age": 220
   },
   "78": {
     "label": "RLB/USD",
@@ -335,9 +335,9 @@
   },
   "79": {
     "label": "TWAP RLB/USD",
-    "oracle_mapping": "6YTnVyDY6d65Cn3LWTpHSnMKkycCR14cKGK1BceVA3HW",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 78,
+    "max_age": 220
   },
   "80": {
     "label": "CGNTSOL/SOL",
@@ -354,15 +354,15 @@
   },
   "82": {
     "label": "TWAP HXRO/USD",
-    "oracle_mapping": "CcDNn4WZ2qQpLU2PmJXxq5U95i2MGmDBWwb45j9MT19Q",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 81,
+    "max_age": 220
   },
   "83": {
     "label": "TWAP MNDE/USD",
-    "oracle_mapping": "2t1goX8trxz5R7iQZMW62zvRnB8kXEkYjAiSgLsjYY46",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 24,
+    "max_age": 220
   },
   "84": {
     "label": "HNT/USD",
@@ -383,9 +383,9 @@
   },
   "87": {
     "label": "TWAP MOBILE/HNT",
-    "oracle_mapping": "76ztFCjsjCuQMSjn2WnFFt2BC46HPoX4ZT1xYoDdiZuH",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 86,
+    "max_age": 220
   },
   "88": {
     "label": "IOT/HNT",
@@ -396,9 +396,9 @@
   },
   "89": {
     "label": "TWAP IOT/HNT",
-    "oracle_mapping": "4Rcx2TpPD2AcE3HJFMLekGUDfgyyFRWgrC6qsbaVNuZW",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 88,
+    "max_age": 220
   },
   "90": {
     "label": "NANA/USD",
@@ -409,9 +409,9 @@
   },
   "91": {
     "label": "TWAP NANA/USD",
-    "oracle_mapping": "DRR56tdTCrzaMDXu9WUKp4kwr7Y9zT9pTGcUF3xr6mRc",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 90,
+    "max_age": 220
   },
   "92": {
     "label": "STEP/USD",
@@ -422,9 +422,9 @@
   },
   "93": {
     "label": "TWAP STEP/USD",
-    "oracle_mapping": "7TjVLJMB1i1bouCPkLJjVCbpSfuf2UMcWdL7p6teQr73",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 92,
+    "max_age": 220
   },
   "94": {
     "label": "FORGE/USD",
@@ -435,9 +435,9 @@
   },
   "95": {
     "label": "TWAP FORGE/USD",
-    "oracle_mapping": "BSnT5fPrmqC5uP3MVnKombxMMhGd3fVGEUsXPPqSX4bt",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 94,
+    "max_age": 220
   },
   "96": {
     "label": "COCO/USD",
@@ -448,9 +448,9 @@
   },
   "97": {
     "label": "TWAP COCO/USD",
-    "oracle_mapping": "EHUsb4k6haGcxWHaQKM2xF4r1gbKQsRppDB8gGqiH1qw",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 96,
+    "max_age": 220
   },
   "100": {
     "label": "CHAI/USD",
@@ -461,9 +461,9 @@
   },
   "101": {
     "label": "TWAP CHAI/USD",
-    "oracle_mapping": "7suZeZ5Efeuxuei6P92jJCEq4eDTyHj2q3p5NEEb7KjD",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 100,
+    "max_age": 220
   },
   "102": {
     "label": "T/USD",
@@ -474,9 +474,9 @@
   },
   "103": {
     "label": "TWAP T/USD",
-    "oracle_mapping": "EbXSXmT9dJVG7fLNk87YN1zxj5AEUkbouhr24DAzc9bA",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 102,
+    "max_age": 220
   },
   "104": {
     "label": "BLZE/USD",
@@ -487,9 +487,9 @@
   },
   "105": {
     "label": "TWAP BLZE/USD",
-    "oracle_mapping": "58gSjWW4Lkh6i8PE2LWAw9Dh8TacrsYftzg5uRLzLm78",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 104,
+    "max_age": 220
   },
   "106": {
     "label": "EUROE/USD",
@@ -500,9 +500,9 @@
   },
   "107": {
     "label": "TWAP EUROE/USD",
-    "oracle_mapping": "AVGoVvdUCMiZ5oZtuE2wtxNNCqUH5dxixsYrnX7yXb6H",
-    "oracle_type": "SwitchboardV2",
-    "max_age": 200
+    "oracle_type": "ScopeTwap",
+    "twap_source": 106,
+    "max_age": 220
   },
   "108": {
     "label": "kSOL-bSOL_Orca/USD",
