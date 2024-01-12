@@ -32,7 +32,7 @@ impl ScopeConfig {
         let buf_reader = BufReader::new(file);
         let config: ScopeConfig = serde_json::from_reader(buf_reader)?;
         for (id, token) in config.tokens.iter() {
-            if token.oracle_type == OracleType::ScopeTwap {
+            if token.oracle_type == OracleType::ScopeTwap1h {
                 if token.twap_source.is_none() {
                     return Err(anyhow::anyhow!(
                         "Twap source not set for token {id}: {}",

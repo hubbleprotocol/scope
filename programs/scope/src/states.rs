@@ -2,6 +2,7 @@ use crate::{MAX_ENTRIES, MAX_ENTRIES_U16};
 use anchor_lang::prelude::*;
 use decimal_wad::decimal::Decimal;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+use strum::{EnumCount, EnumIter};
 
 #[zero_copy]
 #[derive(Debug, Default)]
@@ -45,10 +46,23 @@ impl Default for DatedPrice {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
+#[derive(
+    Debug, PartialEq, Eq, Clone, Copy, TryFromPrimitive, IntoPrimitive, EnumCount, EnumIter,
+)]
 #[repr(usize)]
 pub enum EmaType {
     Ema1h,
+    Ema24h,
+}
+
+#[zero_copy]
+#[derive(Debug, Eq, PartialEq, Default)]
+pub struct EmaEntry {
+    pub ema: u128,
+    /// The sample tracker is a 64 bit number where each bit represents a point in time.
+    pub updates_tracker: u64,
+    pub padding_0: u64,
+    pub padding_1: u128,
 }
 
 #[zero_copy]
@@ -57,10 +71,7 @@ pub struct EmaTwap {
     pub last_update_slot: u64, // the slot when the last observation was added
     pub last_update_unix_timestamp: u64,
 
-    pub current_ema_1h: u128,
-    /// The sample tracker is a 64 bit number where each bit represents a point in time.
-    pub updates_tracker_1h: u64,
-    pub padding_0: u64,
+    pub emas: [EmaEntry; EmaType::COUNT],
 
     pub padding_1: [u128; 39],
 }
@@ -68,20 +79,19 @@ pub struct EmaTwap {
 impl Default for EmaTwap {
     fn default() -> Self {
         Self {
-            current_ema_1h: 0,
+            emas: Default::default(),
             last_update_slot: 0,
             last_update_unix_timestamp: 0,
-            updates_tracker_1h: 0,
-            padding_0: 0,
             padding_1: [0_u128; 39],
         }
     }
 }
 
 impl EmaTwap {
-    pub fn as_dated_price(&self, index: u16) -> DatedPrice {
+    pub fn as_dated_price(&self, index: u16, ema_type: EmaType) -> DatedPrice {
+        let current_ema = self.emas[usize::from(ema_type)].ema;
         DatedPrice {
-            price: Decimal::from_scaled_val(self.current_ema_1h).into(),
+            price: Decimal::from_scaled_val(current_ema).into(),
             last_updated_slot: self.last_update_slot,
             unix_timestamp: self.last_update_unix_timestamp,
             _reserved: [0; 2],

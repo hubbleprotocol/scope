@@ -105,7 +105,7 @@ where
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             Box::new(ktokens::KTokenOracle::new(token_conf, default_max_age, &rpc.client).await?)
         }
-        OracleType::ScopeTwap => Box::new(twap::TwapOracle::new(token_conf, default_max_age)),
+        OracleType::ScopeTwap1h => Box::new(twap::TwapOracle::new(token_conf, default_max_age)),
         #[cfg(not(feature = "yvaults"))]
         OracleType::KToken | OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => {
             panic!("yvaults feature is not enabled, KTokenOracle is not available")

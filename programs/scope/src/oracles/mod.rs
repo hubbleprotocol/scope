@@ -18,7 +18,7 @@ use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
-use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError};
+use crate::{DatedPrice, EmaType, OracleMappings, OracleTwaps, ScopeError};
 
 use self::ktokens_token_x::TokenTypes;
 
@@ -73,7 +73,7 @@ pub enum OracleType {
     /// the price is just fetched from the Jupiter's pool and can be stalled.
     JupiterLpFetch = 11,
     /// Scope twap
-    ScopeTwap = 12,
+    ScopeTwap1h = 12,
     /// Orca's whirlpool price (CLMM) A to B
     OrcaWhirlpoolAtoB = 13,
     /// Orca's whirlpool price (CLMM) B to A
@@ -88,7 +88,7 @@ pub enum OracleType {
 
 impl OracleType {
     pub fn is_twap(&self) -> bool {
-        matches!(self, OracleType::ScopeTwap)
+        matches!(self, OracleType::ScopeTwap1h)
     }
 
     /// Get the number of compute unit needed to refresh the price of a token
@@ -103,7 +103,7 @@ impl OracleType {
             OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => 100_000,
             OracleType::MsolStake => 20_000,
             OracleType::JupiterLpFetch => 40_000,
-            OracleType::ScopeTwap => 15_000,
+            OracleType::ScopeTwap1h => 15_000,
             OracleType::OrcaWhirlpoolAtoB
             | OracleType::OrcaWhirlpoolBtoA
             | OracleType::RaydiumAmmV3AtoB
@@ -171,7 +171,9 @@ where
         OracleType::JupiterLpFetch => {
             jupiter_lp::get_price_no_recompute(base_account, clock, extra_accounts)
         }
-        OracleType::ScopeTwap => twap::get_price(oracle_mappings, oracle_twaps, index, clock),
+        OracleType::ScopeTwap1h => {
+            twap::get_price(oracle_mappings, oracle_twaps, index, EmaType::Ema1h, clock)
+        }
         OracleType::OrcaWhirlpoolAtoB => {
             orca_whirlpool::get_price(true, base_account, clock, extra_accounts)
         }
@@ -210,7 +212,7 @@ pub fn validate_oracle_account(
         OracleType::JupiterLpFetch | OracleType::JupiterLpCompute => {
             jupiter_lp::validate_jlp_pool(price_account)
         }
-        OracleType::ScopeTwap => twap::validate_price_account(price_account),
+        OracleType::ScopeTwap1h => twap::validate_price_account(price_account),
         OracleType::OrcaWhirlpoolAtoB | OracleType::OrcaWhirlpoolBtoA => {
             orca_whirlpool::validate_pool_account(price_account)
         }

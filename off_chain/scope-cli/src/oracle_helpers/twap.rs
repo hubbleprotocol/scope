@@ -34,7 +34,7 @@ impl TwapOracle {
 #[async_trait::async_trait]
 impl OracleHelper for TwapOracle {
     fn get_type(&self) -> OracleType {
-        OracleType::ScopeTwap
+        OracleType::ScopeTwap1h
     }
 
     fn get_number_of_extra_accounts(&self) -> usize {

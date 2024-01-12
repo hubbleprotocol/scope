@@ -52,7 +52,7 @@ pub fn process(
             *ref_price_pubkey = new_price_pubkey;
         }
         None => {
-            if price_type == OracleType::ScopeTwap {
+            if price_type == OracleType::ScopeTwap1h {
                 *ref_price_pubkey = crate::id();
             } else {
                 // if no price_info account is passed, it means that the mapping has to be removed so it is set to Pubkey::default

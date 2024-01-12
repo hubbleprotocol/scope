@@ -38,7 +38,7 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         | OracleType::SplStake
         | OracleType::PythEMA
         | OracleType::MsolStake
-        | OracleType::ScopeTwap
+        | OracleType::ScopeTwap1h
         | OracleType::RaydiumAmmV3AtoB
         | OracleType::RaydiumAmmV3BtoA => {}
         OracleType::JupiterLpFetch => {

@@ -70,7 +70,7 @@ impl From<TestOracleType> for OracleType {
             TestOracleType::PythEMA => OracleType::PythEMA,
             TestOracleType::JupiterLPFetch => OracleType::JupiterLpFetch,
             TestOracleType::JupiterLpCompute => OracleType::JupiterLpCompute,
-            TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap,
+            TestOracleType::ScopeTwap(_) => OracleType::ScopeTwap1h,
             TestOracleType::OrcaWhirlpool(dir) => {
                 if dir {
                     OracleType::OrcaWhirlpoolAtoB
