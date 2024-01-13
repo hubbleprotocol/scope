@@ -1180,6 +1180,22 @@
     "twap_enabled": true,
     "max_age": 100
   },
+  "220": {
+    "label": "TWAP Orca MASH/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 217,
+    "max_age": 120
+  },
+  "221": {
+    "label": "TWAP Orca HONEY/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 218,
+    "max_age": 120
+  },
+  "222": {
+    "label": "TWAP Raydium ONE/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 219,
+    "max_age": 120
+  }
 }
-
-
