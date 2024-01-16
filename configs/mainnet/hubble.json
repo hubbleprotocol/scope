@@ -1219,5 +1219,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 219,
     "max_age": 120
+  },
+  "223": {
+    "label": "Orca mockJUP/SOL",
+    "oracle_mapping": "5Ma3j5resFMUp71VVUG4dQcDaLHvopAiGz7ahCYyEe4e",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "224": {
+    "label": "TWAP Orca mockJUP/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 223,
+    "max_age": 120
   }
 }
