@@ -1223,7 +1223,7 @@
   "223": {
     "label": "Orca mockJUP/SOL",
     "oracle_mapping": "5Ma3j5resFMUp71VVUG4dQcDaLHvopAiGz7ahCYyEe4e",
-    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_type": "OrcaWhirlpoolAtoB",
     "twap_enabled": true,
     "max_age": 100
   },
