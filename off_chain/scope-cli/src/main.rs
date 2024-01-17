@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::{
     io::IsTerminal,
     ops::Neg,
@@ -23,7 +24,7 @@ use tracing_subscriber::EnvFilter;
 
 mod web;
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// Connect to solana validator
@@ -58,6 +59,26 @@ struct Args {
     /// Subcommand to execute
     #[clap(subcommand)]
     action: Actions,
+}
+
+impl Debug for Args {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let cluster_str = if matches!(self.cluster, Cluster::Custom(..)) {
+            "Custom *****".to_owned()
+        } else {
+            format!("{:?}", self.cluster)
+        };
+        f.debug_struct("Args")
+            .field("cluster", &cluster_str)
+            .field("keypair", &self.keypair)
+            .field("program_id", &self.program_id)
+            .field("price_feed", &self.price_feed)
+            .field("multisig", &self.multisig)
+            .field("json", &self.json)
+            .field("log_timestamps", &self.log_timestamps)
+            .field("action", &self.action)
+            .finish()
+    }
 }
 
 #[derive(Debug, Subcommand)]
