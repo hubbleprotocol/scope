@@ -410,13 +410,6 @@ async fn crank<T: AsyncClient, S: Signer>(
             last_mapping_refresh = Instant::now();
         }
 
-        if last_print.elapsed() > print_period {
-            let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
-            info!(current_slot);
-            let _ = scope.log_prices(current_slot).await;
-            last_print = Instant::now();
-        }
-
         if let Err(e) = scope.refresh_old_prices().await {
             warn!("Error while refreshing prices {:?}", e);
         }
@@ -434,6 +427,13 @@ async fn crank<T: AsyncClient, S: Signer>(
             } else {
                 warn!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
             }
+        }
+
+        if last_print.elapsed() > print_period {
+            let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
+            info!(current_slot);
+            let _ = scope.log_prices(current_slot).await;
+            last_print = Instant::now();
         }
 
         let sleep_ms_from_slots = if shortest_ttl > 0 {
