@@ -180,7 +180,7 @@ init: $(SCOPE_CLI)
 
 update-mapping: $(SCOPE_CLI)
 >@ if [ $(CLUSTER) = "mainnet" ]; then\
-      RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" cargo run -p scope-cli -- --cluster $(URL) --multisig $(SCOPE_MULTISIG_AUTH) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
+      RUST_BACKTRACE=1 RUST_LOG="scope_client=info" cargo run -p scope-cli -- --cluster $(URL) --multisig $(SCOPE_MULTISIG_AUTH) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
   else\
       RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json;\
   fi
