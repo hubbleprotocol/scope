@@ -10,6 +10,7 @@ mod jupiter_lp;
 #[cfg(feature = "yvaults")]
 mod ktoken;
 mod pyth;
+mod spl_stake;
 mod switchboard_v2;
 
 #[async_recursion] // kTokens recursively create underlying token mappings
@@ -43,9 +44,10 @@ pub async fn set_price(
         TestOracleType::CToken => {
             panic!("CToken oracle type is not available in tests")
         }
-        TestOracleType::SplStake => {
-            panic!("SplStake oracle type is not available in tests")
-        }
+        TestOracleType::SplStake => sp(
+            spl_stake::get_account_data_for_price(price, &clock),
+            spl_stake::id(),
+        ),
         TestOracleType::JupiterLPFetch => {
             jupiter_lp::get_jlp_price_accounts(&conf.pubkey, price, &clock, false)
         }

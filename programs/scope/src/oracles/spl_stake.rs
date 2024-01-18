@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use solana_program::borsh0_10::try_from_slice_unchecked;
 
-use crate::{utils::hours_since_timestamp, DatedPrice, Price, Result, ScopeError};
+use crate::utils::SECONDS_PER_HOUR;
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 use self::spl_stake_pool::StakePool;
 
@@ -26,11 +27,13 @@ pub fn get_price(
 
     #[cfg(not(feature = "skip_price_validation"))]
     {
-        let hours_since_epoch_started = hours_since_timestamp(
-            current_clock.unix_timestamp as u64,
-            current_clock.epoch_start_timestamp as u64,
-        );
-        if stake_pool.last_update_epoch != current_clock.epoch && hours_since_epoch_started >= 1 {
+        let seconds_since_epoch_started = current_clock
+            .unix_timestamp
+            .saturating_sub(current_clock.epoch_start_timestamp);
+        if (stake_pool.last_update_epoch + 1 == current_clock.epoch
+            && seconds_since_epoch_started >= SECONDS_PER_HOUR)
+            || (stake_pool.last_update_epoch + 1 < current_clock.epoch)
+        {
             // The price has not been refreshed this epoch and it's been 1 hour
             // We allow 1 hour of delay because stake account are never refreshed very quickly on a new epoch and we don't want to block the price usage.
             // This is an accepted tradeoff as this price type is only used as reference and not to compute the value of the token.
