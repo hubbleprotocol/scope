@@ -94,12 +94,12 @@ impl OracleType {
     /// Get the number of compute unit needed to refresh the price of a token
     pub fn get_update_cu_budget(&self) -> u32 {
         match self {
-            OracleType::Pyth => 15_000,
+            OracleType::Pyth => 20_000,
             OracleType::SwitchboardV2 => 30_000,
             OracleType::CToken => 130_000,
             OracleType::SplStake => 20_000,
             OracleType::KToken => 120_000,
-            OracleType::PythEMA => 15_000,
+            OracleType::PythEMA => 20_000,
             OracleType::KTokenToTokenA | OracleType::KTokenToTokenB => 100_000,
             OracleType::MsolStake => 20_000,
             OracleType::JupiterLpFetch => 40_000,
@@ -108,7 +108,7 @@ impl OracleType {
             | OracleType::OrcaWhirlpoolBtoA
             | OracleType::RaydiumAmmV3AtoB
             | OracleType::RaydiumAmmV3BtoA => 20_000,
-            OracleType::JupiterLpCompute => 100_000,
+            OracleType::JupiterLpCompute => 120_000,
             OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }

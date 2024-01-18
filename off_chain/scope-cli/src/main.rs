@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::{
     io::IsTerminal,
     ops::Neg,
@@ -23,7 +24,7 @@ use tracing_subscriber::EnvFilter;
 
 mod web;
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// Connect to solana validator
@@ -58,6 +59,26 @@ struct Args {
     /// Subcommand to execute
     #[clap(subcommand)]
     action: Actions,
+}
+
+impl Debug for Args {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let cluster_str = if matches!(self.cluster, Cluster::Custom(..)) {
+            "Custom *****".to_owned()
+        } else {
+            format!("{:?}", self.cluster)
+        };
+        f.debug_struct("Args")
+            .field("cluster", &cluster_str)
+            .field("keypair", &self.keypair)
+            .field("program_id", &self.program_id)
+            .field("price_feed", &self.price_feed)
+            .field("multisig", &self.multisig)
+            .field("json", &self.json)
+            .field("log_timestamps", &self.log_timestamps)
+            .field("action", &self.action)
+            .finish()
+    }
 }
 
 #[derive(Debug, Subcommand)]
@@ -410,13 +431,6 @@ async fn crank<T: AsyncClient, S: Signer>(
             last_mapping_refresh = Instant::now();
         }
 
-        if last_print.elapsed() > print_period {
-            let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
-            info!(current_slot);
-            let _ = scope.log_prices(current_slot).await;
-            last_print = Instant::now();
-        }
-
         if let Err(e) = scope.refresh_old_prices().await {
             warn!("Error while refreshing prices {:?}", e);
         }
@@ -434,6 +448,13 @@ async fn crank<T: AsyncClient, S: Signer>(
             } else {
                 warn!(%error_log, old_prices=?scope.get_expired_prices().await.unwrap_or_default());
             }
+        }
+
+        if last_print.elapsed() > print_period {
+            let current_slot = get_clock(scope.get_rpc()).await.unwrap_or_default().slot;
+            info!(current_slot);
+            let _ = scope.log_prices(current_slot).await;
+            last_print = Instant::now();
         }
 
         let sleep_ms_from_slots = if shortest_ttl > 0 {
