@@ -92,7 +92,7 @@ fn check_fees(stake_pool: &StakePool) -> Result<()> {
     Ok(())
 }
 
-pub mod spl_stake_pool {
+mod spl_stake_pool {
     use std::fmt::Display;
 
     use anchor_lang::prelude::borsh::BorshSchema;
@@ -104,7 +104,7 @@ pub mod spl_stake_pool {
     /// native `Option`
     #[repr(C)]
     #[derive(Clone, Copy, Debug, PartialEq, AnchorSerialize, AnchorDeserialize, BorshSchema)]
-    pub enum FutureEpoch<T> {
+    pub(crate) enum FutureEpoch<T> {
         /// Nothing is set
         None,
         /// Value is ready after the next epoch boundary
@@ -121,7 +121,7 @@ pub mod spl_stake_pool {
 
     /// Enum representing the account type managed by the program
     #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize, BorshSchema)]
-    pub enum AccountType {
+    pub(crate) enum AccountType {
         /// If the account has not been initialized, the enum will be 0
         #[default]
         Uninitialized,
@@ -133,7 +133,7 @@ pub mod spl_stake_pool {
 
     #[repr(C)]
     #[derive(Clone, Copy, Debug, Default, AnchorSerialize, AnchorDeserialize, BorshSchema)]
-    pub struct Fee {
+    pub(crate) struct Fee {
         /// denominator of the fee ratio
         pub denominator: u64,
         /// numerator of the fee ratio
@@ -172,7 +172,7 @@ pub mod spl_stake_pool {
 
     /// The type of fees that can be set on the stake pool
     #[derive(Clone, Debug, PartialEq, AnchorDeserialize, AnchorSerialize, BorshSchema)]
-    pub enum FeeType {
+    pub(crate) enum FeeType {
         /// Referral fees for SOL deposits
         SolReferral(u8),
         /// Referral fees for stake deposits
@@ -192,7 +192,7 @@ pub mod spl_stake_pool {
     /// Initialized program details.
     #[repr(C)]
     #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize, BorshSchema)]
-    pub struct StakePool {
+    pub(crate) struct StakePool {
         /// Account type, must be StakePool currently
         pub account_type: AccountType,
 
