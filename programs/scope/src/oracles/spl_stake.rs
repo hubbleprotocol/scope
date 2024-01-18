@@ -30,8 +30,9 @@ pub fn get_price(
         let seconds_since_epoch_started = current_clock
             .unix_timestamp
             .saturating_sub(current_clock.epoch_start_timestamp);
-        if stake_pool.last_update_epoch != current_clock.epoch
-            && seconds_since_epoch_started >= SECONDS_PER_HOUR
+        if (stake_pool.last_update_epoch + 1 == current_clock.epoch
+            && seconds_since_epoch_started >= SECONDS_PER_HOUR)
+            || (stake_pool.last_update_epoch + 1 < current_clock.epoch)
         {
             // The price has not been refreshed this epoch and it's been 1 hour
             // We allow 1 hour of delay because stake account are never refreshed very quickly on a new epoch and we don't want to block the price usage.
