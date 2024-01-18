@@ -33,10 +33,10 @@ use crate::utils::map_scope_error;
 // - [x] Wrong Jupiter LP additional oracles account
 
 // Spl Stake:
-// - [] Working case, refreshed in current epoch
-// - [] Working case, refreshed in previous epoch but less than 1hour ago
-// - [] Fail case, refreshed in previous epoch but more than 1hour ago
-// - [] Fail case, refreshed in more than 1 epoch ago and epoch started less than 1hour ago
+// - [x] Working case, refreshed in current epoch
+// - [x] Working case, refreshed in previous epoch but less than 1hour ago
+// - [x] Fail case, refreshed in previous epoch but more than 1hour ago
+// - [x] Fail case, refreshed in more than 1 epoch ago and epoch started less than 1hour ago
 
 #[cfg(feature = "yvaults")]
 mod ktoken_tests {
@@ -1060,7 +1060,7 @@ mod test_spl_stake {
         // Change price
         mock_oracles::set_price(&mut ctx, &feed, &TEST_STAKE_ORACLE, &price).await;
 
-        // Change epoch + 30 minutes
+        // Change epoch + 61 minutes
         let mut clock = ctx.get_clock().await;
         clock.epoch += 1;
         clock.epoch_start_timestamp = clock.unix_timestamp;
@@ -1105,7 +1105,95 @@ mod test_spl_stake {
         // Change price
         mock_oracles::set_price(&mut ctx, &feed, &TEST_STAKE_ORACLE, &price).await;
 
-        // Change epoch + 30 minutes
+        // Change 2 epoch + 30 minutes
+        let mut clock = ctx.get_clock().await;
+        clock.epoch += 2;
+        clock.epoch_start_timestamp = clock.unix_timestamp;
+        clock.unix_timestamp += 30 * 60;
+        ctx.context.set_sysvar(&clock);
+
+        // Refresh
+        let mut accounts = scope::accounts::RefreshList {
+            oracle_prices: feed.prices,
+            oracle_mappings: feed.mapping,
+            oracle_twaps: feed.twaps,
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        }
+        .to_account_metas(None);
+
+        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+
+        let args = scope::instruction::RefreshPriceList {
+            tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],
+        };
+
+        let ix = Instruction {
+            program_id: scope::id(),
+            accounts: accounts.to_account_metas(None),
+            data: args.data(),
+        };
+
+        let res = ctx.send_transaction_with_bot(&[ix]).await;
+        assert_eq!(map_scope_error(res), ScopeError::PriceNotValid);
+    }
+
+    #[tokio::test]
+    async fn test_fail_refresh_one_old_epoch_just_started_spl_stake_2() {
+        let (mut ctx, feed) =
+            fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_STAKE_ORACLE]).await;
+
+        let price = Price {
+            value: 1100000,
+            exp: 6,
+        };
+        // Change price
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_STAKE_ORACLE, &price).await;
+
+        // Change 10 epoch + 30 minutes
+        let mut clock = ctx.get_clock().await;
+        clock.epoch += 10;
+        clock.epoch_start_timestamp = clock.unix_timestamp;
+        clock.unix_timestamp += 30 * 60;
+        ctx.context.set_sysvar(&clock);
+
+        // Refresh
+        let mut accounts = scope::accounts::RefreshList {
+            oracle_prices: feed.prices,
+            oracle_mappings: feed.mapping,
+            oracle_twaps: feed.twaps,
+            instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
+        }
+        .to_account_metas(None);
+
+        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+
+        let args = scope::instruction::RefreshPriceList {
+            tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],
+        };
+
+        let ix = Instruction {
+            program_id: scope::id(),
+            accounts: accounts.to_account_metas(None),
+            data: args.data(),
+        };
+
+        let res = ctx.send_transaction_with_bot(&[ix]).await;
+        assert_eq!(map_scope_error(res), ScopeError::PriceNotValid);
+    }
+
+    #[tokio::test]
+    async fn test_fail_refresh_one_old_epoch_just_started_spl_stake_3() {
+        let (mut ctx, feed) =
+            fixtures::setup_scope(DEFAULT_FEED_NAME, vec![TEST_STAKE_ORACLE]).await;
+
+        let price = Price {
+            value: 1100000,
+            exp: 6,
+        };
+        // Change price
+        mock_oracles::set_price(&mut ctx, &feed, &TEST_STAKE_ORACLE, &price).await;
+
+        // Change 2 epoch + 61 minutes
         let mut clock = ctx.get_clock().await;
         clock.epoch += 2;
         clock.epoch_start_timestamp = clock.unix_timestamp;
