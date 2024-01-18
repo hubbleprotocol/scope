@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use solana_program::borsh0_10::try_from_slice_unchecked;
 
-use crate::{utils::hours_since_timestamp, DatedPrice, Price, Result, ScopeError};
+use crate::utils::SECONDS_PER_HOUR;
+use crate::{DatedPrice, Price, Result, ScopeError};
 
 use self::spl_stake_pool::StakePool;
 
@@ -26,11 +27,12 @@ pub fn get_price(
 
     #[cfg(not(feature = "skip_price_validation"))]
     {
-        let hours_since_epoch_started = hours_since_timestamp(
-            current_clock.unix_timestamp as u64,
-            current_clock.epoch_start_timestamp as u64,
-        );
-        if stake_pool.last_update_epoch != current_clock.epoch && hours_since_epoch_started >= 1 {
+        let seconds_since_epoch_started = current_clock
+            .unix_timestamp
+            .saturating_sub(current_clock.epoch_start_timestamp);
+        if stake_pool.last_update_epoch != current_clock.epoch
+            && seconds_since_epoch_started >= SECONDS_PER_HOUR
+        {
             // The price has not been refreshed this epoch and it's been 1 hour
             // We allow 1 hour of delay because stake account are never refreshed very quickly on a new epoch and we don't want to block the price usage.
             // This is an accepted tradeoff as this price type is only used as reference and not to compute the value of the token.
@@ -89,7 +91,7 @@ fn check_fees(stake_pool: &StakePool) -> Result<()> {
     Ok(())
 }
 
-mod spl_stake_pool {
+pub mod spl_stake_pool {
     use std::fmt::Display;
 
     use anchor_lang::prelude::borsh::BorshSchema;
@@ -101,7 +103,7 @@ mod spl_stake_pool {
     /// native `Option`
     #[repr(C)]
     #[derive(Clone, Copy, Debug, PartialEq, AnchorSerialize, AnchorDeserialize, BorshSchema)]
-    pub(crate) enum FutureEpoch<T> {
+    pub enum FutureEpoch<T> {
         /// Nothing is set
         None,
         /// Value is ready after the next epoch boundary
@@ -118,7 +120,7 @@ mod spl_stake_pool {
 
     /// Enum representing the account type managed by the program
     #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize, BorshSchema)]
-    pub(crate) enum AccountType {
+    pub enum AccountType {
         /// If the account has not been initialized, the enum will be 0
         #[default]
         Uninitialized,
@@ -130,7 +132,7 @@ mod spl_stake_pool {
 
     #[repr(C)]
     #[derive(Clone, Copy, Debug, Default, AnchorSerialize, AnchorDeserialize, BorshSchema)]
-    pub(crate) struct Fee {
+    pub struct Fee {
         /// denominator of the fee ratio
         pub denominator: u64,
         /// numerator of the fee ratio
@@ -169,7 +171,7 @@ mod spl_stake_pool {
 
     /// The type of fees that can be set on the stake pool
     #[derive(Clone, Debug, PartialEq, AnchorDeserialize, AnchorSerialize, BorshSchema)]
-    pub(crate) enum FeeType {
+    pub enum FeeType {
         /// Referral fees for SOL deposits
         SolReferral(u8),
         /// Referral fees for stake deposits
@@ -189,7 +191,7 @@ mod spl_stake_pool {
     /// Initialized program details.
     #[repr(C)]
     #[derive(Clone, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize, BorshSchema)]
-    pub(crate) struct StakePool {
+    pub struct StakePool {
         /// Account type, must be StakePool currently
         pub account_type: AccountType,
 
