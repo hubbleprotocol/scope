@@ -1349,5 +1349,31 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 232,
     "max_age": 120
+  },
+  "243": {
+    "label": "Orca PUFF/SOL",
+    "oracle_mapping": "EAgFY6UpStiVfDrwtAc2WrHa7G6fuH9eWN8WJQGPzWLX",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "244": {
+    "label": "Orca UPSIDEDOWNCAT/SOL",
+    "oracle_mapping": "3z8cAeLRKZJV8Kh4zLLTJm5EP4Z3T2rg23Py9HUcsEUp",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "245": {
+    "label": "TWAP Orca PUFF/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 243,
+    "max_age": 120
+  },
+  "246": {
+    "label": "TWAP Orca UPSIDEDOWNCAT/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 244,
+    "max_age": 120
   }
 }
