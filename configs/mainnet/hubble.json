@@ -1375,5 +1375,44 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 244,
     "max_age": 120
+  },
+  "247": {
+    "label": "Orca OVOL/SOL",
+    "oracle_mapping": "ECk1LzMZmurh49Jvho4EgpERzY65P4heSGjJdZuwzQpZ",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "248": {
+    "label": "Orca CLAY/SOL",
+    "oracle_mapping": "CcvZEe9EDGN7DEudGSKvkfVHcoTWZ9gwHFx5s6iJVmMP",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "249": {
+    "label": "Orca MADx/SOL",
+    "oracle_mapping": "uZqSzWdR67vCmM2CUQU23psHzorZzi7hJ3FzgFhgczk",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "250": {
+    "label": "TWAP Orca OVOL/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 247,
+    "max_age": 120
+  },
+  "251": {
+    "label": "TWAP Orca CLAY/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 248,
+    "max_age": 120
+  },
+  "252": {
+    "label": "TWAP Orca MADx/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 249,
+    "max_age": 120
   }
 }
