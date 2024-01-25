@@ -1360,7 +1360,7 @@
   "254": {
     "label": "TWAP Orca mockJUP/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 243,
+    "twap_source": 253,
     "max_age": 120
   }
 }
