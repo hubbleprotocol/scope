@@ -1439,5 +1439,18 @@
     "oracle_type": "MeteoraDlmmBtoA",
     "oracle_mapping": "AtcGozT6i1GR3wJAjVwRwmt7qbHqZrBUqKs2DcMAKoVe",
     "max_age": 100
+  },
+  "257": {
+    "label": "Meteora MockJUP/SOL",
+    "oracle_type": "MeteoraDlmmAtoB",
+    "oracle_mapping": "ASbMGsQx1RnqzVhFUv8VKrxn993XpZN4VWuBudpv69wJ",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "258": {
+    "label": "TWAP Meteora MockJUP/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 257,
+    "max_age": 120
   }
 }
