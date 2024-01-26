@@ -19,6 +19,7 @@ pub mod jupiter_lp_compute;
 pub mod jupiter_lp_fetch;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
+pub mod meteora_dlmm;
 pub mod orca_whirlpool;
 pub mod single_account_oracle;
 pub mod twap;
@@ -121,6 +122,9 @@ where
         OracleType::JupiterLpCompute => Box::new(
             jupiter_lp_compute::JupiterLPOracleCompute::new(token_conf, default_max_age, rpc)
                 .await?,
+        ),
+        OracleType::MeteoraDlmmAtoB | OracleType::MeteoraDlmmBtoA => Box::new(
+            meteora_dlmm::MeteoraDlmmOracle::new(token_conf, default_max_age, &rpc.client).await?,
         ),
         OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")

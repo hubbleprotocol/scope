@@ -57,6 +57,7 @@ raydium-amm-v3 = { git = "https://github.com/raydium-io/raydium-clmm", features 
     "cpi",
 ] }
 jup-perp-itf = { path = "../jup-perp-itf", features = ["cpi"] }
+lb-clmm-itf = { path = "../lb-clmm-itf", features = ["no-entrypoint"] }
 intbits = "0.2.0"
 
 [dev-dependencies]

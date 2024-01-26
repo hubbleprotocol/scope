@@ -15,7 +15,11 @@ use yvaults::{
 };
 
 use crate::{
-    utils::{account_deserialize, math::u64_div_to_price, zero_copy_deserialize},
+    utils::{
+        account_deserialize,
+        math::{price_of_lamports_to_price_of_tokens, u64_div_to_price},
+        zero_copy_deserialize,
+    },
     DatedPrice, Price, ScopeError,
 };
 
@@ -149,7 +153,11 @@ where
             TokenTypes::TokenB => strategy_account_ref.token_b_mint_decimals,
         };
 
-        price_lamport_to_token_x_per_share(price_lamport_to_lamport, token_decimals, share_decimals)
+        price_of_lamports_to_price_of_tokens(
+            price_lamport_to_lamport,
+            share_decimals,
+            token_decimals,
+        )
     };
 
     Ok(DatedPrice {
@@ -266,62 +274,4 @@ pub fn holdings_of_token_x(
     });
 
     Ok(available + invested + fees + sum_rewards_x)
-}
-
-/// Convert a Price in lamport to lamport to a price of token x per kToken share
-fn price_lamport_to_token_x_per_share(
-    lamport_price: Price,
-    token_decimals: u64,
-    share_decimals: u64,
-) -> Price {
-    // lamport_price = number_of_token_x_lamport / number_of_shares_lamport
-    // price = number_of_token_x / number_of_shares
-    // price = (number_of_token_x_lamport / 10^token_decimals) / (number_of_shares_lamport / 10^share_decimals)
-    // price = (number_of_token_x_lamport / number_of_shares_lamport) * 10^(share_decimals - token_decimals)
-    // price = lamport_price * 10^(share_decimals - token_decimals)
-    // price = lamport_value * 10^(share_decimals - token_decimals - lamport_exp)
-    // price = lamport_value * 10^(-(lamport_exp + token_decimals - share_decimals))
-    let Price {
-        value: lamport_value,
-        exp: lamport_exp,
-    } = lamport_price;
-
-    if lamport_exp + token_decimals >= share_decimals {
-        let exp = lamport_exp + token_decimals - share_decimals;
-        Price {
-            value: lamport_value,
-            exp,
-        }
-    } else {
-        let adjust_exp = share_decimals - (lamport_exp + token_decimals);
-        let value = lamport_value * 10_u64.pow(adjust_exp.try_into().unwrap());
-        Price { value, exp: 0 }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use test_case::test_case;
-
-    #[test_case(100, 0, 6, 6, 100, 0)]
-    #[test_case(100, 0, 3, 6, 100000, 0)]
-    #[test_case(100, 0, 6, 3, 100, 3)]
-    #[test_case(1, 0, 0, 6, 1000000, 0)]
-    #[test_case(1, 0, 6, 0, 1, 6)]
-    #[test_case(1, 6, 0, 6, 1, 0)]
-    #[test_case(99, 8, 0, 6, 99, 2)]
-    fn test_price_lamport_to_token_x_per_share(
-        value: u64,
-        exp: u64,
-        token_decimals: u64,
-        share_decimals: u64,
-        final_value: u64,
-        final_exp: u64,
-    ) {
-        let price = Price { value, exp };
-        let final_price = price_lamport_to_token_x_per_share(price, token_decimals, share_decimals);
-        assert_eq!(final_price.value, final_value);
-        assert_eq!(final_price.exp, final_exp);
-    }
 }
