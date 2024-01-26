@@ -69,10 +69,15 @@ where
     };
 
     let lamport_price = math::q64x64_price_to_price(q64x64_price)?;
+    let (src_token_decimals, dst_token_decimals) = if a_to_b {
+        (mint_a_decimals, mint_b_decimals)
+    } else {
+        (mint_b_decimals, mint_a_decimals)
+    };
     let price = math::price_of_lamports_to_price_of_tokens(
         lamport_price,
-        mint_a_decimals.into(),
-        mint_b_decimals.into(),
+        src_token_decimals.into(),
+        dst_token_decimals.into(),
     );
 
     // Return price
