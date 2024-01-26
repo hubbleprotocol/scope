@@ -1452,5 +1452,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 257,
     "max_age": 120
+  },
+  "259": {
+    "label": "Meteora WEN/SOL",
+    "oracle_type": "MeteoraDlmmAtoB",
+    "oracle_mapping": "GhqPR2A8mqhSyYDrJ8V8wsoGGe11qoURFjWWMm6BPfK4",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "260": {
+    "label": "TWAP Meteora WEN/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 259,
+    "max_age": 120
   }
 }
