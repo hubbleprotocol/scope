@@ -1427,5 +1427,17 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 253,
     "max_age": 120
+  },
+  "255": {
+    "label": "Meteora SOL/USDC",
+    "oracle_type": "MeteoraDlmmAtoB",
+    "oracle_mapping": "FoSDw2L5DmTuQTFe55gWPDXf88euaxAEKFre74CnvQbX",
+    "max_age": 100
+  },
+  "256": {
+    "label": "Meteora SOL/BONK",
+    "oracle_type": "MeteoraDlmmBtoA",
+    "oracle_mapping": "AtcGozT6i1GR3wJAjVwRwmt7qbHqZrBUqKs2DcMAKoVe",
+    "max_age": 100
   }
 }

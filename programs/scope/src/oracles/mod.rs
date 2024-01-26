@@ -5,6 +5,7 @@ pub mod ktokens;
 pub mod ktokens_token_x;
 
 pub mod jupiter_lp;
+pub mod meteora_dlmm;
 pub mod msol_stake;
 pub mod orca_whirlpool;
 pub mod pyth;
@@ -84,6 +85,10 @@ pub enum OracleType {
     RaydiumAmmV3BtoA = 16,
     /// Jupiter's perpetual LP tokens computed from current oracle prices
     JupiterLpCompute = 17,
+    /// Meteora's DLMM A to B
+    MeteoraDlmmAtoB = 18,
+    /// Meteora's DLMM B to A
+    MeteoraDlmmBtoA = 19,
 }
 
 impl OracleType {
@@ -108,6 +113,7 @@ impl OracleType {
             | OracleType::OrcaWhirlpoolBtoA
             | OracleType::RaydiumAmmV3AtoB
             | OracleType::RaydiumAmmV3BtoA => 20_000,
+            OracleType::MeteoraDlmmAtoB | OracleType::MeteoraDlmmBtoA => 30_000,
             OracleType::JupiterLpCompute => 120_000,
             OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
@@ -180,6 +186,12 @@ where
         }
         OracleType::RaydiumAmmV3AtoB => raydium_ammv3::get_price(true, base_account, clock),
         OracleType::RaydiumAmmV3BtoA => raydium_ammv3::get_price(false, base_account, clock),
+        OracleType::MeteoraDlmmAtoB => {
+            meteora_dlmm::get_price(true, base_account, clock, extra_accounts)
+        }
+        OracleType::MeteoraDlmmBtoA => {
+            meteora_dlmm::get_price(false, base_account, clock, extra_accounts)
+        }
         OracleType::JupiterLpCompute => {
             jupiter_lp::get_price_recomputed(base_account, clock, extra_accounts)
         }
@@ -216,6 +228,9 @@ pub fn validate_oracle_account(
         }
         OracleType::RaydiumAmmV3AtoB | OracleType::RaydiumAmmV3BtoA => {
             raydium_ammv3::validate_pool_account(price_account)
+        }
+        OracleType::MeteoraDlmmAtoB | OracleType::MeteoraDlmmBtoA => {
+            meteora_dlmm::validate_pool_account(price_account)
         }
         OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")

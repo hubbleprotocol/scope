@@ -51,6 +51,9 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         OracleType::JupiterLpCompute => {
             accounts.append(&mut get_jlp_compute_remaining_accounts(ctx, conf).await)
         }
+        OracleType::MeteoraDlmmAtoB | OracleType::MeteoraDlmmBtoA => {
+            unimplemented!("MeteoraDlmm is not yet supported in tests")
+        }
         OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }

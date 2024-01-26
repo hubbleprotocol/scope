@@ -2266,6 +2266,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
+name = "lb-clmm-itf"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "bytemuck",
+ "decimal-wad",
+]
+
+[[package]]
 name = "lb_clmm"
 version = "0.5.0"
 source = "git+ssh://git@github.com/hubbleprotocol/lb-clmm.git#0eabb9945419a1f0f51837823a3505864c7636d3"
@@ -4014,6 +4023,7 @@ dependencies = [
  "decimal-wad",
  "intbits",
  "jup-perp-itf",
+ "lb-clmm-itf",
  "num_enum 0.7.1",
  "proptest",
  "pyth-sdk-solana",
