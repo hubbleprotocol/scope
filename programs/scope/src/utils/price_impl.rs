@@ -69,7 +69,7 @@ impl From<Decimal> for Price {
 
 impl From<Price> for Decimal {
     fn from(val: Price) -> Self {
-        Decimal::from(val.value) / 10u64.pow(val.exp as u32)
+        Decimal::from(val.value) / 10u128.pow(val.exp as u32)
     }
 }
 
