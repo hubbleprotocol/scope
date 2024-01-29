@@ -1491,5 +1491,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 263,
     "max_age": 120
+  },
+  "265": {
+    "label": "Meteora JUP/JitoSOL",
+    "oracle_type": "MeteoraDlmmAtoB",
+    "oracle_mapping": "2QrWsSWrGvoAqkDC5XSGqjS752RWLaopqAaGrbugSxBL",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "266": {
+    "label": "TWAP Orca JUP/JitoSOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 265,
+    "max_age": 120
   }
 }
