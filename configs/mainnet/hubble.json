@@ -1465,5 +1465,31 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 259,
     "max_age": 120
+  },
+  "261": {
+    "label": "Orca WYNN/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "J7caZ14NDYVUgKboEqfxH9qyynWbkY7U6u72twVUXwZ2",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "262": {
+    "label": "TWAP Orca WYNN/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 261,
+    "max_age": 120
+  },
+  "263": {
+    "label": "Orca ARAB/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "aKdBju3sxyvyTydsiVvEcmG9Pm9krfZxQezoTptDmPS",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "264": {
+    "label": "TWAP Orca ARAB/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 263,
+    "max_age": 120
   }
 }
