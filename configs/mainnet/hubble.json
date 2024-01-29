@@ -1500,7 +1500,7 @@
     "max_age": 100
   },
   "266": {
-    "label": "TWAP Orca JUP/JitoSOL",
+    "label": "TWAP Meteora JUP/JitoSOL",
     "oracle_type": "ScopeTwap",
     "twap_source": 265,
     "max_age": 120
