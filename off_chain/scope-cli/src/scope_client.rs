@@ -27,6 +27,7 @@ use scope::{
 };
 use tracing::{debug, error, info, trace, warn};
 
+use crate::utils::PriceMode;
 use crate::{
     config::{ScopeConfig, TokenConfig, TokenList},
     oracle_helpers::{entry_from_config, TokenEntry},
@@ -176,7 +177,7 @@ where
     }
 
     /// Update the remote oracle mapping from the local
-    pub async fn upload_oracle_mapping(&self) -> Result<()> {
+    pub async fn upload_oracle_mapping(&self, mode: PriceMode) -> Result<()> {
         let program_mapping = self.get_program_mapping().await?;
         let onchain_accounts_mapping = program_mapping.price_info_accounts;
         let onchain_price_type_mapping = program_mapping.price_types;
@@ -184,8 +185,26 @@ where
         let onchain_twap_source = program_mapping.twap_source;
         let token_metadatas = self.get_token_metadatas().await?;
 
+        let ids: Vec<u16> = match mode {
+            PriceMode::All => self.tokens.keys().copied().collect(),
+            PriceMode::Spot => self
+                .tokens
+                .iter()
+                .filter(|(_, entry)| !entry.get_label().contains("TWAP"))
+                .map(|(id, _)| *id)
+                .collect(),
+            PriceMode::Twap => self
+                .tokens
+                .iter()
+                .filter(|(_, entry)| entry.get_label().contains("TWAP"))
+                .map(|(id, _)| *id)
+                .collect(),
+        };
+
         // For all "token" local and remote
-        for (&token_idx, local_entry) in &self.tokens {
+        // for (&token_idx, local_entry) in &tokens {
+        for &token_idx in &ids {
+            let local_entry = self.tokens.get(&token_idx).unwrap();
             let idx: usize = token_idx.try_into().unwrap();
             let rem_mapping = if onchain_accounts_mapping[idx] == Pubkey::default()
                 || onchain_accounts_mapping[idx] == self.program_id
