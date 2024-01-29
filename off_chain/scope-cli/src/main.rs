@@ -102,7 +102,7 @@ enum Actions {
 
         /// Mode to use for price upload
         #[clap(long, env, default_value = "all")]
-        mode: PriceMode,
+        price_typ: PriceMode,
     },
 
     /// Initialize the program accounts

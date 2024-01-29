@@ -32,6 +32,7 @@ SCOPE_MULTISIG_AUTH ?= "E35i5qn7872eEmBt15e5VGhziUBzCTm43XCSWvDoQNNv"
 FEED_NAME ?= hubble
 MAINNET_RPC_URL ?= "https://api.mainnet-beta.solana.com"
 
+
 #declare CLUSTER to be dependable
 $(eval $(call DEPENDABLE_VAR,CLUSTER))
 
@@ -183,13 +184,6 @@ update-mapping: $(SCOPE_CLI)
       RUST_BACKTRACE=1 RUST_LOG="scope_client=info" cargo run -p scope-cli -- --cluster $(URL) --multisig $(SCOPE_MULTISIG_AUTH) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json --mode $(MODE);\
   else\
       RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json --mode $(MODE);\
-  fi
-
-update-mapping-spot: $(SCOPE_CLI)
->@ if [ $(CLUSTER) = "mainnet" ]; then\
-      RUST_BACKTRACE=1 RUST_LOG="scope_client=info" cargo run -p scope-cli -- --cluster $(URL) --multisig $(SCOPE_MULTISIG_AUTH) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json --mode twap;\
-  else\
-      RUST_BACKTRACE=1 RUST_LOG="scope_client=trace,scope=trace" cargo run -p scope-cli -- --cluster $(URL) --keypair $(OWNER_KEYPAIR) --program-id $(SCOPE_PROGRAM_ID) --price-feed $(FEED_NAME) upload --mapping ./configs/$(CLUSTER)/$(FEED_NAME).json --mode twap;\
   fi
 
 crank: $(SCOPE_CLI)
