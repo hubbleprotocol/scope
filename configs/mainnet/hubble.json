@@ -1504,5 +1504,17 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 265,
     "max_age": 120
+  },
+  "267": {
+    "label": "JUP/USD",
+    "oracle_type": "Pyth",
+    "oracle_mapping": "g6eRCbboSwK4tSWngn773RCMexr1APQr4uA9bGZBYfo",
+    "max_age": 100
+  },
+  "268": {
+    "label": "EMA JUP/USD",
+    "oracle_type": "PythEMA",
+    "oracle_mapping": "g6eRCbboSwK4tSWngn773RCMexr1APQr4uA9bGZBYfo",
+    "max_age": 120
   }
 }
