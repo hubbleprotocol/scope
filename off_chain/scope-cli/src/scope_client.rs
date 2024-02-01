@@ -1,3 +1,4 @@
+#![allow(clippy::borrowed_box)]
 use std::io::IsTerminal;
 use std::mem::size_of;
 use std::{collections::HashSet, num::NonZeroU64};
@@ -21,12 +22,14 @@ use futures::future::join_all;
 use nohash_hasher::IntMap;
 use orbit_link::tx_builder::TxBuilder;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
+use scope::oracles::OracleType;
 use scope::{
     accounts, instruction, Configuration, OracleMappings, OraclePrices, OracleTwaps,
     TokenMetadatas, UpdateTokenMetadataMode,
 };
 use tracing::{debug, error, info, trace, warn};
 
+use crate::utils::PriceTypeFilter;
 use crate::{
     config::{ScopeConfig, TokenConfig, TokenList},
     oracle_helpers::{entry_from_config, TokenEntry},
@@ -176,7 +179,7 @@ where
     }
 
     /// Update the remote oracle mapping from the local
-    pub async fn upload_oracle_mapping(&self) -> Result<()> {
+    pub async fn upload_oracle_mapping(&self, mode: PriceTypeFilter) -> Result<()> {
         let program_mapping = self.get_program_mapping().await?;
         let onchain_accounts_mapping = program_mapping.price_info_accounts;
         let onchain_price_type_mapping = program_mapping.price_types;
@@ -184,8 +187,14 @@ where
         let onchain_twap_source = program_mapping.twap_source;
         let token_metadatas = self.get_token_metadatas().await?;
 
+        let filter = |(_, entry): &(_, &Box<dyn TokenEntry>)| match mode {
+            PriceTypeFilter::All => true,
+            PriceTypeFilter::Spot => !matches!(entry.get_type(), OracleType::ScopeTwap),
+            PriceTypeFilter::Twap => matches!(entry.get_type(), OracleType::ScopeTwap),
+        };
+
         // For all "token" local and remote
-        for (&token_idx, local_entry) in &self.tokens {
+        for (&token_idx, local_entry) in self.tokens.iter().filter(filter) {
             let idx: usize = token_idx.try_into().unwrap();
             let rem_mapping = if onchain_accounts_mapping[idx] == Pubkey::default()
                 || onchain_accounts_mapping[idx] == self.program_id

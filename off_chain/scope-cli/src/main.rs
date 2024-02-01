@@ -17,6 +17,7 @@ use anchor_client::{
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use orbit_link::{async_client::AsyncClient, OrbitLink};
+use scope_client::utils::PriceTypeFilter;
 use scope_client::{utils::get_clock, ScopeClient, ScopeConfig};
 use tokio::time::sleep;
 use tracing::{error, info, trace, warn};
@@ -98,6 +99,10 @@ enum Actions {
         /// Where is stored the mapping to upload
         #[clap(long, env, parse(from_os_str))]
         mapping: PathBuf,
+
+        /// Filter for the types of prices to upload
+        #[clap(value_enum, long, env, rename_all="lower", default_value_t = PriceTypeFilter::All)]
+        price_type_filter: PriceTypeFilter,
     },
 
     /// Initialize the program accounts
@@ -265,7 +270,10 @@ async fn main() -> Result<()> {
 
         match args.action {
             Actions::Download { mapping } => download(&mut scope, &mapping).await,
-            Actions::Upload { mapping } => upload(&mut scope, &mapping).await,
+            Actions::Upload {
+                mapping,
+                price_type_filter,
+            } => upload(&mut scope, &mapping, price_type_filter).await,
             Actions::Init { .. } => unreachable!(),
             Actions::Show { mapping } => show(&mut scope, &mapping).await,
             Actions::Crank {
@@ -319,7 +327,7 @@ async fn init<T: AsyncClient, S: Signer>(
     if let Some(mapping) = mapping_op {
         let token_list = ScopeConfig::read_from_file(&mapping)?;
         scope.set_local_mapping(&token_list).await?;
-        scope.upload_oracle_mapping().await?;
+        scope.upload_oracle_mapping(PriceTypeFilter::All).await?;
     }
 
     Ok(())
@@ -328,10 +336,11 @@ async fn init<T: AsyncClient, S: Signer>(
 async fn upload<T: AsyncClient, S: Signer>(
     scope: &mut ScopeClient<T, S>,
     mapping: &impl AsRef<Path>,
+    mode: PriceTypeFilter,
 ) -> Result<()> {
     let token_list = ScopeConfig::read_from_file(&mapping)?;
     scope.set_local_mapping(&token_list).await?;
-    scope.upload_oracle_mapping().await
+    scope.upload_oracle_mapping(mode).await
 }
 
 async fn download<T: AsyncClient, S: Signer>(

@@ -32,6 +32,7 @@ SCOPE_MULTISIG_AUTH ?= "E35i5qn7872eEmBt15e5VGhziUBzCTm43XCSWvDoQNNv"
 FEED_NAME ?= hubble
 MAINNET_RPC_URL ?= "https://api.mainnet-beta.solana.com"
 
+
 #declare CLUSTER to be dependable
 $(eval $(call DEPENDABLE_VAR,CLUSTER))
 

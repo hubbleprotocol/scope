@@ -30,3 +30,14 @@ pub async fn get_clock(rpc: &impl AsyncClient) -> Result<Clock> {
 
     Ok(clock)
 }
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
+pub enum PriceTypeFilter {
+    /// All price types
+    #[default]
+    All,
+    /// Only spot price type
+    Spot,
+    /// Only Scope twap price type
+    Twap,
+}
