@@ -31,23 +31,13 @@ pub async fn get_clock(rpc: &impl AsyncClient) -> Result<Clock> {
     Ok(clock)
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum PriceMode {
+#[derive(Clone, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
+pub enum PriceTypeFilter {
+    /// All price types
     #[default]
     All,
+    /// Only spot price type
     Spot,
+    /// Only Scope twap price type
     Twap,
-}
-
-impl FromStr for PriceMode {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
-        match s {
-            "all" => Ok(PriceMode::All),
-            "spot" => Ok(PriceMode::Spot),
-            "twap" => Ok(PriceMode::Twap),
-            _ => Err(anyhow::anyhow!("Invalid price mode")),
-        }
-    }
 }
