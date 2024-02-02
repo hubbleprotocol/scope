@@ -22,10 +22,10 @@ pub enum ErrorKind {
     NoInstructions,
 
     #[error("Anchor error: {0:#?}")]
-    AnchorError(anchor_client::anchor_lang::prelude::AnchorError),
+    AnchorError(Box<anchor_client::anchor_lang::prelude::AnchorError>),
 
     #[error("Anchor program error: {0:#?}")]
-    AnchorProgramError(anchor_client::anchor_lang::prelude::ProgramErrorWithOrigin),
+    AnchorProgramError(Box<anchor_client::anchor_lang::prelude::ProgramErrorWithOrigin>),
 
     #[error("Error while deserializing an account: {0}")]
     DeserializationError(String),
@@ -48,8 +48,8 @@ impl From<anchor_client::anchor_lang::error::Error> for ErrorKind {
     fn from(err: anchor_client::anchor_lang::error::Error) -> Self {
         use anchor_client::anchor_lang::error::Error as AnchorError;
         match err {
-            AnchorError::AnchorError(e) => ErrorKind::AnchorError(e),
-            AnchorError::ProgramError(e) => ErrorKind::AnchorProgramError(e),
+            AnchorError::AnchorError(e) => ErrorKind::AnchorError(e.into()),
+            AnchorError::ProgramError(e) => ErrorKind::AnchorProgramError(e.into()),
         }
     }
 }
