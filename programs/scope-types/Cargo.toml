@@ -16,10 +16,11 @@ crate-type = ["cdylib", "lib"]
 devnet = []
 localnet = []
 mainnet = []
+idl-build = ["anchor-lang/idl-build"]
 
 [dependencies]
-anchor-lang = ">= 0.28.0"
-solana-program = ">= 1.16.18"
+anchor-lang = ">= 0.29.0"
+solana-program = ">= 1.17.18"
 num_enum = ">0.5.7"
 cfg-if = "1.0.0"
 bytemuck = { version = "1.14.0", features = ["min_const_generics", "derive"] }

@@ -136,7 +136,7 @@ pub struct TokensMetadata {
 }
 
 #[zero_copy]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct TokenMetadata {
     pub name: [u8; 32],
     pub max_age_price_seconds: u64,
