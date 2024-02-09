@@ -1516,5 +1516,18 @@
     "oracle_type": "PythEMA",
     "oracle_mapping": "g6eRCbboSwK4tSWngn773RCMexr1APQr4uA9bGZBYfo",
     "max_age": 120
-  }
+  },
+  "269": {
+    "label": "Meteora ARAB/JUP",
+    "oracle_type": "MeteoraDlmmBtoA",
+    "oracle_mapping": "ASDU6QtKhi1vEAT29nhD74dkRS6ziUeqZ1wqAJjMGeVB",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "270": {
+    "label": "TWAP Meteora ARAB/JUP",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 269,
+    "max_age": 120
+  },
 }
