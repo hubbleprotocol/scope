@@ -1529,5 +1529,83 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 269,
     "max_age": 120
+  },
+  "271": {
+    "label": "Orca FOXES/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "F4AKmCzyyjvVn4WKh4CeQm282C93wyhMkqiMjbGNPNzD",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "272": {
+    "label": "TWAP Orca FOXES/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 271,
+    "max_age": 120
+  },
+  "273": {
+    "label": "Orca MMOSH/USDC",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "CcZq15LCpaNWsvD7tqZapVRT2mST1cfCygyb9pqriQkp",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "274": {
+    "label": "TWAP Orca MMOSH/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 273,
+    "max_age": 120
+  },
+  "275": {
+    "label": "Orca PONKE/USDC",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "CsJTG4mospaCYvwQghmL5SAqh8YUkBw6YyzBrbfvTDSN",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "276": {
+    "label": "TWAP Orca PONKE/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 275,
+    "max_age": 120
+  },
+  "277": {
+    "label": "Orca SAROS/SOL",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "4H6Sko3XgeftSjPagKDQ8kZyAh4DCot7GwvwbyvCNGNb",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "278": {
+    "label": "TWAP Orca PONKE/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 277,
+    "max_age": 120
+  },
+  "279": {
+    "label": "Orca ELE/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "34Csk2nz6SirGvrzu8Ck63euPcudU5QVnKzxAUBFKB3u",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "280": {
+    "label": "TWAP Orca ELE/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 279,
+    "max_age": 120
+  },
+  "281": {
+    "label": "Raydium HOLY/SOL",
+    "oracle_type": "RaydiumAmmV3BtoA",
+    "oracle_mapping": "3FQKDEo2yXyankS8F3NT69ZpK79acVUM3dZ6BNR8ivZg",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "282": {
+    "label": "TWAP Raydium HOLY/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 281,
+    "max_age": 120
   }
 }
