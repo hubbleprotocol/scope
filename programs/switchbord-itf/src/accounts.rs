@@ -120,3 +120,17 @@ pub struct Hash {
     /// The bytes used to derive the hash.
     pub data: [u8; 32],
 }
+
+impl AggregatorAccountData {
+    pub fn get_result(&self) -> Option<SwitchboardDecimal> {
+        // Copy to avoid references to a packed struct
+        let latest_confirmed_round_success = self.latest_confirmed_round.num_success;
+        let min_oracle_results = self.min_oracle_results;
+        if min_oracle_results > latest_confirmed_round_success {
+            msg!("Switchboard price is invalid: min_oracle_results: {min_oracle_results} > latest_confirmed_round.num_success: {latest_confirmed_round_success}",);
+            None
+        } else {
+            Some(self.latest_confirmed_round.result)
+        }
+    }
+}
