@@ -1577,7 +1577,7 @@
     "max_age": 100
   },
   "278": {
-    "label": "TWAP Orca PONKE/USDC",
+    "label": "TWAP Orca SAROS/SOL",
     "oracle_type": "ScopeTwap",
     "twap_source": 277,
     "max_age": 120
