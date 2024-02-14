@@ -1607,5 +1607,44 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 281,
     "max_age": 120
+  },
+  "283": {
+    "label": "Orca FOMO/USDC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "7q4Xzf1QPCLPKJcaLbKzJk8JGsUJG15kWKC7qy67faR3",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "284": {
+    "label": "TWAP Orca FOMO/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 283,
+    "max_age": 120
+  },
+  "285": {
+    "label": "Orca TFOXES/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "9rco33fKxYDzMJYgD1VNArhqHVt9QiDRTe9GCb3uJg2c",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "286": {
+    "label": "TWAP Orca TFOXES/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 285,
+    "max_age": 120
+  },
+  "287": {
+    "label": "Raydium BURRRD/SOL",
+    "oracle_type": "RaydiumAmmV3BtoA",
+    "oracle_mapping": "Fu4sFxYyaQhxomra3SbLe2SKzVhEef8E2b7DwSR6WFo1",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "288": {
+    "label": "TWAP Raydium BURRRD/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 287,
+    "max_age": 120
   }
 }
