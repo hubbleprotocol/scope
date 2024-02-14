@@ -1646,5 +1646,20 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 287,
     "max_age": 120
+  },
+  "289": {
+    "label": "Orca YAKU/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "DyScEhuvpuxEFAmjtRKRV9btgwz2xS3kLGTa5DYrxgoG",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "290": {
+    "label": "TWAP ORCA YAKU/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 289,
+    "max_age": 120
   }
 }
+
+
