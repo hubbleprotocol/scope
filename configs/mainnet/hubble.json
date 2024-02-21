@@ -1558,7 +1558,7 @@
   },
   "275": {
     "label": "Orca PONKE/USDC",
-    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_type": "OrcaWhirlpoolAtoB",
     "oracle_mapping": "CsJTG4mospaCYvwQghmL5SAqh8YUkBw6YyzBrbfvTDSN",
     "twap_enabled": true,
     "max_age": 100
