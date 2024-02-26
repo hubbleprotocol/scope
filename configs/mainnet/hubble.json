@@ -1659,6 +1659,19 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 289,
     "max_age": 120
+  },
+  "291": {
+    "label": "Orca WEALTH/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "7pyj85n9vZC1fazSynA8HtufMXz3uav1dRarptC7rAE",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "292": {
+    "label": "TWAP ORCA WEALTH/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 291,
+    "max_age": 120
   }
 }
 
