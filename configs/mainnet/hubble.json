@@ -1696,7 +1696,7 @@
   "296": {
     "label": "TWAP Orca SNS/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 293,
+    "twap_source": 295,
     "max_age": 120
   },
   "297": {
@@ -1761,7 +1761,7 @@
   "306": {
     "label": "TWAP Orca OTK/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 303,
+    "twap_source": 305,
     "max_age": 120
   },
   "307": {
@@ -1774,7 +1774,7 @@
   "308": {
     "label": "TWAP Orca WHALES/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 303,
+    "twap_source": 307,
     "max_age": 120
   },
   "309": {
@@ -1904,7 +1904,7 @@
   "328": {
     "label": "TWAP Orca CIF/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 325,
+    "twap_source": 327,
     "max_age": 120
   },
   "329": {
@@ -1958,7 +1958,5 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 335,
     "max_age": 120
-  },
+  }
 }
-
-
