@@ -1,9 +1,5 @@
 FROM lukemathwalker/cargo-chef:latest-rust-slim-bullseye AS chef
 
-# Patch cargo-chef to support transitive workspace dependencies
-# This can be removed if https://github.com/LukeMathWalker/cargo-chef/pull/247 is merged
-RUN cargo install --git https://github.com/elliotkennedy/cargo-chef --branch  transitive-workspace-deps  cargo-chef --locked
-
 RUN apt-get update \
     && apt-get install -y git unzip build-essential autoconf libtool libssl-dev
 
