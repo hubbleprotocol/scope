@@ -1970,5 +1970,20 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 337,
     "max_age": 120
-  }
+  },
+  "339": {
+    "label": "Orca PHTEVE/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "AmrzHo2gPhWtMzELGhNkA5NpPgAXRq9GkoWMnSh2TrzE",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "340": {
+    "label": "TWAP Orca PHTEVE/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 335,
+    "max_age": 120
+  },
 }
+
+
