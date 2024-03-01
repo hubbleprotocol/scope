@@ -1672,7 +1672,318 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 291,
     "max_age": 120
-  }
+  },
+  "293": {
+    "label": "Orca WGC/USDC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "BYaCZSo5brsDsUgWdbTcYGBJjdpoX1sSAsQrVHrVF11Z",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "294": {
+    "label": "TWAP Orca WGC/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 293,
+    "max_age": 120
+  },
+  "295": {
+    "label": "Orca SNS/SOL",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "FQ8VgCiwQE86JNtuboY5HtVahYu9ALm8XF41hDNe15Uk",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "296": {
+    "label": "TWAP Orca SNS/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 295,
+    "max_age": 120
+  },
+  "297": {
+    "label": "Orca vEUR/USDC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "25q3qfHDpRq53HjPsxYEqnLg47rbMH5JiwTRY8HX9mP9",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "298": {
+    "label": "TWAP Orca vEUR/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 297,
+    "max_age": 120
+  },
+  "299": {
+    "label": "Orca vCHF/USDC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "CsPcrAP4gL2JGJxRBLvw4fTBkGdpRDqiSSCfJ8WcTiUk",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "300": {
+    "label": "TWAP Orca vCHF/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 299,
+    "max_age": 120
+  },
+  "301": {
+    "label": "Orca KIWI/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "9j6qbX1E4Aw6xGLQY4NL2ofQC25Z46TC4HwiYgSM8rRK",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "302": {
+    "label": "TWAP Orca KIWI/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 301,
+    "max_age": 120
+  },
+  "303": {
+    "label": "Orca zippySOL/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "HH7gGLknh2WAW3aGw16Z2ovhxLkXdXUizRBSygxLW3wd",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "304": {
+    "label": "TWAP Orca zippySOL/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 303,
+    "max_age": 120
+  },
+  "305": {
+    "label": "Orca OTK/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "Df7vWhJQXNvtQACxiDBFYba8ogaAi7oqTGvsW7jYphHD",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "306": {
+    "label": "TWAP Orca OTK/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 305,
+    "max_age": 120
+  },
+  "307": {
+    "label": "Orca WHALES/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "CibiKUX2jtiYH4VDa7jE48LFqQ8s6ARpSjXBtWiRKXsC",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "308": {
+    "label": "TWAP Orca WHALES/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 307,
+    "max_age": 120
+  },
+  "309": {
+    "label": "Raydium ANTT/SOL",
+    "oracle_type": "RaydiumAmmV3BtoA",
+    "oracle_mapping": "HW2hWdzr2axTabaDfPJCtairnx29f5Me2E86VHsLq1Nq",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "310": {
+    "label": "TWAP Raydium ANTT/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 309,
+    "max_age": 120
+  },
+  "311": {
+    "label": "Orca ARB/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "HsP42eEaEY1L1HHfMfdJbENxDHEvPDzTSzsu9Cs2JrC9",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "312": {
+    "label": "TWAP Orca ARB/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 311,
+    "max_age": 120
+  },
+  "313": {
+    "label": "Orca GME/USDC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "73RuhPFsKghKV88WvupQGEqqVjtYvVQpB1eTni9Ya7tz",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "314": {
+    "label": "TWAP Orca GME/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 313,
+    "max_age": 120
+  },
+  "315": {
+    "label": "Orca FOXY/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "ErPANq1pCtAXCmcUDBttNKzihEESo5EDcTw5FkNnP1De",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "316": {
+    "label": "TWAP Orca FOXY/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 315,
+    "max_age": 120
+  },
+  "317": {
+    "label": "Orca NOS/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "3fCMZfWg48aUNYtdPm9KG4kmwseenr446fLAnafd2Uvj",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "318": {
+    "label": "TWAP Orca NOS/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 317,
+    "max_age": 120
+  },
+  "319": {
+    "label": "Orca APING/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "8NrkeHEzMawZaEurxF4QFBxcQ7jUpyUbM8qPxGjCMUzq",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "320": {
+    "label": "TWAP Orca APING/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 319,
+    "max_age": 120
+  },
+  "321": {
+    "label": "Orca BIPCI/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "CWC1nGbvWyREYnyKyyg8iHGRbRFhy47mLHf5h3odZyG7",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "322": {
+    "label": "TWAP Orca BIPCI/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 321,
+    "max_age": 120
+  },
+  "323": {
+    "label": "Orca PAINT/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "FVYhSEnKZZUfrpJKJUb5HBzAPyRDjrYMjrTe77GHyTfN",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "324": {
+    "label": "TWAP Orca PAINT/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 323,
+    "max_age": 120
+  },
+  "325": {
+    "label": "Orca PRE/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "9VZntM3qabxZYbLDXTVCpqAz1bYETRUMqM8h6wGv1R1f",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "326": {
+    "label": "TWAP Orca PRE/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 325,
+    "max_age": 120
+  },
+  "327": {
+    "label": "Orca CIF/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "D4St43Z1UqbV3xGfhu9wv2iZ9vLoXiW6mfhPcFr3RQZa",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "328": {
+    "label": "TWAP Orca CIF/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 327,
+    "max_age": 120
+  },
+  "329": {
+    "label": "Orca DOBI/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "Dz4nB5b5umPnpRMu1nYYzSnUQ93yUZtuMWbURppLvPV7",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "330": {
+    "label": "TWAP Orca DOBI/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 329,
+    "max_age": 120
+  },
+  "331": {
+    "label": "Orca WUT/USDC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "2U1Y2Zhc6KhiZ83vw6yg8Tdk25R1ipz1as2Hvf1mohKo",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "332": {
+    "label": "TWAP Orca WUT/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 331,
+    "max_age": 120
+  },
+  "333": {
+    "label": "Orca BSKT/USDC",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "ceAFob4AVYaP9MZBjQLaQnsUBBNzJgdYYF39C51U4xh",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "334": {
+    "label": "TWAP Orca BSKT/USDC",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 333,
+    "max_age": 120
+  },
+  "335": {
+    "label": "Orca PAWN/SOL",
+    "oracle_type": "OrcaWhirlpoolAtoB",
+    "oracle_mapping": "5z6AdQVyzNebm2NnFZqwTyeA6o64ouG5rv6Z5avFJ3oi",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "336": {
+    "label": "TWAP Orca PAWN/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 335,
+    "max_age": 120
+  },
+  "337": {
+    "label": "Raydium catwifhat/SOL",
+    "oracle_mapping": "7CPu7bQsbewjoF5tt2zj7xYy5QV4dgr6duruat44NDeF",
+    "oracle_type": "RaydiumAmmV3BtoA",
+    "max_age": 100
+  },
+  "338": {
+    "label": "TWAP Raydium catwifhat/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 337,
+    "max_age": 120
+  },
+  "339": {
+    "label": "Orca PHTEVE/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "AmrzHo2gPhWtMzELGhNkA5NpPgAXRq9GkoWMnSh2TrzE",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "340": {
+    "label": "TWAP Orca PHTEVE/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 339,
+    "max_age": 120
+  },
 }
 
 
