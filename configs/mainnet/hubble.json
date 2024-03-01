@@ -1981,7 +1981,7 @@
   "340": {
     "label": "TWAP Orca PHTEVE/SOL",
     "oracle_type": "ScopeTwap",
-    "twap_source": 335,
+    "twap_source": 339,
     "max_age": 120
   },
 }
