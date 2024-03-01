@@ -1969,6 +1969,6 @@
     "label": "TWAP Raydium catwifhat/SOL",
     "oracle_type": "ScopeTwap",
     "twap_source": 337,
-    "max_age": 100
+    "max_age": 120
   }
 }
