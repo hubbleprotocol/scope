@@ -1962,6 +1962,7 @@
   "337": {
     "label": "Raydium catwifhat/SOL",
     "oracle_mapping": "7CPu7bQsbewjoF5tt2zj7xYy5QV4dgr6duruat44NDeF",
+    "twap_enabled": true,
     "oracle_type": "RaydiumAmmV3BtoA",
     "max_age": 100
   },
@@ -1985,5 +1986,3 @@
     "max_age": 120
   }
 }
-
-
