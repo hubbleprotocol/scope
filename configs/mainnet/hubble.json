@@ -2023,5 +2023,31 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 345,
     "max_age": 120
+  },
+  "347": {
+    "label": "Orca DITH/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "6hg16CLz4b7kuYrt2D4635GCJ1sFyXc7n5hh4Lo6WoBD",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "348": {
+    "label": "TWAP Orca DITH/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 347,
+    "max_age": 120
+  },
+  "349": {
+    "label": "Orca LIKE/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "5rtu9KHabPvJ5uiZ7j4zHvEkGLgy5LdMB3zgRSCp28PU",
+    "twap_enabled": true,
+    "max_age": 100
+  },
+  "350": {
+    "label": "TWAP Orca LIKE/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 349,
+    "max_age": 120
   }
 }
