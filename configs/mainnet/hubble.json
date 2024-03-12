@@ -2049,5 +2049,11 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 349,
     "max_age": 120
+  },
+  "351": {
+    "label": "kPAWN-SOL_Orca/USD",
+    "oracle_mapping": "GHMbbitxf1FeaQz76wXmj8jhHDJDXn3pSjNVt1E9Mb8H",
+    "oracle_type": "KToken",
+    "max_age": 250
   }
 }
