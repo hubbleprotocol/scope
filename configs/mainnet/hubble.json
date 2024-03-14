@@ -116,11 +116,6 @@
     "oracle_mapping": "CtJ8EkqLmeYyGB8s4jevpeNsvmD4dxVR2krfsDLcvV8Y",
     "oracle_type": "Pyth"
   },
-  "34": {
-    "label": "JSOL/SOL",
-    "oracle_mapping": "CtMyWsrUtAwXWiGr9WjHT5fC3p3fgV8cyGpLTo2LJzG1",
-    "oracle_type": "SplStake"
-  },
   "36": {
     "label": "UXD/USD",
     "oracle_mapping": "5Q2eJrnikAw1UBd3cJoBdkjB9Gqq8xjRjYhT3FiBqjPN",
@@ -2055,5 +2050,18 @@
     "oracle_mapping": "GHMbbitxf1FeaQz76wXmj8jhHDJDXn3pSjNVt1E9Mb8H",
     "oracle_type": "KToken",
     "max_age": 250
+  },
+  "352": {
+    "label": "Switchboard USDC/USD",
+    "oracle_type": "SwitchboardV2",
+    "oracle_mapping": "DZxQcTQnNMskQ2VEX57jNW1rBpLTVEVcDYySFkhDaLCe",
+    "max_age": 250,
+    "twap_enabled": true
+  },
+  "353": {
+    "label": "TWAP Switchboard USDC/USD",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 352,
+    "max_age": 255
   }
 }
