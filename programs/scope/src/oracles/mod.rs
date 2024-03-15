@@ -140,7 +140,7 @@ where
     'a: 'b,
 {
     match price_type {
-        OracleType::Pyth => pyth::get_price(base_account),
+        OracleType::Pyth => pyth::get_price(base_account, clock),
         OracleType::SwitchboardV2 => switchboard_v2::get_price(base_account),
         OracleType::CToken => ctokens::get_price(base_account, clock),
         OracleType::SplStake => spl_stake::get_price(base_account, clock),

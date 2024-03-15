@@ -12,6 +12,7 @@
 use std::convert::{TryFrom, TryInto};
 
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::clock::DEFAULT_MS_PER_SLOT;
 use pyth_client::PriceType;
 use pyth_sdk_solana::state as pyth_client;
 
@@ -20,22 +21,45 @@ use crate::{DatedPrice, Price, Result, ScopeError};
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
-pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
+pub fn get_price(price_info: &AccountInfo, clock: &Clock) -> Result<DatedPrice> {
     let data = price_info.try_borrow_data()?;
     let price_account = pyth_client::load_price_account(data.as_ref())
         .map_err(|_| error!(ScopeError::PriceNotValid))?;
 
     let pyth_raw = price_account.to_price_feed(price_info.key);
 
-    let pyth_price = if cfg!(feature = "skip_price_validation") {
+    let (pyth_price, slot, timestamp) = if cfg!(feature = "skip_price_validation") {
         // Don't validate price in tests
-        pyth_raw.get_current_price_unchecked()
+        (
+            pyth_raw.get_current_price_unchecked(),
+            price_account.valid_slot,
+            price_account.timestamp,
+        )
     } else if let Some(pyth_price) = pyth_raw.get_current_price() {
         // Or use the current valid price if available
-        pyth_price
+        (
+            pyth_price,
+            price_account.valid_slot,
+            price_account.timestamp,
+        )
     } else {
-        msg!("No valid price in pyth account {}", price_info.key);
-        return err!(ScopeError::PriceNotValid);
+        let (price, timestamp) = pyth_raw.get_prev_price_unchecked();
+
+        let estimated_elapsed_slots =
+            u64::try_from(clock.unix_timestamp - timestamp).unwrap() * 1000 / DEFAULT_MS_PER_SLOT;
+        let estimated_slot = clock.slot.saturating_sub(estimated_elapsed_slots);
+
+        let prev_slot = price_account.prev_slot;
+
+        // Consider prev_slot could be innacurate and adjust if needed with estimated slot
+        let slot = prev_slot.min(estimated_slot);
+
+        if timestamp == 0 || slot == 0 {
+            msg!("No valid price in pyth account {}", price_info.key);
+            return err!(ScopeError::PriceNotValid);
+        }
+
+        (price, slot, timestamp)
     };
 
     if pyth_price.expo > 0 {
@@ -59,8 +83,8 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
             value: price,
             exp: pyth_price.expo.abs().try_into().unwrap(),
         },
-        last_updated_slot: price_account.valid_slot,
-        unix_timestamp: u64::try_from(price_account.timestamp).unwrap(),
+        last_updated_slot: slot,
+        unix_timestamp: u64::try_from(timestamp).unwrap(),
         ..Default::default()
     })
 }
