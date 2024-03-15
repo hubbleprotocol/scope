@@ -3297,12 +3297,13 @@ dependencies = [
 
 [[package]]
 name = "pyth-sdk"
-version = "0.4.2"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f262b88557d8f152a247e1be786a8359d63112fac0a6e49fa41082a8ef789e8d"
+checksum = "1e7aeef4d5f0a9c98ff5af2ddd84a8b89919c512188305b497a9eb9afa97a949"
 dependencies = [
- "borsh 0.9.3",
- "borsh-derive 0.9.3",
+ "borsh 0.10.3",
+ "borsh-derive 0.10.3",
+ "getrandom 0.2.10",
  "hex",
  "schemars",
  "serde",
@@ -3310,12 +3311,12 @@ dependencies = [
 
 [[package]]
 name = "pyth-sdk-solana"
-version = "0.4.2"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2aed1a0b714f91cb104cc025eb806782e30aa63c23259724e79efd609294a2c9"
+checksum = "7f913de6eb29d8def199af3beaee645e84c5281327d58777eff3fdd9f1d37105"
 dependencies = [
- "borsh 0.9.3",
- "borsh-derive 0.9.3",
+ "borsh 0.10.3",
+ "borsh-derive 0.10.3",
  "bytemuck",
  "num-derive 0.3.3",
  "num-traits",
