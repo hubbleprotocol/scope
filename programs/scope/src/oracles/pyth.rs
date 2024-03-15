@@ -12,6 +12,7 @@
 use std::convert::{TryFrom, TryInto};
 
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::clock::DEFAULT_MS_PER_SLOT;
 use pyth_client::PriceType;
 use pyth_sdk_solana::state as pyth_client;
 
@@ -20,19 +21,44 @@ use crate::{DatedPrice, Price, Result, ScopeError};
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
-pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
+/// Only update with prices not older than 10 minutes, users can still check actual price age
+const STALENESS_SLOT_THRESHOLD: u64 = (10 * 60 * 1000) / DEFAULT_MS_PER_SLOT; // 10 minutes
+
+pub fn get_price(price_info: &AccountInfo, clock: &Clock) -> Result<DatedPrice> {
     let data = price_info.try_borrow_data()?;
-    let price_account = pyth_client::load_price_account(data.as_ref())
-        .map_err(|_| error!(ScopeError::PriceNotValid))?;
+    let price_account: &pyth_client::SolanaPriceAccount =
+        pyth_client::load_price_account(data.as_ref())
+            .map_err(|_| error!(ScopeError::PriceNotValid))?;
 
-    let pyth_raw = price_account.to_price_feed(price_info.key);
+    let oldest_accepted_slot = clock.slot.saturating_sub(STALENESS_SLOT_THRESHOLD);
 
-    let pyth_price = if cfg!(feature = "skip_price_validation") {
-        // Don't validate price in tests
-        pyth_raw.get_current_price_unchecked()
-    } else if let Some(pyth_price) = pyth_raw.get_current_price() {
-        // Or use the current valid price if available
-        pyth_price
+    let (pyth_price, slot, timestamp) = if price_account.agg.status
+        == pyth_client::PriceStatus::Trading
+        && price_account.agg.pub_slot >= oldest_accepted_slot
+    {
+        let pyth_price = pyth_client::Price {
+            conf: price_account.agg.conf,
+            expo: price_account.expo,
+            price: price_account.agg.price,
+            publish_time: price_account.timestamp,
+        };
+        (
+            pyth_price,
+            price_account.agg.pub_slot,
+            price_account.timestamp,
+        )
+    } else if price_account.prev_slot >= oldest_accepted_slot {
+        let pyth_price = pyth_client::Price {
+            conf: price_account.prev_conf,
+            expo: price_account.expo,
+            price: price_account.prev_price,
+            publish_time: price_account.prev_timestamp,
+        };
+        (
+            pyth_price,
+            price_account.prev_slot,
+            price_account.prev_timestamp,
+        )
     } else {
         msg!("No valid price in pyth account {}", price_info.key);
         return err!(ScopeError::PriceNotValid);
@@ -59,8 +85,8 @@ pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
             value: price,
             exp: pyth_price.expo.abs().try_into().unwrap(),
         },
-        last_updated_slot: price_account.valid_slot,
-        unix_timestamp: u64::try_from(price_account.timestamp).unwrap(),
+        last_updated_slot: slot,
+        unix_timestamp: u64::try_from(timestamp).unwrap(),
         ..Default::default()
     })
 }
@@ -85,7 +111,7 @@ pub fn validate_valid_price(
     Ok(price)
 }
 
-fn validate_pyth_price(pyth_price: &pyth_client::PriceAccount) -> Result<()> {
+fn validate_pyth_price(pyth_price: &pyth_client::SolanaPriceAccount) -> Result<()> {
     if pyth_price.magic != pyth_client::MAGIC {
         msg!("Pyth price account provided is not a valid Pyth account");
         return err!(ScopeError::PriceNotValid);
@@ -148,7 +174,9 @@ mod tests {
         let incorrect_magic = 0xa1b2c3d3_u32.to_le_bytes();
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_magic, PRICE_MAGIC_OFFSET);
-        assert!(pyth_client::load_price_account(&buff).is_err());
+        let res: std::result::Result<&pyth_client::SolanaPriceAccount, _> =
+            pyth_client::load_price_account(&buff);
+        assert!(res.is_err());
     }
 
     #[test]
@@ -166,7 +194,9 @@ mod tests {
         let mut buff = valid_price_bytes();
         write_bytes(&mut buff, &incorrect_price_version, PRICE_VERSION_OFFSET);
         // Error detected directly by pyth crate
-        assert!(pyth_client::load_price_account(&buff).is_err());
+        let res: std::result::Result<&pyth_client::SolanaPriceAccount, _> =
+            pyth_client::load_price_account(&buff);
+        assert!(res.is_err());
     }
 
     #[test]

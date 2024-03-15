@@ -19,20 +19,24 @@ use crate::{DatedPrice, Price, Result, ScopeError};
 /// validate price confidence - confidence/price ratio should be less than 2%
 const ORACLE_CONFIDENCE_FACTOR: u64 = 50; // 100% / 2%
 
-pub fn get_price(price_info: &AccountInfo) -> Result<DatedPrice> {
+/// Only update with prices not older than 10 minutes, users can still check actual price age
+const STALENESS_THRESHOLD: u64 = 10 * 60; // 10 minutes
+
+pub fn get_price(price_info: &AccountInfo, clock: &Clock) -> Result<DatedPrice> {
     let data = price_info.try_borrow_data()?;
-    let price_account = pyth_client::load_price_account(data.as_ref()).map_err(|e| {
-        msg!("Invalid pyth price account: {}", e);
-        error!(ScopeError::PriceNotValid)
-    })?;
+    let price_account: &pyth_client::SolanaPriceAccount =
+        pyth_client::load_price_account(data.as_ref())
+            .map_err(|_| error!(ScopeError::PriceNotValid))?;
 
     let pyth_raw = price_account.to_price_feed(price_info.key);
 
     let pyth_ema_price = if cfg!(feature = "skip_price_validation") {
         // Don't validate price in tests
         pyth_raw.get_ema_price_unchecked()
-    } else if let Some(pyth_ema_price) = pyth_raw.get_ema_price() {
-        if !matches!(pyth_raw.status, pyth_sdk_solana::PriceStatus::Trading) {
+    } else if let Some(pyth_ema_price) =
+        pyth_raw.get_ema_price_no_older_than(clock.unix_timestamp, STALENESS_THRESHOLD)
+    {
+        if price_account.agg.status != pyth_client::PriceStatus::Trading {
             msg!("No valid EMA price in pyth account {}", price_info.key);
             return err!(ScopeError::PriceNotValid);
         }
