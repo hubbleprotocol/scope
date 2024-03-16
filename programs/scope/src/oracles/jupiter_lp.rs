@@ -137,7 +137,7 @@ where
 
         for (custody_acc, oracle_acc) in custodies_accs.iter().zip(oracles_accs.iter()) {
             // Compute custody AUM
-            let custody_r = compute_custody_aum(custody_acc, oracle_acc, clock)?;
+            let custody_r = compute_custody_aum_pyth(custody_acc, oracle_acc, clock)?;
 
             pool_amount_usd += custody_r.token_amount_usd;
             trader_short_profits += custody_r.trader_short_profits;
@@ -173,8 +173,7 @@ struct CustodyAumResult {
     pub price_slot: u64,
 }
 
-/// Compute the AUM of a custody scaled by `POOL_VALUE_SCALE_DECIMALS` decimals
-fn compute_custody_aum(
+fn compute_custody_aum_pyth(
     custody_acc: &AccountInfo,
     oracle_acc: &AccountInfo,
     clock: &Clock,
@@ -190,6 +189,11 @@ fn compute_custody_aum(
         ScopeError::UnexpectedAccount
     );
     let dated_price = super::pyth::get_price(oracle_acc, clock)?;
+    compute_custody_aum(&custody, &dated_price)
+}
+
+/// Compute the AUM of a custody scaled by `POOL_VALUE_SCALE_DECIMALS` decimals
+fn compute_custody_aum(custody: &Custody, dated_price: &DatedPrice) -> Result<CustodyAumResult> {
     let price = dated_price.price;
 
     let (token_amount_usd, trader_short_profits) = if custody.is_stable {
