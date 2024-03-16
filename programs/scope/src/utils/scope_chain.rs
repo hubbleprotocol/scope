@@ -289,6 +289,7 @@ impl ScopeChainAccount {
     }
 }
 
+// TODO not working with latest prices that have a lot of decimals. Backport yvault version here.
 pub fn get_price_from_chain(
     prices: &OraclePrices,
     chain: &[u16; MAX_CHAIN_LENGTH],

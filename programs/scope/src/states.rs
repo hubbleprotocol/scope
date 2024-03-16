@@ -151,3 +151,16 @@ pub struct Configuration {
     pub admin_cached: Pubkey,
     _padding: [u64; 1255],
 }
+
+/// Map of mints to scope chain only valid for a given price feed
+#[account]
+pub struct MintsToScopeChains {
+    pub oracle_prices: Pubkey,
+    pub mapping: Vec<MintToScopeChain>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Default, Clone, Copy)]
+pub struct MintToScopeChain {
+    pub mint: Pubkey,
+    pub scope_chain: [u16; 4],
+}
