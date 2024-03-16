@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use crate::{MAX_ENTRIES, MAX_ENTRIES_U16};
 use anchor_lang::prelude::*;
 use decimal_wad::decimal::Decimal;
@@ -153,9 +155,13 @@ pub struct Configuration {
 }
 
 /// Map of mints to scope chain only valid for a given price feed
+#[derive(Default)]
 #[account]
 pub struct MintsToScopeChains {
     pub oracle_prices: Pubkey,
+    pub seed_pk: Pubkey,
+    pub seed_id: u64,
+    pub bump: u8,
     pub mapping: Vec<MintToScopeChain>,
 }
 
@@ -163,4 +169,39 @@ pub struct MintsToScopeChains {
 pub struct MintToScopeChain {
     pub mint: Pubkey,
     pub scope_chain: [u16; 4],
+}
+
+impl MintsToScopeChains {
+    pub const fn size_from_len(len: usize) -> usize {
+        const MINT_TO_SCOPE_CHAIN_SERIALIZED_SIZE: usize =
+            size_of::<Pubkey>() + size_of::<[u16; 4]>();
+
+        size_of::<Pubkey>() // oracle_prices
+            + size_of::<Pubkey>() // seed_pk
+            + size_of::<u64>() // seed_id
+            + size_of::<u8>() // bump
+            + size_of::<u32>() // Vec length
+            + len * MINT_TO_SCOPE_CHAIN_SERIALIZED_SIZE // Vec data
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mints_to_scope_chains_size() {
+        let mut acc = MintsToScopeChains::default();
+
+        let expected_size = acc.try_to_vec().unwrap().len();
+        assert_eq!(expected_size, MintsToScopeChains::size_from_len(0));
+
+        acc.mapping.push(MintToScopeChain::default());
+        let expected_size = acc.try_to_vec().unwrap().len();
+        assert_eq!(expected_size, MintsToScopeChains::size_from_len(1));
+
+        acc.mapping.push(MintToScopeChain::default());
+        let expected_size = acc.try_to_vec().unwrap().len();
+        assert_eq!(expected_size, MintsToScopeChains::size_from_len(2));
+    }
 }
