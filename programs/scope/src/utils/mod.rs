@@ -1,5 +1,6 @@
 pub mod macros;
 pub mod math;
+pub mod pdas;
 pub mod price_impl;
 pub mod scope_chain;
 

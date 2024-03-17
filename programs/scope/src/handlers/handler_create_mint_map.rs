@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 
-use crate::{MintToScopeChain, MintsToScopeChains};
+use crate::{utils::pdas::seeds, MintToScopeChain, MintsToScopeChains};
 
 #[derive(Accounts)]
 #[instruction(
@@ -17,7 +17,7 @@ pub struct CreateMintMap<'info> {
     pub configuration: AccountLoader<'info, crate::Configuration>,
     #[account(
         init,
-        seeds = [b"mints_to_scope_chains", configuration.load()?.oracle_prices.as_ref(), seed_pk.as_ref(), &seed_id.to_le_bytes()],
+        seeds = [seeds::MINTS_TO_SCOPE_CHAINS, configuration.load()?.oracle_prices.as_ref(), seed_pk.as_ref(), &seed_id.to_le_bytes()],
         bump,
         space = 8 + MintsToScopeChains::size_from_len(scope_chains.len()),
         payer = admin,
@@ -35,6 +35,8 @@ pub fn process(
     bump: u8,
     scope_chains: Vec<[u16; 4]>,
 ) -> Result<()> {
+    require_eq!(ctx.remaining_accounts.len(), scope_chains.len());
+
     ctx.accounts.mappings.set_inner(MintsToScopeChains {
         seed_pk,
         seed_id,

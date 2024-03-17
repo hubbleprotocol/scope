@@ -1,3 +1,4 @@
+use crate::utils::pdas::seeds;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -11,7 +12,7 @@ pub struct Initialize<'info> {
 
     // Set space to max size here
     // The ability to create multiple feeds is mostly useful for tests
-    #[account(init, seeds = [b"conf", feed_name.as_bytes()], bump, payer = admin, space = 8 + std::mem::size_of::<crate::Configuration>())]
+    #[account(init, seeds = [seeds::CONFIG, feed_name.as_bytes()], bump, payer = admin, space = 8 + std::mem::size_of::<crate::Configuration>())]
     pub configuration: AccountLoader<'info, crate::Configuration>,
 
     #[account(zero)]

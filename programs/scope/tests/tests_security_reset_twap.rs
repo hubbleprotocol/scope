@@ -1,4 +1,3 @@
-#![allow(clippy::items_after_test_module)]
 use crate::{client::reset_twap, common::fixtures::setup_mapping_for_token_with_twap};
 use anchor_lang::{prelude::Pubkey, InstructionData, ToAccountMetas};
 use common::*;

@@ -3,8 +3,8 @@ use scope::{accounts::Initialize, OracleMappings, OraclePrices, OracleTwaps, Tok
 use solana_program::instruction::Instruction;
 use solana_program_test::ProgramTest;
 use solana_sdk::{
-    account::Account, commitment_config::CommitmentLevel, signature::Keypair, signer::Signer,
-    system_instruction, system_program, transaction::Transaction,
+    account::Account, commitment_config::CommitmentLevel, program_pack::Pack, signature::Keypair,
+    signer::Signer, system_instruction, system_program, transaction::Transaction,
 };
 use types::TestContext;
 
@@ -142,4 +142,20 @@ pub async fn setup_scope_feed() -> (TestContext, ScopeFeedDefinition) {
             twaps: zero_copy_accounts.oracle_twaps.pubkey(),
         },
     )
+}
+
+pub fn create_mint(ctx: &mut TestContext) -> Pubkey {
+    use anchor_spl::token::spl_token::state::Mint;
+
+    let mint = Pubkey::new_unique();
+    let mint_acc = Mint {
+        supply: u64::MAX / 2,
+        decimals: 6,
+        is_initialized: true,
+        ..Default::default()
+    };
+    let mut data = [0u8; Mint::LEN];
+    mint_acc.pack_into_slice(&mut data);
+    ctx.set_account(&mint, data.to_vec(), &anchor_spl::token::ID);
+    mint
 }

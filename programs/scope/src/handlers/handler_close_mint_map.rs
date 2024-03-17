@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 use crate::MintsToScopeChains;
 
 #[derive(Accounts)]
-#[instruction(scope_chains: Vec<[u16; 4]>)]
 pub struct CloseMintMap<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
