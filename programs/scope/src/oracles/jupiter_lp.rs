@@ -153,7 +153,7 @@ where
 /// - The scope mint to price mapping (It must be built with the same mints and order than the custodies)
 /// - All custodies of the pool
 pub fn get_price_recomputed_scope<'a, 'b>(
-    entry_id: u16,
+    entry_id: usize,
     jup_pool_acc: &AccountInfo<'a>,
     clock: &Clock,
     oracle_prices_pk: &Pubkey,
@@ -209,7 +209,7 @@ where
     );
 
     require_eq!(
-        u64::from(entry_id),
+        u64::try_from(entry_id).unwrap(),
         mint_to_price_map.seed_id,
         ScopeError::UnexpectedAccount
     );
