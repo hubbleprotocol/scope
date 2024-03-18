@@ -1,12 +1,17 @@
+use std::ops::Deref;
+
 use anchor_lang::prelude::*;
 use anchor_spl::token::spl_token::state::Mint;
 use decimal_wad::decimal::Decimal;
 use perpetuals::Custody;
 use solana_program::program_pack::Pack;
 
+use crate::scope_chain::get_price_from_chain;
 use crate::utils::account_deserialize;
 use crate::utils::math::ten_pow;
-use crate::{DatedPrice, Price, Result, ScopeError};
+use crate::{
+    DatedPrice, MintToScopeChain, MintsToScopeChains, OraclePrices, Price, Result, ScopeError,
+};
 
 pub use jup_perp_itf as perpetuals;
 pub use perpetuals::utils::{check_mint_pk, get_mint_pk};
@@ -128,6 +133,116 @@ where
             ScopeError::UnexpectedAccount
         );
         let dated_price = super::pyth::get_price(oracle_acc, clock)?;
+        compute_custody_aum(&custody, &dated_price)
+    };
+
+    compute_price_from_custodies_and_prices(
+        lp_token_supply,
+        clock,
+        custodies_and_prices_iter,
+        aum_and_age_getter,
+    )
+}
+
+/// Get the price of 1 JLP token in USD using a scope mapping
+///
+/// This function recompute the AUM of the pool from the custodies and scope prices
+///
+/// Required extra accounts:
+/// - Mint of the JLP token
+/// - The scope mint to price mapping (It must be built with the same mints and order than the custodies)
+/// - All custodies of the pool
+pub fn get_price_recomputed_scope<'a, 'b>(
+    entry_id: u16,
+    jup_pool_acc: &AccountInfo<'a>,
+    clock: &Clock,
+    oracle_prices_pk: &Pubkey,
+    oracle_prices: &OraclePrices,
+    extra_accounts: &mut impl Iterator<Item = &'b AccountInfo<'a>>,
+) -> Result<DatedPrice>
+where
+    'a: 'b,
+{
+    // 1. Get accounts
+    let jup_pool_pk = jup_pool_acc.key;
+    let jup_pool: perpetuals::Pool = account_deserialize(jup_pool_acc)?;
+
+    let mint_acc = extra_accounts
+        .next()
+        .ok_or(ScopeError::AccountsAndTokenMismatch)?;
+
+    // Get mint to price map
+    let mint_to_price_map_acc_info = extra_accounts
+        .next()
+        .ok_or(ScopeError::AccountsAndTokenMismatch)?;
+    let mint_to_price_map_acc =
+        Account::<MintsToScopeChains>::try_from(mint_to_price_map_acc_info)?;
+    let mint_to_price_map = mint_to_price_map_acc.deref();
+
+    // Get custodies
+    let num_custodies = jup_pool.custodies.len();
+
+    // Note: we take all the needed accounts before any check to leave the iterator in a consistent state
+    // (otherwise, we could break the next price computation)
+    let custodies_accs = extra_accounts.take(num_custodies).collect::<Vec<_>>();
+    require_eq!(
+        custodies_accs.len(),
+        num_custodies,
+        ScopeError::AccountsAndTokenMismatch
+    );
+
+    require_gte!(mint_to_price_map.mapping.len(), num_custodies);
+
+    // 2. Check accounts
+    check_accounts(jup_pool_pk, &jup_pool, mint_acc, &custodies_accs)?;
+
+    require_keys_eq!(
+        *oracle_prices_pk,
+        mint_to_price_map.oracle_prices,
+        ScopeError::UnexpectedAccount
+    );
+
+    require_keys_eq!(
+        *jup_pool_pk,
+        mint_to_price_map.seed_pk,
+        ScopeError::UnexpectedAccount
+    );
+
+    require_eq!(
+        u64::from(entry_id),
+        mint_to_price_map.seed_id,
+        ScopeError::UnexpectedAccount
+    );
+    // That the price mints matches the will be done in the next step while deserializing custodies
+    // (avoid double iteration or keeping custodies in memory)
+
+    // 3. Get mint supply
+
+    let lp_token_supply = get_lp_token_supply(mint_acc)?;
+
+    // 4. Compute AUM and prices
+
+    let custodies_and_prices_iter = custodies_accs
+        .into_iter()
+        .zip(mint_to_price_map.mapping.iter());
+    let aum_and_age_getter = |(custody_acc, mint_to_chain): (&AccountInfo, &MintToScopeChain),
+                              _clock: &Clock|
+     -> Result<CustodyAumResult> {
+        let custody: Custody = account_deserialize(custody_acc)?;
+        require!(
+            custody.oracle.oracle_type == perpetuals::OracleType::Pyth,
+            ScopeError::UnexpectedJlpConfiguration
+        );
+        require_keys_eq!(
+            custody.mint,
+            mint_to_chain.mint,
+            ScopeError::UnexpectedAccount
+        );
+        let dated_price =
+            get_price_from_chain(oracle_prices, &mint_to_chain.scope_chain).map_err(|e| {
+                msg!("Error while getting price from scope chain: {:?}", e);
+                ScopeError::BadScopeChainOrPrices
+            })?;
         compute_custody_aum(&custody, &dated_price)
     };
 
