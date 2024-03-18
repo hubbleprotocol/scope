@@ -103,41 +103,58 @@ where
     );
 
     // 2. Check accounts
-    check_mint_pk(jup_pool_pk, mint_acc.key, jup_pool.lp_token_bump)
-        .map_err(|_| error!(ScopeError::UnexpectedAccount))?;
-
-    for (expected_custody_pk, custody_acc) in jup_pool.custodies.iter().zip(custodies_accs.iter()) {
-        require_keys_eq!(
-            *expected_custody_pk,
-            *custody_acc.key,
-            ScopeError::UnexpectedAccount
-        );
-    }
+    check_accounts(jup_pool_pk, &jup_pool, mint_acc, &custodies_accs)?;
     // Check of oracles will be done in the next step while deserializing custodies
     // (avoid double iteration or keeping custodies in memory)
 
     // 3. Get mint supply
 
-    let lp_token_supply = {
-        let mint_borrow = mint_acc.data.borrow();
-        let mint = Mint::unpack(&mint_borrow)?;
-        // This is a sanity check to make sure the mint is configured as expected
-        // This allows to just divide aum by the supply to get the price
-        require_eq!(mint.decimals, POOL_VALUE_SCALE_DECIMALS);
-        mint.supply
+    let lp_token_supply = get_lp_token_supply(mint_acc)?;
+
+    // 4. Compute AUM and prices
+
+    let custodies_and_prices_iter = custodies_accs.into_iter().zip(oracles_accs);
+    let aum_and_age_getter = |(custody_acc, oracle_acc): (&AccountInfo, &AccountInfo),
+                              clock: &Clock|
+     -> Result<CustodyAumResult> {
+        let custody: Custody = account_deserialize(custody_acc)?;
+        require!(
+            custody.oracle.oracle_type == perpetuals::OracleType::Pyth,
+            ScopeError::UnexpectedJlpConfiguration
+        );
+        require_keys_eq!(
+            custody.oracle.oracle_account,
+            *oracle_acc.key,
+            ScopeError::UnexpectedAccount
+        );
+        let dated_price = super::pyth::get_price(oracle_acc, clock)?;
+        compute_custody_aum(&custody, &dated_price)
     };
 
+    compute_price_from_custodies_and_prices(
+        lp_token_supply,
+        clock,
+        custodies_and_prices_iter,
+        aum_and_age_getter,
+    )
+}
+
+fn compute_price_from_custodies_and_prices<T>(
+    lp_token_supply: u64,
+    clock: &Clock,
+    custodies_and_prices_iter: impl Iterator<Item = T>,
+    aum_and_age_getter: impl Fn(T, &Clock) -> Result<CustodyAumResult>,
+) -> Result<DatedPrice> {
     let mut oldest_price_ts: u64 = clock.unix_timestamp.try_into().unwrap();
     let mut oldest_price_slot: u64 = clock.slot;
 
-    // 4. Get AUM with CPI
     let lp_value: u128 = {
         let mut pool_amount_usd: u128 = 0;
         let mut trader_short_profits: u128 = 0;
 
-        for (custody_acc, oracle_acc) in custodies_accs.iter().zip(oracles_accs.iter()) {
+        for custody_and_price in custodies_and_prices_iter {
             // Compute custody AUM
-            let custody_r = compute_custody_aum_pyth(custody_acc, oracle_acc, clock)?;
+            let custody_r = aum_and_age_getter(custody_and_price, clock)?;
 
             pool_amount_usd += custody_r.token_amount_usd;
             trader_short_profits += custody_r.trader_short_profits;
@@ -165,31 +182,42 @@ where
     Ok(dated_price)
 }
 
+fn check_accounts(
+    jup_pool_pk: &Pubkey,
+    jup_pool: &perpetuals::Pool,
+    mint_acc: &AccountInfo,
+    custodies_accs: &[&AccountInfo],
+) -> Result<()> {
+    check_mint_pk(jup_pool_pk, mint_acc.key, jup_pool.lp_token_bump)
+        .map_err(|_| error!(ScopeError::UnexpectedAccount))?;
+
+    for (expected_custody_pk, custody_acc) in jup_pool.custodies.iter().zip(custodies_accs.iter()) {
+        require_keys_eq!(
+            *expected_custody_pk,
+            *custody_acc.key,
+            ScopeError::UnexpectedAccount
+        );
+    }
+    Ok(())
+}
+
+fn get_lp_token_supply(mint_acc: &AccountInfo) -> Result<u64> {
+    let mint_borrow = mint_acc.data.borrow();
+    let mint = Mint::unpack(&mint_borrow)?;
+
+    // This is a sanity check to make sure the mint is configured as expected
+    // This allows to just divide aum by the supply to get the price
+    require_eq!(mint.decimals, POOL_VALUE_SCALE_DECIMALS);
+
+    Ok(mint.supply)
+}
+
 struct CustodyAumResult {
     pub token_amount_usd: u128,
     pub trader_short_profits: u128,
 
     pub price_ts: u64,
     pub price_slot: u64,
-}
-
-fn compute_custody_aum_pyth(
-    custody_acc: &AccountInfo,
-    oracle_acc: &AccountInfo,
-    clock: &Clock,
-) -> Result<CustodyAumResult> {
-    let custody: Custody = account_deserialize(custody_acc)?;
-    require!(
-        custody.oracle.oracle_type == perpetuals::OracleType::Pyth,
-        ScopeError::UnexpectedJlpConfiguration
-    );
-    require_keys_eq!(
-        custody.oracle.oracle_account,
-        *oracle_acc.key,
-        ScopeError::UnexpectedAccount
-    );
-    let dated_price = super::pyth::get_price(oracle_acc, clock)?;
-    compute_custody_aum(&custody, &dated_price)
 }
 
 /// Compute the AUM of a custody scaled by `POOL_VALUE_SCALE_DECIMALS` decimals
