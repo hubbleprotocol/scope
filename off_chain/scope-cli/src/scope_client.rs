@@ -167,8 +167,14 @@ where
         // Local implies to get a copy of needed onchain data (as a cache)
         let tokens_res: Result<TokenEntryList> =
             join_all(token_list.tokens.iter().map(|(id, token_conf)| async {
-                let token_entry: Box<dyn TokenEntry> =
-                    entry_from_config(token_conf, default_max_age, rpc).await?;
+                let token_entry: Box<dyn TokenEntry> = entry_from_config(
+                    *id,
+                    token_conf,
+                    default_max_age,
+                    rpc,
+                    &self.oracle_prices_acc,
+                )
+                .await?;
                 Ok((*id, token_entry))
             }))
             .await
@@ -275,6 +281,7 @@ where
 
         let zero_pk = Pubkey::default();
         let rpc = self.get_orbit_link();
+        let oracle_prices_pk = self.oracle_prices_acc;
 
         let entry_builders = onchain_mapping
             .iter()
@@ -314,7 +321,14 @@ where
                         twap_enabled,
                         twap_source,
                     };
-                    let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
+                    let entry = entry_from_config(
+                        id,
+                        &oracle_conf,
+                        default_max_age,
+                        rpc,
+                        &oracle_prices_pk,
+                    )
+                    .await?;
                     Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
                 },
             );
