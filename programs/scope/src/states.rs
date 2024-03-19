@@ -4,6 +4,10 @@ use crate::{MAX_ENTRIES, MAX_ENTRIES_U16};
 use anchor_lang::prelude::*;
 use decimal_wad::decimal::Decimal;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "serde")]
+use serde_with::serde_as;
 
 #[zero_copy]
 #[derive(Debug, Default)]
@@ -166,7 +170,10 @@ pub struct MintsToScopeChains {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Default, Clone, Copy)]
+#[cfg_attr(feature = "serde", serde_as)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MintToScopeChain {
+    #[cfg_attr(feature = "serde", serde_as(as = "DisplayFromStr"))]
     pub mint: Pubkey,
     pub scope_chain: [u16; 4],
 }

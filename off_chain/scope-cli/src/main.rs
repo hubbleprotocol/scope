@@ -186,6 +186,24 @@ enum Actions {
     /// This requires admin_cached keypair
     #[clap()]
     ApproveAdminCached {},
+
+    /// Creates a new mint to scope chain mapping from a configuration file.
+    /// This requires admin keypair
+    #[clap()]
+    CreateMintMap {
+        /// Where is stored the mapping to use
+        #[clap(long, parse(from_os_str))]
+        conf: PathBuf,
+    },
+
+    /// Close an existing mint to scope chain mapping associated to an entry in the feed configuration.
+    /// This requires admin keypair
+    #[clap()]
+    CloseMintMap {
+        /// Index of the associated entry in the feed configuration
+        #[clap(long)]
+        token_id: u16,
+    },
 }
 
 #[tokio::main]
@@ -308,6 +326,8 @@ async fn main() -> Result<()> {
                 set_admin_cached(&mut scope, admin_cached).await
             }
             Actions::ApproveAdminCached {} => approve_admin_cached(&mut scope).await,
+            Actions::CreateMintMap { conf } => scope.create_mint_map(&conf).await,
+            Actions::CloseMintMap { token_id } => scope.close_mint_map(token_id).await,
         }
     }
 }

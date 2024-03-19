@@ -19,6 +19,7 @@ use std::ops::Deref;
 
 use anchor_lang::{accounts::account_loader::AccountLoader, prelude::*};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{DatedPrice, OracleMappings, OraclePrices, OracleTwaps, ScopeError};
@@ -34,9 +35,8 @@ pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
     Ok(())
 }
 
-#[derive(
-    Serialize, Deserialize, IntoPrimitive, TryFromPrimitive, Clone, Copy, PartialEq, Eq, Debug,
-)]
+#[derive(IntoPrimitive, TryFromPrimitive, Clone, Copy, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(u8)]
 pub enum OracleType {
     Pyth = 0,
