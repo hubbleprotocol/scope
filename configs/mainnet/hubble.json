@@ -2063,5 +2063,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 352,
     "max_age": 255
+  },
+  "354": {
+    "label": "Scope JLP/USD",
+    "oracle_mapping": "5BUwFW4nRbftYTDMbgxykoFWqWHPzahFSNAaaaJtVKsq",
+    "oracle_type": "JupiterLpScope",
+    "max_age": 255,
+    "twap_enabled": true
+  },
+  "355": {
+    "label": "TWAP Scope JLP/USD",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 354,
+    "max_age": 260
   }
 }
