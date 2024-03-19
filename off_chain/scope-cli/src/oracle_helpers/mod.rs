@@ -17,6 +17,7 @@ use scope::{anchor_lang::prelude::Pubkey, oracles::OracleType, DatedPrice};
 
 pub mod jupiter_lp_compute;
 pub mod jupiter_lp_fetch;
+pub mod jupiter_lp_scope;
 #[cfg(feature = "yvaults")]
 pub mod ktokens;
 pub mod meteora_dlmm;
@@ -83,9 +84,12 @@ pub trait OracleHelper: Sync {
 }
 
 pub async fn entry_from_config<T, S>(
+    token_id: u16,
     token_conf: &TokenConfig,
     default_max_age: clock::Slot,
     rpc: &OrbitLink<T, S>,
+    oracle_prices_pk: &Pubkey,
+    scope_pk: &Pubkey,
 ) -> Result<Box<dyn TokenEntry>>
 where
     T: async_client::AsyncClient,
@@ -122,6 +126,17 @@ where
         OracleType::JupiterLpCompute => Box::new(
             jupiter_lp_compute::JupiterLPOracleCompute::new(token_conf, default_max_age, rpc)
                 .await?,
+        ),
+        OracleType::JupiterLpScope => Box::new(
+            jupiter_lp_scope::JupiterLPOracleScope::new(
+                token_conf,
+                token_id,
+                oracle_prices_pk,
+                default_max_age,
+                rpc,
+                scope_pk,
+            )
+            .await?,
         ),
         OracleType::MeteoraDlmmAtoB | OracleType::MeteoraDlmmBtoA => Box::new(
             meteora_dlmm::MeteoraDlmmOracle::new(token_conf, default_max_age, &rpc.client).await?,

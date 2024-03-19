@@ -4,22 +4,27 @@ use num_enum::TryFromPrimitive;
 use scope::oracles::OracleType;
 use solana_program::instruction::{AccountMeta, InstructionError};
 use solana_program_test::BanksClientError;
-use solana_sdk::transaction::TransactionError;
+use solana_sdk::{pubkey::Pubkey, transaction::TransactionError};
 
 use crate::common::types::{OracleConf, TestContext};
 
 pub async fn get_refresh_list_accounts(
     ctx: &mut TestContext,
+    feed_prices_pk: &Pubkey,
     conf: &OracleConf,
 ) -> Vec<AccountMeta> {
     let mut accounts: Vec<AccountMeta> = vec![];
-    let mut remaining_accounts = get_remaining_accounts(ctx, conf).await;
+    let mut remaining_accounts = get_remaining_accounts(ctx, feed_prices_pk, conf).await;
     accounts.push(AccountMeta::new_readonly(conf.pubkey, false));
     accounts.append(&mut remaining_accounts);
     accounts
 }
 
-pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) -> Vec<AccountMeta> {
+pub async fn get_remaining_accounts(
+    ctx: &mut TestContext,
+    feed_prices_pk: &Pubkey,
+    conf: &OracleConf,
+) -> Vec<AccountMeta> {
     #[allow(unused_mut)]
     let mut accounts: Vec<AccountMeta> = vec![];
     match conf.price_type.into() {
@@ -50,6 +55,9 @@ pub async fn get_remaining_accounts(ctx: &mut TestContext, conf: &OracleConf) ->
         }
         OracleType::JupiterLpCompute => {
             accounts.append(&mut get_jlp_compute_remaining_accounts(ctx, conf).await)
+        }
+        OracleType::JupiterLpScope => {
+            accounts.append(&mut get_jlp_scope_remaining_accounts(ctx, feed_prices_pk, conf).await)
         }
         OracleType::MeteoraDlmmAtoB | OracleType::MeteoraDlmmBtoA => {
             unimplemented!("MeteoraDlmm is not yet supported in tests")
@@ -89,6 +97,35 @@ pub async fn get_jlp_compute_remaining_accounts(
             .map(|pk| AccountMeta::new_readonly(*pk, false)),
     );
     accounts.extend(oracles_pk_it.map(|pk| AccountMeta::new_readonly(pk, false)));
+    accounts
+}
+
+pub async fn get_jlp_scope_remaining_accounts(
+    ctx: &mut TestContext,
+    price_feed_pk: &Pubkey,
+    conf: &OracleConf,
+) -> Vec<AccountMeta> {
+    use scope::oracles::jupiter_lp as jlp;
+    let pool: jlp::perpetuals::Pool = ctx.get_anchor_account(&conf.pubkey).await.unwrap();
+    let (mint_pk, _) = jlp::get_mint_pk(&conf.pubkey);
+    let mint_to_chain_pk = scope::utils::pdas::mints_to_scope_chains_pubkey(
+        price_feed_pk,
+        &conf.pubkey,
+        conf.token.try_into().unwrap(),
+        &scope::id(),
+    )
+    .0;
+    let custodies_pks = &pool.custodies;
+
+    let mut accounts = vec![
+        AccountMeta::new_readonly(mint_pk, false),
+        AccountMeta::new_readonly(mint_to_chain_pk, false),
+    ];
+    accounts.extend(
+        custodies_pks
+            .iter()
+            .map(|pk| AccountMeta::new_readonly(*pk, false)),
+    );
     accounts
 }
 

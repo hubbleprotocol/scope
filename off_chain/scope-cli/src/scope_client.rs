@@ -1,6 +1,7 @@
 #![allow(clippy::borrowed_box)]
 use std::io::IsTerminal;
 use std::mem::size_of;
+use std::path::Path;
 use std::{collections::HashSet, num::NonZeroU64};
 
 use anchor_client::solana_sdk::transaction::VersionedTransaction;
@@ -24,11 +25,12 @@ use orbit_link::tx_builder::TxBuilder;
 use orbit_link::{async_client::AsyncClient, OrbitLink};
 use scope::oracles::OracleType;
 use scope::{
-    accounts, instruction, Configuration, OracleMappings, OraclePrices, OracleTwaps,
-    TokenMetadatas, UpdateTokenMetadataMode,
+    accounts, instruction, Configuration, MintsToScopeChains, OracleMappings, OraclePrices,
+    OracleTwaps, TokenMetadatas, UpdateTokenMetadataMode,
 };
 use tracing::{debug, error, info, trace, warn};
 
+use crate::config::mint_to_scope_chain::MintToScopeChainConfig;
 use crate::utils::PriceTypeFilter;
 use crate::{
     config::{ScopeConfig, TokenConfig, TokenList},
@@ -45,7 +47,7 @@ const BASE_URL_MAINNET: &str = "https://explorer.solana.com/tx/inspector?";
 /// Base URL for localnet explorer
 const BASE_URL_LOCALNET: &str = "https://explorer.solana.com/tx/inspector?cluster=custom&customUrl=http%3A%2F%2Flocalhost%3A8899";
 
-type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
+pub(crate) type TokenEntryList = IntMap<u16, Box<dyn TokenEntry>>;
 
 pub struct ScopeClient<T: AsyncClient, S: Signer> {
     client: OrbitLink<T, S>,
@@ -167,8 +169,15 @@ where
         // Local implies to get a copy of needed onchain data (as a cache)
         let tokens_res: Result<TokenEntryList> =
             join_all(token_list.tokens.iter().map(|(id, token_conf)| async {
-                let token_entry: Box<dyn TokenEntry> =
-                    entry_from_config(token_conf, default_max_age, rpc).await?;
+                let token_entry: Box<dyn TokenEntry> = entry_from_config(
+                    *id,
+                    token_conf,
+                    default_max_age,
+                    rpc,
+                    &self.oracle_prices_acc,
+                    &self.program_id,
+                )
+                .await?;
                 Ok((*id, token_entry))
             }))
             .await
@@ -275,6 +284,8 @@ where
 
         let zero_pk = Pubkey::default();
         let rpc = self.get_orbit_link();
+        let oracle_prices_pk = self.oracle_prices_acc;
+        let scope_pk = self.program_id;
 
         let entry_builders = onchain_mapping
             .iter()
@@ -314,7 +325,15 @@ where
                         twap_enabled,
                         twap_source,
                     };
-                    let entry = entry_from_config(&oracle_conf, default_max_age, rpc).await?;
+                    let entry = entry_from_config(
+                        id,
+                        &oracle_conf,
+                        default_max_age,
+                        rpc,
+                        &oracle_prices_pk,
+                        &scope_pk,
+                    )
+                    .await?;
                     Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
                 },
             );
@@ -581,6 +600,37 @@ where
         Ok(token_metadatas)
     }
 
+    pub async fn create_mint_map(&self, configuration_file: &Path) -> Result<()> {
+        let file = std::fs::File::open(configuration_file)
+            .with_context(|| format!("Failed to open file: {configuration_file:?}"))?;
+        let reader = std::io::BufReader::new(file);
+        let mint_to_chain_cfg: MintToScopeChainConfig = serde_json::from_reader(reader)?;
+        let (mint_to_chain_pk, mint_to_chain) = mint_to_chain_cfg.to_mints_to_scope_chains(
+            self.oracle_prices_acc,
+            &self.tokens,
+            self.program_id,
+        )?;
+        self.ix_create_mint_map(&mint_to_chain_pk, mint_to_chain)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn close_mint_map(&self, token_id: u16) -> Result<()> {
+        let seed_pk = self
+            .tokens
+            .get(&token_id)
+            .and_then(|t| t.get_mapping_account())
+            .ok_or_else(|| anyhow!("Token not found"))?;
+        let (mapping_pk, _) = scope::utils::pdas::mints_to_scope_chains_pubkey(
+            &self.oracle_prices_acc,
+            &seed_pk,
+            token_id.into(),
+            &self.program_id,
+        );
+        self.ix_close_mint_map(&mapping_pk).await?;
+        Ok(())
+    }
+
     #[allow(clippy::too_many_arguments)]
     #[tracing::instrument(skip(client))]
     async fn ix_initialize(
@@ -771,7 +821,7 @@ where
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn ix_set_admin_cached(&mut self, admin_cached: Pubkey) -> Result<()> {
+    pub async fn ix_set_admin_cached(&self, admin_cached: Pubkey) -> Result<()> {
         let accounts = accounts::SetAdminCached {
             admin: self.client.payer_pubkey(),
             configuration: self.configuration_acc,
@@ -793,7 +843,7 @@ where
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn ix_approve_admin_cached(&mut self) -> Result<()> {
+    pub async fn ix_approve_admin_cached(&self) -> Result<()> {
         let accounts = accounts::ApproveAdminCached {
             admin_cached: self.admin_cached_acc,
             configuration: self.configuration_acc,
@@ -917,5 +967,63 @@ where
             warn!(?err, "Error while sending refresh price list transaction");
             // Ok case already printed
         }
+    }
+
+    async fn ix_create_mint_map(
+        &self,
+        mint_to_chain_pk: &Pubkey,
+        mint_to_chain: MintsToScopeChains,
+    ) -> Result<()> {
+        let mut accounts = accounts::CreateMintMap {
+            admin: self.client.payer_pubkey(),
+            configuration: self.configuration_acc,
+            mappings: *mint_to_chain_pk,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None);
+
+        accounts.extend(
+            mint_to_chain
+                .mapping
+                .iter()
+                .map(|m| AccountMeta::new(m.mint, false)),
+        );
+
+        let args = instruction::CreateMintMap {
+            seed_pk: mint_to_chain.seed_pk,
+            seed_id: mint_to_chain.seed_id,
+            bump: mint_to_chain.bump,
+            scope_chains: mint_to_chain
+                .mapping
+                .into_iter()
+                .map(|m| m.scope_chain)
+                .collect(),
+        };
+
+        let tx_builder = self
+            .client
+            .tx_builder()
+            .add_anchor_ix(&self.program_id, accounts, args);
+
+        self.send_transaction(tx_builder).await?;
+
+        Ok(())
+    }
+
+    async fn ix_close_mint_map(&self, mint_to_chain_pk: &Pubkey) -> Result<()> {
+        let tx_builder = self.client.tx_builder().add_anchor_ix(
+            &self.program_id,
+            accounts::CloseMintMap {
+                admin: self.client.payer_pubkey(),
+                configuration: self.configuration_acc,
+                mappings: *mint_to_chain_pk,
+                system_program: system_program::ID,
+            },
+            instruction::CloseMintMap {},
+        );
+
+        self.send_transaction(tx_builder).await?;
+
+        Ok(())
     }
 }

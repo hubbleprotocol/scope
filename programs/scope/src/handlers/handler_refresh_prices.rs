@@ -94,6 +94,7 @@ pub fn refresh_price_list<'info>(
             &clock,
             &oracle_twaps,
             oracle_mappings,
+            &ctx.accounts.oracle_prices,
             token_nb.into(),
         );
         let price = if fail_tx_on_error {

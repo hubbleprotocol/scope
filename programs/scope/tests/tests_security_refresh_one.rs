@@ -85,7 +85,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_ORCA_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_ORCA_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
 
         let args = scope::instruction::RefreshPriceList {
@@ -132,7 +133,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_RAYDIUM_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
 
         let args = scope::instruction::RefreshPriceList {
@@ -190,7 +192,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_ORCA_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_ORCA_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong global config
         accounts.iter_mut().for_each(|account| {
@@ -247,7 +250,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_RAYDIUM_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong global config
         accounts.iter_mut().for_each(|account| {
@@ -308,7 +312,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_ORCA_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_ORCA_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong collateral infos
         accounts.iter_mut().for_each(|account| {
@@ -369,7 +374,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_RAYDIUM_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong collateral infos
         accounts.iter_mut().for_each(|account| {
@@ -426,7 +432,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_ORCA_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_ORCA_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong orca whirlpool
         accounts.iter_mut().for_each(|account| {
@@ -482,7 +489,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_RAYDIUM_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong orca whirlpool
         accounts.iter_mut().for_each(|account| {
@@ -539,7 +547,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_ORCA_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_ORCA_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong orca position
         accounts.iter_mut().for_each(|account| {
@@ -596,7 +605,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_RAYDIUM_KTOKEN_ORACLE)
+                .await;
         accounts.append(&mut refresh_accounts);
         // Set the wrong orca position
         accounts.iter_mut().for_each(|account| {
@@ -653,7 +663,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_ORCA_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_ORCA_KTOKEN_ORACLE)
+                .await;
         // Set the wrong scope prices
         refresh_accounts.iter_mut().for_each(|account| {
             if account.pubkey == strategy.scope_prices {
@@ -710,7 +721,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         let mut refresh_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_RAYDIUM_KTOKEN_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_RAYDIUM_KTOKEN_ORACLE)
+                .await;
         refresh_accounts.iter_mut().for_each(|account| {
             if account.pubkey == strategy.scope_prices {
                 account.pubkey = wrong_scope_prices;
@@ -764,7 +776,9 @@ mod test_jlp_fetch {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_JLP_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_JLP_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_JLP_ORACLE.token.try_into().unwrap()],
@@ -804,7 +818,7 @@ mod test_jlp_fetch {
         .to_account_metas(None);
 
         let mut remaining_accounts =
-            utils::get_refresh_list_accounts(&mut ctx, &TEST_JLP_ORACLE).await;
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_JLP_ORACLE).await;
 
         let mint = &mut remaining_accounts[0];
         let mint_pk = mint.pubkey;
@@ -860,7 +874,9 @@ mod test_jlp_compute {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_JLP_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_JLP_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_JLP_ORACLE.token.try_into().unwrap()],
@@ -909,7 +925,8 @@ mod test_jlp_compute {
         }
         .to_account_metas(None);
 
-        let remaining_accounts = utils::get_refresh_list_accounts(&mut ctx, &TEST_JLP_ORACLE).await;
+        let remaining_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_JLP_ORACLE).await;
 
         for i in 0..remaining_accounts.len() {
             let mut remaining_accounts = remaining_accounts.clone();
@@ -969,7 +986,9 @@ mod test_spl_stake {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_STAKE_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],
@@ -1023,7 +1042,9 @@ mod test_spl_stake {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_STAKE_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],
@@ -1076,7 +1097,9 @@ mod test_spl_stake {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_STAKE_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],
@@ -1121,7 +1144,9 @@ mod test_spl_stake {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_STAKE_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],
@@ -1165,7 +1190,9 @@ mod test_spl_stake {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_STAKE_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],
@@ -1209,7 +1236,9 @@ mod test_spl_stake {
         }
         .to_account_metas(None);
 
-        accounts.append(&mut utils::get_refresh_list_accounts(&mut ctx, &TEST_STAKE_ORACLE).await);
+        accounts.append(
+            &mut utils::get_refresh_list_accounts(&mut ctx, &feed.prices, &TEST_STAKE_ORACLE).await,
+        );
 
         let args = scope::instruction::RefreshPriceList {
             tokens: vec![TEST_STAKE_ORACLE.token.try_into().unwrap()],

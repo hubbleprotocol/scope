@@ -150,7 +150,8 @@ async fn test_working_refresh_list() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         accounts.append(&mut refresh_accounts);
     }
 
@@ -216,7 +217,8 @@ async fn test_wrong_oracle_mapping() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         accounts.append(&mut refresh_accounts);
     }
 
@@ -269,7 +271,8 @@ async fn test_wrong_oracle_account_with_copy() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         accounts.append(&mut refresh_accounts);
     }
     // Replace fake account
@@ -324,7 +327,8 @@ async fn test_wrong_index_oracle_account() {
     .to_account_metas(None);
 
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         accounts.append(&mut refresh_accounts);
     }
     let mut tokens = TEST_ORACLE_CONF.map(|conf| conf.token as u16).to_vec();
@@ -379,7 +383,8 @@ async fn test_wrong_sysvar_instructions() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         accounts.append(&mut refresh_accounts);
     }
 
@@ -425,7 +430,8 @@ async fn test_refresh_through_cpi() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         accounts.append(&mut refresh_accounts);
     }
 
@@ -494,7 +500,8 @@ async fn test_refresh_with_unexpected_ix() {
     .to_account_metas(None);
 
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         accounts.append(&mut refresh_accounts);
     }
 
@@ -575,7 +582,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_ORCA_KTOKEN_ORACLE {
                 // Set the wrong global config
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -646,7 +654,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_RAYDIUM_KTOKEN_ORACLE {
                 // Set the wrong global config
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -724,7 +733,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_ORCA_KTOKEN_ORACLE {
                 // Set the wrong collateral infos
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -799,7 +809,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_RAYDIUM_KTOKEN_ORACLE {
                 // Set the wrong collateral infos
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -873,7 +884,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_ORCA_KTOKEN_ORACLE {
                 // Set the wrong orca whirlpool
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -943,7 +955,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_RAYDIUM_KTOKEN_ORACLE {
                 // Set the wrong raydium pool
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -1017,7 +1030,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_ORCA_KTOKEN_ORACLE {
                 // Set the wrong orca position
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -1088,7 +1102,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_RAYDIUM_KTOKEN_ORACLE {
                 // Set the wrong raydium position
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -1162,7 +1177,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_ORCA_KTOKEN_ORACLE {
                 // Set the wrong scope prices
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -1233,7 +1249,8 @@ mod ktoken_tests {
         }
         .to_account_metas(None);
         for conf in TEST_ORACLE_CONF.iter() {
-            let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+            let mut refresh_accounts =
+                utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
             if conf == &TEST_RAYDIUM_KTOKEN_ORACLE {
                 // Set the wrong scope prices
                 refresh_accounts.iter_mut().for_each(|account| {
@@ -1290,7 +1307,8 @@ async fn test_refresh_list_jlp_wrong_mint() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         if conf == &TEST_JLP_FETCH_ORACLE {
             // Set the wrong mint
             let mint = &mut refresh_accounts[1];
@@ -1350,7 +1368,8 @@ async fn test_refresh_list_jlp_compute_wrong_extra_account(extra_account_index: 
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         if conf == &TEST_JLP_COMPUTE_ORACLE {
             // Set the wrong mint
             let acc = &mut refresh_accounts[1 + extra_account_index];
@@ -1403,7 +1422,8 @@ async fn test_refresh_list_orca_wrong_mint_a() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         if conf == &TEST_ORCA_ATOB {
             // Set the wrong mint a
             let mint = &mut refresh_accounts[1];
@@ -1453,7 +1473,8 @@ async fn test_refresh_list_orca_wrong_mint_b() {
     }
     .to_account_metas(None);
     for conf in TEST_ORACLE_CONF.iter() {
-        let mut refresh_accounts = utils::get_refresh_list_accounts(&mut ctx, conf).await;
+        let mut refresh_accounts =
+            utils::get_refresh_list_accounts(&mut ctx, &feed.prices, conf).await;
         if conf == &TEST_ORCA_ATOB {
             // Set the wrong mint b
             let mint = &mut refresh_accounts[2];

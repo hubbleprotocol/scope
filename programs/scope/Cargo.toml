@@ -22,6 +22,7 @@ yvaults = ["dep:yvaults"]
 devnet = ["skip_price_validation"]
 localnet = []
 mainnet = []
+serde = ["dep:serde"]
 
 [dependencies]
 anchor-lang = "0.28.0"
@@ -30,7 +31,7 @@ solana-program = "~1.16.18"
 bytemuck = { version = "1.4.0", features = ["min_const_generics", "derive"] }
 num_enum = "0.7.0"
 cfg-if = "1.0.0"
-serde = "1.0.136"
+serde = { version = "1.0.136", optional = true }
 strum = { git = "https://github.com/hubbleprotocol/strum", features = [
     "derive",
 ], branch = "checked_arithmetics" }
@@ -67,5 +68,5 @@ solana-logger = "~1.16.18"
 solana-program-test = "~1.16.18"
 solana-sdk = "~1.16.18"
 thiserror = "1.0.38"
-test_cpi_caller = { path = "../test_cpi_caller" }
+test_cpi_caller = { path = "../test_cpi_caller", features = ["no-entrypoint"] }
 test-case = "3.3.0"

@@ -15,11 +15,14 @@ pub mod spl_stake;
 pub mod switchboard_v2;
 pub mod twap;
 
-use anchor_lang::prelude::{err, AccountInfo, Clock, Context, Result};
+use std::ops::Deref;
+
+use anchor_lang::{accounts::account_loader::AccountLoader, prelude::*};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{DatedPrice, OracleMappings, OracleTwaps, ScopeError};
+use crate::{DatedPrice, OracleMappings, OraclePrices, OracleTwaps, ScopeError};
 
 use self::ktokens_token_x::TokenTypes;
 
@@ -32,9 +35,8 @@ pub fn check_context<T>(ctx: &Context<T>) -> Result<()> {
     Ok(())
 }
 
-#[derive(
-    Serialize, Deserialize, IntoPrimitive, TryFromPrimitive, Clone, Copy, PartialEq, Eq, Debug,
-)]
+#[derive(IntoPrimitive, TryFromPrimitive, Clone, Copy, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(u8)]
 pub enum OracleType {
     Pyth = 0,
@@ -89,6 +91,8 @@ pub enum OracleType {
     MeteoraDlmmAtoB = 18,
     /// Meteora's DLMM B to A
     MeteoraDlmmBtoA = 19,
+    /// Jupiter's perpetual LP tokens computed from scope prices
+    JupiterLpScope = 20,
 }
 
 impl OracleType {
@@ -114,7 +118,7 @@ impl OracleType {
             | OracleType::RaydiumAmmV3AtoB
             | OracleType::RaydiumAmmV3BtoA => 20_000,
             OracleType::MeteoraDlmmAtoB | OracleType::MeteoraDlmmBtoA => 30_000,
-            OracleType::JupiterLpCompute => 120_000,
+            OracleType::JupiterLpCompute | OracleType::JupiterLpScope => 120_000,
             OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
                 panic!("DeprecatedPlaceholder is not a valid oracle type")
             }
@@ -127,6 +131,7 @@ impl OracleType {
 /// The `base_account` should have been checked against the oracle mapping
 /// If needed the `extra_accounts` will be extracted from the provided iterator and checked
 /// with the data contained in the `base_account`
+#[allow(clippy::too_many_arguments)]
 pub fn get_price<'a, 'b>(
     price_type: OracleType,
     base_account: &AccountInfo<'a>,
@@ -134,6 +139,7 @@ pub fn get_price<'a, 'b>(
     clock: &Clock,
     oracle_twaps: &OracleTwaps,
     oracle_mappings: &OracleMappings,
+    oracle_prices: &AccountLoader<OraclePrices>,
     index: usize,
 ) -> crate::Result<DatedPrice>
 where
@@ -195,6 +201,14 @@ where
         OracleType::JupiterLpCompute => {
             jupiter_lp::get_price_recomputed(base_account, clock, extra_accounts)
         }
+        OracleType::JupiterLpScope => jupiter_lp::get_price_recomputed_scope(
+            index,
+            base_account,
+            clock,
+            &oracle_prices.key(),
+            oracle_prices.load()?.deref(),
+            extra_accounts,
+        ),
         OracleType::DeprecatedPlaceholder1 | OracleType::DeprecatedPlaceholder2 => {
             panic!("DeprecatedPlaceholder is not a valid oracle type")
         }
@@ -219,7 +233,7 @@ pub fn validate_oracle_account(
         OracleType::KTokenToTokenB => Ok(()), // TODO, should validate ownership of the ktoken account
         OracleType::PythEMA => pyth::validate_pyth_price_info(price_account),
         OracleType::MsolStake => Ok(()),
-        OracleType::JupiterLpFetch | OracleType::JupiterLpCompute => {
+        OracleType::JupiterLpFetch | OracleType::JupiterLpCompute | OracleType::JupiterLpScope => {
             jupiter_lp::validate_jlp_pool(price_account)
         }
         OracleType::ScopeTwap => twap::validate_price_account(price_account),

@@ -49,7 +49,7 @@ pub async fn refresh_price(
         instruction_sysvar_account_info: SYSVAR_INSTRUCTIONS_ID,
     }
     .to_account_metas(None);
-    let mut refresh_accounts = utils::get_refresh_list_accounts(ctx, conf).await;
+    let mut refresh_accounts = utils::get_refresh_list_accounts(ctx, &feed.prices, conf).await;
     accounts.append(&mut refresh_accounts);
 
     let args = scope::instruction::RefreshPriceList {

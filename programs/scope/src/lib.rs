@@ -106,4 +106,18 @@ pub mod scope {
     pub fn approve_admin_cached(ctx: Context<ApproveAdminCached>, feed_name: String) -> Result<()> {
         handler_approve_admin_cached::process(ctx, feed_name)
     }
+
+    pub fn create_mint_map(
+        ctx: Context<CreateMintMap>,
+        seed_pk: Pubkey,
+        seed_id: u64,
+        bump: u8,
+        scope_chains: Vec<[u16; 4]>,
+    ) -> Result<()> {
+        handler_create_mint_map::process(ctx, seed_pk, seed_id, bump, scope_chains)
+    }
+
+    pub fn close_mint_map(ctx: Context<CloseMintMap>) -> Result<()> {
+        handler_close_mint_map::process(ctx)
+    }
 }
