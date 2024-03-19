@@ -89,6 +89,7 @@ pub async fn entry_from_config<T, S>(
     default_max_age: clock::Slot,
     rpc: &OrbitLink<T, S>,
     oracle_prices_pk: &Pubkey,
+    scope_pk: &Pubkey,
 ) -> Result<Box<dyn TokenEntry>>
 where
     T: async_client::AsyncClient,
@@ -133,6 +134,7 @@ where
                 oracle_prices_pk,
                 default_max_age,
                 rpc,
+                scope_pk,
             )
             .await?,
         ),

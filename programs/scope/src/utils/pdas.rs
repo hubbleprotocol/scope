@@ -13,6 +13,7 @@ pub fn mints_to_scope_chains_pubkey(
     prices_pk: &Pubkey,
     seed_pk: &Pubkey,
     seed_id: u64,
+    program_id: &Pubkey,
 ) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[
@@ -21,6 +22,6 @@ pub fn mints_to_scope_chains_pubkey(
             seed_pk.as_ref(),
             &seed_id.to_le_bytes(),
         ],
-        &crate::id(),
+        program_id,
     )
 }

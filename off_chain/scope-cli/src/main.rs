@@ -192,6 +192,9 @@ enum Actions {
     #[clap()]
     CreateMintMap {
         /// Where is stored the mapping to use
+        /// This must be provided to get entries that are not yet in the onchain oracle mapping.
+        mapping: Option<PathBuf>,
+        /// Where is stored the mint to chain mapping to use
         #[clap(long, parse(from_os_str))]
         conf: PathBuf,
     },
@@ -200,6 +203,9 @@ enum Actions {
     /// This requires admin keypair
     #[clap()]
     CloseMintMap {
+        /// Where is stored the mapping to use
+        /// This must be provided to get entries that are not yet in the onchain oracle mapping.
+        mapping: Option<PathBuf>,
         /// Index of the associated entry in the feed configuration
         #[clap(long)]
         token_id: u16,
@@ -326,8 +332,24 @@ async fn main() -> Result<()> {
                 set_admin_cached(&mut scope, admin_cached).await
             }
             Actions::ApproveAdminCached {} => approve_admin_cached(&mut scope).await,
-            Actions::CreateMintMap { conf } => scope.create_mint_map(&conf).await,
-            Actions::CloseMintMap { token_id } => scope.close_mint_map(token_id).await,
+            Actions::CreateMintMap { conf, mapping } => {
+                if let Some(mapping) = mapping {
+                    let token_list = ScopeConfig::read_from_file(&mapping)?;
+                    scope.set_local_mapping(&token_list).await?;
+                } else {
+                    scope.download_oracle_mapping(0).await?;
+                }
+                scope.create_mint_map(&conf).await
+            }
+            Actions::CloseMintMap { mapping, token_id } => {
+                if let Some(mapping) = mapping {
+                    let token_list = ScopeConfig::read_from_file(&mapping)?;
+                    scope.set_local_mapping(&token_list).await?;
+                } else {
+                    scope.download_oracle_mapping(0).await?;
+                }
+                scope.close_mint_map(token_id).await
+            }
         }
     }
 }

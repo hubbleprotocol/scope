@@ -57,7 +57,8 @@ pub fn create_mint_map(
     mints: &[Pubkey],
     scope_chains: Vec<[u16; 4]>,
 ) -> (Instruction, Pubkey, u8) {
-    let (mapping_pk, bump) = mints_to_scope_chains_pubkey(&feed.prices, seed_pk, seed_id);
+    let (mapping_pk, bump) =
+        mints_to_scope_chains_pubkey(&feed.prices, seed_pk, seed_id, &scope::id());
 
     let mut accounts = scope::accounts::CreateMintMap {
         admin: *admin,
@@ -114,7 +115,8 @@ pub fn close_mint_map_from_seeds(
     seed_pk: &Pubkey,
     seed_id: u64,
 ) -> Instruction {
-    let (mapping_pk, _) = mints_to_scope_chains_pubkey(&feed.prices, seed_pk, seed_id);
+    let (mapping_pk, _) =
+        mints_to_scope_chains_pubkey(&feed.prices, seed_pk, seed_id, &scope::id());
 
     close_mint_map(admin, feed, &mapping_pk)
 }

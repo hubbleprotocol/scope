@@ -112,6 +112,7 @@ pub async fn get_jlp_scope_remaining_accounts(
         price_feed_pk,
         &conf.pubkey,
         conf.token.try_into().unwrap(),
+        &scope::id(),
     )
     .0;
     let custodies_pks = &pool.custodies;

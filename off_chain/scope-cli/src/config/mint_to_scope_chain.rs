@@ -8,7 +8,6 @@ use anyhow::{anyhow, Result};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MintToScopeChainConfig {
-    pub label: String,
     pub user_entry_id: u16,
     pub mapping: Vec<MintToScopeChain>,
 }
@@ -18,6 +17,7 @@ impl MintToScopeChainConfig {
         &self,
         oracle_prices: Pubkey,
         scope_entries: &TokenEntryList,
+        program_id: Pubkey,
     ) -> Result<(Pubkey, MintsToScopeChains)> {
         let mapping = self.mapping.clone();
         let seed_id = self.user_entry_id;
@@ -26,8 +26,12 @@ impl MintToScopeChainConfig {
             .and_then(|e| e.get_mapping_account())
             .ok_or_else(|| anyhow!("Seed entry not found"))?;
         let seed_id: u64 = seed_id.into();
-        let (pk, bump) =
-            scope::utils::pdas::mints_to_scope_chains_pubkey(&oracle_prices, &seed_pk, seed_id);
+        let (pk, bump) = scope::utils::pdas::mints_to_scope_chains_pubkey(
+            &oracle_prices,
+            &seed_pk,
+            seed_id,
+            &program_id,
+        );
         Ok((
             pk,
             MintsToScopeChains {

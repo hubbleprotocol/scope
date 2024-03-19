@@ -22,7 +22,7 @@ yvaults = ["dep:yvaults"]
 devnet = ["skip_price_validation"]
 localnet = []
 mainnet = []
-serde = ["dep:serde", "dep:serde_with"]
+serde = ["dep:serde"]
 
 [dependencies]
 anchor-lang = "0.28.0"
@@ -32,7 +32,6 @@ bytemuck = { version = "1.4.0", features = ["min_const_generics", "derive"] }
 num_enum = "0.7.0"
 cfg-if = "1.0.0"
 serde = { version = "1.0.136", optional = true }
-serde_with = { version = "3.6.0", optional = true }
 strum = { git = "https://github.com/hubbleprotocol/strum", features = [
     "derive",
 ], branch = "checked_arithmetics" }

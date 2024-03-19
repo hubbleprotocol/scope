@@ -175,6 +175,7 @@ where
                     default_max_age,
                     rpc,
                     &self.oracle_prices_acc,
+                    &self.program_id,
                 )
                 .await?;
                 Ok((*id, token_entry))
@@ -284,6 +285,7 @@ where
         let zero_pk = Pubkey::default();
         let rpc = self.get_orbit_link();
         let oracle_prices_pk = self.oracle_prices_acc;
+        let scope_pk = self.program_id;
 
         let entry_builders = onchain_mapping
             .iter()
@@ -329,6 +331,7 @@ where
                         default_max_age,
                         rpc,
                         &oracle_prices_pk,
+                        &scope_pk,
                     )
                     .await?;
                     Result::<(u16, Box<dyn TokenEntry>)>::Ok((id, entry))
@@ -602,8 +605,11 @@ where
             .with_context(|| format!("Failed to open file: {configuration_file:?}"))?;
         let reader = std::io::BufReader::new(file);
         let mint_to_chain_cfg: MintToScopeChainConfig = serde_json::from_reader(reader)?;
-        let (mint_to_chain_pk, mint_to_chain) =
-            mint_to_chain_cfg.to_mints_to_scope_chains(self.oracle_prices_acc, &self.tokens)?;
+        let (mint_to_chain_pk, mint_to_chain) = mint_to_chain_cfg.to_mints_to_scope_chains(
+            self.oracle_prices_acc,
+            &self.tokens,
+            self.program_id,
+        )?;
         self.ix_create_mint_map(&mint_to_chain_pk, mint_to_chain)
             .await?;
         Ok(())
@@ -619,6 +625,7 @@ where
             &self.oracle_prices_acc,
             &seed_pk,
             token_id.into(),
+            &self.program_id,
         );
         self.ix_close_mint_map(&mapping_pk).await?;
         Ok(())

@@ -39,6 +39,7 @@ impl JupiterLPOracleScope {
         oracle_prices_pk: &Pubkey,
         default_max_age: clock::Slot,
         rpc: &OrbitLink<T, S>,
+        scope_pk: &Pubkey,
     ) -> Result<Self> {
         let mapping = conf.oracle_mapping;
         let (lp_mint, _) = get_mint_pk(&mapping);
@@ -46,6 +47,7 @@ impl JupiterLPOracleScope {
             oracle_prices_pk,
             &conf.oracle_mapping,
             token_index.into(),
+            scope_pk,
         );
 
         let jup_pool: perpetuals::Pool = rpc.get_anchor_account(&conf.oracle_mapping).await?;

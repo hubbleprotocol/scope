@@ -6,8 +6,6 @@ use decimal_wad::decimal::Decimal;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde")]
-use serde_with::serde_as;
 
 #[zero_copy]
 #[derive(Debug, Default)]
@@ -170,10 +168,9 @@ pub struct MintsToScopeChains {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Default, Clone, Copy)]
-#[cfg_attr(feature = "serde", serde_as)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MintToScopeChain {
-    #[cfg_attr(feature = "serde", serde_as(as = "DisplayFromStr"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_string"))] // Use bs58 for serialization
     pub mint: Pubkey,
     pub scope_chain: [u16; 4],
 }
@@ -189,6 +186,32 @@ impl MintsToScopeChains {
             + size_of::<u8>() // bump
             + size_of::<u32>() // Vec length
             + len * MINT_TO_SCOPE_CHAIN_SERIALIZED_SIZE // Vec data
+    }
+}
+
+#[cfg(feature = "serde")]
+pub mod serde_string {
+    use std::{fmt::Display, str::FromStr};
+
+    use serde::{de, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: Display,
+        S: Serializer,
+    {
+        serializer.collect_str(value)
+    }
+
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
+    {
+        String::deserialize(deserializer)?
+            .parse()
+            .map_err(de::Error::custom)
     }
 }
 
