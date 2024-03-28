@@ -28,7 +28,7 @@ jobs:
       - uses: hubbleprotocol/solana-setup-action@v0.1
         with:
           solana-version: v1.16.18
-          rust-version: stable
+          rust-version: 1.73.0
           anchor-version: v0.28.0
           setup-node: 19
 
