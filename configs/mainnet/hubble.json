@@ -2063,5 +2063,18 @@
     "oracle_type": "ScopeTwap",
     "twap_source": 352,
     "max_age": 255
+  },
+  "354": {
+    "label": "Orca ZORKSEES/SOL",
+    "oracle_type": "OrcaWhirlpoolBtoA",
+    "oracle_mapping": "D3CiqHjv8hugCpRn9J4tYouRV14QwHuKJkxhr9Zjr5Wo",
+    "max_age": 100,
+    "twap_enabled": true
+  },
+  "355": {
+    "label": "TWAP Orca ZORKSEES/SOL",
+    "oracle_type": "ScopeTwap",
+    "twap_source": 354,
+    "max_age": 120
   }
 }
